@@ -1,0 +1,459 @@
+Aplicativo de Gestão Condominial — MVP
+Quero construir um aplicativo web mobile-first para gestão de condomínios residenciais.
+A imagem anexada a este prompt representa o mapa inicial de funcionalidades e deve ser utilizada como referência para compreender a arquitetura funcional do produto.
+O objetivo principal do aplicativo é aumentar transparência, participação dos moradores e eficiência da administração do condomínio.
+Não quero apenas um CRUD de condomínio. O conceito central do produto é permitir que o morador consiga acompanhar o que acontece no condomínio, participar de decisões, registrar problemas, acompanhar sua resolução e consultar informações administrativas e financeiras.
+Stack
+Utilize:
+React
+TypeScript
+Vite
+Firebase Authentication
+Firestore
+Firebase Storage
+React Router
+CSS/SCSS ou uma solução simples e consistente de estilização
+Priorize arquitetura simples, modular e fácil de manter.
+Não introduza bibliotecas desnecessárias.
+O aplicativo deve ser mobile-first, mas funcionar corretamente também em desktop.
+Regra importante de desenvolvimento
+Antes de implementar, analise a imagem e os requisitos abaixo e crie mentalmente a arquitetura do sistema.
+Não crie dezenas de telas isoladas.
+As funcionalidades precisam estar conectadas por um modelo de dados coerente.
+Construa primeiro um MVP navegável e funcional e depois evolua as funcionalidades.
+Não implemente funcionalidades fictícias apenas para preencher telas.
+Quando uma funcionalidade ainda não tiver backend implementado, utilize dados mockados claramente separados da camada de dados real.
+
+PERFIS DE USUÁRIO
+O sistema deve possuir controle de acesso baseado em papéis.
+Morador
+Pode:
+consultar moradores;
+consultar funcionários;
+publicar serviços próprios;
+consultar serviços de outros moradores;
+criar reclamações;
+apoiar reclamações;
+comentar reclamações;
+consultar eventos;
+consultar assembleias;
+participar das funcionalidades permitidas das assembleias;
+solicitar reparos;
+consultar reparos;
+consultar regras;
+consultar dependências do condomínio;
+consultar vagas quando permitido;
+consultar contratos e serviços do condomínio;
+consultar prestação de contas.
+Síndico
+Possui acesso administrativo ao condomínio.
+Pode:
+cadastrar moradores;
+cadastrar funcionários;
+cadastrar eventos;
+moderar reclamações;
+administrar assembleias;
+cadastrar e acompanhar reparos;
+publicar regras;
+cadastrar dependências;
+administrar vagas;
+cadastrar serviços contratados;
+cadastrar orçamentos;
+registrar pagamentos;
+publicar prestação de contas;
+administrar documentos;
+visualizar histórico das ações.
+Subsíndico
+Possui permissões administrativas configuráveis.
+Conselho
+Possui acesso ampliado às informações administrativas e financeiras definidas pelo condomínio.
+Funcionário
+Possui acesso somente às funcionalidades necessárias à sua função.
+
+ESTRUTURA PRINCIPAL
+A navegação principal deve conter:
+Moradores
+Serviços
+Funcionários
+Reclamações
+Eventos
+Assembleias
+Benfeitorias
+Reparos
+Regras do condomínio
+Dependências
+Vagas de garagem
+Serviços contratados
+Prestação de contas
+No mobile, utilize navegação simples e clara, podendo utilizar menu inferior ou menu lateral conforme a melhor solução de UX.
+A tela inicial deve funcionar como um dashboard/resumo do condomínio.
+Mostrar, quando aplicável:
+avisos importantes;
+próximos eventos;
+assembleias abertas;
+reclamações em destaque;
+reparos em andamento;
+últimas movimentações;
+notificações.
+
+MORADORES
+Cada unidade deve possuir:
+número da unidade;
+tipo: apartamento/casa;
+moradores;
+nome;
+foto;
+profissão opcional;
+apresentação/interesses opcionais.
+A informação deve ser acessível somente a usuários autenticados pertencentes ao condomínio.
+Não tornar essas informações públicas na internet.
+O morador deve poder editar somente suas próprias informações.
+Evitar exposição desnecessária de dados pessoais.
+
+SERVIÇOS DOS MORADORES
+Moradores podem publicar serviços que oferecem.
+Exemplos:
+personal trainer;
+limpeza;
+manutenção;
+serviços jurídicos;
+aulas;
+tecnologia;
+outros.
+Cada anúncio deve possuir:
+título;
+categoria;
+descrição;
+imagem;
+nome do morador;
+unidade, se permitido;
+forma de contato;
+status ativo/inativo.
+Os demais moradores podem consultar os serviços e entrar em contato.
+Não criar um sistema de pagamento nesta primeira versão.
+
+FUNCIONÁRIOS
+Cadastrar:
+nome;
+foto;
+função;
+horário;
+disponibilidade;
+descrição.
+Moradores podem avaliar funcionários com:
+nota de 1 a 5 estrelas;
+comentário.
+As avaliações são públicas para os moradores e devem servir como feedback para a administração.
+Criar média das avaliações e quantidade de avaliações.
+Impedir avaliações duplicadas sem controle.
+A administração deve poder moderar avaliações inadequadas.
+
+RECLAMAÇÕES
+Não utilizar o termo "curtida".
+Utilizar Apoiar.
+O morador poderá criar uma reclamação escolhendo uma categoria.
+Exemplos:
+barulho;
+sujeira;
+segurança;
+garagem;
+animais;
+áreas comuns;
+manutenção;
+outros.
+Cada reclamação deve possuir:
+título;
+descrição;
+categoria;
+autor;
+data;
+status;
+quantidade de apoios;
+comentários.
+Status:
+Recebida
+Em análise
+Em andamento
+Resolvida
+Encerrada
+Os moradores podem apoiar uma reclamação e comentar.
+Comentários devem ser moderados.
+Não permitir conteúdo ofensivo, ataques pessoais ou discussões agressivas.
+O síndico/admin deve possuir ferramentas para:
+ocultar conteúdo;
+moderar comentários;
+alterar status;
+responder oficialmente;
+encerrar reclamações.
+Adicionar filtros por:
+categoria;
+status;
+data;
+mais apoiadas.
+
+EVENTOS
+Somente administradores publicam eventos.
+Exemplos:
+festa junina;
+confraternização;
+reunião;
+dia das crianças;
+eventos para moradores.
+Cada evento deve possuir:
+título;
+descrição;
+imagem;
+data;
+horário;
+local;
+informações adicionais.
+
+ASSEMBLEIAS
+Criar estrutura para:
+data;
+horário;
+local;
+pauta;
+documentos;
+assuntos;
+propostas;
+votação;
+resultado;
+ata.
+A votação deve deixar claro quando é uma consulta informal e quando existe uma votação oficial do condomínio.
+Cada assembleia deve possuir uma linha do tempo com os acontecimentos relevantes.
+
+BENFEITORIAS
+Permitir registrar propostas de melhorias no condomínio.
+Exemplos:
+reforma;
+academia;
+playground;
+pintura;
+segurança;
+iluminação.
+Cada proposta deve possuir:
+descrição;
+imagens;
+orçamento;
+responsável;
+status.
+Fluxo:
+Proposta → Em discussão → Em votação → Aprovada/Rejeitada → Em execução → Concluída.
+
+REPAROS
+O morador pode registrar algo quebrado ou com problema.
+Exemplos:
+lâmpada;
+elevador;
+portão;
+fachada;
+área comum.
+Cada solicitação deve possuir:
+descrição;
+categoria;
+fotos;
+autor;
+data;
+status.
+Fluxo:
+Solicitado → Em análise → Orçamento → Aprovado → Agendado → Executado → Confirmado.
+Quando o reparo for concluído, registrar:
+data;
+descrição do serviço realizado;
+imagens;
+empresa/prestador;
+valor;
+comprovantes/documentos quando disponíveis.
+A solicitação nunca deve simplesmente desaparecer.
+Manter histórico completo.
+
+REGRAS DO CONDOMÍNIO
+Permitir publicar:
+regulamento interno;
+convenção;
+documentos;
+comunicados;
+regras específicas.
+Criar uma área de consulta simples.
+IA DAS REGRAS
+Criar futuramente uma interface de perguntas e respostas utilizando os documentos oficiais do condomínio como fonte.
+A IA deve:
+responder somente com base nos documentos disponíveis;
+indicar a fonte da resposta;
+informar quando não encontrar a informação;
+nunca inventar uma regra.
+Exemplo:
+"Segundo o Regulamento Interno, artigo X..."
+Não implementar um chatbot genérico.
+
+DEPENDÊNCIAS DO CONDOMÍNIO
+Cadastrar áreas comuns:
+salão de festas;
+churrasqueira;
+academia;
+piscina;
+brinquedoteca;
+quadra;
+outros.
+Cada dependência deve possuir:
+imagem;
+descrição;
+regras de utilização;
+disponibilidade;
+capacidade;
+horários.
+Futuramente poderá existir reserva.
+
+VAGAS DE GARAGEM
+Criar cadastro das vagas:
+número;
+unidade vinculada;
+status;
+observações.
+Permitir visualizar somente as informações necessárias aos moradores.
+
+SERVIÇOS CONTRATADOS PELO CONDOMÍNIO
+Cadastrar serviços e contratos.
+Cada contratação deve permitir:
+descrição;
+empresa;
+categoria;
+orçamento;
+valor;
+datas;
+status;
+documentos;
+responsável.
+Para novos serviços, permitir registrar até três orçamentos concorrentes.
+Mostrar claramente:
+orçamento 1;
+orçamento 2;
+orçamento 3;
+empresa escolhida;
+justificativa da escolha, quando aplicável.
+Status:
+Em cotação
+Em análise
+Contratado
+Em andamento
+Concluído
+
+PRESTAÇÃO DE CONTAS
+Criar uma visão mensal.
+Cada mês deve apresentar:
+receitas;
+despesas;
+saldo;
+serviços contratados;
+pagamentos;
+documentos;
+notas fiscais;
+contratos.
+O usuário deve conseguir entender rapidamente:
+"Quanto entrou, quanto saiu, com o que foi gasto e quais documentos comprovam isso."
+Evitar uma interface contábil excessivamente complexa.
+A prioridade é transparência para moradores comuns.
+
+HISTÓRICO / AUDITORIA
+Esta é uma funcionalidade fundamental.
+Sempre que possível, registrar:
+quem realizou a ação;
+qual ação;
+data;
+objeto afetado;
+valor anterior;
+novo valor;
+documentos relacionados.
+Exemplo:
+"14/08/2026 — Síndica aprovou orçamento de R$ 4.800 para manutenção do elevador."
+Criar uma linha do tempo para entidades importantes como:
+reclamações;
+reparos;
+contratos;
+benfeitorias;
+assembleias;
+despesas.
+A administração não deve conseguir apagar silenciosamente o histórico de uma ação relevante.
+
+NOTIFICAÇÕES
+Criar estrutura para notificações.
+Exemplos:
+nova assembleia;
+votação aberta;
+reparo atualizado;
+reclamação respondida;
+nova prestação de contas;
+evento próximo;
+nova comunicação da administração.
+
+SEGURANÇA
+Implementar desde o início regras de segurança no Firestore.
+Um morador não pode:
+alterar dados de outro morador;
+alterar informações administrativas;
+excluir registros administrativos;
+acessar dados de outro condomínio.
+Toda informação deve estar associada a um condominioId.
+O sistema deve ser preparado para múltiplos condomínios.
+Estruturar os dados de forma semelhante a:
+condominios
+→ moradores
+→ unidades
+→ funcionários
+→ reclamações
+→ reparos
+→ eventos
+→ assembleias
+→ contratos
+→ despesas
+→ documentos
+Utilizar Firebase Storage para imagens e documentos.
+
+UX/UI
+O design deve ser moderno, limpo e extremamente simples.
+Prioridade:
+celular;
+leitura rápida;
+poucos cliques;
+informações importantes visíveis;
+status claros;
+ações principais sempre evidentes.
+Evitar aparência de sistema administrativo antigo.
+O morador não deve precisar entender contabilidade, administração condominial ou tecnologia para utilizar o aplicativo.
+Utilizar cards, badges de status, timeline, filtros e componentes de leitura rápida.
+
+PRIMEIRA ENTREGA
+Não tente implementar tudo de uma vez.
+Primeiro construa um MVP funcional contendo:
+autenticação;
+estrutura de condomínio;
+moradores;
+funcionários;
+serviços dos moradores;
+reclamações;
+reparos;
+eventos;
+navegação mobile-first;
+dashboard inicial;
+controle básico de permissões;
+Firestore;
+Storage;
+dados de demonstração.
+Depois de essa base estar funcionando, evoluir para:
+assembleias;
+benfeitorias;
+dependências;
+vagas;
+contratos;
+orçamentos;
+prestação de contas;
+auditoria;
+notificações;
+IA das regras.
+Importante
+Não quero apenas mockups.
+Quero uma aplicação navegável, com componentes reais, rotas reais, estado consistente e uma arquitetura preparada para conectar o Firebase.
+Antes de escrever código, apresente uma breve proposta da arquitetura e do modelo de dados que você pretende utilizar.
+Depois implemente o MVP.
+Sempre priorize simplicidade, clareza, transparência e manutenção futura em vez de adicionar funcionalidades desnecessárias.
