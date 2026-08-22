@@ -14,8 +14,8 @@ export const GenericModuleScreen: React.FC<GenericModuleScreenProps> = ({ module
   if (!item) {
     return (
       <div className="p-5 text-center space-y-3">
-        <p className="text-slate-500 text-sm">Módulo não encontrado.</p>
-        <button onClick={() => setCurrentScreen('home')} className="px-4 py-2 bg-indigo-600 rounded-xl text-xs text-white font-bold">
+        <p className="text-white text-sm font-bold">Módulo não encontrado.</p>
+        <button onClick={() => setCurrentScreen('home')} className="px-4 py-2 bg-amber-500 rounded-xl text-xs text-slate-950 font-extrabold">
           Voltar ao Início
         </button>
       </div>
@@ -29,30 +29,27 @@ export const GenericModuleScreen: React.FC<GenericModuleScreenProps> = ({ module
       <div className="flex items-center justify-between">
         <button
           onClick={() => setCurrentScreen('home')}
-          className="flex items-center gap-1.5 text-xs text-indigo-600 hover:underline font-bold"
+          className="flex items-center gap-1.5 text-xs text-amber-300 hover:underline font-extrabold drop-shadow"
         >
           <ArrowLeft className="w-4 h-4" /> Voltar ao Início
         </button>
-        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 uppercase font-bold">
-          Espinha Dorsal
-        </span>
       </div>
 
       {/* Module Title Card */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-3 shadow-2xs">
+      <div className="bg-white/45 border border-white/60 rounded-3xl p-5 space-y-3 shadow-xl">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+          <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-950 border border-amber-400/40">
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">{item.titulo}</h2>
-            <p className="text-xs text-slate-500 font-medium">{item.descricaoCurta}</p>
+            <h2 className="text-lg font-extrabold text-slate-950">{item.titulo}</h2>
+            <p className="text-xs text-slate-800 font-bold">{item.descricaoCurta}</p>
           </div>
         </div>
 
         {/* Desdobramentos from diagram */}
-        <div className="pt-3 border-t border-slate-100 space-y-2">
-          <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider block">
+        <div className="pt-3 border-t border-slate-900/10 space-y-2">
+          <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider block">
             Desdobramentos Previstos no Diagrama:
           </span>
 
@@ -60,9 +57,9 @@ export const GenericModuleScreen: React.FC<GenericModuleScreenProps> = ({ module
             {item.desdobramentos.map((desd, idx) => (
               <div
                 key={idx}
-                className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-800 flex items-center gap-2 font-medium"
+                className="p-3 rounded-2xl bg-white/60 border border-white/80 text-xs text-slate-900 flex items-center gap-2 font-bold shadow-2xs"
               >
-                <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-indigo-700 shrink-0" />
                 <span>{desd}</span>
               </div>
             ))}
@@ -73,25 +70,25 @@ export const GenericModuleScreen: React.FC<GenericModuleScreenProps> = ({ module
       {/* Special Content for Funcionários */}
       {moduleId === 'funcionarios' && (
         <div className="space-y-3">
-          <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+          <h3 className="text-xs font-extrabold uppercase tracking-wider text-white drop-shadow">
             Quadro de Funcionários & Avaliações
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {funcionarios.map((func) => (
-              <div key={func.id} className="bg-white border border-slate-200 p-4 rounded-3xl space-y-3 shadow-2xs">
+              <div key={func.id} className="bg-white/45 border border-white/60 p-4 rounded-3xl space-y-3 shadow-xl">
                 <div className="flex items-center gap-3">
-                  <img src={func.foto} alt={func.nome} className="w-12 h-12 rounded-2xl object-cover border border-slate-200" />
+                  <img src={func.foto} alt={func.nome} className="w-12 h-12 rounded-2xl object-cover border border-white/80 shadow-xs" />
                   <div>
-                    <h4 className="font-extrabold text-sm text-slate-900">{func.nome}</h4>
-                    <p className="text-xs text-indigo-700 font-semibold">{func.funcao}</p>
+                    <h4 className="font-extrabold text-sm text-slate-950">{func.nome}</h4>
+                    <p className="text-xs text-amber-950 font-extrabold">{func.funcao}</p>
                   </div>
                 </div>
 
-                <div className="text-xs text-slate-700 space-y-1 bg-slate-50 p-3 rounded-2xl border border-slate-200 font-medium">
-                  <p>⏰ Horário: <strong className="text-slate-900">{func.horario}</strong></p>
+                <div className="text-xs text-slate-900 space-y-1 bg-white/60 p-3 rounded-2xl border border-white/80 font-bold">
+                  <p>⏰ Horário: <strong className="text-slate-950">{func.horario}</strong></p>
                   <p>📅 Disponibilidade: {func.disponibilidade}</p>
-                  <p className="text-amber-800 font-extrabold mt-1">
+                  <p className="text-amber-900 font-extrabold mt-1">
                     ⭐ {func.mediaNota.toFixed(1)} / 5.0 ({func.avaliacoesCount} avaliações dos moradores)
                   </p>
                 </div>
@@ -102,21 +99,21 @@ export const GenericModuleScreen: React.FC<GenericModuleScreenProps> = ({ module
       )}
 
       {/* General PoC Note */}
-      <div className="p-4 rounded-3xl bg-indigo-50/60 border border-indigo-200 text-xs text-indigo-950 space-y-2 font-medium">
-        <span className="font-extrabold text-indigo-900 block">📌 Nota do Protótipo (PoC 1.0)</span>
-        <p className="leading-relaxed">
+      <div className="p-4 rounded-3xl bg-white/45 border border-white/60 text-xs text-slate-950 space-y-2 font-bold shadow-xl">
+        <span className="font-extrabold text-slate-950 block">📌 Nota do Protótipo (PoC 1.0)</span>
+        <p className="leading-relaxed font-semibold">
           Este módulo faz parte da **Espinha Dorsal do Condomínio** especificada no diagrama. Para a demonstração atual da subsíndica, priorizamos o fluxo crítico e integrado:
         </p>
         <div className="flex flex-wrap gap-2 pt-1">
           <button
             onClick={() => setCurrentScreen('reclamacoes')}
-            className="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white font-extrabold text-xs hover:bg-indigo-700 shadow-2xs"
+            className="px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-xs hover:bg-amber-400 shadow-sm"
           >
             Ir para Reclamações →
           </button>
           <button
             onClick={() => setCurrentScreen('reparos')}
-            className="px-3.5 py-1.5 rounded-xl bg-white text-slate-700 font-extrabold text-xs hover:bg-slate-50 border border-slate-200 shadow-2xs"
+            className="px-3.5 py-1.5 rounded-xl bg-white/70 text-slate-950 font-extrabold text-xs hover:bg-white border border-white/90 shadow-sm"
           >
             Ir para Reparos →
           </button>

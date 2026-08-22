@@ -52,13 +52,10 @@ export const ReclamacoesScreen: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
+          <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2 drop-shadow-md">
+            <AlertTriangle className="w-5 h-5 text-amber-400" />
             Reclamações & Ocorrências
           </h2>
-          <p className="text-xs text-slate-500 font-medium">
-            Relate problemas, apoie a vizinhança e acompanhe providências
-          </p>
         </div>
       </div>
 
@@ -68,10 +65,10 @@ export const ReclamacoesScreen: React.FC = () => {
           <button
             key={cat}
             onClick={() => setFilterCategory(cat)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all border shadow-sm ${
               filterCategory === cat
-                ? 'bg-amber-100 text-amber-900 border-amber-300 shadow-2xs'
-                : 'bg-white text-slate-600 border-slate-200 hover:text-slate-900 shadow-2xs'
+                ? 'bg-amber-500 text-slate-950 border-amber-400 scale-105'
+                : 'bg-white/40 text-slate-900 border-white/60 hover:bg-white/60'
             }`}
           >
             {cat}
@@ -84,7 +81,7 @@ export const ReclamacoesScreen: React.FC = () => {
         
         {/* Left Column: Complaints List */}
         <div className="lg:col-span-5 space-y-3">
-          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-white drop-shadow block">
             Lista de Reclamações ({filteredReclamacoes.length})
           </span>
 
@@ -94,37 +91,37 @@ export const ReclamacoesScreen: React.FC = () => {
               <div
                 key={rec.id}
                 onClick={() => setSelectedReclamacaoId(rec.id)}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+                className={`p-4 rounded-3xl border transition-all cursor-pointer shadow-lg ${
                   isSelected
-                    ? 'bg-white border-amber-400 ring-2 ring-amber-400/20 shadow-md'
-                    : 'bg-white border-slate-200/80 hover:border-slate-300 shadow-2xs'
+                    ? 'bg-white/65 border-amber-400 ring-2 ring-amber-400/30 scale-102'
+                    : 'bg-white/45 border-white/60 hover:bg-white/55'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 uppercase">
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-slate-900/10 text-slate-900 border border-slate-900/20 uppercase">
                     {rec.categoria}
                   </span>
                   <StatusBadge status={rec.status} />
                 </div>
 
-                <h3 className="font-bold text-sm text-slate-900 leading-snug">
+                <h3 className="font-extrabold text-sm text-slate-950 leading-snug">
                   {rec.titulo}
                 </h3>
 
-                <p className="text-xs text-slate-600 mt-1 line-clamp-2">
+                <p className="text-xs text-slate-800 mt-1 line-clamp-2 font-medium">
                   {rec.descricao}
                 </p>
 
-                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <span className="text-[11px] font-semibold text-slate-700">
+                <div className="mt-3 pt-2.5 border-t border-slate-900/10 flex items-center justify-between text-xs text-slate-700">
+                  <span className="text-[11px] font-extrabold text-slate-950">
                     {rec.autorNome} • {rec.autorUnidade}
                   </span>
 
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1 font-extrabold text-amber-700">
+                    <span className="flex items-center gap-1 font-extrabold text-amber-800">
                       <ThumbsUp className="w-3.5 h-3.5" /> {rec.apoiosCount}
                     </span>
-                    <span className="flex items-center gap-1 text-slate-500">
+                    <span className="flex items-center gap-1 text-slate-700 font-bold">
                       <MessageSquare className="w-3.5 h-3.5" /> {rec.comentarios.length}
                     </span>
                   </div>
@@ -136,48 +133,48 @@ export const ReclamacoesScreen: React.FC = () => {
 
         {/* Right Column: Selected Complaint Detail Page */}
         {selectedReclamacao ? (
-          <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-5 space-y-4 shadow-sm">
+          <div className="lg:col-span-7 bg-white/45 border border-white/60 rounded-3xl p-5 space-y-4 shadow-xl">
             
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-900/10 pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-2.5 py-1 rounded bg-amber-50 text-amber-900 border border-amber-200 uppercase">
+                <span className="text-xs font-extrabold px-2.5 py-1 rounded bg-amber-500/20 text-amber-950 border border-amber-400/40 uppercase">
                   {selectedReclamacao.categoria}
                 </span>
                 <StatusBadge status={selectedReclamacao.status} />
               </div>
-              <span className="text-[11px] text-slate-400 font-mono">
+              <span className="text-[11px] text-slate-800 font-mono font-bold">
                 {selectedReclamacao.data}
               </span>
             </div>
 
             <div>
-              <h2 className="text-lg font-extrabold text-slate-900 leading-tight">
+              <h2 className="text-lg font-extrabold text-slate-950 leading-tight">
                 {selectedReclamacao.titulo}
               </h2>
-              <p className="text-xs text-indigo-700 mt-1 font-semibold">
+              <p className="text-xs text-amber-950 mt-1 font-extrabold">
                 Por: {selectedReclamacao.autorNome} ({selectedReclamacao.autorUnidade})
               </p>
             </div>
 
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 text-xs text-slate-800 leading-relaxed font-medium">
+            <div className="bg-white/60 p-4 rounded-2xl border border-white/80 text-xs text-slate-900 leading-relaxed font-semibold">
               {selectedReclamacao.descricao}
             </div>
 
             {/* Support Action Button */}
-            <div className="flex items-center justify-between bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200">
+            <div className="flex items-center justify-between bg-white/60 p-3.5 rounded-2xl border border-white/80">
               <div className="text-xs">
-                <span className="font-extrabold text-slate-900 block">Apoio Comunitário</span>
-                <span className="text-[11px] text-slate-500 font-medium">
+                <span className="font-extrabold text-slate-950 block">Apoio Comunitário</span>
+                <span className="text-[11px] text-slate-800 font-semibold">
                   {selectedReclamacao.apoiosCount} vizinhos consideram este problema prioritário
                 </span>
               </div>
 
               <button
                 onClick={() => apoiarReclamacao(selectedReclamacao.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all active:scale-95 shadow-sm ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all active:scale-95 shadow-md ${
                   selectedReclamacao.apoiadoPeloUsuario
-                    ? 'bg-amber-500 text-slate-950 border border-amber-600 shadow-amber-500/20'
-                    : 'bg-white hover:bg-amber-50 text-amber-900 border border-amber-300'
+                    ? 'bg-amber-500 text-slate-950 border border-amber-600 shadow-amber-500/30 scale-105'
+                    : 'bg-white/80 hover:bg-amber-50 text-amber-950 border border-amber-400'
                 }`}
               >
                 <ThumbsUp className={`w-4 h-4 ${selectedReclamacao.apoiadoPeloUsuario ? 'fill-current' : ''}`} />
@@ -187,18 +184,18 @@ export const ReclamacoesScreen: React.FC = () => {
 
             {/* Admin Action: Transform to Repair */}
             {isAdmin && (
-              <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2">
+              <div className="p-4 rounded-2xl bg-amber-500/20 border border-amber-400/60 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-extrabold text-amber-900 flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-amber-600" /> Ação Administrativa
+                  <span className="text-xs font-extrabold text-amber-950 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-amber-700" /> Ação Administrativa
                   </span>
                   {selectedReclamacao.reparoId && (
-                    <span className="text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded border border-emerald-200 font-bold">
+                    <span className="text-[10px] bg-emerald-500/30 text-slate-950 px-2 py-0.5 rounded border border-emerald-500/50 font-bold">
                       Já Vinculado a Reparo
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-700 leading-relaxed font-medium">
+                <p className="text-[11px] text-slate-900 leading-relaxed font-semibold">
                   Transforme este relato de morador em uma Ação de Reparo formal com cotações de fornecedores e controle de execução.
                 </p>
 
@@ -208,7 +205,7 @@ export const ReclamacoesScreen: React.FC = () => {
                       setSelectedReparoId(selectedReclamacao.reparoId!);
                       setCurrentScreen('reparos');
                     }}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-amber-600 text-white font-extrabold text-xs hover:bg-amber-700 transition-all shadow-sm"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-amber-600 text-white font-extrabold text-xs hover:bg-amber-700 transition-all shadow-md"
                   >
                     Ver Reparo Gerado & Orçamentos
                     <ArrowRight className="w-4 h-4" />
@@ -216,7 +213,7 @@ export const ReclamacoesScreen: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => setShowTransformModal(true)}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-extrabold text-xs transition-all active:scale-95 shadow-sm"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-extrabold text-xs transition-all active:scale-95 shadow-md"
                   >
                     <Wrench className="w-4 h-4" />
                     Transformar Reclamação em Reparo
@@ -227,8 +224,8 @@ export const ReclamacoesScreen: React.FC = () => {
 
             {/* Comments Section */}
             <div className="space-y-3 pt-2">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <MessageSquare className="w-4 h-4 text-indigo-600" />
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                <MessageSquare className="w-4 h-4 text-indigo-700" />
                 Manifestações & Comentários ({selectedReclamacao.comentarios.length})
               </h4>
 
@@ -238,18 +235,18 @@ export const ReclamacoesScreen: React.FC = () => {
                     key={com.id}
                     className={`p-3 rounded-2xl text-xs space-y-1 ${
                       com.oficial
-                        ? 'bg-amber-50/80 border border-amber-200'
-                        : 'bg-slate-50 border border-slate-200/80'
+                        ? 'bg-amber-500/20 border border-amber-400/50'
+                        : 'bg-white/60 border border-white/80'
                     }`}
                   >
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className={`font-extrabold flex items-center gap-1.5 ${com.oficial ? 'text-amber-900' : 'text-slate-900'}`}>
-                        {com.oficial ? <ShieldCheck className="w-3.5 h-3.5 text-amber-600" /> : <User className="w-3.5 h-3.5 text-indigo-600" />}
+                      <span className={`font-extrabold flex items-center gap-1.5 ${com.oficial ? 'text-amber-950' : 'text-slate-950'}`}>
+                        {com.oficial ? <ShieldCheck className="w-3.5 h-3.5 text-amber-700" /> : <User className="w-3.5 h-3.5 text-indigo-700" />}
                         {com.autorNome}
                       </span>
-                      <span className="text-slate-400 font-mono text-[10px]">{com.data}</span>
+                      <span className="text-slate-700 font-mono text-[10px] font-bold">{com.data}</span>
                     </div>
-                    <p className="text-slate-700 leading-relaxed pl-5 font-medium">{com.texto}</p>
+                    <p className="text-slate-900 leading-relaxed pl-5 font-semibold">{com.texto}</p>
                   </div>
                 ))}
               </div>
@@ -261,11 +258,11 @@ export const ReclamacoesScreen: React.FC = () => {
                   placeholder={isAdmin ? "Escrever resposta oficial da administração..." : "Escrever um comentário..."}
                   value={novoComentarioTexto}
                   onChange={(e) => setNovoComentarioTexto(e.target.value)}
-                  className="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-2xs"
+                  className="flex-1 bg-white/70 border border-white/90 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-700 focus:outline-none focus:bg-white font-semibold shadow-xs"
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-md"
                 >
                   <Send className="w-3.5 h-3.5" />
                   Enviar

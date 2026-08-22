@@ -34,7 +34,7 @@ const MainContent: React.FC = () => {
   };
 
   return (
-    <main className="max-w-4xl mx-auto px-4 pt-20 pb-24 min-h-screen">
+    <main className="relative z-10 max-w-4xl mx-auto px-4 pt-20 pb-24 min-h-screen">
       {renderScreen()}
     </main>
   );
@@ -43,7 +43,17 @@ const MainContent: React.FC = () => {
 export default function App() {
   return (
     <CondoProvider>
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+      <div className="min-h-screen bg-slate-950 text-slate-900 flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative">
+        {/* Fullscreen Building Background Image Shared Across ALL Screens */}
+        <div className="fixed inset-0 w-screen h-screen overflow-hidden pointer-events-none z-0">
+          <img
+            src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=2000&q=90"
+            alt="Residencial Jardim Paulista"
+            className="w-full h-full object-cover object-center opacity-85 scale-105"
+          />
+          <div className="absolute inset-0 bg-slate-950/30" />
+        </div>
+
         <Header />
         <EspinhaDorsalDrawer />
         <MainContent />
