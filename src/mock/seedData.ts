@@ -422,6 +422,56 @@ export const MOCK_PRESTACAO_CONTAS: PrestacaoContas = {
   despesasTotal: 60700.00,
   saldo: 21700.00,
   condominioId: CURRENT_CONDO_ID,
+  receitas: [
+    {
+      id: 'rec-1',
+      categoria: 'Taxa Condominial',
+      descricao: 'Arrecadação de Taxa Condominial Ordinária (54 unidades)',
+      valor: 72900.00,
+      data: '10/04/2026',
+      origem: 'Boleto Bancário Bradesco'
+    },
+    {
+      id: 'rec-2',
+      categoria: 'Fundo de Reserva',
+      descricao: 'Aporte de 5% da cota condominial para o Fundo de Reserva',
+      valor: 3645.00,
+      data: '10/04/2026',
+      origem: 'Rateio Automático Bancário'
+    },
+    {
+      id: 'rec-3',
+      categoria: 'Aplicações Financeiras',
+      descricao: 'Rendimento de Aplicação Fundo DI / CDB Liquidez Diária',
+      valor: 2455.00,
+      data: '05/04/2026',
+      origem: 'Banco Itaú Personnalité'
+    },
+    {
+      id: 'rec-4',
+      categoria: 'Locações & Serviços',
+      descricao: 'Taxas de locação do Salão de Festas (3 eventos no mês)',
+      valor: 1800.00,
+      data: '18/04/2026',
+      origem: 'Moradores Apt 102, 302 e 401'
+    },
+    {
+      id: 'rec-5',
+      categoria: 'Locações & Serviços',
+      descricao: 'Taxas de reserva da Churrasqueira Gourmet (4 reservas)',
+      valor: 600.00,
+      data: '21/04/2026',
+      origem: 'Moradores Diversos'
+    },
+    {
+      id: 'rec-6',
+      categoria: 'Multas & Juros',
+      descricao: 'Juros e multas de boletos quitados após o vencimento',
+      valor: 1000.00,
+      data: '25/04/2026',
+      origem: 'Cobrança Administrativa'
+    }
+  ],
   despesas: [
     {
       id: 'desp-1',
@@ -482,6 +532,286 @@ export const MOCK_PRESTACAO_CONTAS: PrestacaoContas = {
       fornecedor: 'Verde Vida Paisagismo'
     }
   ]
+};
+
+export const MOCK_MESES_PRESTACAO: Record<string, PrestacaoContas> = {
+  'Abril / 2026': MOCK_PRESTACAO_CONTAS,
+  'Março / 2026': {
+    id: 'pc-marco-2026',
+    mesAno: 'Março / 2026',
+    receitasTotal: 81200.00,
+    despesasTotal: 58900.00,
+    saldo: 22300.00,
+    condominioId: CURRENT_CONDO_ID,
+    receitas: [
+      {
+        id: 'rec-m-1',
+        categoria: 'Taxa Condominial',
+        descricao: 'Arrecadação de Taxa Condominial Ordinária',
+        valor: 72900.00,
+        data: '10/03/2026',
+        origem: 'Boleto Bancário'
+      },
+      {
+        id: 'rec-m-2',
+        categoria: 'Fundo de Reserva',
+        descricao: 'Aporte de 5% para o Fundo de Reserva',
+        valor: 3645.00,
+        data: '10/03/2026',
+        origem: 'Rateio Automático'
+      },
+      {
+        id: 'rec-m-3',
+        categoria: 'Aplicações Financeiras',
+        descricao: 'Rendimento de Aplicação CDB',
+        valor: 2455.00,
+        data: '05/03/2026',
+        origem: 'Banco Itaú'
+      },
+      {
+        id: 'rec-m-4',
+        categoria: 'Locações & Serviços',
+        descricao: 'Locações Salão de Festas e Churrasqueira',
+        valor: 2200.00,
+        data: '15/03/2026',
+        origem: 'Moradores'
+      }
+    ],
+    despesas: [
+      {
+        id: 'desp-m-1',
+        categoria: 'Segurança & Portaria',
+        descricao: 'Folha de pagamento portaria 24h',
+        valor: 28400.00,
+        data: '05/03/2026',
+        fornecedor: 'Grupo Delta Segurança'
+      },
+      {
+        id: 'desp-m-2',
+        categoria: 'Energia Elétrica',
+        descricao: 'Conta de luz áreas comuns',
+        valor: 8900.00,
+        data: '10/03/2026',
+        fornecedor: 'ENEL'
+      },
+      {
+        id: 'desp-m-3',
+        categoria: 'Água e Esgoto',
+        descricao: 'Consumo de água',
+        valor: 6600.00,
+        data: '12/03/2026',
+        fornecedor: 'SABESP'
+      },
+      {
+        id: 'desp-m-4',
+        categoria: 'Limpeza & Conservação',
+        descricao: 'Produtos de limpeza e piscina',
+        valor: 3200.00,
+        data: '15/03/2026',
+        fornecedor: 'Alvorada Distribuidora'
+      },
+      {
+        id: 'desp-m-5',
+        categoria: 'Elevadores',
+        descricao: 'Manutenção preventiva elevadores',
+        valor: 4100.00,
+        data: '20/03/2026',
+        fornecedor: 'Atlas Schindler'
+      },
+      {
+        id: 'desp-m-6',
+        categoria: 'Manutenção & Reparos',
+        descricao: 'Reparo hidráulico caixa d\'água superior',
+        valor: 7700.00,
+        data: '25/03/2026',
+        fornecedor: 'HidroFix Engenharia'
+      }
+    ]
+  },
+  'Fevereiro / 2026': {
+    id: 'pc-fev-2026',
+    mesAno: 'Fevereiro / 2026',
+    receitasTotal: 80500.00,
+    despesasTotal: 57400.00,
+    saldo: 23100.00,
+    condominioId: CURRENT_CONDO_ID,
+    receitas: [
+      {
+        id: 'rec-f-1',
+        categoria: 'Taxa Condominial',
+        descricao: 'Arrecadação de Taxa Condominial Ordinária',
+        valor: 72900.00,
+        data: '10/02/2026',
+        origem: 'Boleto Bancário'
+      },
+      {
+        id: 'rec-f-2',
+        categoria: 'Fundo de Reserva',
+        descricao: 'Aporte de 5% para Fundo de Reserva',
+        valor: 3645.00,
+        data: '10/02/2026',
+        origem: 'Rateio Automático'
+      },
+      {
+        id: 'rec-f-3',
+        categoria: 'Aplicações Financeiras',
+        descricao: 'Rendimento de Aplicação',
+        valor: 2355.00,
+        data: '05/02/2026',
+        origem: 'Banco Itaú'
+      },
+      {
+        id: 'rec-f-4',
+        categoria: 'Locações & Serviços',
+        descricao: 'Locação Salão de Festas (Carnaval)',
+        valor: 1600.00,
+        data: '17/02/2026',
+        origem: 'Moradores'
+      }
+    ],
+    despesas: [
+      {
+        id: 'desp-f-1',
+        categoria: 'Segurança & Portaria',
+        descricao: 'Folha de pagamento portaria 24h',
+        valor: 28400.00,
+        data: '05/02/2026',
+        fornecedor: 'Grupo Delta Segurança'
+      },
+      {
+        id: 'desp-f-2',
+        categoria: 'Energia Elétrica',
+        descricao: 'Conta de luz áreas comuns',
+        valor: 8700.00,
+        data: '10/02/2026',
+        fornecedor: 'ENEL'
+      },
+      {
+        id: 'desp-f-3',
+        categoria: 'Água e Esgoto',
+        descricao: 'Consumo de água',
+        valor: 6400.00,
+        data: '12/02/2026',
+        fornecedor: 'SABESP'
+      },
+      {
+        id: 'desp-f-4',
+        categoria: 'Limpeza & Conservação',
+        descricao: 'Produtos de limpeza',
+        valor: 3100.00,
+        data: '15/02/2026',
+        fornecedor: 'Alvorada Distribuidora'
+      },
+      {
+        id: 'desp-f-5',
+        categoria: 'Elevadores',
+        descricao: 'Manutenção preventiva elevadores',
+        valor: 4100.00,
+        data: '20/02/2026',
+        fornecedor: 'Atlas Schindler'
+      },
+      {
+        id: 'desp-f-6',
+        categoria: 'Manutenção & Reparos',
+        descricao: 'Troca de lâmpadas LED garagem e hall',
+        valor: 6700.00,
+        data: '23/02/2026',
+        fornecedor: 'Luz & Cia Materiais Elétricos'
+      }
+    ]
+  },
+  'Janeiro / 2026': {
+    id: 'pc-jan-2026',
+    mesAno: 'Janeiro / 2026',
+    receitasTotal: 83500.00,
+    despesasTotal: 62100.00,
+    saldo: 21400.00,
+    condominioId: CURRENT_CONDO_ID,
+    receitas: [
+      {
+        id: 'rec-j-1',
+        categoria: 'Taxa Condominial',
+        descricao: 'Arrecadação de Taxa Condominial Ordinária',
+        valor: 72900.00,
+        data: '10/01/2026',
+        origem: 'Boleto Bancário'
+      },
+      {
+        id: 'rec-j-2',
+        categoria: 'Fundo de Reserva',
+        descricao: 'Aporte de 5% para Fundo de Reserva',
+        valor: 3645.00,
+        data: '10/01/2026',
+        origem: 'Rateio Automático'
+      },
+      {
+        id: 'rec-j-3',
+        categoria: 'Aplicações Financeiras',
+        descricao: 'Rendimento de Aplicação',
+        valor: 2555.00,
+        data: '05/01/2026',
+        origem: 'Banco Itaú'
+      },
+      {
+        id: 'rec-j-4',
+        categoria: 'Locações & Serviços',
+        descricao: 'Locações Salão de Festas (Férias)',
+        valor: 4400.00,
+        data: '20/01/2026',
+        origem: 'Moradores'
+      }
+    ],
+    despesas: [
+      {
+        id: 'desp-j-1',
+        categoria: 'Segurança & Portaria',
+        descricao: 'Folha de pagamento portaria 24h',
+        valor: 28400.00,
+        data: '05/01/2026',
+        fornecedor: 'Grupo Delta Segurança'
+      },
+      {
+        id: 'desp-j-2',
+        categoria: 'Energia Elétrica',
+        descricao: 'Conta de luz áreas comuns',
+        valor: 9400.00,
+        data: '10/01/2026',
+        fornecedor: 'ENEL'
+      },
+      {
+        id: 'desp-j-3',
+        categoria: 'Água e Esgoto',
+        descricao: 'Consumo de água',
+        valor: 6900.00,
+        data: '12/01/2026',
+        fornecedor: 'SABESP'
+      },
+      {
+        id: 'desp-j-4',
+        categoria: 'Limpeza & Conservação',
+        descricao: 'Produtos de limpeza e tratamento químico piscina',
+        valor: 3900.00,
+        data: '15/01/2026',
+        fornecedor: 'Alvorada Distribuidora'
+      },
+      {
+        id: 'desp-j-5',
+        categoria: 'Elevadores',
+        descricao: 'Manutenção preventiva elevadores',
+        valor: 4100.00,
+        data: '20/01/2026',
+        fornecedor: 'Atlas Schindler'
+      },
+      {
+        id: 'desp-j-6',
+        categoria: 'Manutenção & Reparos',
+        descricao: 'Recarga anual de extintores e laudo AVCB',
+        valor: 9400.00,
+        data: '28/01/2026',
+        fornecedor: 'FireProtect Segurança Contra Incêndio'
+      }
+    ]
+  }
 };
 
 export const MOCK_FUNCIONARIOS: Funcionario[] = [

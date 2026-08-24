@@ -163,6 +163,16 @@ export interface DespesaItem {
   comprovanteUrl?: string;
 }
 
+export interface ReceitaItem {
+  id: string;
+  categoria: string;
+  descricao: string;
+  valor: number;
+  data: string;
+  origem: string;
+  comprovanteUrl?: string;
+}
+
 export interface PrestacaoContas {
   id: string;
   mesAno: string;
@@ -170,6 +180,7 @@ export interface PrestacaoContas {
   despesasTotal: number;
   saldo: number;
   despesas: DespesaItem[];
+  receitas: ReceitaItem[];
   condominioId: string;
 }
 
