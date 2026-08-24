@@ -8,10 +8,15 @@ import {
   Wrench, 
   ShieldCheck, 
   User, 
-  Send
+  Send,
+  Upload,
+  Calendar,
+  Search,
+  Plus
 } from 'lucide-react';
 import { StatusBadge } from '../components/layout/StatusBadge';
 import { TransformToRepairModal } from '../components/reclamacoes/TransformToRepairModal';
+import { CategoriaReclamacao } from '../types';
 
 export const ReclamacoesScreen: React.FC = () => {
   const { 
@@ -21,21 +26,63 @@ export const ReclamacoesScreen: React.FC = () => {
     setSelectedReclamacaoId, 
     apoiarReclamacao, 
     adicionarComentario,
+    adicionarReclamacao,
     setCurrentScreen,
     setSelectedReparoId
   } = useCondo();
 
+  // Filters State
   const [filterCategory, setFilterCategory] = useState<string>('Todas');
+  const [filterDate, setFilterDate] = useState<string>('');
+  const [filterResident, setFilterResident] = useState<string>('');
+
+  // Form State
+  const [titulo, setTitulo] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [categoria, setCategoria] = useState<CategoriaReclamacao>('Garagem');
+  const [anexoFile, setAnexoFile] = useState<File | null>(null);
+
   const [showTransformModal, setShowTransformModal] = useState<boolean>(false);
   const [novoComentarioTexto, setNovoComentarioTexto] = useState<string>('');
 
   const selectedReclamacao = reclamacoes.find(r => r.id === selectedReclamacaoId) || reclamacoes[0];
 
-  const categories = ['Todas', 'Garagem', 'Manutenção', 'Barulho', 'Limpeza', 'Segurança', 'Outros'];
+  const categories = [
+    'Todas', 
+    'Garagem', 
+    'Manutenção', 
+    'Barulho', 
+    'Limpeza', 
+    'Segurança', 
+    'Ameaça', 
+    'Assédio', 
+    'Animais Domésticos', 
+    'Outros'
+  ];
 
-  const filteredReclamacoes = reclamacoes.filter(r => 
-    filterCategory === 'Todas' || r.categoria === filterCategory
-  );
+  // Submit new Complaint
+  const handleSubmitReclamacao = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!titulo.trim() || !descricao.trim()) return;
+
+    if (anexoFile) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        const isVideo = anexoFile.type.startsWith('video');
+        adicionarReclamacao(titulo, descricao, categoria, result, isVideo ? 'video' : 'imagem');
+      };
+      reader.readAsDataURL(anexoFile);
+    } else {
+      adicionarReclamacao(titulo, descricao, categoria);
+    }
+
+    setTitulo('');
+    setDescricao('');
+    setAnexoFile(null);
+    const fileInput = document.getElementById('anexo-file-input') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+  };
 
   const handleSendComentario = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +90,23 @@ export const ReclamacoesScreen: React.FC = () => {
     adicionarComentario(selectedReclamacao.id, novoComentarioTexto);
     setNovoComentarioTexto('');
   };
+
+  // Date formatting for comparison
+  let formattedFilterDate = '';
+  if (filterDate) {
+    const [year, month, day] = filterDate.split('-');
+    formattedFilterDate = `${day}/${month}/${year}`;
+  }
+
+  // Filtering Logic
+  const filteredReclamacoes = reclamacoes.filter(r => {
+    const matchesCategory = filterCategory === 'Todas' || r.categoria === filterCategory;
+    const matchesDate = !filterDate || r.data === formattedFilterDate;
+    const matchesResident = !filterResident || 
+      r.autorNome.toLowerCase().includes(filterResident.toLowerCase()) || 
+      r.autorUnidade.toLowerCase().includes(filterResident.toLowerCase());
+    return matchesCategory && matchesDate && matchesResident;
+  });
 
   const isAdmin = currentUser.role === 'subsindico' || currentUser.role === 'sindico';
 
@@ -59,21 +123,132 @@ export const ReclamacoesScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Category Pills Filter */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setFilterCategory(cat)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all border shadow-sm ${
-              filterCategory === cat
-                ? 'bg-amber-500 text-slate-950 border-amber-400 scale-105'
-                : 'bg-white/40 text-slate-900 border-white/60 hover:bg-white/60'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+      {/* 1. Form: Faça uma Reclamação */}
+      <div className="bg-white/45 border border-white/60 rounded-3xl p-5 shadow-xl space-y-4">
+        <div className="flex items-center gap-2 text-slate-950">
+          <Plus className="w-5 h-5 text-amber-900" />
+          <h3 className="text-sm font-extrabold uppercase tracking-wider">
+            Registrar Nova Ocorrência
+          </h3>
+        </div>
+
+        <form onSubmit={handleSubmitReclamacao} className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Title */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 ml-1">Título da Reclamação</label>
+              <input
+                type="text"
+                placeholder="Ex: Vazamento na vaga da garagem"
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                className="w-full bg-white/70 border border-white/90 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs"
+                required
+              />
+            </div>
+
+            {/* Category Select */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 ml-1">Categoria</label>
+              <select
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value as CategoriaReclamacao)}
+                className="w-full bg-white/70 border border-white/90 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:bg-white font-semibold shadow-xs"
+              >
+                {categories.filter(c => c !== 'Todas').map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 ml-1">Descrição Detalhada</label>
+            <textarea
+              placeholder="Descreva o problema com o maior nível de detalhes possível para que a zeladoria possa analisar..."
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              rows={3}
+              className="w-full bg-white/70 border border-white/90 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs resize-none"
+              required
+            />
+          </div>
+
+          {/* File Upload Attachment */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
+            <div className="relative">
+              <input
+                type="file"
+                id="anexo-file-input"
+                accept="image/*,video/*"
+                onChange={(e) => setAnexoFile(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+              <label
+                htmlFor="anexo-file-input"
+                className="inline-flex items-center gap-1.5 px-3 py-1.8 bg-white/80 hover:bg-white border border-white/90 rounded-xl text-[11px] text-slate-950 font-extrabold cursor-pointer shadow-sm transition-all active:scale-95"
+              >
+                <Upload className="w-3.5 h-3.5 text-indigo-700" />
+                {anexoFile ? `Anexado: ${anexoFile.name.substring(0, 15)}...` : 'Anexar Imagem ou Vídeo'}
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full sm:w-auto px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5"
+            >
+              <Send className="w-3.5 h-3.5" />
+              Publicar Ocorrência
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* 2. Filters Row: Category Pills + Search Inputs */}
+      <div className="space-y-3">
+        {/* Category Pills Filter */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setFilterCategory(cat)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all border shadow-sm ${
+                filterCategory === cat
+                  ? 'bg-amber-500 text-slate-950 border-amber-400 scale-105'
+                  : 'bg-white/40 text-slate-900 border-white/60 hover:bg-white/60'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Date and Resident Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white/30 border border-white/40 p-3 rounded-2xl shadow-sm">
+          {/* Resident Search */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Filtrar por morador ou apt..."
+              value={filterResident}
+              onChange={(e) => setFilterResident(e.target.value)}
+              className="w-full bg-white/70 border border-white/80 rounded-xl px-3 py-1.8 pl-9 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold"
+            />
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+          </div>
+
+          {/* Date Filter */}
+          <div className="relative">
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="w-full bg-white/70 border border-white/80 rounded-xl px-3 py-1.8 pl-9 text-xs text-slate-900 focus:outline-none focus:bg-white font-semibold"
+            />
+            <Calendar className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+          </div>
+        </div>
       </div>
 
       {/* List / Detail Split Layout */}
@@ -82,53 +257,59 @@ export const ReclamacoesScreen: React.FC = () => {
         {/* Left Column: Complaints List */}
         <div className="lg:col-span-5 space-y-3">
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-white drop-shadow block">
-            Lista de Reclamações ({filteredReclamacoes.length})
+            Lista de Ocorrências ({filteredReclamacoes.length})
           </span>
 
-          {filteredReclamacoes.map((rec) => {
-            const isSelected = rec.id === selectedReclamacaoId;
-            return (
-              <div
-                key={rec.id}
-                onClick={() => setSelectedReclamacaoId(rec.id)}
-                className={`p-4 rounded-3xl border transition-all cursor-pointer shadow-lg ${
-                  isSelected
-                    ? 'bg-white/65 border-amber-400 ring-2 ring-amber-400/30 scale-102'
-                    : 'bg-white/45 border-white/60 hover:bg-white/55'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-slate-900/10 text-slate-900 border border-slate-900/20 uppercase">
-                    {rec.categoria}
-                  </span>
-                  <StatusBadge status={rec.status} />
-                </div>
-
-                <h3 className="font-extrabold text-sm text-slate-950 leading-snug">
-                  {rec.titulo}
-                </h3>
-
-                <p className="text-xs text-slate-800 mt-1 line-clamp-2 font-medium">
-                  {rec.descricao}
-                </p>
-
-                <div className="mt-3 pt-2.5 border-t border-slate-900/10 flex items-center justify-between text-xs text-slate-700">
-                  <span className="text-[11px] font-extrabold text-slate-950">
-                    {rec.autorNome} • {rec.autorUnidade}
-                  </span>
-
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1 font-extrabold text-amber-800">
-                      <ThumbsUp className="w-3.5 h-3.5" /> {rec.apoiosCount}
+          {filteredReclamacoes.length === 0 ? (
+            <div className="p-5 text-center bg-white/30 rounded-3xl border border-white/40 text-xs font-semibold text-slate-800">
+              Nenhuma reclamação encontrada com os filtros selecionados.
+            </div>
+          ) : (
+            filteredReclamacoes.map((rec) => {
+              const isSelected = rec.id === selectedReclamacaoId;
+              return (
+                <div
+                  key={rec.id}
+                  onClick={() => setSelectedReclamacaoId(rec.id)}
+                  className={`p-4 rounded-3xl border transition-all cursor-pointer shadow-lg ${
+                    isSelected
+                      ? 'bg-white/65 border-amber-400 ring-2 ring-amber-400/30 scale-102'
+                      : 'bg-white/45 border-white/60 hover:bg-white/55'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-slate-900/10 text-slate-900 border border-slate-900/20 uppercase">
+                      {rec.categoria}
                     </span>
-                    <span className="flex items-center gap-1 text-slate-700 font-bold">
-                      <MessageSquare className="w-3.5 h-3.5" /> {rec.comentarios.length}
+                    <StatusBadge status={rec.status} />
+                  </div>
+
+                  <h3 className="font-extrabold text-sm text-slate-950 leading-snug">
+                    {rec.titulo}
+                  </h3>
+
+                  <p className="text-xs text-slate-800 mt-1 line-clamp-2 font-medium">
+                    {rec.descricao}
+                  </p>
+
+                  <div className="mt-3 pt-2.5 border-t border-slate-900/10 flex items-center justify-between text-xs text-slate-700">
+                    <span className="text-[11px] font-extrabold text-slate-950">
+                      {rec.autorNome} • {rec.autorUnidade}
                     </span>
+
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1 font-extrabold text-amber-800">
+                        <ThumbsUp className="w-3.5 h-3.5" /> {rec.apoiosCount}
+                      </span>
+                      <span className="flex items-center gap-1 text-slate-700 font-bold">
+                        <MessageSquare className="w-3.5 h-3.5" /> {rec.comentarios.length}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
 
         {/* Right Column: Selected Complaint Detail Page */}
@@ -158,6 +339,28 @@ export const ReclamacoesScreen: React.FC = () => {
 
             <div className="bg-white/60 p-4 rounded-2xl border border-white/80 text-xs text-slate-900 leading-relaxed font-semibold">
               {selectedReclamacao.descricao}
+              
+              {/* Media Attachment Rendering */}
+              {selectedReclamacao.anexoUrl && (
+                <div className="mt-3">
+                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-600 block mb-1">
+                    Anexo Enviado pelo Morador:
+                  </span>
+                  {selectedReclamacao.anexoTipo === 'video' ? (
+                    <video 
+                      src={selectedReclamacao.anexoUrl} 
+                      controls 
+                      className="w-full rounded-xl border border-white/50 shadow-sm max-h-64 object-cover"
+                    />
+                  ) : (
+                    <img 
+                      src={selectedReclamacao.anexoUrl} 
+                      alt="Anexo da ocorrência" 
+                      className="w-full rounded-xl border border-white/50 shadow-sm max-h-64 object-cover"
+                    />
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Support Action Button */}

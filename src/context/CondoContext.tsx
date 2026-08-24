@@ -8,7 +8,8 @@ import {
   Funcionario, 
   StatusReparo, 
   StatusReclamacao,
-  EspinhaDorsalItem
+  EspinhaDorsalItem,
+  CategoriaReclamacao
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -17,7 +18,8 @@ import {
   MOCK_REPAROS, 
   MOCK_PRESTACAO_CONTAS, 
   MOCK_FUNCIONARIOS,
-  ESPINHA_DORSAL_ITEMS 
+  ESPINHA_DORSAL_ITEMS,
+  CURRENT_CONDO_ID
 } from '../mock/seedData';
 
 interface CondoContextType {
@@ -42,6 +44,7 @@ interface CondoContextType {
   // Actions
   apoiarReclamacao: (id: string) => void;
   adicionarComentario: (reclamacaoId: string, texto: string) => void;
+  adicionarReclamacao: (titulo: string, descricao: string, categoria: CategoriaReclamacao, anexoUrl?: string, anexoTipo?: 'imagem' | 'video') => void;
   transformarEmReparo: (reclamacaoId: string, titulo: string, descricao: string) => string;
   selecionarOrcamento: (reparoId: string, orcamentoId: string) => void;
   atualizarStatusReparo: (reparoId: string, novoStatus: StatusReparo) => void;
@@ -286,6 +289,34 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   };
 
+  const adicionarReclamacao = (
+    titulo: string,
+    descricao: string,
+    categoria: CategoriaReclamacao,
+    anexoUrl?: string,
+    anexoTipo?: 'imagem' | 'video'
+  ) => {
+    const novaRec: Reclamacao = {
+      id: `rec-${Date.now()}`,
+      titulo,
+      descricao,
+      categoria,
+      autorId: currentUser.id,
+      autorNome: currentUser.nome,
+      autorUnidade: currentUser.role === 'morador' ? `Apt ${currentUser.unidade}` : 'Administração',
+      data: new Date().toLocaleDateString('pt-BR'),
+      status: 'Recebida',
+      apoiosCount: 0,
+      apoiadoPeloUsuario: false,
+      comentarios: [],
+      condominioId: CURRENT_CONDO_ID,
+      anexoUrl,
+      anexoTipo
+    };
+    setReclamacoes(prev => [novaRec, ...prev]);
+    setSelectedReclamacaoId(novaRec.id);
+  };
+
   return (
     <CondoContext.Provider value={{
       currentUser,
@@ -307,6 +338,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setSelectedReparoId,
       apoiarReclamacao,
       adicionarComentario,
+      adicionarReclamacao,
       transformarEmReparo,
       selecionarOrcamento,
       atualizarStatusReparo

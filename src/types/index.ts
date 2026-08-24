@@ -57,6 +57,8 @@ export type CategoriaReclamacao =
   | 'Limpeza' 
   | 'Barulho' 
   | 'Ameaça' 
+  | 'Assédio'
+  | 'Animais Domésticos'
   | 'Brigas' 
   | 'Pets' 
   | 'Manutenção' 
@@ -96,6 +98,8 @@ export interface Reclamacao {
   comentarios: Comentario[];
   reparoId?: string;
   condominioId: string;
+  anexoUrl?: string;
+  anexoTipo?: 'imagem' | 'video';
 }
 
 export type StatusReparo = 
