@@ -3,20 +3,52 @@ import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, Espinh
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
 export const MOCK_USERS: User[] = [
+  // Unit 102
   {
     id: 'usr-morador-102',
-    nome: 'Carlos Almeida',
-    email: 'carlos.almeida@email.com',
+    nome: 'Marcos Almeida',
+    email: 'marcos.almeida@email.com',
     role: 'morador',
     unidade: '102',
     bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-    profissao: 'Engenheiro de Software',
-    hobby: 'Fotografia e Ciclismo',
-    aniversario: '14 de Maio',
-    vagaGaragem: 'G-12 (Subsolo 1)',
+    foto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Administrador de Empresas',
     condominioId: CURRENT_CONDO_ID
   },
+  {
+    id: 'usr-sandra-102',
+    nome: 'Sandra Almeida',
+    email: 'sandra.almeida@email.com',
+    role: 'morador',
+    unidade: '102',
+    bloco: 'Bloco A',
+    foto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Designer Gráfica',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'usr-lucas-102',
+    nome: 'Lucas Almeida',
+    email: 'lucas.almeida@email.com',
+    role: 'morador',
+    unidade: '102',
+    bloco: 'Bloco A',
+    foto: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Estudante',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'usr-giulia-102',
+    nome: 'Giulia Almeida',
+    email: 'giulia.almeida@email.com',
+    role: 'morador',
+    unidade: '102',
+    bloco: 'Bloco A',
+    foto: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Estudante',
+    condominioId: CURRENT_CONDO_ID
+  },
+  // Unit 401
   {
     id: 'usr-admin-401',
     nome: 'Dra. Mariana Costa',
@@ -24,13 +56,33 @@ export const MOCK_USERS: User[] = [
     role: 'subsindico',
     unidade: '401',
     bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+    foto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
     profissao: 'Advogada & Subsíndica',
-    hobby: 'Leitura e Jardinagem',
-    aniversario: '22 de Setembro',
-    vagaGaragem: 'G-41 (Subsolo 2)',
     condominioId: CURRENT_CONDO_ID
   },
+  {
+    id: 'usr-sofia-401',
+    nome: 'Sofia Costa',
+    email: 'sofia.costa@email.com',
+    role: 'morador',
+    unidade: '401',
+    bloco: 'Bloco A',
+    foto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Estudante',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'usr-tobias-401',
+    nome: 'Tobias (Cachorro)',
+    email: 'tobias.dog@email.com',
+    role: 'morador',
+    unidade: '401',
+    bloco: 'Bloco A',
+    foto: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Pet da Família',
+    condominioId: CURRENT_CONDO_ID
+  },
+  // Unit 101
   {
     id: 'usr-morador-101',
     nome: 'Renato Alencar',
@@ -38,27 +90,67 @@ export const MOCK_USERS: User[] = [
     role: 'morador',
     unidade: '101',
     bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    foto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
     profissao: 'Arquiteto',
-    hobby: 'Pintura',
-    aniversario: '03 de Fevereiro',
-    vagaGaragem: 'G-11 (Subsolo 1)',
     condominioId: CURRENT_CONDO_ID
   },
   {
+    id: 'usr-camila-101',
+    nome: 'Camila Alencar',
+    email: 'camila.alencar@email.com',
+    role: 'morador',
+    unidade: '101',
+    bloco: 'Bloco A',
+    foto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Fisioterapeuta',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'usr-leo-101',
+    nome: 'Leo Alencar',
+    email: 'leo.alencar@email.com',
+    role: 'morador',
+    unidade: '101',
+    bloco: 'Bloco A',
+    foto: 'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Estudante',
+    condominioId: CURRENT_CONDO_ID
+  },
+  // Unit 201
+  {
     id: 'usr-morador-201',
-    nome: 'Beatriz & Roberto Souza',
-    email: 'beatriz.souza@email.com',
+    nome: 'João Carlos',
+    email: 'joao.carlos@email.com',
     role: 'morador',
     unidade: '201',
     bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
-    profissao: 'Médica Veterinária',
-    hobby: 'Culinária e Pets',
-    aniversario: '18 de Novembro',
-    vagaGaragem: 'G-21 (Subsolo 1)',
+    foto: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Médico',
     condominioId: CURRENT_CONDO_ID
   },
+  {
+    id: 'usr-luiz-201',
+    nome: 'Luiz Souza',
+    email: 'luiz.souza@email.com',
+    role: 'morador',
+    unidade: '201',
+    bloco: 'Bloco A',
+    foto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Arquiteto',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'usr-miumiu-201',
+    nome: 'Miu Miu (Gato)',
+    email: 'miumiu.cat@email.com',
+    role: 'morador',
+    unidade: '201',
+    bloco: 'Bloco A',
+    foto: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Pet da Família',
+    condominioId: CURRENT_CONDO_ID
+  },
+  // Unit 302
   {
     id: 'usr-morador-302',
     nome: 'Eduardo Prado',
@@ -66,11 +158,30 @@ export const MOCK_USERS: User[] = [
     role: 'morador',
     unidade: '302',
     bloco: 'Bloco B',
-    foto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+    foto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
     profissao: 'Professor Universitário',
-    hobby: 'Música instrumental',
-    aniversario: '30 de Agosto',
-    vagaGaragem: 'G-32 (Subsolo 2)',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'usr-clara-302',
+    nome: 'Clara Prado',
+    email: 'clara.prado@email.com',
+    role: 'morador',
+    unidade: '302',
+    bloco: 'Bloco B',
+    foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Jornalista',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'usr-felipe-302',
+    nome: 'Felipe Prado',
+    email: 'felipe.prado@email.com',
+    role: 'morador',
+    unidade: '302',
+    bloco: 'Bloco B',
+    foto: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80',
+    profissao: 'Designer',
     condominioId: CURRENT_CONDO_ID
   }
 ];
@@ -82,7 +193,9 @@ export const MOCK_UNIDADES: Unidade[] = [
     bloco: 'Bloco A',
     tipo: 'Apartamento',
     vagaGaragem: 'G-11',
-    moradores: [MOCK_USERS[2]]
+    moradores: [MOCK_USERS[7], MOCK_USERS[8], MOCK_USERS[9]],
+    fotoCelula: '/family_101.jpg',
+    nomeCelula: 'Renato Alencar, Camila Alencar & Leo'
   },
   {
     id: 'unid-102',
@@ -90,7 +203,9 @@ export const MOCK_UNIDADES: Unidade[] = [
     bloco: 'Bloco A',
     tipo: 'Apartamento',
     vagaGaragem: 'G-12',
-    moradores: [MOCK_USERS[0]]
+    moradores: [MOCK_USERS[0], MOCK_USERS[1], MOCK_USERS[2], MOCK_USERS[3]],
+    fotoCelula: '/family_102.jpg',
+    nomeCelula: 'Família Almeida'
   },
   {
     id: 'unid-201',
@@ -98,7 +213,9 @@ export const MOCK_UNIDADES: Unidade[] = [
     bloco: 'Bloco A',
     tipo: 'Apartamento',
     vagaGaragem: 'G-21',
-    moradores: [MOCK_USERS[3]]
+    moradores: [MOCK_USERS[10], MOCK_USERS[11], MOCK_USERS[12]],
+    fotoCelula: '/couple_201.jpg',
+    nomeCelula: 'João Carlos, Luiz Souza & Miu Miu'
   },
   {
     id: 'unid-302',
@@ -106,7 +223,9 @@ export const MOCK_UNIDADES: Unidade[] = [
     bloco: 'Bloco B',
     tipo: 'Apartamento',
     vagaGaragem: 'G-32',
-    moradores: [MOCK_USERS[4]]
+    moradores: [MOCK_USERS[13], MOCK_USERS[14], MOCK_USERS[15]],
+    fotoCelula: '/siblings_302.jpg',
+    nomeCelula: 'Eduardo Prado, Clara Prado & Felipe'
   },
   {
     id: 'unid-401',
@@ -114,7 +233,9 @@ export const MOCK_UNIDADES: Unidade[] = [
     bloco: 'Bloco A',
     tipo: 'Cobertura',
     vagaGaragem: 'G-41',
-    moradores: [MOCK_USERS[1]]
+    moradores: [MOCK_USERS[4], MOCK_USERS[5], MOCK_USERS[6]],
+    fotoCelula: '/family_401.jpg',
+    nomeCelula: 'Dra. Mariana Costa, Sofia Costa & Tobias'
   }
 ];
 

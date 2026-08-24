@@ -66,9 +66,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const toggleRole = () => {
     if (currentUser.role === 'morador') {
-      setCurrentUser(MOCK_USERS[1]); // Switch to Dra. Mariana (Subsíndica)
+      const adminUser = MOCK_USERS.find(u => u.id === 'usr-admin-401') || MOCK_USERS[4];
+      setCurrentUser(adminUser);
     } else {
-      setCurrentUser(MOCK_USERS[0]); // Switch to Carlos (Morador)
+      const normalUser = MOCK_USERS.find(u => u.id === 'usr-morador-102') || MOCK_USERS[0];
+      setCurrentUser(normalUser);
     }
   };
 

@@ -22,6 +22,8 @@ export interface Unidade {
   tipo: 'Apartamento' | 'Cobertura' | 'Casa';
   vagaGaragem: string;
   moradores: User[];
+  fotoCelula?: string;
+  nomeCelula?: string;
 }
 
 export interface Funcionario {
