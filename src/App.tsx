@@ -10,6 +10,7 @@ import { ReclamacoesScreen } from './pages/ReclamacoesScreen';
 import { ReparosScreen } from './pages/ReparosScreen';
 import { PrestacaoContasScreen } from './pages/PrestacaoContasScreen';
 import { GenericModuleScreen } from './pages/GenericModuleScreen';
+import { ServicosMoradoresScreen } from './pages/ServicosMoradoresScreen';
 
 const MainContent: React.FC = () => {
   const { currentScreen } = useCondo();
@@ -28,6 +29,8 @@ const MainContent: React.FC = () => {
         return <ReparosScreen />;
       case 'prestacao-contas':
         return <PrestacaoContasScreen />;
+      case 'servicos-moradores':
+        return <ServicosMoradoresScreen />;
       default:
         return <GenericModuleScreen moduleId={currentScreen} />;
     }
