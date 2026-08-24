@@ -33,8 +33,8 @@ export interface Funcionario {
   funcao: string;
   horario: string;
   disponibilidade: string;
-  avaliacoesCount: number;
-  mediaNota: number;
+  avaliacoesCount?: number;
+  mediaNota?: number;
   condominioId: string;
 }
 

@@ -88,9 +88,11 @@ export const GenericModuleScreen: React.FC<GenericModuleScreenProps> = ({ module
                 <div className="text-xs text-slate-900 space-y-1 bg-white/60 p-3 rounded-2xl border border-white/80 font-bold">
                   <p>⏰ Horário: <strong className="text-slate-950">{func.horario}</strong></p>
                   <p>📅 Disponibilidade: {func.disponibilidade}</p>
-                  <p className="text-amber-900 font-extrabold mt-1">
-                    ⭐ {func.mediaNota.toFixed(1)} / 5.0 ({func.avaliacoesCount} avaliações dos moradores)
-                  </p>
+                  {func.mediaNota !== undefined && func.avaliacoesCount !== undefined && (
+                    <p className="text-amber-900 font-extrabold mt-1">
+                      ⭐ {func.mediaNota.toFixed(1)} / 5.0 ({func.avaliacoesCount} avaliações dos moradores)
+                    </p>
+                  )}
                 </div>
               </div>
             ))}

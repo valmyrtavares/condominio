@@ -488,7 +488,7 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
   {
     id: 'func-1',
     nome: 'Ademar Lopes',
-    foto: '/Ademar%20Lopes%20Porteiro.png',
+    foto: '/ademar_porteiro.png',
     funcao: 'Porteiro Noturno (Escala 12x36)',
     horario: '19:00 - 07:00',
     disponibilidade: 'Segunda, Quarta, Sexta e Domingos alternados',
@@ -499,7 +499,7 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
   {
     id: 'func-2',
     nome: 'Anastácia Moreira',
-    foto: '/Anast%C3%A1cia%20Moreira%20Faxineira.png',
+    foto: '/anastacia_faxineira.png',
     funcao: 'Faxineira Chefe',
     horario: '08:00 - 17:00',
     disponibilidade: 'Segunda a Sexta e Sábado até 12:00',
@@ -510,7 +510,7 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
   {
     id: 'func-3',
     nome: 'José Casimiro',
-    foto: '/Jos%C3%A9%20Casimiro%20Porteiro.png',
+    foto: '/jose_casimiro_porteiro.png',
     funcao: 'Porteiro Diurno (Escala 12x36)',
     horario: '07:00 - 19:00',
     disponibilidade: 'Terça, Quinta, Sábado e Domingos alternados',
@@ -521,7 +521,7 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
   {
     id: 'func-4',
     nome: 'Jose Cassio',
-    foto: '/Jose%20Cassio%20vigia.png',
+    foto: '/jose_vigia.png',
     funcao: 'Vigia Noturno',
     horario: '22:00 - 06:00',
     disponibilidade: 'Diariamente (Zeladoria e Segurança)',
@@ -532,12 +532,39 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
   {
     id: 'func-5',
     nome: 'Adriana Gomes',
-    foto: '/Adriana%20Gomes%20sindica.png',
+    foto: '/adriana_sindica.png',
     funcao: 'Síndica Profissional',
     horario: '09:00 - 18:00',
     disponibilidade: 'Reuniões mensais e emergências',
     avaliacoesCount: 55,
     mediaNota: 4.9,
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'func-6',
+    nome: 'Cassia Marques',
+    foto: '/cassia_sub_sindica.png',
+    funcao: 'Subsíndica',
+    horario: '09:00 - 18:00',
+    disponibilidade: 'Segunda a Sexta',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'func-7',
+    nome: 'Fabio Sanches',
+    foto: '/fabio_conselheiro.png',
+    funcao: 'Conselheiro Fiscal',
+    horario: 'Reuniões e Pareceres',
+    disponibilidade: 'Sob demanda',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'func-8',
+    nome: 'Marco Aurélio',
+    foto: '/marco_conselheiro.png',
+    funcao: 'Conselheiro de Contas',
+    horario: 'Reuniões e Auditorias',
+    disponibilidade: 'Sob demanda',
     condominioId: CURRENT_CONDO_ID
   }
 ];
