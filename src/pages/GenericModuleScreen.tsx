@@ -77,11 +77,11 @@ export const GenericModuleScreen: React.FC<GenericModuleScreenProps> = ({ module
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {funcionarios.map((func) => (
               <div key={func.id} className="bg-white/45 border border-white/60 p-4 rounded-3xl space-y-3 shadow-xl">
-                <div className="flex items-center gap-3">
-                  <img src={func.foto} alt={func.nome} className="w-12 h-12 rounded-2xl object-cover border border-white/80 shadow-xs" />
+                <div className="flex items-center gap-4">
+                  <img src={func.foto} alt={func.nome} className="w-20 h-20 rounded-2xl object-cover border border-white/80 shadow-xs shrink-0" />
                   <div>
                     <h4 className="font-extrabold text-sm text-slate-950">{func.nome}</h4>
-                    <p className="text-xs text-amber-950 font-extrabold">{func.funcao}</p>
+                    <p className="text-xs text-amber-950 font-extrabold mt-0.5">{func.funcao}</p>
                   </div>
                 </div>
 
