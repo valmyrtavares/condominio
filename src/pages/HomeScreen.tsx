@@ -2,7 +2,7 @@ import React from 'react';
 
 export const HomeScreen: React.FC = () => {
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-hidden flex items-center justify-center z-0">
+    <div className="fixed inset-0 w-full h-full overflow-hidden flex items-center justify-center z-0">
       {/* Fullscreen Building Image — 100% Width & Height */}
       <img
         src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=2000&q=90"

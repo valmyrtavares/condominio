@@ -124,7 +124,7 @@ export const ReclamacoesScreen: React.FC = () => {
       </div>
 
       {/* 1. Form: Faça uma Reclamação */}
-      <div className="bg-white/45 border border-white/60 rounded-3xl p-5 shadow-xl space-y-4">
+      <div className="bg-white/45 border border-white/60 rounded-3xl p-4 sm:p-5 shadow-xl space-y-4 w-full max-w-full box-border overflow-hidden">
         <div className="flex items-center gap-2 text-slate-950">
           <Plus className="w-5 h-5 text-amber-900" />
           <h3 className="text-sm font-extrabold uppercase tracking-wider">
@@ -132,28 +132,28 @@ export const ReclamacoesScreen: React.FC = () => {
           </h3>
         </div>
 
-        <form onSubmit={handleSubmitReclamacao} className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <form onSubmit={handleSubmitReclamacao} className="space-y-3 w-full max-w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
             {/* Title */}
-            <div className="space-y-1">
+            <div className="space-y-1 min-w-0 w-full">
               <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 ml-1">Título da Reclamação</label>
               <input
                 type="text"
                 placeholder="Ex: Vazamento na vaga da garagem"
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
-                className="w-full bg-white/70 border border-white/90 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs"
+                className="w-full max-w-full bg-white/70 border border-white/90 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs"
                 required
               />
             </div>
 
             {/* Category Select */}
-            <div className="space-y-1">
+            <div className="space-y-1 min-w-0 w-full">
               <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 ml-1">Categoria</label>
               <select
                 value={categoria}
                 onChange={(e) => setCategoria(e.target.value as CategoriaReclamacao)}
-                className="w-full bg-white/70 border border-white/90 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:bg-white font-semibold shadow-xs"
+                className="w-full max-w-full bg-white/70 border border-white/90 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:bg-white font-semibold shadow-xs"
               >
                 {categories.filter(c => c !== 'Todas').map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
@@ -163,21 +163,21 @@ export const ReclamacoesScreen: React.FC = () => {
           </div>
 
           {/* Description */}
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0 w-full">
             <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 ml-1">Descrição Detalhada</label>
             <textarea
-              placeholder="Descreva o problema com o maior nível de detalhes possível para que a zeladoria possa analisar..."
+              placeholder="Descreva o problema com o maior nível de detalhes possível..."
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               rows={3}
-              className="w-full bg-white/70 border border-white/90 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs resize-none"
+              className="w-full max-w-full bg-white/70 border border-white/90 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs resize-none"
               required
             />
           </div>
 
           {/* File Upload Attachment */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1 w-full">
+            <div className="relative w-full sm:w-auto">
               <input
                 type="file"
                 id="anexo-file-input"
@@ -187,33 +187,33 @@ export const ReclamacoesScreen: React.FC = () => {
               />
               <label
                 htmlFor="anexo-file-input"
-                className="inline-flex items-center gap-1.5 px-3 py-1.8 bg-white/80 hover:bg-white border border-white/90 rounded-xl text-[11px] text-slate-950 font-extrabold cursor-pointer shadow-sm transition-all active:scale-95"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white/80 hover:bg-white border border-white/90 rounded-xl text-[11px] text-slate-950 font-extrabold cursor-pointer shadow-sm transition-all active:scale-95 w-full sm:w-auto text-center truncate"
               >
-                <Upload className="w-3.5 h-3.5 text-indigo-700" />
-                {anexoFile ? `Anexado: ${anexoFile.name.substring(0, 15)}...` : 'Anexar Imagem ou Vídeo'}
+                <Upload className="w-3.5 h-3.5 text-indigo-700 shrink-0" />
+                <span className="truncate">{anexoFile ? `Anexado: ${anexoFile.name}` : 'Anexar Imagem ou Vídeo'}</span>
               </label>
             </div>
 
             <button
               type="submit"
-              className="w-full sm:w-auto px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5"
+              className="w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 shrink-0"
             >
-              <Send className="w-3.5 h-3.5" />
-              Publicar Ocorrência
+              <Send className="w-3.5 h-3.5 shrink-0" />
+              <span>Publicar Ocorrência</span>
             </button>
           </div>
         </form>
       </div>
 
       {/* 2. Filters Row: Category Pills + Search Inputs */}
-      <div className="space-y-3">
+      <div className="space-y-3 w-full max-w-full">
         {/* Category Pills Filter */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none w-full max-w-full">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setFilterCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all border shadow-sm ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all border shadow-sm shrink-0 ${
                 filterCategory === cat
                   ? 'bg-amber-500 text-slate-950 border-amber-400 scale-105'
                   : 'bg-white/40 text-slate-900 border-white/60 hover:bg-white/60'
@@ -225,26 +225,26 @@ export const ReclamacoesScreen: React.FC = () => {
         </div>
 
         {/* Date and Resident Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white/30 border border-white/40 p-3 rounded-2xl shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white/30 border border-white/40 p-3 rounded-2xl shadow-sm w-full max-w-full box-border">
           {/* Resident Search */}
-          <div className="relative">
+          <div className="relative min-w-0 w-full">
             <input
               type="text"
               placeholder="Filtrar por morador ou apt..."
               value={filterResident}
               onChange={(e) => setFilterResident(e.target.value)}
-              className="w-full bg-white/70 border border-white/80 rounded-xl px-3 py-1.8 pl-9 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold"
+              className="w-full max-w-full bg-white/70 border border-white/80 rounded-xl px-3 py-1.8 pl-9 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold"
             />
             <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
           </div>
 
           {/* Date Filter */}
-          <div className="relative">
+          <div className="relative min-w-0 w-full">
             <input
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="w-full bg-white/70 border border-white/80 rounded-xl px-3 py-1.8 pl-9 text-xs text-slate-900 focus:outline-none focus:bg-white font-semibold"
+              className="w-full max-w-full bg-white/70 border border-white/80 rounded-xl px-3 py-1.8 pl-9 text-xs text-slate-900 focus:outline-none focus:bg-white font-semibold"
             />
             <Calendar className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
           </div>
@@ -252,16 +252,16 @@ export const ReclamacoesScreen: React.FC = () => {
       </div>
 
       {/* List / Detail Split Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full max-w-full">
         
         {/* Left Column: Complaints List */}
-        <div className="lg:col-span-5 space-y-3">
+        <div className="lg:col-span-5 space-y-3 w-full max-w-full min-w-0">
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-white drop-shadow block">
             Lista de Ocorrências ({filteredReclamacoes.length})
           </span>
 
           {filteredReclamacoes.length === 0 ? (
-            <div className="p-5 text-center bg-white/30 rounded-3xl border border-white/40 text-xs font-semibold text-slate-800">
+            <div className="p-5 text-center bg-white/30 rounded-3xl border border-white/40 text-xs font-semibold text-slate-800 w-full">
               Nenhuma reclamação encontrada com os filtros selecionados.
             </div>
           ) : (
