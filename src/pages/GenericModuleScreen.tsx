@@ -100,27 +100,6 @@ export const GenericModuleScreen: React.FC<GenericModuleScreenProps> = ({ module
         </div>
       )}
 
-      {/* General PoC Note */}
-      <div className="p-4 rounded-3xl bg-white/45 border border-white/60 text-xs text-slate-950 space-y-2 font-bold shadow-xl">
-        <span className="font-extrabold text-slate-950 block">📌 Nota do Protótipo (PoC 1.0)</span>
-        <p className="leading-relaxed font-semibold">
-          Este módulo faz parte da **Espinha Dorsal do Condomínio** especificada no diagrama. Para a demonstração atual da subsíndica, priorizamos o fluxo crítico e integrado:
-        </p>
-        <div className="flex flex-wrap gap-2 pt-1">
-          <button
-            onClick={() => setCurrentScreen('reclamacoes')}
-            className="px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-xs hover:bg-amber-400 shadow-sm"
-          >
-            Ir para Reclamações →
-          </button>
-          <button
-            onClick={() => setCurrentScreen('reparos')}
-            className="px-3.5 py-1.5 rounded-xl bg-white/70 text-slate-950 font-extrabold text-xs hover:bg-white border border-white/90 shadow-sm"
-          >
-            Ir para Reparos →
-          </button>
-        </div>
-      </div>
 
     </div>
   );
