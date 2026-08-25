@@ -22,8 +22,8 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({ despesa,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white border border-slate-200 text-slate-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-60 flex items-center justify-center pt-20 pb-24 sm:py-6 px-3 sm:px-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
+      <div className="bg-white border border-slate-200 text-slate-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl my-auto max-h-[calc(100vh-170px)] sm:max-h-[85vh] flex flex-col">
         
         {/* Header */}
         <div className="p-4 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between">
@@ -42,7 +42,7 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({ despesa,
         </div>
 
         {/* Content */}
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 overflow-y-auto flex-1">
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center">
             <span className="text-xs text-slate-500 uppercase tracking-wider block font-extrabold mb-1">Valor Total Lançado</span>
             <span className="text-2xl font-extrabold text-emerald-700">
