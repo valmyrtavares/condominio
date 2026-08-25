@@ -9,7 +9,9 @@ import {
   StatusReparo, 
   StatusReclamacao,
   EspinhaDorsalItem,
-  CategoriaReclamacao
+  CategoriaReclamacao,
+  PorteReparo,
+  CategoriaReparo
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -45,6 +47,7 @@ interface CondoContextType {
   apoiarReclamacao: (id: string) => void;
   adicionarComentario: (reclamacaoId: string, texto: string) => void;
   adicionarReclamacao: (titulo: string, descricao: string, categoria: CategoriaReclamacao, anexoUrl?: string, anexoTipo?: 'imagem' | 'video') => void;
+  adicionarReparo: (titulo: string, descricao: string, porte: PorteReparo, categoria: CategoriaReparo, fotoUrl?: string) => void;
   atualizarStatusReclamacao: (id: string, novoStatus: StatusReclamacao) => void;
   transformarEmReparo: (reclamacaoId: string, titulo: string, descricao: string) => string;
   selecionarOrcamento: (reparoId: string, orcamentoId: string) => void;
@@ -127,7 +130,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       reclamacaoId,
       titulo: titulo || `Reparo: ${reclamacao?.titulo || 'Solicitação'}`,
       descricao: descricao || reclamacao?.descricao || '',
-      categoria: reclamacao?.categoria || 'Manutenção',
+      porte: 'Médio',
+      categoria: 'Outros',
       solicitanteNome: `${reclamacao?.autorNome || currentUser.nome} (Originado de Reclamação)`,
       solicitanteUnidade: reclamacao?.autorUnidade || `Apt ${currentUser.unidade}`,
       dataSolicitacao: dataHoje,
@@ -318,6 +322,43 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSelectedReclamacaoId(novaRec.id);
   };
 
+  const adicionarReparo = (
+    titulo: string, 
+    descricao: string, 
+    porte: PorteReparo, 
+    categoria: CategoriaReparo, 
+    fotoUrl?: string
+  ) => {
+    const dataHoje = new Date().toLocaleDateString('pt-BR');
+    const novoReparo: Reparo = {
+      id: `rep-${Date.now()}`,
+      titulo,
+      descricao,
+      porte,
+      categoria,
+      solicitanteNome: currentUser.nome,
+      solicitanteUnidade: `Apt ${currentUser.unidade} - ${currentUser.bloco}`,
+      dataSolicitacao: dataHoje,
+      responsavel: 'A definir (Administração)',
+      status: 'Solicitado',
+      condominioId: CURRENT_CONDO_ID,
+      orcamentos: [],
+      timeline: [
+        {
+          id: `tl-sol-${Date.now()}`,
+          data: dataHoje,
+          titulo: 'Solicitação de Reparo Registrada',
+          descricao: `Abertura realizada por ${currentUser.nome} (${currentUser.unidade}). Aguardando análise técnica da administração.`,
+          autorRole: currentUser.role
+        }
+      ],
+      fotosAntes: fotoUrl ? [fotoUrl] : ['https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80']
+    };
+
+    setReparos(prev => [novoReparo, ...prev]);
+    setSelectedReparoId(novoReparo.id);
+  };
+
   const atualizarStatusReclamacao = (id: string, novoStatus: StatusReclamacao) => {
     setReclamacoes(prev => prev.map(rec => {
       if (rec.id === id) {
@@ -349,6 +390,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       apoiarReclamacao,
       adicionarComentario,
       adicionarReclamacao,
+      adicionarReparo,
       atualizarStatusReclamacao,
       transformarEmReparo,
       selecionarOrcamento,

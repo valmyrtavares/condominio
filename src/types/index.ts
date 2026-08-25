@@ -99,10 +99,25 @@ export interface Reclamacao {
   anexoTipo?: 'imagem' | 'video';
 }
 
+export type PorteReparo = 'Pequeno' | 'Médio' | 'Grande';
+
+export type CategoriaReparo = 
+  | 'Pintura' 
+  | 'Elevador' 
+  | 'Garagem' 
+  | 'Escadas' 
+  | 'Academia' 
+  | 'Churrasqueira' 
+  | 'Quadra' 
+  | 'Salão de Festas' 
+  | 'Hall / Corredor' 
+  | 'Inter-Apartamentos' 
+  | 'Outros';
+
 export type StatusReparo = 
   | 'Solicitado' 
   | 'Em análise' 
-  | 'Aguardando Conserto'
+  | 'Aguardando Conserto' 
   | 'Orçamento' 
   | 'Aprovado' 
   | 'Agendado' 
@@ -134,7 +149,8 @@ export interface Reparo {
   reclamacaoId?: string;
   titulo: string;
   descricao: string;
-  categoria: string;
+  porte: PorteReparo;
+  categoria: CategoriaReparo;
   solicitanteNome: string;
   solicitanteUnidade: string;
   dataSolicitacao: string;
@@ -145,7 +161,7 @@ export interface Reparo {
   status: StatusReparo;
   timeline: TimelineStep[];
   fotosAntes: string[];
-  fotosDepois: string[];
+  fotosDepois?: string[];
   condominioId: string;
 }
 

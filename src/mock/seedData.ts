@@ -418,9 +418,10 @@ export const MOCK_REPAROS: Reparo[] = [
     id: 'rep-motor-portao',
     titulo: 'Manutenção preventiva e substituição do motor do portão principal',
     descricao: 'Troca da engrenagem do fuso, placa de controle inversora e lubrificação técnica dos trilhos de corrediça do portão da garagem do Bloco A.',
-    categoria: 'Portão & Acesso',
-    solicitanteNome: 'Zeladoria Condominial',
-    solicitanteUnidade: 'Administração',
+    porte: 'Médio',
+    categoria: 'Garagem',
+    solicitanteNome: 'Carlos Almeida',
+    solicitanteUnidade: 'Apt 102 - Bloco A',
     dataSolicitacao: '12/08/2026',
     responsavel: 'Dra. Mariana Costa (Subsíndica)',
     empresaEscolhida: 'Automatiza Tech Condominial',
@@ -464,7 +465,7 @@ export const MOCK_REPAROS: Reparo[] = [
         id: 'tl-1',
         data: '12/08/2026',
         titulo: 'Vistoria e Registro do Problema',
-        descricao: 'Zeladoria constatou travamento intermitente e desgaste no motor do portão.',
+        descricao: 'Morador e zeladoria constataram travamento intermitente e desgaste no motor do portão.',
         autorRole: 'morador'
       },
       {
@@ -507,11 +508,12 @@ export const MOCK_REPAROS: Reparo[] = [
   },
   {
     id: 'rep-infiltracao-subsolo',
-    titulo: 'Impermeabilização e reparo de infiltração no teto do Subsolo 2',
+    titulo: 'Impermeabilização e contenção de infiltração no teto do Subsolo 2',
     descricao: 'Tratamento de goteira e infiltração proveniente da junta de dilatação da laje sobre as vagas G-30 e G-31 com injeção de poliuretano impermeabilizante.',
-    categoria: 'Estrutura & Hidráulica',
-    solicitanteNome: 'Zeladoria',
-    solicitanteUnidade: 'Administração',
+    porte: 'Grande',
+    categoria: 'Garagem',
+    solicitanteNome: 'Eduardo Prado',
+    solicitanteUnidade: 'Apt 302 - Bloco B',
     dataSolicitacao: '18/08/2026',
     responsavel: 'Dra. Mariana Costa (Subsíndica)',
     empresaEscolhida: 'Vedatech Engenharia e Impermeabilizações',
@@ -525,7 +527,7 @@ export const MOCK_REPAROS: Reparo[] = [
         siteUrl: 'https://vedatech.exemplo.com.br',
         cnpj: '33.444.555/0001-22',
         valor: 3200.00,
-        descricao: 'Injeção de resina flexível de poliuretano + teste de estanqueidade 5 anos de garantia.',
+        descricao: 'Injeção de resina flexível de poliuretano + teste de estanqueidade com 5 anos de garantia.',
         prazoDias: 4,
         selecionado: true
       },
@@ -561,6 +563,191 @@ export const MOCK_REPAROS: Reparo[] = [
     ],
     fotosDepois: [
       'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80'
+    ]
+  },
+  {
+    id: 'rep-lampadas-hall',
+    titulo: 'Substituição de painéis LED queimados no Hall do 4º andar',
+    descricao: 'Dois spots embutidos de LED do hall social em frente aos apartamentos 401 e 402 pararam de funcionar, deixando o corredor escuro.',
+    porte: 'Pequeno',
+    categoria: 'Hall / Corredor',
+    solicitanteNome: 'Renato Alencar',
+    solicitanteUnidade: 'Apt 101 - Bloco A',
+    dataSolicitacao: '20/08/2026',
+    responsavel: 'Zeladoria',
+    empresaEscolhida: 'EletroPaulista Reparos',
+    valorFinal: 180.00,
+    status: 'Executado',
+    condominioId: CURRENT_CONDO_ID,
+    orcamentos: [
+      {
+        id: 'orc-led-1',
+        empresa: 'EletroPaulista Reparos',
+        siteUrl: 'https://eletropaulista.exemplo.com.br',
+        cnpj: '21.000.111/0001-55',
+        valor: 180.00,
+        descricao: 'Troca de 2 painéis LED 18W + teste de disjuntores.',
+        prazoDias: 1,
+        selecionado: true
+      }
+    ],
+    timeline: [
+      {
+        id: 'tl-led-1',
+        data: '20/08/2026',
+        titulo: 'Solicitação Registrada',
+        descricao: 'Morador reportou luzes apagadas no corredor do 4º andar.',
+        autorRole: 'morador'
+      },
+      {
+        id: 'tl-led-2',
+        data: '21/08/2026',
+        titulo: 'Serviço Executado',
+        descricao: 'Substituição das lâmpadas e reatores efetuada com sucesso.',
+        autorRole: 'subsindico',
+        statusAlvo: 'Executado'
+      }
+    ],
+    fotosAntes: [
+      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80'
+    ],
+    fotosDepois: [
+      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80'
+    ]
+  },
+  {
+    id: 'rep-porta-academia',
+    titulo: 'Regulagem da mola hidráulica e trava da porta da Academia',
+    descricao: 'A porta de vidro da academia está batendo com força excessiva no batente após o uso, com risco de quebra do vidro temperado.',
+    porte: 'Pequeno',
+    categoria: 'Academia',
+    solicitanteNome: 'Sandra Almeida',
+    solicitanteUnidade: 'Apt 102 - Bloco A',
+    dataSolicitacao: '22/08/2026',
+    responsavel: 'Dra. Mariana Costa (Subsíndica)',
+    empresaEscolhida: 'Vidros & Molas Express',
+    valorFinal: 250.00,
+    status: 'Agendado',
+    condominioId: CURRENT_CONDO_ID,
+    orcamentos: [
+      {
+        id: 'orc-mola-1',
+        empresa: 'Vidros & Molas Express',
+        siteUrl: 'https://vidrosexpress.exemplo.com.br',
+        cnpj: '55.666.777/0001-88',
+        valor: 250.00,
+        descricao: 'Substituição da mola de piso Dorma + regulagem de pressão.',
+        prazoDias: 2,
+        selecionado: true
+      }
+    ],
+    timeline: [
+      {
+        id: 'tl-mola-1',
+        data: '22/08/2026',
+        titulo: 'Solicitação Aberta',
+        descricao: 'Problema reportado com mola da porta da academia.',
+        autorRole: 'morador'
+      },
+      {
+        id: 'tl-mola-2',
+        data: '23/08/2026',
+        titulo: 'Visita Técnica Agendada',
+        descricao: 'Técnico fará o conserto amanhã às 14h.',
+        autorRole: 'subsindico',
+        statusAlvo: 'Agendado'
+      }
+    ],
+    fotosAntes: [
+      'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=600&q=80'
+    ]
+  },
+  {
+    id: 'rep-elevador-botoeira',
+    titulo: 'Revisão dos cabos de tração e troca da botoeira do Elevador Social',
+    descricao: 'Ruído anormal no deslocamento entre o 3º e 6º andar e botões de chamada do 2º e 5º pavimentos apresentando mau contato intermitente.',
+    porte: 'Grande',
+    categoria: 'Elevador',
+    solicitanteNome: 'Zeladoria Condominial',
+    solicitanteUnidade: 'Administração',
+    dataSolicitacao: '23/08/2026',
+    responsavel: 'Dra. Mariana Costa (Subsíndica)',
+    empresaEscolhida: 'Atlas Schindler Serviços',
+    valorFinal: 4800.00,
+    status: 'Em análise',
+    condominioId: CURRENT_CONDO_ID,
+    orcamentos: [
+      {
+        id: 'orc-elev-1',
+        empresa: 'Atlas Schindler Serviços',
+        siteUrl: 'https://schindler.exemplo.com.br',
+        cnpj: '11.222.333/0001-44',
+        valor: 4800.00,
+        descricao: 'Revisão integral dos cabos de aço, encoder e troca de botoeiras antivandalismo.',
+        prazoDias: 5,
+        selecionado: true
+      },
+      {
+        id: 'orc-elev-2',
+        empresa: 'Otis Elevadores do Brasil',
+        siteUrl: 'https://otis.exemplo.com.br',
+        cnpj: '44.555.666/0001-77',
+        valor: 5200.00,
+        descricao: 'Substituição de componentes de tração e placa controladora de cabine.',
+        prazoDias: 7,
+        selecionado: false
+      }
+    ],
+    timeline: [
+      {
+        id: 'tl-elev-1',
+        data: '23/08/2026',
+        titulo: 'Vistoria Preventiva',
+        descricao: 'Chamado técnico aberto com a empresa mantenedora do elevador.',
+        autorRole: 'subsindico'
+      }
+    ],
+    fotosAntes: [
+      'https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&w=600&q=80'
+    ]
+  },
+  {
+    id: 'rep-pintura-garagem',
+    titulo: 'Pintura e demarcação de faixas e vagas no Subsolo 1',
+    descricao: 'Desgaste da tinta epóxi nas faixas amarelas de demarcação de vagas e numeração apagada após limpeza pesada.',
+    porte: 'Médio',
+    categoria: 'Pintura',
+    solicitanteNome: 'Beatriz Souza',
+    solicitanteUnidade: 'Apt 201 - Bloco A',
+    dataSolicitacao: '24/08/2026',
+    responsavel: 'Dra. Mariana Costa (Subsíndica)',
+    empresaEscolhida: 'Pinturas Pro SP',
+    valorFinal: 2100.00,
+    status: 'Aguardando Conserto',
+    condominioId: CURRENT_CONDO_ID,
+    orcamentos: [
+      {
+        id: 'orc-pint-1',
+        empresa: 'Pinturas Pro SP',
+        siteUrl: 'https://pinturaspro.exemplo.com.br',
+        cnpj: '66.777.888/0001-99',
+        valor: 2100.00,
+        descricao: 'Pintura em tinta epóxi de alta resistência para 35 vagas e faixas de pedestres.',
+        prazoDias: 3,
+        selecionado: true
+      }
+    ],
+    timeline: [
+      {
+        id: 'tl-pint-1',
+        data: '24/08/2026',
+        titulo: 'Solicitação Aberta',
+        descricao: 'Necessidade de renovação da demarcação de piso na garagem.',
+        autorRole: 'morador'
+      }
+    ],
+    fotosAntes: [
+      'https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=600&q=80'
     ]
   }
 ];
