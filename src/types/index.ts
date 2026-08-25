@@ -275,6 +275,44 @@ export interface Dependencia {
   condominioId: string;
 }
 
+export type StatusAssembleia = 
+  | 'Agendada' 
+  | 'Realizada com Ata Publicada' 
+  | 'Realizada - Aguardando Ata';
+
+export interface PautaAssembleia {
+  id: string;
+  titulo: string;
+  descricao: string;
+  aprovada?: boolean; // true = check verde; false = sem check/rejeitada; undefined = agendada
+  resultadoVotacao?: string;
+}
+
+export interface AtaAssembleia {
+  numeroAta: string;
+  dataLavratura: string;
+  presidenteMesa: string;
+  secretarioMesa: string;
+  registroCartorio?: string;
+  resumoDecisoes: string;
+  textoCompleto: string;
+}
+
+export interface Assembleia {
+  id: string;
+  titulo: string;
+  tipo: 'Ordinária' | 'Extraordinária';
+  dataHora: string;
+  local: string;
+  primeiraChamada: string;
+  segundaChamada: string;
+  status: StatusAssembleia;
+  descricaoGeral: string;
+  pautas: PautaAssembleia[];
+  ata?: AtaAssembleia;
+  condominioId: string;
+}
+
 export interface DespesaItem {
   id: string;
   categoria: string;

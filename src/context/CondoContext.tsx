@@ -21,7 +21,8 @@ import {
   StatusServicoContratado,
   PropostaEmpresa,
   Dependencia,
-  ReservaDependencia
+  ReservaDependencia,
+  Assembleia
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -33,6 +34,7 @@ import {
   MOCK_SERVICOS_CONTRATADOS,
   MOCK_DEPENDENCIAS,
   MOCK_RESERVAS,
+  MOCK_ASSEMBLEIAS,
   MOCK_PRESTACAO_CONTAS, 
   MOCK_FUNCIONARIOS,
   ESPINHA_DORSAL_ITEMS,
@@ -51,6 +53,7 @@ interface CondoContextType {
   servicosContratados: ServicoContratado[];
   dependencias: Dependencia[];
   reservas: ReservaDependencia[];
+  assembleias: Assembleia[];
   prestacaoContas: PrestacaoContas;
   funcionarios: Funcionario[];
   espinhaDorsalItems: EspinhaDorsalItem[];
@@ -92,6 +95,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [servicosContratados, setServicosContratados] = useState<ServicoContratado[]>(MOCK_SERVICOS_CONTRATADOS);
   const [dependencias, setDependencias] = useState<Dependencia[]>(MOCK_DEPENDENCIAS);
   const [reservas, setReservas] = useState<ReservaDependencia[]>(MOCK_RESERVAS);
+  const [assembleias, setAssembleias] = useState<Assembleia[]>(MOCK_ASSEMBLEIAS);
   const [prestacaoContas] = useState<PrestacaoContas>(MOCK_PRESTACAO_CONTAS);
   const [funcionarios] = useState<Funcionario[]>(MOCK_FUNCIONARIOS);
   const [espinhaDorsalItems] = useState<EspinhaDorsalItem[]>(ESPINHA_DORSAL_ITEMS);
@@ -527,6 +531,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       servicosContratados,
       dependencias,
       reservas,
+      assembleias,
       prestacaoContas,
       funcionarios,
       espinhaDorsalItems,

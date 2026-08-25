@@ -1,4 +1,4 @@
-import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia } from '../types';
+import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia } from '../types';
 
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
@@ -1397,6 +1397,115 @@ export const MOCK_RESERVAS: ReservaDependencia[] = [
   }
 ];
 
+export const MOCK_ASSEMBLEIAS: Assembleia[] = [
+  // 1. Status 1: Agendada (Card Amarelo / Dourado)
+  {
+    id: 'ass-age-setembro-2026',
+    titulo: 'Assembleia Geral Extraordinária - Orçamento de Obras & Usina Solar',
+    tipo: 'Extraordinária',
+    dataHora: '18 de Setembro de 2026 às 19:30',
+    local: 'Salão de Festas & Híbrida via Zoom',
+    primeiraChamada: '19:00 com 2/3 dos condôminos',
+    segundaChamada: '19:30 com qualquer número de presentes',
+    status: 'Agendada',
+    descricaoGeral: 'Convocação formal para deliberação de investimento em eficiência energética com painéis solares, substituição de empresa terceirizada de portaria e atualização das regras para pets.',
+    pautas: [
+      {
+        id: 'pauta-1',
+        titulo: 'Instalação de Usina Solar Fotovoltaica na Cobertura',
+        descricao: 'Votação da proposta técnica para instalação de 42 placas solares com investimento previsto de R$ 42.000,00 e economia média de R$ 2.450,00/mês nas contas de energia das áreas comuns.'
+      },
+      {
+        id: 'pauta-2',
+        titulo: 'Contratação de Nova Empresa de Portaria & Vigilância 24h',
+        descricao: 'Avaliação dos 3 orçamentos homologados pela comissão para contratação de empresa de controle de acesso com ronda noturna e fiscalização armada.'
+      },
+      {
+        id: 'pauta-3',
+        titulo: 'Revisão do Regimento Interno para Circulação de Animais de Estimação',
+        descricao: 'Adequação das normas para uso de elevadores de serviço por tutores de animais e novos pontos com dispensers de saquinhos higiênicos no bosque.'
+      }
+    ],
+    condominioId: CURRENT_CONDO_ID
+  },
+
+  // 2. Status 3: Realizada - Aguardando Ata (Card Amarelo - Já aconteceu mas ata ainda em redação)
+  {
+    id: 'ass-age-agosto-2026',
+    titulo: 'Assembleia Geral Extraordinária - Reforma e Impermeabilização da Fachada',
+    tipo: 'Extraordinária',
+    dataHora: '12 de Agosto de 2026 às 19:30',
+    local: 'Salão de Festas & Transmissão no App',
+    primeiraChamada: '19:00',
+    segundaChamada: '19:30',
+    status: 'Realizada - Aguardando Ata',
+    descricaoGeral: 'Reunião realizada com quórum qualificado para definir a empresa executora do retrofit e impermeabilização da fachada externa do condomínio.',
+    pautas: [
+      {
+        id: 'pauta-fac-1',
+        titulo: 'Escolha da Empresa Vencedora para Reforma da Fachada',
+        descricao: 'Deliberação entre as 3 empresas concorrentes cotadas pela sindicância.',
+        aprovada: true,
+        resultadoVotacao: 'Aprovada proposta da Engenharia & Fachadas Alpha (38 votos a favor, 4 contra)'
+      },
+      {
+        id: 'pauta-fac-2',
+        titulo: 'Condições de Pagamento e Utilização do Fundo de Obras',
+        descricao: 'Definição de pagamento parcelado em 10 vezes sem necessidade de emissão de cota extra extraordinária aos moradores.',
+        aprovada: true,
+        resultadoVotacao: 'Aprovado por unanimidade (42 votos a 0)'
+      }
+    ],
+    condominioId: CURRENT_CONDO_ID
+  },
+
+  // 3. Status 2: Realizada com Ata Publicada (Card Verde - Concluída e com documento oficial anexado)
+  {
+    id: 'ass-ago-marco-2026',
+    titulo: 'Assembleia Geral Ordinária - Prestação de Contas & Eleição de Síndica 2026-2028',
+    tipo: 'Ordinária',
+    dataHora: '24 de Março de 2026 às 20:00',
+    local: 'Salão de Festas do Edifício',
+    primeiraChamada: '19:30',
+    segundaChamada: '20:00',
+    status: 'Realizada com Ata Publicada',
+    descricaoGeral: 'Assembleia Geral Ordinária para homologação das contas do exercício de 2025, eleição do corpo diretivo e fixação do valor da taxa condominial.',
+    pautas: [
+      {
+        id: 'pauta-ago-1',
+        titulo: 'Aprovação das Contas do Exercício de 2025 & Parecer do Conselho',
+        descricao: 'Apresentação detalhada do balancete anual, conciliação bancária e comprovação de superávit transferido ao Fundo de Reserva.',
+        aprovada: true,
+        resultadoVotacao: 'Aprovado por unanimidade (48 votos a favor, 0 abstenções)'
+      },
+      {
+        id: 'pauta-ago-2',
+        titulo: 'Eleição de Síndica Geral e Subsíndica (Biênio 2026/2028)',
+        descricao: 'Votação das chapas concorrentes para a gestão e representação legal do Condomínio Residencial Jardim Paulista.',
+        aprovada: true,
+        resultadoVotacao: 'Eleita Chapa 1 (Dra. Mariana Ferreira - Síndica / Cássia Rezende - Subsíndica) com 41 votos'
+      },
+      {
+        id: 'pauta-ago-3',
+        titulo: 'Instituição de Taxa Extra para Reforma Completa da Quadra Poliesportiva',
+        descricao: 'Proposta de taxa extra mensal de R$ 85,00 durante 6 meses para troca do piso e iluminação da quadra.',
+        aprovada: false,
+        resultadoVotacao: 'Rejeitada pelo plenário (11 votos a favor, 37 votos contrários)'
+      }
+    ],
+    ata: {
+      numeroAta: 'ATA-AGO-001/2026',
+      dataLavratura: '26/03/2026',
+      presidenteMesa: 'Dr. Roberto Silveira (Apto 302)',
+      secretarioMesa: 'Cássia Rezende (Apto 201)',
+      registroCartorio: '4º Oficial de Registro de Títulos e Documentos de SP - Registro nº 894.210/2026',
+      resumoDecisoes: 'Contas do exercício 2025 homologadas sem ressalvas. Eleita a Sra. Mariana Ferreira como Síndica e Cássia Rezende como Subsíndica. Rejeitada a cobrança de taxa extra da quadra poliesportiva por maioria absoluta dos votos.',
+      textoCompleto: 'Aos vinte e quatro dias do mês de março do ano de dois mil e vinte e seis, às vinte horas, reuniram-se em Assembleia Geral Ordinária os condôminos do Condomínio Residencial Jardim Paulista. Assumiu a presidência da mesa o Dr. Roberto Silveira, que convidou a Sra. Cássia Rezende para secretariar os trabalhos. Passou-se à deliberação das ordens do dia: 1) Apresentação e aprovação das contas de 2025, aprovadas por unanimidade após leitura do parecer favorável do Conselho Fiscal; 2) Eleição do corpo diretivo para o biênio 2026-2028, sendo eleita a Chapa 1 com 41 votos; 3) Votação da taxa extra para a quadra esportiva, rejeitada por 37 votos contra 11. Nada mais havendo a tratar, lavrou-se a presente ata que vai assinada pelo Presidente, Secretária e Síndica eleita.'
+    },
+    condominioId: CURRENT_CONDO_ID
+  }
+];
+
 export const MOCK_PRESTACAO_CONTAS: PrestacaoContas = {
   id: 'pc-abril-2026',
   mesAno: 'Abril / 2026',
@@ -1928,9 +2037,10 @@ export const ESPINHA_DORSAL_ITEMS: EspinhaDorsalItem[] = [
     id: 'assembleias',
     titulo: 'Assembleias',
     icone: 'Gavel',
-    descricaoCurta: 'Pautas para discussão, votações abertas e publicação da ata final acordada.',
-    desdobramentos: ['Data e horário', 'Serviços/reparos em pauta', 'Ata com resumo do acordado'],
-    rota: '/assembleias'
+    descricaoCurta: 'Pautas para discussão, votações com checks e publicação oficial da ata em PDF.',
+    desdobramentos: ['Agendadas e Realizadas', 'Pautas e deliberações com check', 'Ata oficial com PDF'],
+    rota: '/assembleias',
+    destaquePoC: true
   },
   {
     id: 'benfeitorias',
