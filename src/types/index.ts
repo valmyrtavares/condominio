@@ -165,6 +165,56 @@ export interface Reparo {
   condominioId: string;
 }
 
+export type TipoBenfeitoria = 
+  | 'Grande Reparo & Manutenção' 
+  | 'Nova Aquisição & Modernização' 
+  | 'Equilíbrio Financeiro & Economia' 
+  | 'Área Comum & Convivência';
+
+export interface Benfeitoria {
+  id: string;
+  titulo: string;
+  subtitulo: string;
+  tipo: TipoBenfeitoria;
+  dataEntrega: string;
+  descricao: string;
+  impactoGestao: string;
+  investimento?: number;
+  economiaMensal?: number;
+  fotos: string[];
+  fotosAntes?: string[];
+  responsavel: string;
+  condominioId: string;
+  regrasUso?: string;
+}
+
+export type StatusVaga = 'Em uso' | 'Para Alugar' | 'Vazia';
+
+export interface VeiculoInfo {
+  modelo: string;
+  cor: string;
+  placa: string;
+  tipo: 'Carro' | 'SUV' | 'Moto' | 'Outro';
+}
+
+export interface VagaGaragem {
+  id: string;
+  numeroVaga: string;
+  subsolo: 'Subsolo 1' | 'Subsolo 2';
+  unidadeNumero: string;
+  bloco: string;
+  status: StatusVaga;
+  tipoVaga?: 'Simples' | 'Dupla' | 'PCD' | 'Moto';
+  moradorNome: string;
+  moradorFoto?: string;
+  interfoneRamal: string;
+  contatoWhatsapp?: string;
+  veiculo?: VeiculoInfo;
+  valorAluguelMensal?: number;
+  observacoes?: string;
+  condominioId: string;
+}
+
 export interface DespesaItem {
   id: string;
   categoria: string;

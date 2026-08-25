@@ -1,4 +1,4 @@
-import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem } from '../types';
+import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem } from '../types';
 
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
@@ -752,6 +752,305 @@ export const MOCK_REPAROS: Reparo[] = [
   }
 ];
 
+export const MOCK_BENFEITORIAS: Benfeitoria[] = [
+  {
+    id: 'benf-esteira-academia',
+    titulo: 'Substituição e Modernização da Esteira Ergométrica da Academia',
+    subtitulo: 'Grande reparo e reativação do espaço fitness com motor industrial novo',
+    tipo: 'Grande Reparo & Manutenção',
+    dataEntrega: '15/07/2026',
+    descricao: 'A esteira principal da academia encontrava-se inoperante há mais de 4 meses devido a queima do inversor de frequência e desgaste do motor. A nova gestão realizou cotação tripartite e adquiriu um novo conjunto motorizado Movement Profissional de alta durabilidade com garantia estendida de 2 anos.',
+    impactoGestao: 'Economia de R$ 4.500 em relação à troca total por equipamento novo. Espaço 100% funcional para todos os condôminos.',
+    investimento: 3400.00,
+    fotos: [
+      'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1576678927484-cc907957088c?auto=format&fit=crop&w=800&q=80'
+    ],
+    fotosAntes: [
+      'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?auto=format&fit=crop&w=600&q=80'
+    ],
+    responsavel: 'Dra. Mariana Costa (Subsíndica)',
+    condominioId: CURRENT_CONDO_ID,
+    regrasUso: 'Uso exclusivo para moradores das 06h às 22h. Higienizar os apoios após o uso.'
+  },
+  {
+    id: 'benf-brinquedoteca',
+    titulo: 'Revitalização Completa e Novos Brinquedos na Brinquedoteca',
+    subtitulo: 'Substituição de itens quebrados, instalação de piso amortecedor e novos jogos',
+    tipo: 'Nova Aquisição & Modernização',
+    dataEntrega: '28/06/2026',
+    descricao: 'Reforma integral do espaço infantil: descarte de brinquedos plásticos trincados e perigosos, colocação de piso vinílico térmico e emborrachado para amortecimento de impactos, pintura lúdica antialérgica e aquisição de novos módulos de casinha, piscina de bolinhas higienizada e mesinhas de pintura.',
+    impactoGestao: 'Segurança absoluta para as crianças do condomínio e valorização patrimonial das áreas comuns.',
+    investimento: 4850.00,
+    fotos: [
+      'https://images.unsplash.com/photo-1566454544259-f4b94c3d758c?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=800&q=80'
+    ],
+    responsavel: 'Dra. Mariana Costa (Subsíndica)',
+    condominioId: CURRENT_CONDO_ID,
+    regrasUso: 'Crianças até 10 anos acompanhadas dos responsáveis. Proibido consumo de alimentos dentro do espaço.'
+  },
+  {
+    id: 'benf-energia-solar',
+    titulo: 'Instalação do Sistema de Energia Solar Fotovoltaica',
+    subtitulo: 'Redução histórica de 38% na conta de luz das áreas comuns e equilíbrio das contas',
+    tipo: 'Equilíbrio Financeiro & Economia',
+    dataEntrega: '10/05/2026',
+    descricao: 'Instalação de 42 placas solares de alta performance na cobertura do Bloco A e B. A energia gerada supre a iluminação dos corredores, subsolos, bombas de pressurização e portaria, injetando excedente na rede Enel.',
+    impactoGestao: 'Economia média de R$ 3.850,00 por mês. O equilíbrio financeiro permitiu congelar o reajuste da taxa condominial ordinária.',
+    investimento: 42000.00,
+    economiaMensal: 3850.00,
+    fotos: [
+      'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1508873696983-2df57046475b?auto=format&fit=crop&w=800&q=80'
+    ],
+    responsavel: 'Dra. Mariana Costa (Subsíndica)',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'benf-led-sensores',
+    titulo: 'Retrofit Geral de Iluminação LED com Sensores de Presença',
+    subtitulo: 'Modernização de 100% dos halls e subsolos com desligamento inteligente',
+    tipo: 'Equilíbrio Financeiro & Economia',
+    dataEntrega: '20/04/2026',
+    descricao: 'Substituição de todas as antigas lâmpadas fluorescentes tubulares dos 8 andares e dos 2 subsolos por luminárias LED tubulares e painéis inteligentes com sensor de presença gradual.',
+    impactoGestao: 'Queda de 22% no consumo elétrico de iluminação contínua e redução de 80% nos chamados de lâmpadas queimadas.',
+    investimento: 3100.00,
+    economiaMensal: 820.00,
+    fotos: [
+      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80'
+    ],
+    responsavel: 'Zeladoria & Subsíndica',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'benf-coworking-mezanino',
+    titulo: 'Novo Espaço Coworking & Sala de Estudos Climatizada',
+    subtitulo: 'Aproveitamento do mezanino ocioso com mesas ergonômicas e Wi-Fi de alta velocidade',
+    tipo: 'Área Comum & Convivência',
+    dataEntrega: '12/03/2026',
+    descricao: 'Transformação de antiga sala de depósito em um moderno espaço de trabalho compartilhado com 8 postos de trabalho, tomadas USB, cadeiras ergonômicas, ar-condicionado inverter e link de fibra ótica dedicado.',
+    impactoGestao: 'Atende mais de 35 moradores que atuam em Home Office sem custo adicional na taxa condominial.',
+    investimento: 5600.00,
+    fotos: [
+      'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=800&q=80'
+    ],
+    responsavel: 'Dra. Mariana Costa (Subsíndica)',
+    condominioId: CURRENT_CONDO_ID,
+    regrasUso: 'Uso livre para moradores das 07h às 23h. Silêncio e fones de ouvido obrigatórios para chamadas.'
+  }
+];
+
+export const MOCK_VAGAS_GARAGEM: VagaGaragem[] = [
+  {
+    id: 'vaga-g11',
+    numeroVaga: 'G-11',
+    subsolo: 'Subsolo 1',
+    unidadeNumero: '101',
+    bloco: 'Bloco A',
+    status: 'Em uso',
+    tipoVaga: 'Simples',
+    moradorNome: 'Renato Alencar',
+    moradorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    interfoneRamal: '101',
+    contatoWhatsapp: '(11) 98888-1101',
+    veiculo: {
+      modelo: 'Jeep Compass Limited',
+      cor: 'Preto',
+      placa: 'BRA-3A10',
+      tipo: 'SUV'
+    },
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'vaga-g12',
+    numeroVaga: 'G-12',
+    subsolo: 'Subsolo 1',
+    unidadeNumero: '102',
+    bloco: 'Bloco A',
+    status: 'Em uso',
+    tipoVaga: 'Simples',
+    moradorNome: 'Marcos Almeida',
+    moradorFoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    interfoneRamal: '102',
+    contatoWhatsapp: '(11) 99999-1002',
+    veiculo: {
+      modelo: 'Toyota Corolla Cross',
+      cor: 'Prata Metálico',
+      placa: 'XYZ-7890',
+      tipo: 'SUV'
+    },
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'vaga-g13',
+    numeroVaga: 'G-13',
+    subsolo: 'Subsolo 1',
+    unidadeNumero: '103',
+    bloco: 'Bloco A',
+    status: 'Para Alugar',
+    tipoVaga: 'Simples',
+    moradorNome: 'Cíntia Mendes',
+    moradorFoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+    interfoneRamal: '103',
+    contatoWhatsapp: '(11) 97777-1003',
+    valorAluguelMensal: 250.00,
+    observacoes: 'Vaga livre e coberta, próxima ao elevador social. Não possuo veículo no momento.',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'vaga-g14',
+    numeroVaga: 'G-14',
+    subsolo: 'Subsolo 1',
+    unidadeNumero: '104',
+    bloco: 'Bloco A',
+    status: 'Vazia',
+    tipoVaga: 'Simples',
+    moradorNome: 'Unidade Desocupada / Em Reforma',
+    interfoneRamal: '104',
+    observacoes: 'Apartamento em processo de locação pela imobiliária. Vaga temporariamente desocupada.',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'vaga-g21',
+    numeroVaga: 'G-21',
+    subsolo: 'Subsolo 1',
+    unidadeNumero: '201',
+    bloco: 'Bloco A',
+    status: 'Em uso',
+    tipoVaga: 'Simples',
+    moradorNome: 'Dr. João Carlos & Beatriz',
+    moradorFoto: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80',
+    interfoneRamal: '201',
+    contatoWhatsapp: '(11) 98111-2001',
+    veiculo: {
+      modelo: 'Honda Civic Touring',
+      cor: 'Branco Pérola',
+      placa: 'RIO-9G21',
+      tipo: 'Carro'
+    },
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'vaga-g22',
+    numeroVaga: 'G-22',
+    subsolo: 'Subsolo 1',
+    unidadeNumero: '202',
+    bloco: 'Bloco A',
+    status: 'Para Alugar',
+    tipoVaga: 'Simples',
+    moradorNome: 'Juliana Paes (Proprietária)',
+    moradorFoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
+    interfoneRamal: '202',
+    contatoWhatsapp: '(11) 99222-2002',
+    valorAluguelMensal: 280.00,
+    observacoes: 'Vaga espaçosa com fácil manobra no Subsolo 1. Alugo por contrato mínimo de 6 meses.',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'vaga-g31',
+    numeroVaga: 'G-31',
+    subsolo: 'Subsolo 2',
+    unidadeNumero: '301',
+    bloco: 'Bloco B',
+    status: 'Vazia',
+    tipoVaga: 'Simples',
+    moradorNome: 'Família Silveira',
+    interfoneRamal: '301',
+    observacoes: 'Moradores utilizam apenas transporte por aplicativo no momento.',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'vaga-g32',
+    numeroVaga: 'G-32',
+    subsolo: 'Subsolo 2',
+    unidadeNumero: '302',
+    bloco: 'Bloco B',
+    status: 'Em uso',
+    tipoVaga: 'Dupla',
+    moradorNome: 'Eduardo Prado',
+    moradorFoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    interfoneRamal: '302',
+    contatoWhatsapp: '(11) 97333-3002',
+    veiculo: {
+      modelo: 'Volkswagen T-Cross',
+      cor: 'Azul Noturno',
+      placa: 'TCX-4B32',
+      tipo: 'SUV'
+    },
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'vaga-g41',
+    numeroVaga: 'G-41',
+    subsolo: 'Subsolo 2',
+    unidadeNumero: '401',
+    bloco: 'Bloco A',
+    status: 'Em uso',
+    tipoVaga: 'Dupla',
+    moradorNome: 'Dra. Mariana Costa (Subsíndica)',
+    moradorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
+    interfoneRamal: '401',
+    contatoWhatsapp: '(11) 99444-4001',
+    veiculo: {
+      modelo: 'Volvo XC60 Híbrido',
+      cor: 'Cinza Platinum',
+      placa: 'EVO-8H41',
+      tipo: 'SUV'
+    },
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'vaga-g42',
+    numeroVaga: 'G-42',
+    subsolo: 'Subsolo 2',
+    unidadeNumero: '402',
+    bloco: 'Bloco A',
+    status: 'Para Alugar',
+    tipoVaga: 'Simples',
+    moradorNome: 'Roberto Campos',
+    interfoneRamal: '402',
+    contatoWhatsapp: '(11) 98555-4002',
+    valorAluguelMensal: 230.00,
+    observacoes: 'Excelente vaga no Subsolo 2 com iluminação direta. Tratar direto via interfone ou WhatsApp.',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'vaga-g51',
+    numeroVaga: 'G-51',
+    subsolo: 'Subsolo 2',
+    unidadeNumero: '501',
+    bloco: 'Bloco B',
+    status: 'Em uso',
+    tipoVaga: 'Simples',
+    moradorNome: 'Antônio Ferreira (Advogado)',
+    moradorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    interfoneRamal: '501',
+    contatoWhatsapp: '(11) 97666-5001',
+    veiculo: {
+      modelo: 'BMW 320i',
+      cor: 'Preto Safira',
+      placa: 'BMW-5A01',
+      tipo: 'Carro'
+    },
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'vaga-g52',
+    numeroVaga: 'G-52',
+    subsolo: 'Subsolo 2',
+    unidadeNumero: '502',
+    bloco: 'Bloco B',
+    status: 'Vazia',
+    tipoVaga: 'Simples',
+    moradorNome: 'Apartamento para Locação',
+    interfoneRamal: '502',
+    observacoes: 'Vaga livre no momento.',
+    condominioId: CURRENT_CONDO_ID
+  }
+];
+
 export const MOCK_PRESTACAO_CONTAS: PrestacaoContas = {
   id: 'pc-abril-2026',
   mesAno: 'Abril / 2026',
@@ -1289,11 +1588,12 @@ export const ESPINHA_DORSAL_ITEMS: EspinhaDorsalItem[] = [
   },
   {
     id: 'benfeitorias',
-    titulo: 'Benfeitorias',
+    titulo: 'Benfeitorias & Conquistas',
     icone: 'Sparkles',
-    descricaoCurta: 'Novidades de novos serviços, aquisições e reformas com fotos, comentários e regras.',
-    desdobramentos: ['Fotos antes/depois', 'Regras de uso', 'Vínculo com serviços concluídos'],
-    rota: '/benfeitorias'
+    descricaoCurta: 'Tudo o que foi produzido pela nova gestão: fotos de entrega, grandes reparos e equilíbrio das contas.',
+    desdobramentos: ['Fotos de entrega', 'Grandes reparos resolvidos', 'Equilíbrio das contas & Economia'],
+    rota: '/benfeitorias',
+    destaquePoC: true
   },
   {
     id: 'reparos',
@@ -1322,11 +1622,12 @@ export const ESPINHA_DORSAL_ITEMS: EspinhaDorsalItem[] = [
   },
   {
     id: 'vagas-garagem',
-    titulo: 'Vagas de garagem',
+    titulo: 'Vagas de Garagem & Veículos',
     icone: 'Car',
-    descricaoCurta: 'Mapeamento completo das vagas de garagem vinculadas a cada apartamento.',
-    desdobramentos: ['Número da vaga', 'Subsolo 1 e 2', 'Status de uso'],
-    rota: '/vagas-garagem'
+    descricaoCurta: 'Mapeamento das vagas por apartamento, contato direto via interfone e status (Em uso, Para alugar, Vazia).',
+    desdobramentos: ['Vínculo com apartamento', 'Chamar interfone do morador', 'Status: Em uso / Para alugar / Vazia'],
+    rota: '/vagas-garagem',
+    destaquePoC: true
   },
   {
     id: 'servicos-contratados',

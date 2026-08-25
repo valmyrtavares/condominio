@@ -11,13 +11,20 @@ import {
   EspinhaDorsalItem,
   CategoriaReclamacao,
   PorteReparo,
-  CategoriaReparo
+  CategoriaReparo,
+  Benfeitoria,
+  TipoBenfeitoria,
+  VagaGaragem,
+  StatusVaga,
+  VeiculoInfo
 } from '../types';
 import { 
   MOCK_USERS, 
   MOCK_UNIDADES, 
   MOCK_RECLAMACOES, 
   MOCK_REPAROS, 
+  MOCK_BENFEITORIAS,
+  MOCK_VAGAS_GARAGEM,
   MOCK_PRESTACAO_CONTAS, 
   MOCK_FUNCIONARIOS,
   ESPINHA_DORSAL_ITEMS,
@@ -31,6 +38,8 @@ interface CondoContextType {
   unidades: Unidade[];
   reclamacoes: Reclamacao[];
   reparos: Reparo[];
+  benfeitorias: Benfeitoria[];
+  vagasGaragem: VagaGaragem[];
   prestacaoContas: PrestacaoContas;
   funcionarios: Funcionario[];
   espinhaDorsalItems: EspinhaDorsalItem[];
@@ -48,7 +57,9 @@ interface CondoContextType {
   adicionarComentario: (reclamacaoId: string, texto: string) => void;
   adicionarReclamacao: (titulo: string, descricao: string, categoria: CategoriaReclamacao, anexoUrl?: string, anexoTipo?: 'imagem' | 'video') => void;
   adicionarReparo: (titulo: string, descricao: string, porte: PorteReparo, categoria: CategoriaReparo, fotoUrl?: string) => void;
+  adicionarBenfeitoria: (titulo: string, subtitulo: string, tipo: TipoBenfeitoria, descricao: string, impactoGestao: string, fotos: string[], investimento?: number, economiaMensal?: number, regrasUso?: string) => void;
   atualizarStatusReclamacao: (id: string, novoStatus: StatusReclamacao) => void;
+  atualizarStatusVaga: (vagaId: string, novoStatus: StatusVaga, dadosAdicionais?: { veiculo?: VeiculoInfo; valorAluguelMensal?: number; observacoes?: string }) => void;
   transformarEmReparo: (reclamacaoId: string, titulo: string, descricao: string) => string;
   selecionarOrcamento: (reparoId: string, orcamentoId: string) => void;
   atualizarStatusReparo: (reparoId: string, novoStatus: StatusReparo) => void;
@@ -61,6 +72,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [unidades] = useState<Unidade[]>(MOCK_UNIDADES);
   const [reclamacoes, setReclamacoes] = useState<Reclamacao[]>(MOCK_RECLAMACOES);
   const [reparos, setReparos] = useState<Reparo[]>(MOCK_REPAROS);
+  const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>(MOCK_BENFEITORIAS);
+  const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>(MOCK_VAGAS_GARAGEM);
   const [prestacaoContas] = useState<PrestacaoContas>(MOCK_PRESTACAO_CONTAS);
   const [funcionarios] = useState<Funcionario[]>(MOCK_FUNCIONARIOS);
   const [espinhaDorsalItems] = useState<EspinhaDorsalItem[]>(ESPINHA_DORSAL_ITEMS);
@@ -359,6 +372,56 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSelectedReparoId(novoReparo.id);
   };
 
+  const adicionarBenfeitoria = (
+    titulo: string,
+    subtitulo: string,
+    tipo: TipoBenfeitoria,
+    descricao: string,
+    impactoGestao: string,
+    fotos: string[],
+    investimento?: number,
+    economiaMensal?: number,
+    regrasUso?: string
+  ) => {
+    const dataHoje = new Date().toLocaleDateString('pt-BR');
+    const novaBenfeitoria: Benfeitoria = {
+      id: `benf-${Date.now()}`,
+      titulo,
+      subtitulo,
+      tipo,
+      dataEntrega: dataHoje,
+      descricao,
+      impactoGestao,
+      investimento,
+      economiaMensal,
+      fotos: fotos.length > 0 ? fotos : ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'],
+      responsavel: `${currentUser.nome} (${currentUser.role === 'subsindico' ? 'Subsíndica' : 'Síndico'})`,
+      condominioId: CURRENT_CONDO_ID,
+      regrasUso
+    };
+
+    setBenfeitorias(prev => [novaBenfeitoria, ...prev]);
+  };
+
+  const atualizarStatusVaga = (
+    vagaId: string, 
+    novoStatus: StatusVaga, 
+    dadosAdicionais?: { veiculo?: VeiculoInfo; valorAluguelMensal?: number; observacoes?: string }
+  ) => {
+    setVagasGaragem(prev => prev.map(v => {
+      if (v.id === vagaId) {
+        return {
+          ...v,
+          status: novoStatus,
+          veiculo: dadosAdicionais?.veiculo !== undefined ? dadosAdicionais.veiculo : v.veiculo,
+          valorAluguelMensal: dadosAdicionais?.valorAluguelMensal !== undefined ? dadosAdicionais.valorAluguelMensal : v.valorAluguelMensal,
+          observacoes: dadosAdicionais?.observacoes !== undefined ? dadosAdicionais.observacoes : v.observacoes
+        };
+      }
+      return v;
+    }));
+  };
+
   const atualizarStatusReclamacao = (id: string, novoStatus: StatusReclamacao) => {
     setReclamacoes(prev => prev.map(rec => {
       if (rec.id === id) {
@@ -376,6 +439,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unidades,
       reclamacoes,
       reparos,
+      benfeitorias,
+      vagasGaragem,
       prestacaoContas,
       funcionarios,
       espinhaDorsalItems,
@@ -391,7 +456,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adicionarComentario,
       adicionarReclamacao,
       adicionarReparo,
+      adicionarBenfeitoria,
       atualizarStatusReclamacao,
+      atualizarStatusVaga,
       transformarEmReparo,
       selecionarOrcamento,
       atualizarStatusReparo
