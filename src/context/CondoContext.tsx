@@ -22,7 +22,8 @@ import {
   PropostaEmpresa,
   Dependencia,
   ReservaDependencia,
-  Assembleia
+  Assembleia,
+  EventoCondominio
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -35,6 +36,7 @@ import {
   MOCK_DEPENDENCIAS,
   MOCK_RESERVAS,
   MOCK_ASSEMBLEIAS,
+  MOCK_EVENTOS,
   MOCK_PRESTACAO_CONTAS, 
   MOCK_FUNCIONARIOS,
   ESPINHA_DORSAL_ITEMS,
@@ -54,6 +56,7 @@ interface CondoContextType {
   dependencias: Dependencia[];
   reservas: ReservaDependencia[];
   assembleias: Assembleia[];
+  eventos: EventoCondominio[];
   prestacaoContas: PrestacaoContas;
   funcionarios: Funcionario[];
   espinhaDorsalItems: EspinhaDorsalItem[];
@@ -96,6 +99,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [dependencias, setDependencias] = useState<Dependencia[]>(MOCK_DEPENDENCIAS);
   const [reservas, setReservas] = useState<ReservaDependencia[]>(MOCK_RESERVAS);
   const [assembleias, setAssembleias] = useState<Assembleia[]>(MOCK_ASSEMBLEIAS);
+  const [eventos, setEventos] = useState<EventoCondominio[]>(MOCK_EVENTOS);
   const [prestacaoContas] = useState<PrestacaoContas>(MOCK_PRESTACAO_CONTAS);
   const [funcionarios] = useState<Funcionario[]>(MOCK_FUNCIONARIOS);
   const [espinhaDorsalItems] = useState<EspinhaDorsalItem[]>(ESPINHA_DORSAL_ITEMS);
@@ -532,6 +536,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       dependencias,
       reservas,
       assembleias,
+      eventos,
       prestacaoContas,
       funcionarios,
       espinhaDorsalItems,

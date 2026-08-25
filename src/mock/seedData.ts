@@ -1,4 +1,4 @@
-import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia } from '../types';
+import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio } from '../types';
 
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
@@ -1506,6 +1506,69 @@ export const MOCK_ASSEMBLEIAS: Assembleia[] = [
   }
 ];
 
+export const MOCK_EVENTOS: EventoCondominio[] = [
+  {
+    id: 'evt-aniversario-beatriz',
+    titulo: 'Aniversário da Beatriz (10 Anos)',
+    data: '29/08/2026',
+    horario: '16:00 às 22:00',
+    local: 'Salão de Festas & Espaço Gourmet',
+    organizador: 'Marcos & Família (Apto 102)',
+    visibilidade: 'Privado',
+    descricao: 'Festa de aniversário temática comemorando os 10 anos da Beatriz. Evento fechado e particular para familiares e amigos convidados da unidade 102. Espaço reservado conforme agendamento.',
+    imagem: '/Salão de festas.jpg',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'evt-dia-das-maes',
+    titulo: 'Café da Manhã & Celebração do Dia das Mães',
+    data: '10/05/2026',
+    horario: '09:30 às 13:00',
+    local: 'Jardim & Bosque de Convivência',
+    organizador: 'Administração & Comissão Social',
+    visibilidade: 'Público',
+    descricao: 'Café da manhã comunitário com mesa de frutas, sucos, pães artesanais, música acústica ao vivo e entrega de flores para homenagear todas as mães do condomínio!',
+    imagem: '/jardin.jpg',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'evt-festa-junina',
+    titulo: 'Grande Arraiá do Jardim Paulista (Festa Junina)',
+    data: '27/06/2026',
+    horario: '17:00 às 23:00',
+    local: 'Salão de Festas & Deck da Piscina',
+    organizador: 'Comissão de Moradores & Zeladoria',
+    visibilidade: 'Público',
+    descricao: 'Tradicional Festa Junina do condomínio com barracas de comidas típicas (milho verde, pastel, quentão e canjica), pescaria infantil, correio elegante e quadrilha dos moradores!',
+    imagem: '/Salão de festas.jpg',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'evt-churrasco-domingo',
+    titulo: 'Churrasco de Domingo dos Amigos',
+    data: '06/09/2026',
+    horario: '12:00 às 19:00',
+    local: 'Churrasqueira Gourmet & Deck Solarium',
+    organizador: 'Renato Alencar (Apto 101)',
+    visibilidade: 'Privado',
+    descricao: 'Almoço de confraternização particular entre amigos e familiares. Uso reservado da churrasqueira externa e mesas do deck.',
+    imagem: '/Piscina.jpg',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'evt-dia-das-criancas',
+    titulo: 'Torneio Esportivo & Pipoca (Dia das Crianças)',
+    data: '12/10/2026',
+    horario: '09:00 às 13:00',
+    local: 'Brinquedoteca & Quadra de Esportes',
+    organizador: 'Comissão Esportiva do Condomínio',
+    visibilidade: 'Público',
+    descricao: 'Manhã de brincadeiras lúdicas, mini torneio de futsal infantil, piscina de bolinhas liberada, pipoca e distribuição de medalhas de participação.',
+    imagem: '/Brinquedoteca.jpg',
+    condominioId: CURRENT_CONDO_ID
+  }
+];
+
 export const MOCK_PRESTACAO_CONTAS: PrestacaoContas = {
   id: 'pc-abril-2026',
   mesAno: 'Abril / 2026',
@@ -2035,11 +2098,12 @@ export const ESPINHA_DORSAL_ITEMS: EspinhaDorsalItem[] = [
   },
   {
     id: 'eventos',
-    titulo: 'Eventos',
+    titulo: 'Eventos & Celebrações',
     icone: 'Calendar',
-    descricaoCurta: 'Eventos como caixinha de natal, dia dos pais e assembleias abertas aos moradores.',
-    desdobramentos: ['Postado por admins', 'Datas e horários', 'Local e confirmações'],
-    rota: '/eventos'
+    descricaoCurta: 'Mural de eventos públicos do condomínio e celebrações privadas com data e detalhes.',
+    desdobramentos: ['Públicos e Privados', 'Cards expansíveis com fotos', 'Confirmação de presença'],
+    rota: '/eventos',
+    destaquePoC: true
   },
   {
     id: 'assembleias',

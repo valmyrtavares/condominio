@@ -316,6 +316,22 @@ export interface Assembleia {
   condominioId: string;
 }
 
+export type TipoVisibilidadeEvento = 'Público' | 'Privado';
+
+export interface EventoCondominio {
+  id: string;
+  titulo: string;
+  data: string;
+  horario: string;
+  local: string;
+  organizador: string;
+  visibilidade: TipoVisibilidadeEvento;
+  descricao: string;
+  imagem: string;
+  linkMaisInfo?: string;
+  condominioId: string;
+}
+
 export interface DespesaItem {
   id: string;
   categoria: string;

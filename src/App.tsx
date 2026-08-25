@@ -18,6 +18,7 @@ import { ServicosContratadosScreen } from './pages/ServicosContratadosScreen';
 import { DependenciasScreen } from './pages/DependenciasScreen';
 import { AssembleiasScreen } from './pages/AssembleiasScreen';
 import { FuncionariosScreen } from './pages/FuncionariosScreen';
+import { EventosScreen } from './pages/EventosScreen';
 
 const MainContent: React.FC = () => {
   const { currentScreen } = useCondo();
@@ -44,6 +45,8 @@ const MainContent: React.FC = () => {
         return <DependenciasScreen />;
       case 'assembleias':
         return <AssembleiasScreen />;
+      case 'eventos':
+        return <EventosScreen />;
       case 'funcionarios':
         return <FuncionariosScreen />;
       case 'prestacao-contas':
