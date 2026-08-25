@@ -26,11 +26,14 @@ export interface Unidade {
   nomeCelula?: string;
 }
 
+export type CategoriaFuncionario = 'Portaria' | 'Limpeza' | 'Segurança' | 'Gestão';
+
 export interface Funcionario {
   id: string;
   nome: string;
   foto: string;
   funcao: string;
+  categoria?: CategoriaFuncionario;
   horario: string;
   disponibilidade: string;
   avaliacoesCount?: number;
