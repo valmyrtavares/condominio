@@ -1,4 +1,4 @@
-import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem } from '../types';
+import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado } from '../types';
 
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
@@ -1048,6 +1048,177 @@ export const MOCK_VAGAS_GARAGEM: VagaGaragem[] = [
     interfoneRamal: '502',
     observacoes: 'Vaga livre no momento.',
     condominioId: CURRENT_CONDO_ID
+  }
+];
+
+export const MOCK_SERVICOS_CONTRATADOS: ServicoContratado[] = [
+  {
+    id: 'sc-elevadores',
+    titulo: 'Contratação de Manutenção Preventiva & Corretiva dos Elevadores',
+    data: '15/07/2026',
+    descricao: 'Tomada de preços para renovação do contrato anual de manutenção de 2 elevadores (Social e Serviço), incluindo cobertura 24 horas para emergências e vistorias mensais obrigatórias.',
+    categoria: 'Elevadores',
+    status: 'Contratada',
+    condominioId: CURRENT_CONDO_ID,
+    observacoesFinais: 'Proposta da Atlas Schindler aprovada por apresentar melhor relação custo-benefício, tempo de atendimento em chamados de até 45 min e histórico excelente em serviços anteriores.',
+    propostas: [
+      {
+        id: 'prop-elev-1',
+        empresaNome: 'Atlas Schindler do Brasil Ltda',
+        cnpj: '61.123.456/0001-89',
+        siteUrl: 'https://schindler.exemplo.com.br',
+        valor: 2450.00,
+        descricao: 'Contrato mensal integral: 2 visitas preventivas/mês, atendimento emergencial 24h em até 45 minutos e peças de reposição com 25% de desconto tabelado.',
+        formaPagamento: 'Mensalidade faturada todo dia 15 via boleto',
+        prazoEntrega: 'Início imediato (vigência 12 meses)',
+        jaPrestouServico: true,
+        selecionada: true
+      },
+      {
+        id: 'prop-elev-2',
+        empresaNome: 'Otis Elevadores S.A.',
+        cnpj: '50.987.654/0001-32',
+        siteUrl: 'https://otis.exemplo.com.br',
+        valor: 2780.00,
+        descricao: 'Manutenção preventiva mensal, suporte 24h e monitoramento remoto via IoT com alerta antecipado de falhas.',
+        formaPagamento: 'Mensalidade no dia 10 via débito em conta/boleto',
+        prazoEntrega: 'Início em 5 dias úteis',
+        jaPrestouServico: false,
+        selecionada: false
+      },
+      {
+        id: 'prop-elev-3',
+        empresaNome: 'TK Elevator (Thyssenkrupp)',
+        cnpj: '33.222.111/0001-05',
+        siteUrl: 'https://tkelevator.exemplo.com.br',
+        valor: 2950.00,
+        descricao: 'Plano premium de manutenção com reposição inclusa de cabos e botões de cabine.',
+        formaPagamento: 'Mensal faturado para 30 dias',
+        prazoEntrega: 'Início em 10 dias',
+        jaPrestouServico: false,
+        selecionada: false
+      }
+    ]
+  },
+  {
+    id: 'sc-cftv-seguranca',
+    titulo: 'Modernização do Sistema de CFTV e Câmeras IP com Inteligência Artificial',
+    data: '08/08/2026',
+    descricao: 'Substituição das 24 câmeras analógicas antigas por câmeras IP Full HD com visão noturna ColorVu, reconhecimento de placas na garagem (LPR) e armazenamento em nuvem por 30 dias.',
+    categoria: 'Segurança & Monitoramento',
+    status: 'Aguardando avaliação de proposta',
+    condominioId: CURRENT_CONDO_ID,
+    observacoesFinais: 'Três propostas recebidas e validadas tecnicamente pela comissão de segurança. Votação aberta para deliberação na próxima assembleia.',
+    propostas: [
+      {
+        id: 'prop-cftv-1',
+        empresaNome: 'Intelbras Guard Soluções Integradas',
+        cnpj: '18.456.789/0001-77',
+        siteUrl: 'https://intelbrasguard.exemplo.com.br',
+        valor: 16800.00,
+        descricao: '28 câmeras IP Intelbras 4K, 2 servidores NVR com 16TB de armazenamento, IA de detecção perimetral e integração total com a clausura de pedestres.',
+        formaPagamento: 'Entrada de 30% + 4 parcelas no boleto sem juros',
+        prazoEntrega: 'Instalação completa em 12 dias úteis',
+        jaPrestouServico: true,
+        selecionada: false
+      },
+      {
+        id: 'prop-cftv-2',
+        empresaNome: 'SegurTech Condominial SP',
+        cnpj: '72.333.444/0001-90',
+        siteUrl: 'https://segurtech.exemplo.com.br',
+        valor: 15400.00,
+        descricao: 'Kit com 24 câmeras Hikvision ColorVu com áudio bidirecional e leitura de placas na entrada e saída da garagem.',
+        formaPagamento: 'Entrada de 40% + 3 parcelas mensais',
+        prazoEntrega: 'Instalação em 15 dias corridos',
+        jaPrestouServico: false,
+        selecionada: false
+      },
+      {
+        id: 'prop-cftv-3',
+        empresaNome: 'Vigilância Máxima Telecom',
+        cnpj: '91.888.777/0001-12',
+        siteUrl: 'https://vigilanciamaxima.exemplo.com.br',
+        valor: 18200.00,
+        descricao: 'Sistema com 30 câmeras Dahua e aplicativo para monitoramento remoto pelos próprios moradores em tempo real.',
+        formaPagamento: 'Faturamento em até 6x no boleto bancário',
+        prazoEntrega: 'Instalação em 20 dias',
+        jaPrestouServico: false,
+        selecionada: false
+      }
+    ]
+  },
+  {
+    id: 'sc-pintura-fachada',
+    titulo: 'Restauração, Hidrojateamento e Pintura da Fachada Externa',
+    data: '22/08/2026',
+    descricao: 'Tomada de orçamentos para lavagem pressurizada, recuperação de pastilhas soltas, tratamento de fissuras e pintura acrílica emborrachada de proteção contra intempéries em ambos os blocos.',
+    categoria: 'Pintura & Estrutura',
+    status: 'Aguardando propostas',
+    condominioId: CURRENT_CONDO_ID,
+    observacoesFinais: 'Edital técnico publicado no mural. 1ª proposta recebida da Engenharia & Fachadas Paulista. Aguardando entrega dos outros 2 orçamentos pelas empresas concorrentes para início da avaliação.',
+    propostas: [
+      {
+        id: 'prop-fach-1',
+        empresaNome: 'Engenharia & Fachadas Paulista',
+        cnpj: '44.555.666/0001-23',
+        siteUrl: 'https://fachadaspaulista.exemplo.com.br',
+        valor: 58000.00,
+        descricao: 'Lavagem com hidrojateamento, teste de percussão, reposição de pastilhas e aplicação de 3 demãos de tinta Suvinil Proteção Total com garantia de 5 anos.',
+        formaPagamento: 'Sinal de 20% + 8 parcelas vinculadas ao cronograma de medição da obra',
+        prazoEntrega: '45 dias úteis de execução',
+        jaPrestouServico: true,
+        selecionada: false
+      }
+    ]
+  },
+  {
+    id: 'sc-gerador-energia',
+    titulo: 'Manutenção Preventiva e Automação do Gerador de Energia',
+    data: '10/06/2026',
+    descricao: 'Revisão geral do motor a diesel, substituição de filtros, troca de óleo e automação do quadro de transferência (QTA) para acionamento em menos de 5 segundos.',
+    categoria: 'Elétrica & Infraestrutura',
+    status: 'Contratada',
+    condominioId: CURRENT_CONDO_ID,
+    observacoesFinais: 'Serviço concluído com sucesso e gerador 100% operacional durante as quedas de energia recentes.',
+    propostas: [
+      {
+        id: 'prop-ger-1',
+        empresaNome: 'Geradores SP Engenharia & Manutenção',
+        cnpj: '15.678.901/0001-34',
+        siteUrl: 'https://geradoressp.exemplo.com.br',
+        valor: 4200.00,
+        descricao: 'Revisão do motor Cummins 150kVA, substituição de filtros racor, troca de óleo mineral e calibração do QTA automático.',
+        formaPagamento: 'Entrada 50% + 50% após entrega técnica com emissão de ART',
+        prazoEntrega: '3 dias úteis',
+        jaPrestouServico: true,
+        selecionada: true
+      },
+      {
+        id: 'prop-ger-2',
+        empresaNome: 'PowerGen Motores e Equipamentos',
+        cnpj: '38.999.888/0001-67',
+        siteUrl: 'https://powergen.exemplo.com.br',
+        valor: 4850.00,
+        descricao: 'Manutenção preventiva padrão + teste de carga com banco de resistências.',
+        formaPagamento: 'À vista com 3% de desconto ou 2x no boleto',
+        prazoEntrega: '5 dias',
+        jaPrestouServico: false,
+        selecionada: false
+      },
+      {
+        id: 'prop-ger-3',
+        empresaNome: 'MegaVolt Geradores',
+        cnpj: '52.123.456/0001-99',
+        siteUrl: 'https://megavolt.exemplo.com.br',
+        valor: 5100.00,
+        descricao: 'Substituição de correias, mangueiras e bateria selada de 100Ah.',
+        formaPagamento: 'Faturado 30 dias',
+        prazoEntrega: '7 dias úteis',
+        jaPrestouServico: false,
+        selecionada: false
+      }
+    ]
   }
 ];
 

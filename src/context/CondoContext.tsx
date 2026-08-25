@@ -16,7 +16,10 @@ import {
   TipoBenfeitoria,
   VagaGaragem,
   StatusVaga,
-  VeiculoInfo
+  VeiculoInfo,
+  ServicoContratado,
+  StatusServicoContratado,
+  PropostaEmpresa
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -25,6 +28,7 @@ import {
   MOCK_REPAROS, 
   MOCK_BENFEITORIAS,
   MOCK_VAGAS_GARAGEM,
+  MOCK_SERVICOS_CONTRATADOS,
   MOCK_PRESTACAO_CONTAS, 
   MOCK_FUNCIONARIOS,
   ESPINHA_DORSAL_ITEMS,
@@ -40,6 +44,7 @@ interface CondoContextType {
   reparos: Reparo[];
   benfeitorias: Benfeitoria[];
   vagasGaragem: VagaGaragem[];
+  servicosContratados: ServicoContratado[];
   prestacaoContas: PrestacaoContas;
   funcionarios: Funcionario[];
   espinhaDorsalItems: EspinhaDorsalItem[];
@@ -58,6 +63,8 @@ interface CondoContextType {
   adicionarReclamacao: (titulo: string, descricao: string, categoria: CategoriaReclamacao, anexoUrl?: string, anexoTipo?: 'imagem' | 'video') => void;
   adicionarReparo: (titulo: string, descricao: string, porte: PorteReparo, categoria: CategoriaReparo, fotoUrl?: string) => void;
   adicionarBenfeitoria: (titulo: string, subtitulo: string, tipo: TipoBenfeitoria, descricao: string, impactoGestao: string, fotos: string[], investimento?: number, economiaMensal?: number, regrasUso?: string) => void;
+  adicionarServicoContratado: (titulo: string, descricao: string, categoria: string, status: StatusServicoContratado, propostas: PropostaEmpresa[], observacoesFinais?: string) => void;
+  selecionarPropostaVencedora: (servicoId: string, propostaId: string) => void;
   atualizarStatusReclamacao: (id: string, novoStatus: StatusReclamacao) => void;
   atualizarStatusVaga: (vagaId: string, novoStatus: StatusVaga, dadosAdicionais?: { veiculo?: VeiculoInfo; valorAluguelMensal?: number; observacoes?: string }) => void;
   transformarEmReparo: (reclamacaoId: string, titulo: string, descricao: string) => string;
@@ -74,6 +81,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [reparos, setReparos] = useState<Reparo[]>(MOCK_REPAROS);
   const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>(MOCK_BENFEITORIAS);
   const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>(MOCK_VAGAS_GARAGEM);
+  const [servicosContratados, setServicosContratados] = useState<ServicoContratado[]>(MOCK_SERVICOS_CONTRATADOS);
   const [prestacaoContas] = useState<PrestacaoContas>(MOCK_PRESTACAO_CONTAS);
   const [funcionarios] = useState<Funcionario[]>(MOCK_FUNCIONARIOS);
   const [espinhaDorsalItems] = useState<EspinhaDorsalItem[]>(ESPINHA_DORSAL_ITEMS);
@@ -422,6 +430,46 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   };
 
+  const adicionarServicoContratado = (
+    titulo: string,
+    descricao: string,
+    categoria: string,
+    status: StatusServicoContratado,
+    propostas: PropostaEmpresa[],
+    observacoesFinais?: string
+  ) => {
+    const dataHoje = new Date().toLocaleDateString('pt-BR');
+    const novoServico: ServicoContratado = {
+      id: `sc-${Date.now()}`,
+      titulo,
+      data: dataHoje,
+      descricao,
+      categoria,
+      status,
+      propostas,
+      observacoesFinais,
+      condominioId: CURRENT_CONDO_ID
+    };
+
+    setServicosContratados(prev => [novoServico, ...prev]);
+  };
+
+  const selecionarPropostaVencedora = (servicoId: string, propostaId: string) => {
+    setServicosContratados(prev => prev.map(serv => {
+      if (serv.id === servicoId) {
+        return {
+          ...serv,
+          status: 'Contratada' as StatusServicoContratado,
+          propostas: serv.propostas.map(p => ({
+            ...p,
+            selecionada: p.id === propostaId
+          }))
+        };
+      }
+      return serv;
+    }));
+  };
+
   const atualizarStatusReclamacao = (id: string, novoStatus: StatusReclamacao) => {
     setReclamacoes(prev => prev.map(rec => {
       if (rec.id === id) {
@@ -441,6 +489,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       reparos,
       benfeitorias,
       vagasGaragem,
+      servicosContratados,
       prestacaoContas,
       funcionarios,
       espinhaDorsalItems,
@@ -457,6 +506,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adicionarReclamacao,
       adicionarReparo,
       adicionarBenfeitoria,
+      adicionarServicoContratado,
+      selecionarPropostaVencedora,
       atualizarStatusReclamacao,
       atualizarStatusVaga,
       transformarEmReparo,

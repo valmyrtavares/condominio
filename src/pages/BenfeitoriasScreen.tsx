@@ -31,6 +31,7 @@ export const BenfeitoriasScreen: React.FC = () => {
   } = useCondo();
 
   const [expandedId, setExpandedId] = useState<string | null>('benf-esteira-academia');
+  const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [filterTipo, setFilterTipo] = useState<string>('Todas');
 
   // Form State
@@ -104,6 +105,7 @@ export const BenfeitoriasScreen: React.FC = () => {
     setEconomiaMensal('');
     setRegrasUso('');
     setFotoFile(null);
+    setIsFormOpen(false);
   };
 
   // Filter Logic
@@ -207,50 +209,71 @@ export const BenfeitoriasScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Form: Exclusivo para o Síndico (Desabilitado quando morador) */}
-      <div className={`bg-white/45 border rounded-3xl p-4 sm:p-5 shadow-xl space-y-4 transition-all ${
+      {/* Form: Exclusivo para o Síndico (Expansível / Recolhível) */}
+      <div className={`bg-white/45 border rounded-3xl overflow-hidden shadow-xl transition-all ${
         isAdmin ? 'border-amber-400/80 ring-2 ring-amber-400/30' : 'border-white/60 opacity-90'
       }`}>
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2 text-slate-950">
-            {isAdmin ? (
-              <Plus className="w-5 h-5 text-amber-900" />
-            ) : (
-              <Lock className="w-5 h-5 text-slate-700" />
-            )}
-            <h3 className="text-sm font-extrabold uppercase tracking-wider">
-              Cadastrar Nova Benfeitoria / Prestação de Gestão
-            </h3>
-          </div>
-
-          <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border flex items-center gap-1 ${
-            isAdmin 
-              ? 'bg-emerald-100 text-emerald-950 border-emerald-300' 
-              : 'bg-amber-100 text-amber-950 border-amber-300'
-          }`}>
-            {isAdmin ? '✓ Acesso Habilitado (Síndico)' : '🔒 Bloqueado: Apenas Síndico'}
-          </span>
-        </div>
-
-        {!isAdmin && (
-          <div className="p-3 bg-amber-500/15 border border-amber-400/50 rounded-2xl flex items-start gap-2.5 text-xs text-amber-950 font-semibold">
-            <Info className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <p>
-                Este formulário é de uso restrito do Síndico para publicar melhorias e grandes reparos concluídos.
-              </p>
-              <button
-                type="button"
-                onClick={toggleRole}
-                className="text-indigo-800 font-extrabold hover:underline block"
-              >
-                Alternar para perfil de Síndica para testar a inclusão →
-              </button>
+        {/* Cabeçalho Clicável para Abrir/Fechar */}
+        <button
+          type="button"
+          onClick={() => setIsFormOpen(!isFormOpen)}
+          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-white/40 transition-all focus:outline-none"
+        >
+          <div className="flex items-center gap-2.5 text-slate-950">
+            <div className={`p-2 rounded-2xl ${isAdmin ? 'bg-amber-500 text-slate-950' : 'bg-slate-300 text-slate-700'} shadow-sm`}>
+              {isAdmin ? (
+                <Plus className="w-4 h-4" />
+              ) : (
+                <Lock className="w-4 h-4" />
+              )}
+            </div>
+            <div>
+              <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-950">
+                Cadastrar Nova Benfeitoria / Prestação de Gestão
+              </h3>
+              <span className="text-[11px] text-slate-700 font-semibold block">
+                {isFormOpen ? 'Clique para recolher o formulário' : 'Clique para expandir e publicar nova obra ou conquista'}
+              </span>
             </div>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border hidden sm:flex items-center gap-1 ${
+              isAdmin 
+                ? 'bg-emerald-100 text-emerald-950 border-emerald-300' 
+                : 'bg-amber-100 text-amber-950 border-amber-300'
+            }`}>
+              {isAdmin ? '✓ Acesso Habilitado (Síndico)' : '🔒 Bloqueado: Apenas Síndico'}
+            </span>
+
+            <div className="p-2 rounded-full bg-white/70 border border-white/90 text-slate-900 shadow-xs">
+              {isFormOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          </div>
+        </button>
+
+        {/* Conteúdo do Formulário */}
+        {isFormOpen && (
+          <div className="px-4 pb-5 sm:px-5 space-y-4 border-t border-slate-950/10 pt-4 animate-in slide-in-from-top-2 duration-200">
+            {!isAdmin && (
+              <div className="p-3 bg-amber-500/15 border border-amber-400/50 rounded-2xl flex items-start gap-2.5 text-xs text-amber-950 font-semibold">
+                <Info className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p>
+                    Este formulário é de uso restrito do Síndico para publicar melhorias e grandes reparos concluídos.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={toggleRole}
+                    className="text-indigo-800 font-extrabold hover:underline block"
+                  >
+                    Alternar para perfil de Síndica para testar a inclusão →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-3">
           <fieldset disabled={!isAdmin} className="space-y-3 disabled:opacity-60 disabled:cursor-not-allowed">
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -392,6 +415,8 @@ export const BenfeitoriasScreen: React.FC = () => {
           </fieldset>
         </form>
       </div>
+      )}
+    </div>
 
       {/* Filter Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none w-full">

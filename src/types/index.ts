@@ -215,6 +215,36 @@ export interface VagaGaragem {
   condominioId: string;
 }
 
+export type StatusServicoContratado = 
+  | 'Aguardando propostas' 
+  | 'Aguardando avaliação de proposta' 
+  | 'Contratada';
+
+export interface PropostaEmpresa {
+  id: string;
+  empresaNome: string;
+  cnpj?: string;
+  siteUrl: string;
+  valor: number;
+  descricao: string;
+  formaPagamento: string;
+  prazoEntrega: string;
+  jaPrestouServico: boolean;
+  selecionada: boolean;
+}
+
+export interface ServicoContratado {
+  id: string;
+  titulo: string;
+  data: string;
+  descricao: string;
+  categoria: string;
+  status: StatusServicoContratado;
+  propostas: PropostaEmpresa[];
+  condominioId: string;
+  observacoesFinais?: string;
+}
+
 export interface DespesaItem {
   id: string;
   categoria: string;
