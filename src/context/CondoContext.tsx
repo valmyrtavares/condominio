@@ -45,6 +45,7 @@ interface CondoContextType {
   apoiarReclamacao: (id: string) => void;
   adicionarComentario: (reclamacaoId: string, texto: string) => void;
   adicionarReclamacao: (titulo: string, descricao: string, categoria: CategoriaReclamacao, anexoUrl?: string, anexoTipo?: 'imagem' | 'video') => void;
+  atualizarStatusReclamacao: (id: string, novoStatus: StatusReclamacao) => void;
   transformarEmReparo: (reclamacaoId: string, titulo: string, descricao: string) => string;
   selecionarOrcamento: (reparoId: string, orcamentoId: string) => void;
   atualizarStatusReparo: (reparoId: string, novoStatus: StatusReparo) => void;
@@ -64,7 +65,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   
   // Navigation State
   const [currentScreen, setCurrentScreen] = useState<string>('home');
-  const [selectedReclamacaoId, setSelectedReclamacaoId] = useState<string | null>('rec-portao-garagem');
+  const [selectedReclamacaoId, setSelectedReclamacaoId] = useState<string | null>('rec-barulho-gourmet');
   const [selectedReparoId, setSelectedReparoId] = useState<string | null>('rep-motor-portao');
 
   const toggleRole = () => {
@@ -317,6 +318,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSelectedReclamacaoId(novaRec.id);
   };
 
+  const atualizarStatusReclamacao = (id: string, novoStatus: StatusReclamacao) => {
+    setReclamacoes(prev => prev.map(rec => {
+      if (rec.id === id) {
+        return { ...rec, status: novoStatus };
+      }
+      return rec;
+    }));
+  };
+
   return (
     <CondoContext.Provider value={{
       currentUser,
@@ -339,6 +349,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       apoiarReclamacao,
       adicionarComentario,
       adicionarReclamacao,
+      atualizarStatusReclamacao,
       transformarEmReparo,
       selecionarOrcamento,
       atualizarStatusReparo

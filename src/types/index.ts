@@ -52,16 +52,13 @@ export interface ServicoMorador {
 }
 
 export type CategoriaReclamacao = 
-  | 'Garagem' 
-  | 'Segurança' 
-  | 'Limpeza' 
   | 'Barulho' 
+  | 'Limpeza' 
+  | 'Segurança' 
   | 'Ameaça' 
-  | 'Assédio'
+  | 'Assédio' 
   | 'Animais Domésticos'
-  | 'Brigas' 
-  | 'Pets' 
-  | 'Manutenção' 
+  | 'Convivência / Regras'
   | 'Outros';
 
 export type StatusReclamacao = 

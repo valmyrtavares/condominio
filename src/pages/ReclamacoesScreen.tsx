@@ -4,8 +4,6 @@ import {
   AlertTriangle, 
   ThumbsUp, 
   MessageSquare, 
-  ArrowRight, 
-  Wrench, 
   ShieldCheck, 
   User, 
   Send,
@@ -15,8 +13,7 @@ import {
   Plus
 } from 'lucide-react';
 import { StatusBadge } from '../components/layout/StatusBadge';
-import { TransformToRepairModal } from '../components/reclamacoes/TransformToRepairModal';
-import { CategoriaReclamacao } from '../types';
+import { CategoriaReclamacao, StatusReclamacao } from '../types';
 
 export const ReclamacoesScreen: React.FC = () => {
   const { 
@@ -27,8 +24,7 @@ export const ReclamacoesScreen: React.FC = () => {
     apoiarReclamacao, 
     adicionarComentario,
     adicionarReclamacao,
-    setCurrentScreen,
-    setSelectedReparoId
+    atualizarStatusReclamacao
   } = useCondo();
 
   // Filters State
@@ -39,25 +35,31 @@ export const ReclamacoesScreen: React.FC = () => {
   // Form State
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [categoria, setCategoria] = useState<CategoriaReclamacao>('Garagem');
+  const [categoria, setCategoria] = useState<CategoriaReclamacao>('Barulho');
   const [anexoFile, setAnexoFile] = useState<File | null>(null);
 
-  const [showTransformModal, setShowTransformModal] = useState<boolean>(false);
   const [novoComentarioTexto, setNovoComentarioTexto] = useState<string>('');
 
   const selectedReclamacao = reclamacoes.find(r => r.id === selectedReclamacaoId) || reclamacoes[0];
 
   const categories = [
     'Todas', 
-    'Garagem', 
-    'Manutenção', 
     'Barulho', 
     'Limpeza', 
     'Segurança', 
     'Ameaça', 
     'Assédio', 
     'Animais Domésticos', 
+    'Convivência / Regras', 
     'Outros'
+  ];
+
+  const statusOptions: StatusReclamacao[] = [
+    'Recebida',
+    'Em análise',
+    'Em andamento',
+    'Resolvida',
+    'Encerrada'
   ];
 
   // Submit new Complaint
@@ -139,7 +141,7 @@ export const ReclamacoesScreen: React.FC = () => {
               <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 ml-1">Título da Reclamação</label>
               <input
                 type="text"
-                placeholder="Ex: Vazamento na vaga da garagem"
+                placeholder="Ex: Som excessivo após as 22h ou desrespeito às regras"
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
                 className="w-full max-w-full bg-white/70 border border-white/90 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs"
@@ -166,7 +168,7 @@ export const ReclamacoesScreen: React.FC = () => {
           <div className="space-y-1 min-w-0 w-full">
             <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 ml-1">Descrição Detalhada</label>
             <textarea
-              placeholder="Descreva o problema com o maior nível de detalhes possível..."
+              placeholder="Descreva a ocorrência com detalhes (local, horário aproximado, relato do ocorrido)..."
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               rows={3}
@@ -385,43 +387,34 @@ export const ReclamacoesScreen: React.FC = () => {
               </button>
             </div>
 
-            {/* Admin Action: Transform to Repair */}
+            {/* Admin Action: Status Management */}
             {isAdmin && (
-              <div className="p-4 rounded-2xl bg-amber-500/20 border border-amber-400/60 space-y-2">
+              <div className="p-4 rounded-2xl bg-amber-500/20 border border-amber-400/60 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold text-amber-950 flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-amber-700" /> Ação Administrativa
+                    <ShieldCheck className="w-4 h-4 text-amber-700" /> Gestão da Ocorrência (Administração)
                   </span>
-                  {selectedReclamacao.reparoId && (
-                    <span className="text-[10px] bg-emerald-500/30 text-slate-950 px-2 py-0.5 rounded border border-emerald-500/50 font-bold">
-                      Já Vinculado a Reparo
-                    </span>
-                  )}
+                  <span className="text-[10px] text-slate-800 font-bold">Status Atual</span>
                 </div>
                 <p className="text-[11px] text-slate-900 leading-relaxed font-semibold">
-                  Transforme este relato de morador em uma Ação de Reparo formal com cotações de fornecedores e controle de execução.
+                  Alterne o status desta reclamação conforme a condução do caso e mediação com os moradores:
                 </p>
 
-                {selectedReclamacao.reparoId ? (
-                  <button
-                    onClick={() => {
-                      setSelectedReparoId(selectedReclamacao.reparoId!);
-                      setCurrentScreen('reparos');
-                    }}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-amber-600 text-white font-extrabold text-xs hover:bg-amber-700 transition-all shadow-md"
-                  >
-                    Ver Reparo Gerado & Orçamentos
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setShowTransformModal(true)}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-extrabold text-xs transition-all active:scale-95 shadow-md"
-                  >
-                    <Wrench className="w-4 h-4" />
-                    Transformar Reclamação em Reparo
-                  </button>
-                )}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {statusOptions.map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => atualizarStatusReclamacao(selectedReclamacao.id, st)}
+                      className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all border ${
+                        selectedReclamacao.status === st
+                          ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-md scale-105'
+                          : 'bg-white/60 text-slate-900 border-white/80 hover:bg-white/80'
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -429,7 +422,7 @@ export const ReclamacoesScreen: React.FC = () => {
             <div className="space-y-3 pt-2">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
                 <MessageSquare className="w-4 h-4 text-indigo-700" />
-                Manifestações & Comentários ({selectedReclamacao.comentarios.length})
+                Manifestações & Resoluções ({selectedReclamacao.comentarios.length})
               </h4>
 
               <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
@@ -458,7 +451,7 @@ export const ReclamacoesScreen: React.FC = () => {
               <form onSubmit={handleSendComentario} className="flex gap-2 pt-2">
                 <input
                   type="text"
-                  placeholder={isAdmin ? "Escrever resposta oficial da administração..." : "Escrever um comentário..."}
+                  placeholder={isAdmin ? "Escrever comunicado oficial ou parecer da sindicância..." : "Escrever um comentário..."}
                   value={novoComentarioTexto}
                   onChange={(e) => setNovoComentarioTexto(e.target.value)}
                   className="flex-1 bg-white/70 border border-white/90 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-700 focus:outline-none focus:bg-white font-semibold shadow-xs"
@@ -477,14 +470,6 @@ export const ReclamacoesScreen: React.FC = () => {
         ) : null}
 
       </div>
-
-      {/* Transform Modal */}
-      {showTransformModal && selectedReclamacao && (
-        <TransformToRepairModal
-          reclamacao={selectedReclamacao}
-          onClose={() => setShowTransformModal(false)}
-        />
-      )}
     </div>
   );
 };

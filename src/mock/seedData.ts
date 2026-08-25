@@ -241,94 +241,186 @@ export const MOCK_UNIDADES: Unidade[] = [
 
 export const MOCK_RECLAMACOES: Reclamacao[] = [
   {
-    id: 'rec-portao-garagem',
-    titulo: 'Portão da garagem apresentando falhas e travamento parcial',
-    descricao: 'O portão automático principal da garagem (entrada Bloco A) está travando no meio do curso e emitindo um ruído metálico forte ao abrir. Há risco de ficar preso ou fechar acidentalmente sobre algum veículo.',
-    categoria: 'Garagem',
-    autorId: 'usr-morador-102',
-    autorNome: 'Carlos Eduardo Silva',
-    autorUnidade: 'Apt 102 - Bloco A',
-    data: '12/08/2026 às 08:30',
-    status: 'Em andamento',
-    apoiosCount: 14,
-    apoiadoPeloUsuario: false,
-    reparoId: 'rep-motor-portao',
-    condominioId: CURRENT_CONDO_ID,
-    comentarios: [
-      {
-        id: 'com-1',
-        autorId: 'usr-morador-201',
-        autorNome: 'Beatriz Souza',
-        autorRole: 'morador',
-        autorUnidade: 'Apt 201',
-        autorFoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
-        texto: 'Aconteceu comigo hoje de manhã! O portão subiu até a metade e parou. Tivemos que esperar 10 minutos.',
-        data: '12/08/2026 às 09:15'
-      },
-      {
-        id: 'com-2',
-        autorId: 'usr-morador-101',
-        autorNome: 'Renato Alencar',
-        autorRole: 'morador',
-        autorUnidade: 'Apt 101',
-        autorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-        texto: 'Apoio totalmente a manutenção rápida antes que quebre de vez e a substituição seja mais cara.',
-        data: '12/08/2026 às 10:04'
-      },
-      {
-        id: 'com-3',
-        autorId: 'usr-admin-401',
-        autorNome: 'Dra. Mariana Costa (Subsíndica)',
-        autorRole: 'subsindico',
-        autorUnidade: 'Administração',
-        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
-        texto: 'Comunicado Oficial: A administração já acionou 3 empresas especializadas para envio imediato de orçamentos técnicos de reparo do motor. Acompanhem pela aba de Reparos!',
-        data: '13/08/2026 às 11:30',
-        oficial: true
-      }
-    ]
-  },
-  {
-    id: 'rec-infiltracao-garagem',
-    titulo: 'Ponto de goteira/infiltração no teto do Subsolo 2',
-    descricao: 'Notado acúmulo de água próximo às vagas G-30 e G-31 após as chuvas de ontem. Parece vir da tubulação da área de lazer.',
-    categoria: 'Manutenção',
-    autorId: 'usr-morador-302',
-    autorNome: 'Eduardo Prado',
-    autorUnidade: 'Apt 302 - Bloco B',
-    data: '18/08/2026 às 19:10',
-    status: 'Em análise',
-    apoiosCount: 6,
-    apoiadoPeloUsuario: false,
-    condominioId: CURRENT_CONDO_ID,
-    comentarios: []
-  },
-  {
     id: 'rec-barulho-gourmet',
     titulo: 'Música elevada na área Gourmet após as 22h no sábado',
-    descricao: 'Uso do som em volume incompatível com o regulamento interno após o horário de silêncio.',
+    descricao: 'Uso de caixa de som em volume incompatível com o regulamento interno após o horário de silêncio (estendeu-se até 01h30 da manhã), gerando incômodo aos apartamentos vizinhos. Solicito notificação e reforço das normas.',
     categoria: 'Barulho',
     autorId: 'usr-morador-101',
     autorNome: 'Renato Alencar',
     autorUnidade: 'Apt 101 - Bloco A',
     data: '16/08/2026 às 23:45',
     status: 'Resolvida',
-    apoiosCount: 4,
+    apoiosCount: 8,
+    apoiadoPeloUsuario: true,
+    condominioId: CURRENT_CONDO_ID,
+    comentarios: [
+      {
+        id: 'com-1',
+        autorId: 'usr-morador-102',
+        autorNome: 'Marcos Almeida',
+        autorRole: 'morador',
+        autorUnidade: 'Apt 102',
+        autorFoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+        texto: 'Também ouvimos claramente daqui. O regulamento estipula silêncio rigoroso após as 22h.',
+        data: '17/08/2026 às 08:20'
+      },
+      {
+        id: 'com-2',
+        autorId: 'usr-admin-401',
+        autorNome: 'Dra. Mariana Costa (Subsíndica)',
+        autorRole: 'subsindico',
+        autorUnidade: 'Administração',
+        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+        texto: 'Comunicado Oficial: A unidade locatária do espaço foi advertida formalmente conforme artigo 24 do regulamento interno.',
+        data: '17/08/2026 às 11:00',
+        oficial: true
+      }
+    ]
+  },
+  {
+    id: 'rec-seguranca-portao',
+    titulo: 'Portão de pedestres deixado destravado e entrada de entregador sem identificação',
+    descricao: 'Presenciei moradores deixando o portão social de pedestres aberto com calço para receber entregas. Isso anula a clausura de segurança e coloca em risco todos os condôminos.',
+    categoria: 'Segurança',
+    autorId: 'usr-morador-102',
+    autorNome: 'Marcos Almeida',
+    autorUnidade: 'Apt 102 - Bloco A',
+    data: '18/08/2026 às 19:30',
+    status: 'Em andamento',
+    apoiosCount: 14,
     apoiadoPeloUsuario: false,
     condominioId: CURRENT_CONDO_ID,
-    comentarios: []
+    comentarios: [
+      {
+        id: 'com-s1',
+        autorId: 'usr-admin-401',
+        autorNome: 'Dra. Mariana Costa (Subsíndica)',
+        autorRole: 'subsindico',
+        autorUnidade: 'Administração',
+        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+        texto: 'A portaria foi reorientada sobre o protocolo rígido de clausura. Lembramos que é proibido calçar as portas de acesso.',
+        data: '19/08/2026 às 08:00',
+        oficial: true
+      }
+    ]
+  },
+  {
+    id: 'rec-ameaca-garagem',
+    titulo: 'Intimidação e ameaça verbal por desacordo de vaga na garagem',
+    descricao: 'Ao solicitar a um morador que liberasse a circulação bloqueada por sua caminhonete no subsolo 1, fui vítima de ofensas verbais e intimidações agressivas. Solicito mediação imediata da sindicância e registro no livro de ocorrências.',
+    categoria: 'Ameaça',
+    autorId: 'usr-morador-302',
+    autorNome: 'Eduardo Prado',
+    autorUnidade: 'Apt 302 - Bloco B',
+    data: '20/08/2026 às 18:45',
+    status: 'Em análise',
+    apoiosCount: 11,
+    apoiadoPeloUsuario: false,
+    condominioId: CURRENT_CONDO_ID,
+    comentarios: [
+      {
+        id: 'com-am1',
+        autorId: 'usr-admin-401',
+        autorNome: 'Dra. Mariana Costa (Subsíndica)',
+        autorRole: 'subsindico',
+        autorUnidade: 'Administração',
+        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+        texto: 'As imagens do CFTV do subsolo foram resguardadas e os envolvidos foram convocados para reunião formal de mediação e aplicação de penalidade.',
+        data: '21/08/2026 às 09:15',
+        oficial: true
+      }
+    ]
+  },
+  {
+    id: 'rec-assedio-elevador',
+    titulo: 'Abordagem inconveniente e constrangimento no hall do elevador social',
+    descricao: 'Relato de comportamento desrespeitoso de intimidação verbal e comentários impróprios dirigidos a moradores ao aguardar o elevador no período noturno. Solicito averiguação rigorosa.',
+    categoria: 'Assédio',
+    autorId: 'usr-morador-201',
+    autorNome: 'Beatriz Souza',
+    autorUnidade: 'Apt 201 - Bloco A',
+    data: '22/08/2026 às 21:05',
+    status: 'Em análise',
+    apoiosCount: 16,
+    apoiadoPeloUsuario: true,
+    condominioId: CURRENT_CONDO_ID,
+    comentarios: [
+      {
+        id: 'com-a1',
+        autorId: 'usr-admin-401',
+        autorNome: 'Dra. Mariana Costa (Subsíndica)',
+        autorRole: 'subsindico',
+        autorUnidade: 'Administração',
+        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+        texto: 'Caso tratado com máxima prioridade e sigilo. O jurídico e a administração já tomaram as medidas cabíveis para garantir a tranquilidade dos moradores.',
+        data: '23/08/2026 às 08:30',
+        oficial: true
+      }
+    ]
+  },
+  {
+    id: 'rec-limpeza-corredor',
+    titulo: 'Sacos de lixo doméstico deixados no corredor do 3º andar vazando chorume',
+    descricao: 'Sacos de lixo orgânico foram deixados no chão do hall dos apartamentos por mais de 24 horas, causando mau odor e sujeira no piso comum. Todo descarte deve ser direcionado à lixeira central.',
+    categoria: 'Limpeza',
+    autorId: 'usr-morador-302',
+    autorNome: 'Eduardo Prado',
+    autorUnidade: 'Apt 302 - Bloco B',
+    data: '23/08/2026 às 14:15',
+    status: 'Resolvida',
+    apoiosCount: 7,
+    apoiadoPeloUsuario: false,
+    condominioId: CURRENT_CONDO_ID,
+    comentarios: [
+      {
+        id: 'com-l1',
+        autorId: 'usr-admin-401',
+        autorNome: 'Dra. Mariana Costa (Subsíndica)',
+        autorRole: 'subsindico',
+        autorUnidade: 'Administração',
+        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+        texto: 'A equipe de limpeza higienizou o corredor e a unidade responsável foi notificada sobre a proibição de depósito de resíduos nas áreas comuns.',
+        data: '23/08/2026 às 16:00',
+        oficial: true
+      }
+    ]
+  },
+  {
+    id: 'rec-pets-parquinho',
+    titulo: 'Cachorro de grande porte solto sem coleira/guia na área do parquinho infantil',
+    descricao: 'Animal de grande porte estava correndo solto sem guia próximo às crianças no parquinho. É obrigatório o uso de coleira e guia em todas as áreas sociais do condomínio por segurança.',
+    categoria: 'Animais Domésticos',
+    autorId: 'usr-morador-102',
+    autorNome: 'Sandra Almeida',
+    autorUnidade: 'Apt 102 - Bloco A',
+    data: '24/08/2026 às 17:40',
+    status: 'Em andamento',
+    apoiosCount: 12,
+    apoiadoPeloUsuario: false,
+    condominioId: CURRENT_CONDO_ID,
+    comentarios: [
+      {
+        id: 'com-p1',
+        autorId: 'usr-morador-101',
+        autorNome: 'Camila Alencar',
+        autorRole: 'morador',
+        autorUnidade: 'Apt 101',
+        autorFoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+        texto: 'Apoiado! Todos amamos os pets, mas a segurança das crianças e dos próprios animais exige a guia.',
+        data: '24/08/2026 às 18:10'
+      }
+    ]
   }
 ];
 
 export const MOCK_REPAROS: Reparo[] = [
   {
     id: 'rep-motor-portao',
-    reclamacaoId: 'rec-portao-garagem',
     titulo: 'Manutenção preventiva e substituição do motor do portão principal',
     descricao: 'Troca da engrenagem do fuso, placa de controle inversora e lubrificação técnica dos trilhos de corrediça do portão da garagem do Bloco A.',
-    categoria: 'Garagem / Segurança',
-    solicitanteNome: 'Carlos Eduardo Silva (Originado de Reclamação)',
-    solicitanteUnidade: 'Apt 102 - Bloco A',
+    categoria: 'Portão & Acesso',
+    solicitanteNome: 'Zeladoria Condominial',
+    solicitanteUnidade: 'Administração',
     dataSolicitacao: '12/08/2026',
     responsavel: 'Dra. Mariana Costa (Subsíndica)',
     empresaEscolhida: 'Automatiza Tech Condominial',
@@ -371,15 +463,15 @@ export const MOCK_REPAROS: Reparo[] = [
       {
         id: 'tl-1',
         data: '12/08/2026',
-        titulo: 'Reclamação Registrada',
-        descricao: 'Morador Carlos Silva registrou o problema com travamento no portão.',
+        titulo: 'Vistoria e Registro do Problema',
+        descricao: 'Zeladoria constatou travamento intermitente e desgaste no motor do portão.',
         autorRole: 'morador'
       },
       {
         id: 'tl-2',
         data: '13/08/2026',
         titulo: 'Análise Técnica Inicial',
-        descricao: 'Zeladoria inspecionou e constatou desgaste crítico na engrenagem principal.',
+        descricao: 'Técnico inspecionou e constatou desgaste crítico na engrenagem principal.',
         autorRole: 'subsindico'
       },
       {
@@ -411,6 +503,64 @@ export const MOCK_REPAROS: Reparo[] = [
     ],
     fotosDepois: [
       'https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=600&q=80'
+    ]
+  },
+  {
+    id: 'rep-infiltracao-subsolo',
+    titulo: 'Impermeabilização e reparo de infiltração no teto do Subsolo 2',
+    descricao: 'Tratamento de goteira e infiltração proveniente da junta de dilatação da laje sobre as vagas G-30 e G-31 com injeção de poliuretano impermeabilizante.',
+    categoria: 'Estrutura & Hidráulica',
+    solicitanteNome: 'Zeladoria',
+    solicitanteUnidade: 'Administração',
+    dataSolicitacao: '18/08/2026',
+    responsavel: 'Dra. Mariana Costa (Subsíndica)',
+    empresaEscolhida: 'Vedatech Engenharia e Impermeabilizações',
+    valorFinal: 3200.00,
+    status: 'Orçamento',
+    condominioId: CURRENT_CONDO_ID,
+    orcamentos: [
+      {
+        id: 'orc-inf-1',
+        empresa: 'Vedatech Engenharia',
+        siteUrl: 'https://vedatech.exemplo.com.br',
+        cnpj: '33.444.555/0001-22',
+        valor: 3200.00,
+        descricao: 'Injeção de resina flexível de poliuretano + teste de estanqueidade 5 anos de garantia.',
+        prazoDias: 4,
+        selecionado: true
+      },
+      {
+        id: 'orc-inf-2',
+        empresa: 'ImperSoluções Condomínios',
+        siteUrl: 'https://impersolucoes.exemplo.com.br',
+        cnpj: '77.888.999/0001-44',
+        valor: 3750.00,
+        descricao: 'Tratamento de fissuras superficiais e manta asfáltica líquida.',
+        prazoDias: 6,
+        selecionado: false
+      }
+    ],
+    timeline: [
+      {
+        id: 'tl-inf-1',
+        data: '18/08/2026',
+        titulo: 'Vistoria Predial',
+        descricao: 'Goteira no subsolo 2 mapeada pela zeladoria após chuva forte.',
+        autorRole: 'subsindico'
+      },
+      {
+        id: 'tl-inf-2',
+        data: '19/08/2026',
+        titulo: 'Coleta de Laudos e Orçamentos',
+        descricao: 'Empresas de impermeabilização visitaram o subsolo para diagnóstico.',
+        autorRole: 'subsindico'
+      }
+    ],
+    fotosAntes: [
+      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80'
+    ],
+    fotosDepois: [
+      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80'
     ]
   }
 ];
