@@ -332,6 +332,29 @@ export interface EventoCondominio {
   condominioId: string;
 }
 
+export type FinalidadeImovel = 'Aluga-se' | 'Vende-se' | 'Aluga-se ou Vende-se';
+
+export interface UnidadeDisponivel {
+  id: string;
+  apartamento: string;
+  bloco: string;
+  finalidade: FinalidadeImovel;
+  valor: number;
+  valorCondominio?: number;
+  valorIptu?: number;
+  metragemM2: number;
+  quartos: number;
+  suites: number;
+  vagasGaragem: number;
+  proprietarioNome: string;
+  proprietarioTelefone: string;
+  proprietarioWhatsapp: string;
+  descricaoCurta: string;
+  fotos?: string[];
+  dataAnuncio: string;
+  condominioId: string;
+}
+
 export interface DespesaItem {
   id: string;
   categoria: string;

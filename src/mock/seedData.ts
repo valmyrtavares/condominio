@@ -1,4 +1,4 @@
-import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio } from '../types';
+import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio, UnidadeDisponivel } from '../types';
 
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
@@ -1569,6 +1569,104 @@ export const MOCK_EVENTOS: EventoCondominio[] = [
   }
 ];
 
+export const MOCK_UNIDADES_DISPONIVEIS: UnidadeDisponivel[] = [
+  {
+    id: 'disp-apto-204-a',
+    apartamento: '204',
+    bloco: 'Bloco A',
+    finalidade: 'Aluga-se',
+    valor: 3800.00,
+    valorCondominio: 850.00,
+    valorIptu: 220.00,
+    metragemM2: 82,
+    quartos: 2,
+    suites: 1,
+    vagasGaragem: 1,
+    proprietarioNome: 'Dr. Roberto Silveira',
+    proprietarioTelefone: '(11) 98765-4321',
+    proprietarioWhatsapp: '5511987654321',
+    descricaoCurta: 'Apartamento reformado com varanda envidraçada, armários planejados na cozinha e suíte. Vista livre para a copa das árvores.',
+    dataAnuncio: '20/08/2026',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'disp-apto-502-b',
+    apartamento: '502',
+    bloco: 'Bloco B',
+    finalidade: 'Vende-se',
+    valor: 890000.00,
+    valorCondominio: 1100.00,
+    valorIptu: 340.00,
+    metragemM2: 110,
+    quartos: 3,
+    suites: 2,
+    vagasGaragem: 2,
+    proprietarioNome: 'Dra. Camila Siqueira',
+    proprietarioTelefone: '(11) 99123-8877',
+    proprietarioWhatsapp: '5511991238877',
+    descricaoCurta: 'Excelente planta de 3 dormitórios, sala ampliada para 2 ambientes, sacada gourmet e 2 vagas demarcadas no 1º subsolo.',
+    dataAnuncio: '15/08/2026',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'disp-apto-104-a',
+    apartamento: '104',
+    bloco: 'Bloco A',
+    finalidade: 'Aluga-se',
+    valor: 3200.00,
+    valorCondominio: 780.00,
+    valorIptu: 190.00,
+    metragemM2: 68,
+    quartos: 2,
+    suites: 0,
+    vagasGaragem: 1,
+    proprietarioNome: 'Fernando Menezes',
+    proprietarioTelefone: '(11) 97654-3210',
+    proprietarioWhatsapp: '5511976543210',
+    descricaoCurta: 'Apartamento aconchegante no 1º andar, recém-pintado, piso vinílico novo e cozinha com armários.',
+    dataAnuncio: '18/08/2026',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'disp-apto-303-a',
+    apartamento: '303',
+    bloco: 'Bloco A',
+    finalidade: 'Aluga-se ou Vende-se',
+    valor: 4200.00, // Aluguel R$ 4.200 ou Venda R$ 920.000
+    valorCondominio: 950.00,
+    valorIptu: 280.00,
+    metragemM2: 95,
+    quartos: 3,
+    suites: 1,
+    vagasGaragem: 2,
+    proprietarioNome: 'Juliana Prado (Proprietária)',
+    proprietarioTelefone: '(11) 99445-6677',
+    proprietarioWhatsapp: '5511994456677',
+    descricaoCurta: 'Totalmente mobiliado e decorado por arquiteto. Ar-condicionado inverter em todos os cômodos. Disponível para locação imediata ou venda.',
+    dataAnuncio: '22/08/2026',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'disp-apto-701-b',
+    apartamento: '701',
+    bloco: 'Bloco B',
+    finalidade: 'Vende-se',
+    valor: 1650000.00,
+    valorCondominio: 1850.00,
+    valorIptu: 580.00,
+    metragemM2: 185,
+    quartos: 4,
+    suites: 3,
+    vagasGaragem: 3,
+    proprietarioNome: 'Marcelo Alvarenga',
+    proprietarioTelefone: '(11) 98888-2233',
+    proprietarioWhatsapp: '5511988882233',
+    descricaoCurta: 'Cobertura duplex exclusiva com terraço privativo, churrasqueira e vista panorâmica 360º de São Paulo. 3 vagas de garagem fixas.',
+    dataAnuncio: '10/08/2026',
+    condominioId: CURRENT_CONDO_ID
+  }
+];
+
 export const MOCK_PRESTACAO_CONTAS: PrestacaoContas = {
   id: 'pc-abril-2026',
   mesAno: 'Abril / 2026',
@@ -2174,6 +2272,15 @@ export const ESPINHA_DORSAL_ITEMS: EspinhaDorsalItem[] = [
     descricaoCurta: 'Lista mês a mês de tudo que foi gasto e arrecadado com máxima transparência.',
     desdobramentos: ['Entradas (Receitas)', 'Saídas (Despesas)', 'Detalhamento por nota fiscal'],
     rota: '/prestacao-contas',
+    destaquePoC: true
+  },
+  {
+    id: 'unidades-disponiveis',
+    titulo: 'Unidades Disponíveis',
+    icone: 'KeyRound',
+    descricaoCurta: 'Apartamentos para alugar ou vender no condomínio com contato direto do proprietário.',
+    desdobramentos: ['Aluga-se e Vende-se', 'Contato direto do proprietário', 'Acesso exclusivo para condôminos'],
+    rota: '/unidades-disponiveis',
     destaquePoC: true
   }
 ];
