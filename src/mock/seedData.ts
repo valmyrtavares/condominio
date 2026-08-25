@@ -1,4 +1,4 @@
-import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado } from '../types';
+import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia } from '../types';
 
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
@@ -1222,6 +1222,181 @@ export const MOCK_SERVICOS_CONTRATADOS: ServicoContratado[] = [
   }
 ];
 
+export const MOCK_DEPENDENCIAS: Dependencia[] = [
+  {
+    id: 'dep-salao-festas',
+    nome: 'Salão de Festas & Espaço Gourmet',
+    tipo: 'Lazer & Convivência',
+    foto: '/Salão de festas.jpg',
+    descricao: 'Espaço climatizado completo para celebrações e confraternizações familiares com churrasqueira, forno de pizza e mobiliário elegante.',
+    horarioFuncionamento: '09:00 às 23:00',
+    capacidadePessoas: 60,
+    requerReserva: true,
+    taxaReserva: 180.00,
+    comodidades: [
+      'Churrasqueira a carvão e forno de pizza',
+      'Geladeira duplex e cervejeira expositora',
+      '12 Mesas com 48 cadeiras estofadas',
+      'Sistema de som integrado via Bluetooth',
+      'Ar-condicionado split 36.000 BTUs',
+      'Wi-Fi de alta velocidade exclusivo'
+    ],
+    regrasUso: [
+      'Horário de silêncio rigoroso a partir das 22:00 conforme convenção.',
+      'Lista de convidados deve ser enviada para a portaria com antecedência de 24h.',
+      'A taxa de R$ 180,00 cobre a limpeza pesada e higienização pós-evento.',
+      'Proibido colar fitas ou pregos na pintura das paredes decorativas.'
+    ],
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'dep-piscina',
+    nome: 'Piscina Climatizada & Deck Solarium',
+    tipo: 'Lazer & Convivência',
+    foto: '/Piscina.jpg',
+    descricao: 'Conjunto aquático climatizado por energia solar com piscina semiolímpica, piscina infantil rasa, espreguiçadeiras e vestiários completos.',
+    horarioFuncionamento: '07:00 às 22:00 (Terça a Domingo)',
+    capacidadePessoas: 35,
+    requerReserva: false,
+    comodidades: [
+      'Piscina adulto com iluminação noturna LED',
+      'Piscina infantil com prainha segura',
+      'Sistema de aquecimento térmico solar',
+      'Espreguiçadeiras, mesas e ombrelones',
+      'Ducha externa e vestiários masculino/feminino'
+    ],
+    regrasUso: [
+      'Obrigatório exame médico dermatológico atualizado no cadastro da zeladoria.',
+      'Proibido o uso de garrafas, copos ou recipientes de vidro no deck.',
+      'Crianças menores de 12 anos devem permanecer com responsáveis.',
+      'Fechada às segundas-feiras para manutenção química e cloração.'
+    ],
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'dep-academia',
+    nome: 'Academia & Espaço Fitness Completo',
+    tipo: 'Esporte & Saúde',
+    foto: '/academia.jpg',
+    descricao: 'Academia moderna e equipada com aparelhos de musculação, novos equipamentos cárdio Movement, espaço para treino funcional e pilates.',
+    horarioFuncionamento: '06:00 às 23:00 (Todos os dias)',
+    capacidadePessoas: 15,
+    requerReserva: false,
+    comodidades: [
+      'Esteiras ergométricas Movement novas (Motor industrial)',
+      'Bicicletas horizontais e elípticos de última geração',
+      'Estação de musculação multifuncional com polias',
+      'Halteres emborrachados de 1kg a 24kg com banco regulável',
+      'Colchonetes, faixas elásticas e caneleiras de peso',
+      'Ar-condicionado e Smart TV integrada'
+    ],
+    regrasUso: [
+      'Uso de toalha individual obrigatório durante os exercícios.',
+      'Higienizar os apoios e assentos com álcool 70% disponível após o treino.',
+      'Guardar pesos e anilhas nos respectivos suportes após a utilização.',
+      'Permitido apenas maiores de 14 anos (menores acompanhados de personal).'
+    ],
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'dep-brinquedoteca',
+    nome: 'Brinquedoteca & Espaço Kids',
+    tipo: 'Infantil',
+    foto: '/Brinquedoteca.jpg',
+    descricao: 'Ambiente infantil lúdico e seguro com piso vinílico amortecedor de impacto, piscina de bolinhas, novos brinquedos pedagógicos e mesinhas de artes.',
+    horarioFuncionamento: '08:00 às 21:00 (Todos os dias)',
+    capacidadePessoas: 20,
+    requerReserva: false,
+    comodidades: [
+      'Piso vinílico térmico e emborrachado anti-impacto',
+      'Piscina de bolinhas totalmente higienizada',
+      'Módulos de casinha e escorregador infantil',
+      'Mesas de atividades com jogos pedagógicos e pintura',
+      'Estante de livros infantis e TV com desenhos'
+    ],
+    regrasUso: [
+      'Crianças com menos de 10 anos devem estar acompanhadas dos pais.',
+      'Obrigatório retirar calçados na entrada do espaço.',
+      'Proibido entrar com alimentos, refrigerantes ou chicletes no tapete lúdico.',
+      'Ao sair, recolher os brinquedos e guardar nos organizadores.'
+    ],
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'dep-jardim',
+    nome: 'Jardim & Bosque de Convivência',
+    tipo: 'Lazer & Convivência',
+    foto: '/jardin.jpg',
+    descricao: 'Ampla área verde arborizada com paisagismo exuberante, bancos de descanso, pergolado sombreado e trilha para caminhadas tranquilas.',
+    horarioFuncionamento: '06:00 às 22:00',
+    capacidadePessoas: 40,
+    requerReserva: false,
+    comodidades: [
+      'Paisagismo tropical com árvores nativas e flores',
+      'Pergolado de madeira com bancos para leitura e descanso',
+      'Iluminação decorativa noturna com lâmpadas solares LED',
+      'Trilha pavimentada e acessível para passeio',
+      'Espaço Pet Friendly com saquinhos coletores'
+    ],
+    regrasUso: [
+      'Manter animais de estimação sempre na coleira e guia curta.',
+      'Recolher imediatamente quaisquer dejetos dos pets.',
+      'Proibido pisar ou arrancar mudas e flores dos canteiros.',
+      'Preservar o silêncio e a tranquilidade para momentos de leitura e descanso.'
+    ],
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'dep-fachada',
+    nome: 'Fachada & Portaria Social 24h',
+    tipo: 'Infraestrutura & Acesso',
+    foto: '/Faixada.jpg',
+    descricao: 'Fachada revitalizada com portaria blindada, controle de acesso por reconhecimento facial, clausura dupla para pedestres e monitoramento integral.',
+    horarioFuncionamento: '24 Horas (Ininterrupto)',
+    capacidadePessoas: 20,
+    requerReserva: false,
+    comodidades: [
+      'Portaria blindada com vigilância armada e CFTV 24h',
+      'Clausura dupla para pedestres e veículos',
+      'Totem de reconhecimento facial rápido para moradores',
+      'Armários inteligentes para recebimento de encomendas',
+      'Rampa de acessibilidade e elevador PNE'
+    ],
+    regrasUso: [
+      'Visitantes e prestadores devem ser anunciados e liberados pelo morador.',
+      'Entregadores de delivery não sobem aos apartamentos (retirar na clausura).',
+      'Nunca permitir a entrada de pessoas não identificadas na carona.',
+      'Cadastrar novos prestadores recorrentes junto à administração.'
+    ],
+    condominioId: CURRENT_CONDO_ID
+  }
+];
+
+export const MOCK_RESERVAS: ReservaDependencia[] = [
+  {
+    id: 'res-1',
+    dependenciaId: 'dep-salao-festas',
+    moradorId: 'usr-morador-102',
+    moradorNome: 'Marcos Almeida',
+    unidade: '102 - Bloco A',
+    dataReserva: '29/08/2026',
+    periodo: 'Tarde/Noite (16h-23h)',
+    status: 'Confirmada',
+    valorTaxa: 180.00
+  },
+  {
+    id: 'res-2',
+    dependenciaId: 'dep-salao-festas',
+    moradorId: 'usr-morador-101',
+    moradorNome: 'Renato Alencar',
+    unidade: '101 - Bloco A',
+    dataReserva: '05/09/2026',
+    periodo: 'Manhã (09h-14h)',
+    status: 'Confirmada',
+    valorTaxa: 180.00
+  }
+];
+
 export const MOCK_PRESTACAO_CONTAS: PrestacaoContas = {
   id: 'pc-abril-2026',
   mesAno: 'Abril / 2026',
@@ -1785,11 +1960,12 @@ export const ESPINHA_DORSAL_ITEMS: EspinhaDorsalItem[] = [
   },
   {
     id: 'dependencias',
-    titulo: 'Dependência do condomínio',
+    titulo: 'Dependências do Condomínio',
     icone: 'Building2',
-    descricaoCurta: 'Salão de festas, churrasqueira e piscina com regras, disponibilidade e agendamentos.',
-    desdobramentos: ['Preços de aluguel', 'Regras de uso', 'Agenda de disponibilidade'],
-    rota: '/dependencias'
+    descricaoCurta: 'Brinquedoteca, Academia, Piscina, Salão de Festas, Jardim e Fachada com fotos reais, regras e reservas.',
+    desdobramentos: ['Fotos e comodidades', 'Regras de convivência', 'Agendamento e reservas'],
+    rota: '/dependencias',
+    destaquePoC: true
   },
   {
     id: 'vagas-garagem',

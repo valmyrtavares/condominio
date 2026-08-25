@@ -15,6 +15,7 @@ import { RegrasCondominioScreen } from './pages/RegrasCondominioScreen';
 import { BenfeitoriasScreen } from './pages/BenfeitoriasScreen';
 import { VagasGaragemScreen } from './pages/VagasGaragemScreen';
 import { ServicosContratadosScreen } from './pages/ServicosContratadosScreen';
+import { DependenciasScreen } from './pages/DependenciasScreen';
 
 const MainContent: React.FC = () => {
   const { currentScreen } = useCondo();
@@ -37,6 +38,8 @@ const MainContent: React.FC = () => {
         return <VagasGaragemScreen />;
       case 'servicos-contratados':
         return <ServicosContratadosScreen />;
+      case 'dependencias':
+        return <DependenciasScreen />;
       case 'prestacao-contas':
         return <PrestacaoContasScreen />;
       case 'servicos-moradores':

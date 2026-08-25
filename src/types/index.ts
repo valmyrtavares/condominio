@@ -245,6 +245,36 @@ export interface ServicoContratado {
   observacoesFinais?: string;
 }
 
+export type TipoDependencia = 'Lazer & Convivência' | 'Esporte & Saúde' | 'Infantil' | 'Infraestrutura & Acesso';
+
+export interface ReservaDependencia {
+  id: string;
+  dependenciaId: string;
+  moradorId: string;
+  moradorNome: string;
+  unidade: string;
+  dataReserva: string;
+  periodo: 'Manhã (09h-14h)' | 'Tarde/Noite (16h-23h)' | 'Dia Inteiro';
+  status: 'Confirmada' | 'Pendente de Pagamento' | 'Cancelada';
+  valorTaxa?: number;
+}
+
+export interface Dependencia {
+  id: string;
+  nome: string;
+  tipo: TipoDependencia;
+  foto: string;
+  fotosAdicionais?: string[];
+  descricao: string;
+  horarioFuncionamento: string;
+  capacidadePessoas: number;
+  requerReserva: boolean;
+  taxaReserva?: number;
+  comodidades: string[];
+  regrasUso: string[];
+  condominioId: string;
+}
+
 export interface DespesaItem {
   id: string;
   categoria: string;

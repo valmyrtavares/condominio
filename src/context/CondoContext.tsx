@@ -19,7 +19,9 @@ import {
   VeiculoInfo,
   ServicoContratado,
   StatusServicoContratado,
-  PropostaEmpresa
+  PropostaEmpresa,
+  Dependencia,
+  ReservaDependencia
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -29,6 +31,8 @@ import {
   MOCK_BENFEITORIAS,
   MOCK_VAGAS_GARAGEM,
   MOCK_SERVICOS_CONTRATADOS,
+  MOCK_DEPENDENCIAS,
+  MOCK_RESERVAS,
   MOCK_PRESTACAO_CONTAS, 
   MOCK_FUNCIONARIOS,
   ESPINHA_DORSAL_ITEMS,
@@ -45,6 +49,8 @@ interface CondoContextType {
   benfeitorias: Benfeitoria[];
   vagasGaragem: VagaGaragem[];
   servicosContratados: ServicoContratado[];
+  dependencias: Dependencia[];
+  reservas: ReservaDependencia[];
   prestacaoContas: PrestacaoContas;
   funcionarios: Funcionario[];
   espinhaDorsalItems: EspinhaDorsalItem[];
@@ -65,6 +71,8 @@ interface CondoContextType {
   adicionarBenfeitoria: (titulo: string, subtitulo: string, tipo: TipoBenfeitoria, descricao: string, impactoGestao: string, fotos: string[], investimento?: number, economiaMensal?: number, regrasUso?: string) => void;
   adicionarServicoContratado: (titulo: string, descricao: string, categoria: string, status: StatusServicoContratado, propostas: PropostaEmpresa[], observacoesFinais?: string) => void;
   selecionarPropostaVencedora: (servicoId: string, propostaId: string) => void;
+  solicitarReserva: (dependenciaId: string, dataReserva: string, periodo: ReservaDependencia['periodo']) => void;
+  cancelarReserva: (reservaId: string) => void;
   atualizarStatusReclamacao: (id: string, novoStatus: StatusReclamacao) => void;
   atualizarStatusVaga: (vagaId: string, novoStatus: StatusVaga, dadosAdicionais?: { veiculo?: VeiculoInfo; valorAluguelMensal?: number; observacoes?: string }) => void;
   transformarEmReparo: (reclamacaoId: string, titulo: string, descricao: string) => string;
@@ -82,6 +90,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>(MOCK_BENFEITORIAS);
   const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>(MOCK_VAGAS_GARAGEM);
   const [servicosContratados, setServicosContratados] = useState<ServicoContratado[]>(MOCK_SERVICOS_CONTRATADOS);
+  const [dependencias, setDependencias] = useState<Dependencia[]>(MOCK_DEPENDENCIAS);
+  const [reservas, setReservas] = useState<ReservaDependencia[]>(MOCK_RESERVAS);
   const [prestacaoContas] = useState<PrestacaoContas>(MOCK_PRESTACAO_CONTAS);
   const [funcionarios] = useState<Funcionario[]>(MOCK_FUNCIONARIOS);
   const [espinhaDorsalItems] = useState<EspinhaDorsalItem[]>(ESPINHA_DORSAL_ITEMS);
@@ -470,6 +480,31 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   };
 
+  const solicitarReserva = (
+    dependenciaId: string, 
+    dataReserva: string, 
+    periodo: ReservaDependencia['periodo']
+  ) => {
+    const dep = dependencias.find(d => d.id === dependenciaId);
+    const novaReserva: ReservaDependencia = {
+      id: `res-${Date.now()}`,
+      dependenciaId,
+      moradorId: currentUser.id,
+      moradorNome: currentUser.nome,
+      unidade: `${currentUser.unidade} - ${currentUser.bloco}`,
+      dataReserva,
+      periodo,
+      status: 'Confirmada',
+      valorTaxa: dep?.taxaReserva
+    };
+
+    setReservas(prev => [novaReserva, ...prev]);
+  };
+
+  const cancelarReserva = (reservaId: string) => {
+    setReservas(prev => prev.filter(r => r.id !== reservaId));
+  };
+
   const atualizarStatusReclamacao = (id: string, novoStatus: StatusReclamacao) => {
     setReclamacoes(prev => prev.map(rec => {
       if (rec.id === id) {
@@ -490,6 +525,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       benfeitorias,
       vagasGaragem,
       servicosContratados,
+      dependencias,
+      reservas,
       prestacaoContas,
       funcionarios,
       espinhaDorsalItems,
@@ -508,6 +545,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adicionarBenfeitoria,
       adicionarServicoContratado,
       selecionarPropostaVencedora,
+      solicitarReserva,
+      cancelarReserva,
       atualizarStatusReclamacao,
       atualizarStatusVaga,
       transformarEmReparo,
