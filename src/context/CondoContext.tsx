@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   User, 
   Reclamacao, 
@@ -72,6 +72,20 @@ interface CondoContextType {
   setSelectedReclamacaoId: (id: string | null) => void;
   selectedReparoId: string | null;
   setSelectedReparoId: (id: string | null) => void;
+
+  // Admin & Unidades Management
+  isAdminLoggedIn: boolean;
+  loginAdmin: (usuario: string, senha: string) => boolean;
+  logoutAdmin: () => void;
+  adicionarUnidade: (numero: string, bloco?: string, senhaAcesso?: string) => void;
+  editarUnidade: (id: string, numero: string, bloco: string, senhaAcesso: string) => void;
+  excluirUnidade: (id: string) => void;
+
+  // Resident Auth State
+  isResidentLoggedIn: boolean;
+  residentAuthData: { unidade: string; bloco?: string } | null;
+  loginResident: (unidadeInput: string, senhaInput: string) => { success: boolean; message?: string };
+  logoutResident: () => void;
   
   // Actions
   apoiarReclamacao: (id: string) => void;
@@ -94,7 +108,46 @@ const CondoContext = createContext<CondoContextType | undefined>(undefined);
 
 export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User>(MOCK_USERS[0]); // Default: Morador Carlos Silva
-  const [unidades] = useState<Unidade[]>(MOCK_UNIDADES);
+  
+  // Unidades com persistência em LocalStorage
+  const [unidades, setUnidades] = useState<Unidade[]>(() => {
+    const saved = localStorage.getItem('condo_unidades_list');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // fallback
+      }
+    }
+    return MOCK_UNIDADES.map(u => ({
+      ...u,
+      senhaAcesso: u.senhaAcesso || u.numero,
+      statusCadastro: u.statusCadastro || (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente')
+    }));
+  });
+
+  // Admin Auth State
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
+    return localStorage.getItem('condo_admin_auth') === 'true';
+  });
+
+  // Resident Auth State
+  const [isResidentLoggedIn, setIsResidentLoggedIn] = useState<boolean>(() => {
+    return Boolean(localStorage.getItem('condo_resident_auth'));
+  });
+
+  const [residentAuthData, setResidentAuthData] = useState<{ unidade: string; bloco?: string } | null>(() => {
+    const saved = localStorage.getItem('condo_resident_auth');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
   const [reclamacoes, setReclamacoes] = useState<Reclamacao[]>(MOCK_RECLAMACOES);
   const [reparos, setReparos] = useState<Reparo[]>(MOCK_REPAROS);
   const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>(MOCK_BENFEITORIAS);
@@ -114,6 +167,157 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [currentScreen, setCurrentScreen] = useState<string>('home');
   const [selectedReclamacaoId, setSelectedReclamacaoId] = useState<string | null>('rec-barulho-gourmet');
   const [selectedReparoId, setSelectedReparoId] = useState<string | null>('rep-motor-portao');
+
+  // Detectar rota /admin digitada na barra de endereço
+  useEffect(() => {
+    const checkAdminRoute = () => {
+      const pathname = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (pathname.includes('/admin') || hash.includes('admin')) {
+        setCurrentScreen('admin');
+      }
+    };
+
+    checkAdminRoute();
+    window.addEventListener('popstate', checkAdminRoute);
+    window.addEventListener('hashchange', checkAdminRoute);
+    return () => {
+      window.removeEventListener('popstate', checkAdminRoute);
+      window.removeEventListener('hashchange', checkAdminRoute);
+    };
+  }, []);
+
+  // Métodos de Gestão de Unidades do Admin
+  const adicionarUnidade = (numero: string, bloco: string = 'Bloco A', senhaAcesso?: string) => {
+    const numLimpo = numero.trim();
+    if (!numLimpo) return;
+
+    const nova: Unidade = {
+      id: `und-${numLimpo}-${Date.now()}`,
+      numero: numLimpo,
+      bloco: bloco.trim() || 'Bloco A',
+      tipo: 'Apartamento',
+      senhaAcesso: (senhaAcesso && senhaAcesso.trim()) ? senhaAcesso.trim() : numLimpo,
+      statusCadastro: 'Pendente',
+      vagaGaragem: `Vaga ${numLimpo}`,
+      moradores: []
+    };
+
+    setUnidades(prev => {
+      const atualizadas = [nova, ...prev.filter(u => u.numero !== numLimpo || u.bloco !== bloco)];
+      localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      return atualizadas;
+    });
+  };
+
+  const editarUnidade = (id: string, numero: string, bloco: string, senhaAcesso: string) => {
+    setUnidades(prev => {
+      const atualizadas = prev.map(u => {
+        if (u.id === id) {
+          return {
+            ...u,
+            numero: numero.trim(),
+            bloco: bloco.trim(),
+            senhaAcesso: senhaAcesso.trim() || numero.trim()
+          };
+        }
+        return u;
+      });
+      localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      return atualizadas;
+    });
+  };
+
+  const excluirUnidade = (id: string) => {
+    setUnidades(prev => {
+      const atualizadas = prev.filter(u => u.id !== id);
+      localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      return atualizadas;
+    });
+  };
+
+  // Autenticação do Admin
+  const loginAdmin = (usuario: string, senha: string): boolean => {
+    if (usuario.trim().toLowerCase() === 'admin' && senha.trim() === 'admin') {
+      setIsAdminLoggedIn(true);
+      localStorage.setItem('condo_admin_auth', 'true');
+      return true;
+    }
+    return false;
+  };
+
+  const logoutAdmin = () => {
+    setIsAdminLoggedIn(false);
+    localStorage.removeItem('condo_admin_auth');
+  };
+
+  // Autenticação do Morador
+  const loginResident = (unidadeInput: string, senhaInput: string): { success: boolean; message?: string } => {
+    const numLimpo = unidadeInput.trim();
+    const senhaLimpa = senhaInput.trim();
+
+    if (!numLimpo || !senhaLimpa) {
+      return { success: false, message: 'Preencha a unidade e a senha' };
+    }
+
+    // Busca a unidade
+    const unidadeEncontrada = unidades.find(u => u.numero.toLowerCase() === numLimpo.toLowerCase());
+
+    if (!unidadeEncontrada) {
+      return { success: false, message: 'Unidade não cadastrada pela administração' };
+    }
+
+    const senhaCorreta = unidadeEncontrada.senhaAcesso || unidadeEncontrada.numero;
+
+    if (senhaLimpa !== senhaCorreta && senhaLimpa !== unidadeEncontrada.numero) {
+      return { success: false, message: 'Senha incorreta para esta unidade' };
+    }
+
+    // Autenticação bem-sucedida
+    const authData = {
+      unidade: unidadeEncontrada.numero,
+      bloco: unidadeEncontrada.bloco
+    };
+
+    const hasData = Boolean(
+      (unidadeEncontrada.moradores && unidadeEncontrada.moradores.length > 0) || 
+      unidadeEncontrada.fotoCelula
+    );
+
+    setIsResidentLoggedIn(true);
+    setResidentAuthData(authData);
+
+    // Moradores sem dados configurados não persistem login automático:
+    // devem sempre digitar o número do apto no usuário e na senha
+    if (hasData) {
+      localStorage.setItem('condo_resident_auth', JSON.stringify(authData));
+    } else {
+      localStorage.removeItem('condo_resident_auth');
+    }
+
+    // Atualiza o currentUser para refletir a unidade
+    const usuarioMorador = (unidadeEncontrada.moradores && unidadeEncontrada.moradores.length > 0)
+      ? unidadeEncontrada.moradores[0]
+      : {
+        id: `usr-morador-${unidadeEncontrada.numero}`,
+        nome: 'Morador sem dados',
+        email: `morador.${unidadeEncontrada.numero}@condominio.com`,
+        role: 'morador' as const,
+        unidade: unidadeEncontrada.numero,
+        bloco: unidadeEncontrada.bloco,
+        condominioId: CURRENT_CONDO_ID
+      };
+
+    setCurrentUser(usuarioMorador);
+
+    return { success: true };
+  };
+
+  const logoutResident = () => {
+    setIsResidentLoggedIn(false);
+    setResidentAuthData(null);
+    localStorage.removeItem('condo_resident_auth');
+  };
 
   const toggleRole = () => {
     if (currentUser.role === 'morador') {
@@ -554,6 +758,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setSelectedReclamacaoId,
       selectedReparoId,
       setSelectedReparoId,
+      isAdminLoggedIn,
+      loginAdmin,
+      logoutAdmin,
+      adicionarUnidade,
+      editarUnidade,
+      excluirUnidade,
+      isResidentLoggedIn,
+      residentAuthData,
+      loginResident,
+      logoutResident,
       apoiarReclamacao,
       adicionarComentario,
       adicionarReclamacao,

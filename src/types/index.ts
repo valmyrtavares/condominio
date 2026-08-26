@@ -19,8 +19,10 @@ export interface Unidade {
   id: string;
   numero: string;
   bloco: string;
-  tipo: 'Apartamento' | 'Cobertura' | 'Casa';
-  vagaGaragem: string;
+  tipo?: 'Apartamento' | 'Cobertura' | 'Casa';
+  vagaGaragem?: string;
+  senhaAcesso?: string;
+  statusCadastro?: 'Pendente' | 'Cadastrado';
   moradores: User[];
   fotoCelula?: string;
   nomeCelula?: string;

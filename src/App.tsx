@@ -20,9 +20,12 @@ import { AssembleiasScreen } from './pages/AssembleiasScreen';
 import { FuncionariosScreen } from './pages/FuncionariosScreen';
 import { EventosScreen } from './pages/EventosScreen';
 import { UnidadesDisponiveisScreen } from './pages/UnidadesDisponiveisScreen';
+import { AdminLoginScreen } from './pages/admin/AdminLoginScreen';
+import { AdminPanelScreen } from './pages/admin/AdminPanelScreen';
+import { ResidentLoginScreen } from './pages/auth/ResidentLoginScreen';
 
 const MainContent: React.FC = () => {
-  const { currentScreen } = useCondo();
+  const { currentScreen, isAdminLoggedIn } = useCondo();
 
   if (currentScreen === 'home') {
     return <HomeScreen />;
@@ -30,6 +33,10 @@ const MainContent: React.FC = () => {
 
   const renderScreen = () => {
     switch (currentScreen) {
+      case 'admin':
+        return isAdminLoggedIn ? <AdminPanelScreen /> : <AdminLoginScreen />;
+      case 'resident-login':
+        return <ResidentLoginScreen />;
       case 'moradores':
         return <MoradoresScreen />;
       case 'reclamacoes':
