@@ -24,10 +24,42 @@ export interface Unidade {
   senhaAcesso?: string;
   senhaPadraoAlterada?: boolean;
   emailResponsavel?: string;
-  statusCadastro?: 'Pendente' | 'Cadastrado';
+  statusCadastro?: 'Pendente' | 'Cadastrado' | 'Vazio';
+  semMoradores?: boolean;
   moradores: User[];
   fotoCelula?: string;
   nomeCelula?: string;
+}
+
+export interface NotificacaoPrivada {
+  id: string;
+  unidadeNumero: string;
+  titulo?: string;
+  mensagem: string;
+  autorNome: string;
+  dataHora: string;
+  lida: boolean;
+}
+
+export interface AdminRole {
+  id: string;
+  nome: string;
+  tipoAcesso: 'total' | 'morador_destaque';
+  descricao?: string;
+}
+
+export interface AdminUser {
+  id: string;
+  nome: string;
+  usuario: string;
+  email: string;
+  cargo: string;
+  tipoAcesso: 'total' | 'morador_destaque';
+  foto?: string;
+  senha: string;
+  ativo: boolean;
+  criadoEm: string;
+  telefone?: string;
 }
 
 export type CategoriaFuncionario = 'Portaria' | 'Limpeza' | 'Segurança' | 'Gestão';

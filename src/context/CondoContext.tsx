@@ -77,9 +77,21 @@ interface CondoContextType {
   isAdminLoggedIn: boolean;
   loginAdmin: (usuario: string, senha: string) => boolean;
   logoutAdmin: () => void;
+  adminUsers: AdminUser[];
+  adminRoles: AdminRole[];
+  adicionarAdminUser: (admin: Omit<AdminUser, 'id' | 'criadoEm'>) => void;
+  excluirAdminUser: (id: string) => void;
+  adicionarAdminRole: (nome: string, tipoAcesso: 'total' | 'morador_destaque', descricao?: string) => void;
+  excluirAdminRole: (id: string) => void;
   adicionarUnidade: (numero: string, vagaGaragem?: string, senhaAcesso?: string) => void;
   editarUnidade: (id: string, numero: string, vagaGaragem: string, senhaAcesso: string) => void;
   excluirUnidade: (id: string) => void;
+  toggleUnidadeSemMoradores: (id: string) => void;
+
+  // Notificações Privadas por Unidade
+  notificacoesPrivadas: NotificacaoPrivada[];
+  enviarNotificacaoPrivada: (unidadeNumero: string, mensagem: string, titulo?: string) => void;
+  marcarNotificacaoComoLida: (notificacaoId: string) => void;
 
   // Resident Auth & Onboarding State
   isResidentLoggedIn: boolean;
@@ -118,16 +130,122 @@ interface CondoContextType {
 
 const CondoContext = createContext<CondoContextType | undefined>(undefined);
 
+const DEFAULT_ADMIN_ROLES: AdminRole[] = [
+  { id: 'role-sindico', nome: 'Síndico Geral', tipoAcesso: 'total', descricao: 'Acesso irrestrito a todo o aplicativo e painel.' },
+  { id: 'role-subsindico', nome: 'Subsíndico', tipoAcesso: 'total', descricao: 'Acesso irrestrito a todo o aplicativo e painel.' },
+  { id: 'role-admin', nome: 'Administrador', tipoAcesso: 'total', descricao: 'Acesso irrestrito a todo o aplicativo e painel.' },
+  { id: 'role-conselheiro', nome: 'Conselheiro', tipoAcesso: 'morador_destaque', descricao: 'Poder de morador com destaque oficial no quadro de equipe.' }
+];
+
+const DEFAULT_ADMIN_USERS: AdminUser[] = [
+  {
+    id: 'adm-1',
+    nome: 'Valmyr Tavares',
+    usuario: 'admin',
+    email: 'admin@condominio.com',
+    cargo: 'Síndico Geral',
+    tipoAcesso: 'total',
+    foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+    senha: 'admin',
+    ativo: true,
+    criadoEm: '26/08/2026'
+  },
+  {
+    id: 'adm-2',
+    nome: 'Mariana Silva',
+    usuario: 'subsindica',
+    email: 'subsindica@condominio.com',
+    cargo: 'Subsíndico',
+    tipoAcesso: 'total',
+    foto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80',
+    senha: 'sub123',
+    ativo: true,
+    criadoEm: '26/08/2026'
+  },
+  {
+    id: 'adm-3',
+    nome: 'Fabio Sanches',
+    usuario: 'fabio.conselho',
+    email: 'fabio@condominio.com',
+    cargo: 'Conselheiro',
+    tipoAcesso: 'morador_destaque',
+    foto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
+    senha: '101',
+    ativo: true,
+    criadoEm: '26/08/2026'
+  }
+];
+
 export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Admin Roles & Categories
+  const [adminRoles, setAdminRoles] = useState<AdminRole[]>(() => {
+    const saved = localStorage.getItem('condo_admin_roles');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return DEFAULT_ADMIN_ROLES;
+  });
+
+  // Admin Users with photos and permissions
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>(() => {
+    const saved = localStorage.getItem('condo_admin_users');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return DEFAULT_ADMIN_USERS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_admin_roles', JSON.stringify(adminRoles));
+  }, [adminRoles]);
+
+  useEffect(() => {
+    localStorage.setItem('condo_admin_users', JSON.stringify(adminUsers));
+  }, [adminUsers]);
+
+  const adicionarAdminRole = (nome: string, tipoAcesso: 'total' | 'morador_destaque', descricao?: string) => {
+    const roleLimpa = nome.trim();
+    if (!roleLimpa) return;
+
+    const novaRole: AdminRole = {
+      id: `role-${Date.now()}`,
+      nome: roleLimpa,
+      tipoAcesso,
+      descricao: descricao?.trim()
+    };
+
+    setAdminRoles(prev => [...prev, novaRole]);
+  };
+
+  const excluirAdminRole = (id: string) => {
+    setAdminRoles(prev => prev.filter(r => r.id !== id));
+  };
+
+  const adicionarAdminUser = (admin: Omit<AdminUser, 'id' | 'criadoEm'>) => {
+    const novoAdmin: AdminUser = {
+      ...admin,
+      id: `adm-${Date.now()}`,
+      criadoEm: new Date().toLocaleDateString('pt-BR')
+    };
+
+    setAdminUsers(prev => [novoAdmin, ...prev]);
+  };
+
+  const excluirAdminUser = (id: string) => {
+    setAdminUsers(prev => prev.filter(a => a.id !== id));
+  };
+
   // Unidades com persistência em LocalStorage
   const [unidades, setUnidades] = useState<Unidade[]>(() => {
     const saved = localStorage.getItem('condo_unidades_list');
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch {
-        // fallback
-      }
+      } catch {}
     }
     return MOCK_UNIDADES.map(u => ({
       ...u,
@@ -189,13 +307,32 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>(MOCK_BENFEITORIAS);
   const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>(MOCK_VAGAS_GARAGEM);
   const [servicosContratados, setServicosContratados] = useState<ServicoContratado[]>(MOCK_SERVICOS_CONTRATADOS);
-  const [dependencias, setDependencias] = useState<Dependencia[]>(MOCK_DEPENDENCIAS);
+  const [dependencias] = useState<Dependencia[]>(MOCK_DEPENDENCIAS);
   const [reservas, setReservas] = useState<ReservaDependencia[]>(MOCK_RESERVAS);
   const [assembleias, setAssembleias] = useState<Assembleia[]>(MOCK_ASSEMBLEIAS);
   const [eventos, setEventos] = useState<EventoCondominio[]>(MOCK_EVENTOS);
   const [unidadesDisponiveis, setUnidadesDisponiveis] = useState<UnidadeDisponivel[]>(MOCK_UNIDADES_DISPONIVEIS);
   const [prestacaoContas] = useState<PrestacaoContas>(MOCK_PRESTACAO_CONTAS);
-  const [funcionarios] = useState<Funcionario[]>(MOCK_FUNCIONARIOS);
+
+  // Funcionários combinando equipe operacional + administradores/conselheiros cadastrados com foto!
+  const [funcionariosOperacionais] = useState<Funcionario[]>(MOCK_FUNCIONARIOS.filter(f => f.categoria !== 'Gestão'));
+
+  const funcionarios: Funcionario[] = [
+    // Gestores e Conselheiros cadastrados
+    ...adminUsers.map(adm => ({
+      id: `func-${adm.id}`,
+      nome: adm.nome,
+      foto: adm.foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+      funcao: adm.cargo,
+      categoria: 'Gestão' as const,
+      horario: adm.tipoAcesso === 'total' ? 'Administração & Plantão' : 'Reuniões e Pareceres',
+      disponibilidade: adm.tipoAcesso === 'total' ? 'Horário Comercial / Emergências' : 'Sob demanda',
+      condominioId: CURRENT_CONDO_ID
+    })),
+    // Funcionários operacionais (portaria, limpeza, segurança)
+    ...funcionariosOperacionais
+  ];
+
   const [espinhaDorsalItems] = useState<EspinhaDorsalItem[]>(ESPINHA_DORSAL_ITEMS);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   
@@ -274,13 +411,109 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
+  const toggleUnidadeSemMoradores = (id: string) => {
+    setUnidades(prev => {
+      const atualizadas = prev.map(u => {
+        if (u.id === id) {
+          const novoSemMoradores = !u.semMoradores;
+          return {
+            ...u,
+            semMoradores: novoSemMoradores,
+            statusCadastro: novoSemMoradores 
+              ? ('Vazio' as const) 
+              : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' as const : 'Pendente' as const)
+          };
+        }
+        return u;
+      });
+      localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      return atualizadas;
+    });
+  };
+
+  // Notificações Privadas
+  const [notificacoesPrivadas, setNotificacoesPrivadas] = useState<NotificacaoPrivada[]>(() => {
+    const saved = localStorage.getItem('condo_notificacoes_privadas');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return [
+      {
+        id: 'notif-1',
+        unidadeNumero: '101',
+        titulo: 'Aviso de Encomenda na Portaria',
+        mensagem: 'Olá morador, chegou um pacote grande na portaria para sua unidade. Favor retirar na zeladoria.',
+        autorNome: 'Valmyr Tavares (Síndico)',
+        dataHora: '26/08/2026 às 15:30',
+        lida: false
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_notificacoes_privadas', JSON.stringify(notificacoesPrivadas));
+  }, [notificacoesPrivadas]);
+
+  const enviarNotificacaoPrivada = (unidadeNumero: string, mensagem: string, titulo?: string) => {
+    const msgLimpa = mensagem.trim();
+    if (!msgLimpa) return;
+
+    const novaNotif: NotificacaoPrivada = {
+      id: `notif-${Date.now()}`,
+      unidadeNumero: unidadeNumero.trim(),
+      titulo: titulo?.trim() || 'Notificação da Sindicância',
+      mensagem: msgLimpa,
+      autorNome: currentUser?.nome || 'Administração do Condomínio',
+      dataHora: `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
+      lida: false
+    };
+
+    setNotificacoesPrivadas(prev => [novaNotif, ...prev]);
+  };
+
+  const marcarNotificacaoComoLida = (notificacaoId: string) => {
+    setNotificacoesPrivadas(prev => prev.map(n => n.id === notificacaoId ? { ...n, lida: true } : n));
+  };
+
   // Autenticação do Admin
   const loginAdmin = (usuario: string, senha: string): boolean => {
-    if (usuario.trim().toLowerCase() === 'admin' && senha.trim() === 'admin') {
+    const u = usuario.trim().toLowerCase();
+    const s = senha.trim();
+
+    if ((u === 'admin' && s === 'admin') || (u === 'sindica' && s === 'sindica')) {
       setIsAdminLoggedIn(true);
       localStorage.setItem('condo_admin_auth', 'true');
+      setCurrentUser(MOCK_USERS[4]);
       return true;
     }
+
+    const matchedAdmin = adminUsers.find(
+      adm => adm.usuario.toLowerCase() === u && adm.senha === s && adm.ativo
+    );
+
+    if (matchedAdmin) {
+      if (matchedAdmin.tipoAcesso === 'total') {
+        setIsAdminLoggedIn(true);
+        localStorage.setItem('condo_admin_auth', 'true');
+      }
+      
+      const adminUserObj: User = {
+        id: matchedAdmin.id,
+        nome: matchedAdmin.nome,
+        email: matchedAdmin.email,
+        role: matchedAdmin.tipoAcesso === 'total' ? 'sindico' : 'morador',
+        unidade: '',
+        bloco: '',
+        foto: matchedAdmin.foto,
+        profissao: matchedAdmin.cargo,
+        condominioId: CURRENT_CONDO_ID
+      };
+      setCurrentUser(adminUserObj);
+      return matchedAdmin.tipoAcesso === 'total';
+    }
+
     return false;
   };
 
@@ -1046,9 +1279,19 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       isAdminLoggedIn,
       loginAdmin,
       logoutAdmin,
+      adminUsers,
+      adminRoles,
+      adicionarAdminUser,
+      excluirAdminUser,
+      adicionarAdminRole,
+      excluirAdminRole,
       adicionarUnidade,
       editarUnidade,
       excluirUnidade,
+      toggleUnidadeSemMoradores,
+      notificacoesPrivadas,
+      enviarNotificacaoPrivada,
+      marcarNotificacaoComoLida,
       isResidentLoggedIn,
       residentAuthData,
       pendingRegistrationUnit,

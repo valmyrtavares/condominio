@@ -18,12 +18,13 @@ export const FuncionariosScreen: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedCategoria, setSelectedCategoria] = useState<string>('Todos');
 
-  const categorias = ['Todos', 'Portaria', 'Limpeza', 'Segurança', 'Gestão'];
+  const categorias = ['Todos', 'Gestão', 'Conselho', 'Portaria', 'Limpeza', 'Segurança'];
 
   // Helper para identificar categoria do funcionário
-  const getFuncionarioCategoria = (func: Funcionario): CategoriaFuncionario => {
-    if (func.categoria) return func.categoria;
+  const getFuncionarioCategoria = (func: Funcionario): string => {
     const funcaoLower = func.funcao.toLowerCase();
+    if (funcaoLower.includes('conselh')) return 'Conselho';
+    if (func.categoria) return func.categoria;
     if (funcaoLower.includes('porteir') || funcaoLower.includes('portaria')) return 'Portaria';
     if (funcaoLower.includes('faxin') || funcaoLower.includes('limpeza')) return 'Limpeza';
     if (funcaoLower.includes('vigi') || funcaoLower.includes('seguran') || funcaoLower.includes('ronda')) return 'Segurança';
@@ -48,7 +49,7 @@ export const FuncionariosScreen: React.FC = () => {
   });
 
   // Badge color helper por Categoria
-  const getCategoriaBadgeStyle = (cat: CategoriaFuncionario) => {
+  const getCategoriaBadgeStyle = (cat: string) => {
     switch (cat) {
       case 'Portaria':
         return 'bg-blue-100 text-blue-950 border-blue-300';
@@ -56,9 +57,11 @@ export const FuncionariosScreen: React.FC = () => {
         return 'bg-teal-100 text-teal-950 border-teal-300';
       case 'Segurança':
         return 'bg-purple-100 text-purple-950 border-purple-300';
+      case 'Conselho':
+        return 'bg-amber-100 text-amber-950 border-amber-300';
       case 'Gestão':
       default:
-        return 'bg-amber-100 text-amber-950 border-amber-300';
+        return 'bg-amber-200 text-amber-950 border-amber-400 font-black';
     }
   };
 

@@ -77,7 +77,8 @@ export const MoradoresScreen: React.FC = () => {
 
       {/* Selected Unit Details — Unified Household Cell Card */}
       {selectedUnidade && (() => {
-        const hasMoradorConfigurado = Boolean(
+        const isUnidadeVazia = selectedUnidade.semMoradores || selectedUnidade.statusCadastro === 'Vazio';
+        const hasMoradorConfigurado = !isUnidadeVazia && Boolean(
           (selectedUnidade.moradores && selectedUnidade.moradores.length > 0) || 
           selectedUnidade.fotoCelula
         );
@@ -97,10 +98,10 @@ export const MoradoresScreen: React.FC = () => {
                     <span className="text-[9px] font-black text-slate-700 mt-1">{unitLabel}</span>
                   </div>
 
-                  {/* Morador sem dados configurados */}
+                  {/* Morador sem dados configurados ou Unidade Vazia */}
                   <div className="space-y-1">
                     <h3 className="text-base sm:text-lg font-black text-slate-950 tracking-tight">
-                      Morador sem dados configurados
+                      {isUnidadeVazia ? 'Unidade Vazia (Sem Moradores)' : 'Morador sem dados configurados'}
                     </h3>
                     {selectedUnidade.vagaGaragem && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/60 text-slate-900 border border-white/80 shadow-2xs text-[11px] font-bold">

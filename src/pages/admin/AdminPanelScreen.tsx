@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useCondo } from '../../context/CondoContext';
-import { Unidade } from '../../types';
+import { Unidade, AdminUser, AdminRole } from '../../types';
 import { 
   Building, 
   Plus, 
@@ -12,7 +12,6 @@ import {
   LogOut, 
   ShieldCheck, 
   Search, 
-  Sparkles, 
   CheckCircle2, 
   Copy, 
   ArrowLeft,
@@ -22,45 +21,27 @@ import {
   EyeOff,
   ChevronDown,
   ChevronUp,
-  UserCheck,
   UserPlus,
   Mail,
+  Camera,
+  Upload,
+  Layers,
+  Settings2,
   Lock,
-  BadgeCheck
+  Unlock,
+  AlertCircle,
+  HelpCircle,
+  Bell
 } from 'lucide-react';
+import { PrivateNotifyModal } from '../../components/admin/PrivateNotifyModal';
 
-interface AdminUser {
-  id: string;
-  nome: string;
-  usuario: string;
-  email: string;
-  cargo: 'Síndico Geral' | 'Subsíndico' | 'Administradora' | 'Portaria';
-  senha: string;
-  ativo: boolean;
-  criadoEm: string;
-}
-
-const DEFAULT_ADMIN_USERS: AdminUser[] = [
-  {
-    id: 'adm-1',
-    nome: 'Valmyr Tavares (Síndico)',
-    usuario: 'admin',
-    email: 'admin@condominio.com',
-    cargo: 'Síndico Geral',
-    senha: 'admin',
-    ativo: true,
-    criadoEm: '26/08/2026'
-  },
-  {
-    id: 'adm-2',
-    nome: 'Mariana Silva (Subsíndica)',
-    usuario: 'subsindica',
-    email: 'subsindica@condominio.com',
-    cargo: 'Subsíndico',
-    senha: 'sub123',
-    ativo: true,
-    criadoEm: '26/08/2026'
-  }
+const AVATARES_SUGERIDOS = [
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=600&q=80'
 ];
 
 export const AdminPanelScreen: React.FC = () => {
@@ -69,13 +50,24 @@ export const AdminPanelScreen: React.FC = () => {
     adicionarUnidade, 
     editarUnidade, 
     excluirUnidade, 
+    toggleUnidadeSemMoradores,
     logoutAdmin, 
-    setCurrentScreen 
+    setCurrentScreen,
+    adminUsers,
+    adminRoles,
+    adicionarAdminUser,
+    excluirAdminUser,
+    adicionarAdminRole,
+    excluirAdminRole
   } = useCondo();
 
   // Accordion section collapse states
   const [isUnidadesOpen, setIsUnidadesOpen] = useState(true);
   const [isSenhasAdminOpen, setIsSenhasAdminOpen] = useState(true);
+
+  // Private Notify Modal state
+  const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
+  const [selectedUnidadeParaNotificar, setSelectedUnidadeParaNotificar] = useState<Unidade | null>(null);
 
   // Form Unidades
   const [novoNumero, setNovoNumero] = useState('');
@@ -92,28 +84,22 @@ export const AdminPanelScreen: React.FC = () => {
   const [editSenha, setEditSenha] = useState('');
   const [showEditSenha, setShowEditSenha] = useState(false);
 
-  // Admin Users & Passwords Management
-  const [adminUsers, setAdminUsers] = useState<AdminUser[]>(() => {
-    try {
-      const saved = localStorage.getItem('condo_admin_users');
-      return saved ? JSON.parse(saved) : DEFAULT_ADMIN_USERS;
-    } catch {
-      return DEFAULT_ADMIN_USERS;
-    }
-  });
-
+  // Form Admin & Gestores
   const [novoAdminNome, setNovoAdminNome] = useState('');
   const [novoAdminUsuario, setNovoAdminUsuario] = useState('');
   const [novoAdminEmail, setNovoAdminEmail] = useState('');
-  const [novoAdminCargo, setNovoAdminCargo] = useState<AdminUser['cargo']>('Síndico Geral');
+  const [novoAdminRoleSelected, setNovoAdminRoleSelected] = useState(adminRoles[0]?.nome || 'Síndico Geral');
   const [novoAdminSenha, setNovoAdminSenha] = useState('');
   const [showNovoAdminSenha, setShowNovoAdminSenha] = useState(false);
+  const [novoAdminFoto, setNovoAdminFoto] = useState(AVATARES_SUGERIDOS[0]);
   const [adminSuccessMsg, setAdminSuccessMsg] = useState('');
   const [visibleAdminPasswords, setVisibleAdminPasswords] = useState<{ [key: string]: boolean }>({});
 
-  useEffect(() => {
-    localStorage.setItem('condo_admin_users', JSON.stringify(adminUsers));
-  }, [adminUsers]);
+  // Modal / Seção de Criação de Novas Categorias de Gestão
+  const [isModalNovaCategoriaOpen, setIsModalNovaCategoriaOpen] = useState(false);
+  const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
+  const [novaCategoriaTipoAcesso, setNovaCategoriaTipoAcesso] = useState<'total' | 'morador_destaque'>('morador_destaque');
+  const [novaCategoriaDescricao, setNovaCategoriaDescricao] = useState('');
 
   const handleAddUnidade = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,36 +136,61 @@ export const AdminPanelScreen: React.FC = () => {
     setTimeout(() => setCopiadoId(null), 2000);
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setNovoAdminFoto(reader.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleAddAdminUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoAdminNome.trim() || !novoAdminUsuario.trim() || !novoAdminSenha.trim()) return;
 
-    const novoAdmin: AdminUser = {
-      id: `adm-${Date.now()}`,
+    // Descobre o tipo de acesso pelo cargo selecionado
+    const roleObj = adminRoles.find(r => r.nome === novoAdminRoleSelected);
+    const tipoAcesso = roleObj ? roleObj.tipoAcesso : 'morador_destaque';
+
+    adicionarAdminUser({
       nome: novoAdminNome.trim(),
       usuario: novoAdminUsuario.trim().toLowerCase(),
       email: novoAdminEmail.trim() || `${novoAdminUsuario.trim().toLowerCase()}@condominio.com`,
-      cargo: novoAdminCargo,
+      cargo: novoAdminRoleSelected,
+      tipoAcesso: tipoAcesso,
+      foto: novoAdminFoto || AVATARES_SUGERIDOS[0],
       senha: novoAdminSenha.trim(),
-      ativo: true,
-      criadoEm: new Date().toLocaleDateString('pt-BR')
-    };
+      ativo: true
+    });
 
-    setAdminUsers(prev => [novoAdmin, ...prev]);
     setNovoAdminNome('');
     setNovoAdminUsuario('');
     setNovoAdminEmail('');
     setNovoAdminSenha('');
-    setAdminSuccessMsg('Administrador e credenciais criadas com sucesso!');
-    setTimeout(() => setAdminSuccessMsg(''), 3000);
+    setNovoAdminFoto(AVATARES_SUGERIDOS[Math.floor(Math.random() * AVATARES_SUGERIDOS.length)]);
+    setAdminSuccessMsg(`Perfil de ${novoAdminRoleSelected} cadastrado e integrado ao quadro de colaboradores!`);
+    setTimeout(() => setAdminSuccessMsg(''), 4000);
   };
 
-  const handleDeleteAdmin = (id: string) => {
-    if (adminUsers.length <= 1) {
-      alert('É necessário manter ao menos 1 administrador ativo no sistema.');
-      return;
-    }
-    setAdminUsers(prev => prev.filter(a => a.id !== id));
+  const handleAddNovaCategoria = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!novaCategoriaNome.trim()) return;
+
+    adicionarAdminRole(
+      novaCategoriaNome.trim(),
+      novaCategoriaTipoAcesso,
+      novaCategoriaDescricao.trim() || undefined
+    );
+
+    setNovoAdminRoleSelected(novaCategoriaNome.trim());
+    setNovaCategoriaNome('');
+    setNovaCategoriaDescricao('');
+    setIsModalNovaCategoriaOpen(false);
   };
 
   const toggleAdminPasswordVisibility = (id: string) => {
@@ -196,6 +207,9 @@ export const AdminPanelScreen: React.FC = () => {
 
   const unidadesCadastradas = unidades.filter(u => u.moradores && u.moradores.length > 0).length;
   const unidadesPendentes = unidades.length - unidadesCadastradas;
+
+  // Selected Role Info Helper
+  const currentSelectedRole = adminRoles.find(r => r.nome === novoAdminRoleSelected);
 
   return (
     <div className="space-y-6 pb-24 animate-in fade-in duration-300 w-full max-w-full overflow-x-hidden">
@@ -228,7 +242,7 @@ export const AdminPanelScreen: React.FC = () => {
               Painel de Administração
             </h2>
             <p className="text-xs text-slate-700 font-medium">
-              Controle central de unidades, senhas de moradores e acessos da gestão.
+              Controle central de unidades, senhas de moradores e equipe de gestão do condomínio.
             </p>
           </div>
         </div>
@@ -238,7 +252,7 @@ export const AdminPanelScreen: React.FC = () => {
             {unidades.length} Unidades
           </span>
           <span className="px-3.5 py-1.5 bg-slate-900 text-amber-300 rounded-xl font-black text-xs shadow-xs">
-            {adminUsers.length} Administradores
+            {adminUsers.length} Administradores & Gestores
           </span>
         </div>
       </div>
@@ -391,7 +405,7 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
 
               {/* Grid de Cards de Unidades na Fila */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredUnidades.map((u) => {
                   const isEditing = editingId === u.id;
                   const senhaDisplay = u.senhaAcesso || u.numero;
@@ -466,43 +480,49 @@ export const AdminPanelScreen: React.FC = () => {
                     return `Apto ${num}`;
                   };
 
+                  const isVazio = Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+                  const badgeText = isVazio 
+                    ? 'Sem Moradores' 
+                    : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente');
+                  const badgeStyle = isVazio
+                    ? 'bg-slate-200 text-slate-800 border-slate-300'
+                    : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300');
+
                   return (
                     <div
                       key={u.id}
-                      className="bg-white border border-slate-200 hover:border-amber-400 rounded-2xl p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-2.5"
+                      className={`bg-white border ${
+                        isVazio ? 'border-slate-300 bg-slate-50/60' : 'border-slate-200 hover:border-amber-400'
+                      } rounded-2xl p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-2.5 overflow-hidden`}
                     >
                       {/* Topo do Card de Unidade */}
                       <div className="flex items-center justify-between gap-2">
-                        <div>
-                          <h4 className="font-black text-base text-slate-950 leading-tight">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-black text-sm sm:text-base text-slate-950 leading-tight truncate">
                             {formatUnitTitle(u.numero)}
                           </h4>
-                          <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1 mt-0.5">
-                            <Car className="w-3 h-3 text-amber-800" />
+                          <span className="text-[10px] sm:text-[11px] font-bold text-slate-600 flex items-center gap-1 mt-0.5 truncate">
+                            <Car className="w-3 h-3 text-amber-800 shrink-0" />
                             Vaga: {u.vagaGaragem || 'Sem vaga'}
                           </span>
                         </div>
 
-                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
-                          u.moradores && u.moradores.length > 0
-                            ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
-                            : 'bg-amber-100 text-amber-950 border-amber-300'
-                        }`}>
-                          {u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente'}
+                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${badgeStyle}`}>
+                          {badgeText}
                         </span>
                       </div>
 
                       {/* Senha e Credencial */}
                       <div className="p-2 rounded-xl bg-slate-100/90 border border-slate-200 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1 text-slate-700">
-                          <KeyRound className="w-3.5 h-3.5 text-amber-800" />
-                          <span className="text-[10px] font-extrabold uppercase">Senha:</span>
-                          <strong className="text-slate-950 font-mono font-black ml-1">{senhaDisplay}</strong>
+                        <div className="flex items-center gap-1 text-slate-700 min-w-0 truncate">
+                          <KeyRound className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+                          <span className="text-[10px] font-extrabold uppercase shrink-0">Senha:</span>
+                          <strong className="text-slate-950 font-mono font-black ml-1 truncate">{senhaDisplay}</strong>
                         </div>
 
                         <button
                           onClick={() => handleCopySenha(u)}
-                          className="p-1 rounded-lg hover:bg-slate-200 text-slate-700 transition-colors"
+                          className="p-1 rounded-lg hover:bg-slate-200 text-slate-700 transition-colors shrink-0"
                           title="Copiar dados de acesso"
                         >
                           {copiadoId === u.id ? (
@@ -513,25 +533,62 @@ export const AdminPanelScreen: React.FC = () => {
                         </button>
                       </div>
 
-                      {/* Ações: Editar e Excluir */}
-                      <div className="flex items-center justify-end gap-1 pt-1 border-t border-slate-100">
-                        <button
-                          onClick={() => handleStartEdit(u)}
-                          className="p-1.5 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-100 transition-colors text-xs flex items-center gap-1 font-bold"
-                          title="Editar Unidade"
+                      {/* Ações: Check Vazio (canto esquerdo) + Editar + Notificar + Excluir (canto direito) */}
+                      <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
+                        
+                        {/* Checkbox de Apartamento Vazio */}
+                        <label 
+                          className="flex items-center gap-1 cursor-pointer select-none group bg-slate-100/90 hover:bg-amber-100/70 px-1.5 py-1 rounded-lg border border-slate-200 transition-colors shrink-0"
+                          title="Marcar como apartamento vazio / sem moradores"
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>Editar</span>
-                        </button>
+                          <input
+                            type="checkbox"
+                            checked={isVazio}
+                            onChange={() => toggleUnidadeSemMoradores(u.id)}
+                            className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer accent-amber-600"
+                          />
+                          <span className={`text-[9px] uppercase tracking-tight transition-colors ${
+                            isVazio 
+                              ? 'text-slate-950 font-black' 
+                              : 'text-slate-500 font-bold group-hover:text-slate-800'
+                          }`}>
+                            Vazio
+                          </span>
+                        </label>
 
-                        <button
-                          onClick={() => excluirUnidade(u.id)}
-                          className="p-1.5 rounded-lg text-rose-700 hover:text-rose-900 hover:bg-rose-100 transition-colors text-xs flex items-center gap-1 font-bold"
-                          title="Excluir Unidade"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Excluir</span>
-                        </button>
+                        {/* Ações da Direita: Editar + Notificar + Excluir */}
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <button
+                            onClick={() => handleStartEdit(u)}
+                            className="px-1.5 py-1 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
+                            title="Editar Unidade"
+                          >
+                            <Edit3 className="w-3 h-3 text-slate-600" />
+                            <span>Editar</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setSelectedUnidadeParaNotificar(u);
+                              setIsNotifyModalOpen(true);
+                            }}
+                            className="px-1.5 py-1 rounded-lg text-amber-800 hover:text-amber-950 hover:bg-amber-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
+                            title="Notificar Moradia Privadamente"
+                          >
+                            <Bell className="w-3 h-3 text-amber-700" />
+                            <span>Notificar</span>
+                          </button>
+
+                          <button
+                            onClick={() => excluirUnidade(u.id)}
+                            className="px-1.5 py-1 rounded-lg text-rose-700 hover:text-rose-900 hover:bg-rose-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
+                            title="Excluir Unidade"
+                          >
+                            <Trash2 className="w-3 h-3 text-rose-600" />
+                            <span>Excluir</span>
+                          </button>
+                        </div>
+
                       </div>
 
                     </div>
@@ -546,7 +603,7 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 2: CRIANDO SENHA DE ACESSOS (GESTÃO DE ADMINISTRADORES / SÍNDICOS) */}
+      {/* SEÇÃO 2: CRIANDO SENHA DE ACESSOS (GESTÃO DE ADMINISTRADORES & CONSELHEIROS) */}
       {/* ========================================================================= */}
       <div className="bg-white/90 border-2 border-amber-200/80 rounded-3xl shadow-md overflow-hidden transition-all">
         
@@ -563,14 +620,14 @@ export const AdminPanelScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-black text-slate-950">
-                  Criando senha de acessos
+                  Criando senha de acessos & Equipe de Gestão
                 </h3>
                 <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-slate-900 text-amber-300">
-                  {adminUsers.length} Administradores
+                  {adminUsers.length} Membros Cadastrados
                 </span>
               </div>
               <p className="text-xs text-slate-600 font-medium">
-                Cadastre e gerencie os usuários e senhas de administradores, síndicos e subsíndicos.
+                Síndicos, Subsíndicos, Administradores (Acesso Total) e Conselheiros (Acesso Morador com Destaque na Equipe).
               </p>
             </div>
           </div>
@@ -597,157 +654,259 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
             )}
 
-            {/* Form de Criação de Novo Administrador / Senha de Acesso */}
-            <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-2xs">
-              <div className="flex items-center gap-2 pb-1">
-                <UserPlus className="w-4 h-4 text-amber-800" />
-                <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-950">
-                  Novo Administrador / Senha de Gestão
-                </h4>
+            {/* Form de Criação de Novo Administrador / Conselheiro com Foto */}
+            <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs">
+              <div className="flex items-center justify-between gap-2 pb-1 border-b border-amber-200/60">
+                <div className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4 text-amber-800" />
+                  <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-950">
+                    Cadastrar Membro da Gestão / Nova Senha
+                  </h4>
+                </div>
+
+                {/* Botão para Gerenciar / Criar Categorias */}
+                <button
+                  type="button"
+                  onClick={() => setIsModalNovaCategoriaOpen(true)}
+                  className="px-2.5 py-1 bg-white hover:bg-amber-100 border border-amber-300 text-amber-950 rounded-lg text-[11px] font-black uppercase flex items-center gap-1 shadow-2xs transition-all"
+                >
+                  <Settings2 className="w-3.5 h-3.5 text-amber-800" />
+                  + Criar Nova Categoria / Cargo
+                </button>
               </div>
 
-              <form onSubmit={handleAddAdminUser} className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+              <form onSubmit={handleAddAdminUser} className="space-y-4">
+                
+                {/* Linha 1: Foto de Perfil Individual + Dados Principais */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
                   
-                  {/* Nome Completo */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                      Nome do Administrador:
+                  {/* Foto de Perfil com Upload e Preview */}
+                  <div className="md:col-span-3 space-y-2 bg-white/80 border border-amber-200 rounded-2xl p-3 text-center">
+                    <label className="text-[10px] font-extrabold uppercase text-slate-700 block">
+                      Foto de Perfil (Aparece em Funcionários):
                     </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Valmyr Tavares"
-                      value={novoAdminNome}
-                      onChange={(e) => setNovoAdminNome(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
-                      required
-                    />
-                  </div>
 
-                  {/* Usuário de Login */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                      Usuário de Acesso:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: admin, subsindico"
-                      value={novoAdminUsuario}
-                      onChange={(e) => setNovoAdminUsuario(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
-                      required
-                    />
-                  </div>
-
-                  {/* Cargo / Perfil */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                      Perfil / Função:
-                    </label>
-                    <select
-                      value={novoAdminCargo}
-                      onChange={(e) => setNovoAdminCargo(e.target.value as AdminUser['cargo'])}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
-                    >
-                      <option value="Síndico Geral">Síndico Geral</option>
-                      <option value="Subsíndico">Subsíndico</option>
-                      <option value="Administradora">Administradora</option>
-                      <option value="Portaria">Portaria / Zeladoria</option>
-                    </select>
-                  </div>
-
-                  {/* Senha de Acesso com Olho */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                      Senha Administrativa:
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showNovoAdminSenha ? 'text' : 'password'}
-                        placeholder="Ex: admin123"
-                        value={novoAdminSenha}
-                        onChange={(e) => setNovoAdminSenha(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pr-9 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
-                        required
+                    <div className="relative w-20 h-20 mx-auto">
+                      <img
+                        src={novoAdminFoto || AVATARES_SUGERIDOS[0]}
+                        alt="Preview"
+                        className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-md bg-slate-100"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowNovoAdminSenha(!showNovoAdminSenha)}
-                        className="p-1 text-slate-500 hover:text-slate-800 absolute right-2.5 top-1.5 rounded-lg"
-                        tabIndex={-1}
-                        title={showNovoAdminSenha ? "Ocultar senha" : "Ver senha"}
+                      <label 
+                        htmlFor="upload-admin-foto"
+                        className="absolute -bottom-1.5 -right-1.5 p-1.5 rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 cursor-pointer shadow-md border border-white"
+                        title="Trocar Foto"
                       >
-                        {showNovoAdminSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                        <Camera className="w-3.5 h-3.5" />
+                        <input
+                          id="upload-admin-foto"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-extrabold uppercase text-slate-500 block">
+                        Ou escolha um avatar:
+                      </span>
+                      <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                        {AVATARES_SUGERIDOS.slice(0, 4).map((av, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setNovoAdminFoto(av)}
+                            className={`w-6 h-6 rounded-full overflow-hidden border-2 transition-all ${
+                              novoAdminFoto === av ? 'border-amber-600 scale-110 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'
+                            }`}
+                          >
+                            <img src={av} alt="Avatar" className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                </div>
+                  {/* Campos de Nome, Usuário, Cargo e Senha */}
+                  <div className="md:col-span-9 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      
+                      {/* Nome Completo */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                          Nome Completo:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ex: Valmyr Tavares, Dr. Carlos..."
+                          value={novoAdminNome}
+                          onChange={(e) => setNovoAdminNome(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                          required
+                        />
+                      </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  {/* E-mail de Recuperação */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                      E-mail para Notificações & Recuperação:
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="email"
-                        placeholder="Ex: admin@condominio.com"
-                        value={novoAdminEmail}
-                        onChange={(e) => setNovoAdminEmail(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pl-9 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
-                      />
-                      <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      {/* Usuário de Login */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                          Usuário de Acesso / Login:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ex: admin, subsindico, conselheiro1"
+                          value={novoAdminUsuario}
+                          onChange={(e) => setNovoAdminUsuario(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                          required
+                        />
+                      </div>
+
+                      {/* Cargo Dinâmico do Select */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                            Categoria / Função:
+                          </label>
+                          <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded border ${
+                            currentSelectedRole?.tipoAcesso === 'total' 
+                              ? 'bg-amber-100 text-amber-950 border-amber-300' 
+                              : 'bg-indigo-100 text-indigo-950 border-indigo-300'
+                          }`}>
+                            {currentSelectedRole?.tipoAcesso === 'total' ? '🔓 Acesso Total' : '👤 Acesso Morador (Conselho)'}
+                          </span>
+                        </div>
+
+                        <select
+                          value={novoAdminRoleSelected}
+                          onChange={(e) => setNovoAdminRoleSelected(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                        >
+                          {adminRoles.map((role) => (
+                            <option key={role.id} value={role.nome}>
+                              {role.nome} {role.tipoAcesso === 'total' ? '(Acesso Irrestrito)' : '(Poder de Morador)'}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Senha com Olho */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                          Senha de Acesso:
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showNovoAdminSenha ? 'text' : 'password'}
+                            placeholder="Ex: admin123, 101..."
+                            value={novoAdminSenha}
+                            onChange={(e) => setNovoAdminSenha(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pr-9 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNovoAdminSenha(!showNovoAdminSenha)}
+                            className="p-1 text-slate-500 hover:text-slate-800 absolute right-2.5 top-1.5 rounded-lg"
+                            tabIndex={-1}
+                            title={showNovoAdminSenha ? "Ocultar senha" : "Ver senha"}
+                          >
+                            {showNovoAdminSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
                     </div>
-                  </div>
 
-                  <div className="flex items-end justify-end">
-                    <button
-                      type="submit"
-                      className="w-full sm:w-auto px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95"
-                    >
-                      <ShieldCheck className="w-4 h-4 stroke-[3]" />
-                      Salvar Administrador
-                    </button>
+                    {/* E-mail e Botão de Salvar */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-1 items-end">
+                      <div className="sm:col-span-8 space-y-1">
+                        <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                          E-mail para Notificações & Recuperação:
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="email"
+                            placeholder="Ex: gestao@condominio.com"
+                            value={novoAdminEmail}
+                            onChange={(e) => setNovoAdminEmail(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pl-9 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                          />
+                          <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-4">
+                        <button
+                          type="submit"
+                          className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95"
+                        >
+                          <ShieldCheck className="w-4 h-4 stroke-[3]" />
+                          Salvar Membro
+                        </button>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
+
               </form>
             </div>
 
-            {/* Lista de Administradores e Senhas */}
+            {/* Lista de Administradores & Gestores com Foto e Permissões */}
             <div className="space-y-3">
-              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-950 block">
-                Administradores Cadastrados ({adminUsers.length})
-              </span>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-950">
+                  Equipe de Gestão Cadastrada ({adminUsers.length})
+                </span>
+                
+                <span className="text-[11px] text-slate-600 font-medium">
+                  * Todos os membros com foto aparecem no quadro de colaboradores (aba Funcionários).
+                </span>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {adminUsers.map((admin) => {
                   const isPassVisible = visibleAdminPasswords[admin.id];
+                  const isTotal = admin.tipoAcesso === 'total';
 
                   return (
                     <div
                       key={admin.id}
                       className="bg-white border border-slate-200 hover:border-amber-400 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3"
                     >
-                      {/* Topo do Card */}
+                      {/* Topo do Card com Foto */}
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-900 font-black text-xs shrink-0">
-                            {admin.nome.charAt(0)}
-                          </div>
-                          <div>
-                            <h4 className="font-black text-sm text-slate-950 leading-tight">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={admin.foto || AVATARES_SUGERIDOS[0]}
+                            alt={admin.nome}
+                            className="w-12 h-12 rounded-2xl object-cover border-2 border-amber-300 shadow-sm bg-slate-100 shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <h4 className="font-black text-sm text-slate-950 leading-tight truncate">
                               {admin.nome}
                             </h4>
-                            <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
+                            <p className="text-[11px] text-slate-500 font-semibold truncate mt-0.5">
                               {admin.email}
                             </p>
                           </div>
                         </div>
+                      </div>
 
-                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-900 text-amber-300 border border-slate-800 shrink-0">
+                      {/* Cargo e Nível de Acesso */}
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-900 text-amber-300 border border-slate-800">
                           {admin.cargo}
+                        </span>
+
+                        <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
+                          isTotal 
+                            ? 'bg-amber-100 text-amber-950 border-amber-300' 
+                            : 'bg-blue-100 text-blue-950 border-blue-300'
+                        }`}>
+                          {isTotal ? '🔓 Acesso Irrestrito' : '👤 Poder de Morador'}
                         </span>
                       </div>
 
@@ -791,8 +950,8 @@ export const AdminPanelScreen: React.FC = () => {
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => {
-                              navigator.clipboard.writeText(`Painel Admin\nUsuário: ${admin.usuario}\nSenha: ${admin.senha}`);
-                              alert(`Credenciais de ${admin.usuario} copiadas!`);
+                              navigator.clipboard.writeText(`Painel Condomínio\nNome: ${admin.nome}\nCargo: ${admin.cargo}\nUsuário: ${admin.usuario}\nSenha: ${admin.senha}`);
+                              alert(`Credenciais de ${admin.nome} copiadas!`);
                             }}
                             className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center gap-1 text-[11px] font-bold"
                             title="Copiar dados"
@@ -802,7 +961,7 @@ export const AdminPanelScreen: React.FC = () => {
 
                           {adminUsers.length > 1 && (
                             <button
-                              onClick={() => handleDeleteAdmin(admin.id)}
+                              onClick={() => excluirAdminUser(admin.id)}
                               className="p-1.5 rounded-lg text-rose-600 hover:text-rose-800 hover:bg-rose-100 transition-colors flex items-center gap-1 text-[11px] font-bold"
                               title="Remover Administrador"
                             >
@@ -822,6 +981,172 @@ export const AdminPanelScreen: React.FC = () => {
         )}
 
       </div>
+
+      {/* ========================================================================= */}
+      {/* MODAL: CRIAR NOVA CATEGORIA / CARGO DINÂMICO */}
+      {/* ========================================================================= */}
+      {isModalNovaCategoriaOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white border-2 border-amber-400 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-900 flex items-center justify-center">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-950">
+                    Criar Nova Categoria / Cargo
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Adicione qualquer novo cargo para aparecer no select sem precisar alterar código.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsModalNovaCategoriaOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddNovaCategoria} className="space-y-4">
+              
+              {/* Nome do Cargo */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold uppercase text-slate-800">
+                  Nome do Cargo / Categoria:
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Gerente Predial, Comitê de Obras, Diretor Financeiro..."
+                  value={novaCategoriaNome}
+                  onChange={(e) => setNovaCategoriaNome(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              {/* Nível de Acesso */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-extrabold uppercase text-slate-800">
+                  Nível de Permissão & Poderes:
+                </label>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNovaCategoriaTipoAcesso('total')}
+                    className={`p-3 rounded-2xl border text-left transition-all ${
+                      novaCategoriaTipoAcesso === 'total'
+                        ? 'bg-amber-100/90 border-amber-400 ring-2 ring-amber-500/20'
+                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 font-black text-xs text-slate-950">
+                      <Lock className="w-3.5 h-3.5 text-amber-800" />
+                      <span>Acesso Irrestrito (Admin)</span>
+                    </div>
+                    <p className="text-[10px] text-slate-600 font-medium mt-1">
+                      Acesso total a todas as telas, painel de admin e gestão.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setNovaCategoriaTipoAcesso('morador_destaque')}
+                    className={`p-3 rounded-2xl border text-left transition-all ${
+                      novaCategoriaTipoAcesso === 'morador_destaque'
+                        ? 'bg-amber-100/90 border-amber-400 ring-2 ring-amber-500/20'
+                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 font-black text-xs text-slate-950">
+                      <Unlock className="w-3.5 h-3.5 text-indigo-700" />
+                      <span>Poder de Morador (Conselho)</span>
+                    </div>
+                    <p className="text-[10px] text-slate-600 font-medium mt-1">
+                      Poder de um morador comum, mas ganha destaque no quadro de equipe.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Descrição Opcional */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold uppercase text-slate-800">
+                  Descrição / Atribuições (Opcional):
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Responsável pelas vistorias técnicas e orçamentos de obras"
+                  value={novaCategoriaDescricao}
+                  onChange={(e) => setNovaCategoriaDescricao(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              {/* Categorias Atuais */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[10px] font-extrabold uppercase text-slate-500 block">
+                  Categorias Ativas ({adminRoles.length}):
+                </span>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-200">
+                  {adminRoles.map((r) => (
+                    <span 
+                      key={r.id}
+                      className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 flex items-center gap-1"
+                    >
+                      {r.nome}
+                      {adminRoles.length > 4 && (
+                        <button
+                          type="button"
+                          onClick={() => excluirAdminRole(r.id)}
+                          className="text-rose-600 hover:text-rose-800 ml-1"
+                          title="Excluir Categoria"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Botões do Modal */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsModalNovaCategoriaOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md active:scale-95"
+                >
+                  Salvar e Adicionar ao Select
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Notificação Privada da Unidade */}
+      <PrivateNotifyModal
+        isOpen={isNotifyModalOpen}
+        onClose={() => {
+          setIsNotifyModalOpen(false);
+          setSelectedUnidadeParaNotificar(null);
+        }}
+        unidade={selectedUnidadeParaNotificar}
+      />
 
     </div>
   );

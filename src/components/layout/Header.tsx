@@ -10,7 +10,8 @@ import {
   Building2, 
   X,
   ChevronRight,
-  Shield
+  Shield,
+  Bell
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -23,10 +24,18 @@ export const Header: React.FC = () => {
     isAdminLoggedIn,
     logoutResident,
     logoutAdmin,
-    setCurrentScreen 
+    setCurrentScreen,
+    notificacoesPrivadas,
+    marcarNotificacaoComoLida
   } = useCondo();
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotifPopupOpen, setIsNotifPopupOpen] = useState(false);
+
+  const unitNotifs = notificacoesPrivadas.filter(
+    n => currentUser.unidade && n.unidadeNumero.toLowerCase() === currentUser.unidade.toLowerCase()
+  );
+  const unreadCount = unitNotifs.filter(n => !n.lida).length;
 
   const isHome = currentScreen === 'home';
 
@@ -92,26 +101,121 @@ export const Header: React.FC = () => {
             <Menu className="w-7 h-7 stroke-[2.5]" />
           </button>
 
-          {/* Right: Resident Name - Opens Logout / Profile Modal */}
-          <button
-            onClick={() => setIsProfileOpen(true)}
-            className={`flex items-center gap-2 text-sm font-medium tracking-tight transition-all active:scale-95 px-2.5 py-1.5 rounded-2xl ${
-              isHome 
-                ? 'text-white/90 hover:text-white bg-black/20 hover:bg-black/35 backdrop-blur-sm border border-white/20' 
-                : 'text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200/80 border border-slate-200'
-            }`}
-            title="Gerenciar perfil e sessão"
-          >
-            {currentUser.role === 'subsindico' ? (
-              <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
-            ) : (
-              <User className="w-4 h-4 text-white/80 shrink-0" />
+          {/* Right Section: Notifications Bell + Resident Name */}
+          <div className="flex items-center gap-2">
+            
+            {/* Private Notification Bell for Resident */}
+            {unitNotifs.length > 0 && (
+              <button
+                onClick={() => setIsNotifPopupOpen(true)}
+                className={`relative p-2 rounded-2xl transition-all active:scale-95 flex items-center justify-center ${
+                  isHome
+                    ? 'text-white bg-black/20 hover:bg-black/35 border border-white/20'
+                    : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200'
+                }`}
+                title="Avisos e Notificações Privadas da Sindicância"
+              >
+                <Bell className="w-4 h-4 text-amber-400" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[10px] font-black flex items-center justify-center animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
             )}
-            <span className="font-normal">{formattedName}</span>
-          </button>
+
+            {/* Resident Name - Opens Logout / Profile Modal */}
+            <button
+              onClick={() => setIsProfileOpen(true)}
+              className={`flex items-center gap-2 text-sm font-medium tracking-tight transition-all active:scale-95 px-2.5 py-1.5 rounded-2xl ${
+                isHome 
+                  ? 'text-white/90 hover:text-white bg-black/20 hover:bg-black/35 backdrop-blur-sm border border-white/20' 
+                  : 'text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200/80 border border-slate-200'
+              }`}
+              title="Gerenciar perfil e sessão"
+            >
+              {currentUser.role === 'subsindico' ? (
+                <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+              ) : (
+                <User className="w-4 h-4 text-white/80 shrink-0" />
+              )}
+              <span className="font-normal">{formattedName}</span>
+            </button>
+          </div>
 
         </div>
       </header>
+
+      {/* Modal de Notificações Privadas para o Morador */}
+      {isNotifPopupOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white border-2 border-amber-400 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-900 flex items-center justify-center">
+                  <Bell className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-950">
+                    Notificações da Sindicância
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Avisos privados para o Apto {currentUser.unidade}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsNotifPopupOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+              {unitNotifs.map((n) => (
+                <div 
+                  key={n.id}
+                  className={`p-4 rounded-2xl border transition-all space-y-1.5 ${
+                    n.lida ? 'bg-slate-50 border-slate-200' : 'bg-amber-50/80 border-amber-300 shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-black text-xs text-slate-950">
+                      {n.titulo}
+                    </h4>
+                    {!n.lida && (
+                      <button
+                        onClick={() => marcarNotificacaoComoLida(n.id)}
+                        className="text-[10px] font-black uppercase text-amber-900 hover:underline"
+                      >
+                        Marcar como lida
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                    {n.mensagem}
+                  </p>
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200/60">
+                    <span>{n.autorNome}</span>
+                    <span>{n.dataHora}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setIsNotifPopupOpen(false)}
+                className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-xs"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile & Logout Popup Modal */}
       {isProfileOpen && (
