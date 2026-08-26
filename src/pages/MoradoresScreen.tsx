@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useCondo } from '../context/CondoContext';
-import { Car, Search, Building2, ShieldCheck } from 'lucide-react';
+import { EditResidentCellModal } from '../components/moradores/EditResidentCellModal';
+import { Car, Search, Building2, ShieldCheck, Edit3 } from 'lucide-react';
 
 export const MoradoresScreen: React.FC = () => {
   const { unidades } = useCondo();
   const [selectedUnidadeId, setSelectedUnidadeId] = useState<string>(unidades[1]?.id || unidades[0]?.id);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const selectedUnidade = unidades.find(u => u.id === selectedUnidadeId) || unidades[0];
 
@@ -79,24 +81,33 @@ export const MoradoresScreen: React.FC = () => {
         if (!hasMoradorConfigurado) {
           return (
             <div className="bg-white/45 border border-white/60 rounded-3xl p-4 sm:p-5 shadow-xl hover:bg-white/55 transition-all duration-300">
-              <div className="flex items-center gap-4">
-                {/* Quadrado vazio sem foto */}
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-dashed border-slate-500/40 bg-white/20 flex flex-col items-center justify-center shrink-0 shadow-inner">
-                  <div className="w-7 h-7 rounded-xl border border-slate-400/40 bg-white/20" />
-                  <span className="text-[9px] font-black text-slate-700 mt-1">{unitLabel}</span>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  {/* Quadrado vazio sem foto */}
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-dashed border-slate-500/40 bg-white/20 flex flex-col items-center justify-center shrink-0 shadow-inner">
+                    <div className="w-7 h-7 rounded-xl border border-slate-400/40 bg-white/20" />
+                    <span className="text-[9px] font-black text-slate-700 mt-1">{unitLabel}</span>
+                  </div>
+
+                  {/* Morador sem dados configurados */}
+                  <div className="space-y-1">
+                    <h3 className="text-base sm:text-lg font-black text-slate-950 tracking-tight">
+                      Morador sem dados configurados
+                    </h3>
+                    {selectedUnidade.vagaGaragem && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/60 text-slate-900 border border-white/80 shadow-2xs text-[11px] font-bold">
+                        <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga: {selectedUnidade.vagaGaragem}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                {/* Morador sem dados configurados */}
-                <div className="space-y-1">
-                  <h3 className="text-base sm:text-lg font-black text-slate-950 tracking-tight">
-                    Morador sem dados configurados
-                  </h3>
-                  {selectedUnidade.vagaGaragem && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/60 text-slate-900 border border-white/80 shadow-2xs text-[11px] font-bold">
-                      <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga: {selectedUnidade.vagaGaragem}
-                    </span>
-                  )}
-                </div>
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400 shadow-md font-black text-xs transition-all active:scale-95 shrink-0"
+                >
+                  <Edit3 className="w-3.5 h-3.5" /> Editar
+                </button>
               </div>
             </div>
           );
@@ -156,16 +167,26 @@ export const MoradoresScreen: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Operational details */}
-                <div className="border-t border-slate-950/10 pt-3 flex flex-wrap gap-2.5 text-[11px]">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 text-slate-950 border border-white/80 shadow-2xs font-extrabold">
-                    <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga de Garagem: {selectedUnidade.vagaGaragem || 'Sem vaga vinculada'}
-                  </span>
-                  {selectedUnidade.bloco && (
+                {/* Operational details & Yellow Edit Button */}
+                <div className="border-t border-slate-950/10 pt-3 flex flex-wrap items-center justify-between gap-2.5 text-[11px]">
+                  <div className="flex flex-wrap gap-2.5">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 text-slate-950 border border-white/80 shadow-2xs font-extrabold">
-                      <Building2 className="w-3.5 h-3.5 text-slate-800" /> Bloco: {selectedUnidade.bloco}
+                      <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga de Garagem: {selectedUnidade.vagaGaragem || 'Sem vaga vinculada'}
                     </span>
-                  )}
+                    {selectedUnidade.bloco && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 text-slate-950 border border-white/80 shadow-2xs font-extrabold">
+                        <Building2 className="w-3.5 h-3.5 text-slate-800" /> Bloco: {selectedUnidade.bloco}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Botão Editar em Amarelo posicionado exatamente onde indicado pelo retângulo */}
+                  <button
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400 shadow-md font-black text-xs transition-all active:scale-95 ml-auto cursor-pointer"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-slate-950" /> Editar
+                  </button>
                 </div>
 
               </div>
@@ -173,6 +194,15 @@ export const MoradoresScreen: React.FC = () => {
           </div>
         );
       })()}
+
+      {/* Edit Resident Cell Modal */}
+      {selectedUnidade && (
+        <EditResidentCellModal
+          isOpen={isEditModalOpen}
+          unidade={selectedUnidade}
+          onClose={() => setIsEditModalOpen(false)}
+        />
+      )}
 
     </div>
   );

@@ -93,6 +93,7 @@ interface CondoContextType {
     novaSenha?: string
   ) => void;
   pularCadastroMorador: (unidadeNumero: string) => void;
+  atualizarMoradoresUnidade: (unidadeId: string, moradores: User[], fotoCelula?: string, nomeCelula?: string) => void;
   atualizarSenhaUnidade: (unidadeNumero: string, novaSenha: string) => boolean;
   solicitarRecuperacaoSenha: (unidadeOuEmail: string) => { success: boolean; emailMascarado?: string; codigoSimulado?: string; message?: string };
   redefinirSenhaComCodigo: (unidadeOuEmail: string, codigo: string, novaSenha: string) => { success: boolean; message?: string };
@@ -522,6 +523,41 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       success: true, 
       message: 'Senha alterada com sucesso! Você já pode entrar com sua nova senha.' 
     };
+  };
+
+  const atualizarMoradoresUnidade = (
+    unidadeId: string, 
+    moradores: User[], 
+    fotoCelula?: string, 
+    nomeCelula?: string
+  ) => {
+    setUnidades(prev => {
+      const atualizadas = prev.map(u => {
+        if (u.id === unidadeId || u.numero.toLowerCase() === unidadeId.toLowerCase()) {
+          const nomeFinal = nomeCelula || moradores.map(m => m.nome).join(', ');
+          const emailPrincipal = moradores[0]?.email || u.emailResponsavel;
+          return {
+            ...u,
+            moradores,
+            statusCadastro: moradores.length > 0 ? ('Cadastrado' as const) : ('Pendente' as const),
+            fotoCelula: fotoCelula !== undefined ? fotoCelula : u.fotoCelula,
+            nomeCelula: nomeFinal,
+            emailResponsavel: emailPrincipal
+          };
+        }
+        return u;
+      });
+      localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      return atualizadas;
+    });
+
+    // Se o morador logado pertencer a essa unidade, atualiza o currentUser
+    if (moradores.length > 0) {
+      const match = moradores.find(m => m.id === currentUser.id) || moradores[0];
+      if (match.unidade === currentUser.unidade || !currentUser.unidade) {
+        setCurrentUser(match);
+      }
+    }
   };
 
   const pularCadastroMorador = (unidadeNumero: string) => {
@@ -1020,6 +1056,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       loginResident,
       concluirCadastroMorador,
       pularCadastroMorador,
+      atualizarMoradoresUnidade,
       atualizarSenhaUnidade,
       solicitarRecuperacaoSenha,
       redefinirSenhaComCodigo,
