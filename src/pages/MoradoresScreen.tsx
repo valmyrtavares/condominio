@@ -44,6 +44,10 @@ export const MoradoresScreen: React.FC = () => {
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {filteredUnidades.map((u) => {
             const isSelected = u.id === selectedUnidadeId;
+            const title = u.numero.toLowerCase().startsWith('apt') || u.numero.toLowerCase().startsWith('cobertura')
+              ? u.numero
+              : `Apt ${u.numero}`;
+
             return (
               <button
                 key={u.id}
@@ -54,7 +58,7 @@ export const MoradoresScreen: React.FC = () => {
                     : 'bg-white/40 text-slate-900 border-white/60 hover:bg-white/60'
                 }`}
               >
-                Apt {u.numero}
+                {title}
               </button>
             );
           })}
@@ -68,20 +72,30 @@ export const MoradoresScreen: React.FC = () => {
           selectedUnidade.fotoCelula
         );
 
+        const unitLabel = selectedUnidade.numero.toLowerCase().startsWith('apt') || selectedUnidade.numero.toLowerCase().startsWith('cobertura')
+          ? selectedUnidade.numero
+          : `Apt ${selectedUnidade.numero}`;
+
         if (!hasMoradorConfigurado) {
           return (
             <div className="bg-white/45 border border-white/60 rounded-3xl p-4 sm:p-5 shadow-xl hover:bg-white/55 transition-all duration-300">
               <div className="flex items-center gap-4">
                 {/* Quadrado vazio sem foto */}
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-dashed border-slate-500/40 bg-white/20 flex items-center justify-center shrink-0 shadow-inner">
-                  <div className="w-8 h-8 rounded-xl border border-slate-400/40 bg-white/20" />
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-dashed border-slate-500/40 bg-white/20 flex flex-col items-center justify-center shrink-0 shadow-inner">
+                  <div className="w-7 h-7 rounded-xl border border-slate-400/40 bg-white/20" />
+                  <span className="text-[9px] font-black text-slate-700 mt-1">{unitLabel}</span>
                 </div>
 
                 {/* Morador sem dados configurados */}
-                <div>
+                <div className="space-y-1">
                   <h3 className="text-base sm:text-lg font-black text-slate-950 tracking-tight">
                     Morador sem dados configurados
                   </h3>
+                  {selectedUnidade.vagaGaragem && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/60 text-slate-900 border border-white/80 shadow-2xs text-[11px] font-bold">
+                      <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga: {selectedUnidade.vagaGaragem}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -100,7 +114,7 @@ export const MoradoresScreen: React.FC = () => {
                   className="w-40 h-40 md:w-44 md:h-44 rounded-2xl object-cover border-2 border-white/80 shadow-md"
                 />
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 md:left-2 md:translate-x-0 bg-slate-950/70 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/10 text-white text-[10px] font-extrabold uppercase tracking-wider">
-                  Apt {selectedUnidade.numero}
+                  {unitLabel}
                 </div>
               </div>
 
@@ -145,11 +159,13 @@ export const MoradoresScreen: React.FC = () => {
                 {/* Operational details */}
                 <div className="border-t border-slate-950/10 pt-3 flex flex-wrap gap-2.5 text-[11px]">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 text-slate-950 border border-white/80 shadow-2xs font-extrabold">
-                    <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga de Garagem: {selectedUnidade.vagaGaragem}
+                    <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga de Garagem: {selectedUnidade.vagaGaragem || 'Sem vaga vinculada'}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 text-slate-950 border border-white/80 shadow-2xs font-extrabold">
-                    <Building2 className="w-3.5 h-3.5 text-slate-800" /> Bloco: {selectedUnidade.bloco}
-                  </span>
+                  {selectedUnidade.bloco && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 text-slate-950 border border-white/80 shadow-2xs font-extrabold">
+                      <Building2 className="w-3.5 h-3.5 text-slate-800" /> Bloco: {selectedUnidade.bloco}
+                    </span>
+                  )}
                 </div>
 
               </div>

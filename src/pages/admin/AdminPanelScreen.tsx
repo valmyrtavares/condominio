@@ -16,7 +16,10 @@ import {
   CheckCircle2, 
   Copy, 
   ArrowLeft,
-  Users
+  Users,
+  Car,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export const AdminPanelScreen: React.FC = () => {
@@ -30,18 +33,18 @@ export const AdminPanelScreen: React.FC = () => {
   } = useCondo();
 
   const [novoNumero, setNovoNumero] = useState('');
-  const [novoBloco, setNovoBloco] = useState('Bloco A');
+  const [novaVaga, setNovaVaga] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
+  const [showNovaSenha, setShowNovaSenha] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
 
   // Edit inline state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNumero, setEditNumero] = useState('');
-  const [editBloco, setEditBloco] = useState('');
+  const [editVaga, setEditVaga] = useState('');
   const [editSenha, setEditSenha] = useState('');
-
-  const blocos = ['Bloco A', 'Bloco B', 'Bloco Único', 'Torre 1', 'Torre 2'];
+  const [showEditSenha, setShowEditSenha] = useState(false);
 
   const handleAddUnidade = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,37 +52,38 @@ export const AdminPanelScreen: React.FC = () => {
 
     adicionarUnidade(
       novoNumero.trim(),
-      novoBloco.trim(),
+      novaVaga.trim() || `Vaga ${novoNumero.trim()}`,
       novaSenha.trim() || novoNumero.trim()
     );
 
     setNovoNumero('');
+    setNovaVaga('');
     setNovaSenha('');
   };
 
   const handleStartEdit = (u: Unidade) => {
     setEditingId(u.id);
     setEditNumero(u.numero);
-    setEditBloco(u.bloco || 'Bloco A');
+    setEditVaga(u.vagaGaragem || '');
     setEditSenha(u.senhaAcesso || u.numero);
   };
 
   const handleSaveEdit = (id: string) => {
     if (!editNumero.trim()) return;
-    editarUnidade(id, editNumero, editBloco, editSenha || editNumero);
+    editarUnidade(id, editNumero, editVaga, editSenha || editNumero);
     setEditingId(null);
   };
 
   const handleCopySenha = (u: Unidade) => {
-    const texto = `Condomínio Jardim Paulista - Unidade ${u.numero} (${u.bloco})\nLogin: ${u.numero}\nSenha de Acesso: ${u.senhaAcesso || u.numero}`;
+    const texto = `Condomínio - Unidade: ${u.numero}\nVaga de Garagem: ${u.vagaGaragem || 'Sem vaga'}\nLogin / Senha: ${u.senhaAcesso || u.numero}`;
     navigator.clipboard.writeText(texto);
     setCopiadoId(u.id);
     setTimeout(() => setCopiadoId(null), 2000);
   };
 
   const filteredUnidades = unidades.filter(u => 
-    u.numero.includes(searchTerm) ||
-    u.bloco.toLowerCase().includes(searchTerm.toLowerCase())
+    u.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (u.vagaGaragem && u.vagaGaragem.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -119,7 +123,7 @@ export const AdminPanelScreen: React.FC = () => {
         </span>
       </div>
 
-      {/* Form de Criação de Unidade (Preenchimento Manual Rápido) */}
+      {/* Form de Criação de Unidade */}
       <div className="bg-white/50 border-2 border-white/70 rounded-3xl p-5 shadow-xl space-y-3.5 backdrop-blur-xs">
         <div className="flex items-center gap-2 border-b border-slate-950/10 pb-2">
           <Building className="w-4 h-4 text-amber-800" />
@@ -131,14 +135,14 @@ export const AdminPanelScreen: React.FC = () => {
         <form onSubmit={handleAddUnidade} className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             
-            {/* Número da Unidade */}
+            {/* Número / Identificação Completa da Unidade */}
             <div className="space-y-1">
               <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                Número do Apto:
+                Número do Apto / Identificação:
               </label>
               <input
                 type="text"
-                placeholder="Ex: 101, 102, 201..."
+                placeholder="Ex: 101 Bloco A, 001, 102..."
                 value={novoNumero}
                 onChange={(e) => setNovoNumero(e.target.value)}
                 className="w-full bg-white/80 border border-white rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
@@ -146,41 +150,50 @@ export const AdminPanelScreen: React.FC = () => {
               />
             </div>
 
-            {/* Bloco */}
+            {/* Vaga de Garagem */}
             <div className="space-y-1">
               <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                Bloco / Torre:
+                Vaga de Garagem:
               </label>
-              <select
-                value={novoBloco}
-                onChange={(e) => setNovoBloco(e.target.value)}
-                className="w-full bg-white/80 border border-white rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
-              >
-                {blocos.map((b) => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
-              </select>
+              <input
+                type="text"
+                placeholder="Ex: 12 subsolo, 13, G-01..."
+                value={novaVaga}
+                onChange={(e) => setNovaVaga(e.target.value)}
+                className="w-full bg-white/80 border border-white rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
+              />
             </div>
 
-            {/* Senha Padrão (Opcional - default é o próprio número) */}
+            {/* Senha Padrão (Opcional - default é o próprio número da unidade) */}
             <div className="space-y-1">
               <label className="text-[10px] font-extrabold uppercase text-slate-700">
                 Senha de Acesso (Opcional):
               </label>
-              <input
-                type="text"
-                placeholder={novoNumero ? `Padrão: ${novoNumero}` : 'Ex: 101'}
-                value={novaSenha}
-                onChange={(e) => setNovaSenha(e.target.value)}
-                className="w-full bg-white/80 border border-white rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
-              />
+              <div className="relative">
+                <input
+                  type={showNovaSenha ? 'text' : 'password'}
+                  placeholder={novoNumero ? `Padrão: ${novoNumero}` : 'Padrão: número do apto'}
+                  value={novaSenha}
+                  onChange={(e) => setNovaSenha(e.target.value)}
+                  className="w-full bg-white/80 border border-white rounded-xl px-3.5 py-2 pr-9 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNovaSenha(!showNovaSenha)}
+                  className="p-1 text-slate-500 hover:text-slate-800 absolute right-2.5 top-1.5 rounded-lg"
+                  tabIndex={-1}
+                  title={showNovaSenha ? "Ocultar senha" : "Ver senha"}
+                >
+                  {showNovaSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
           </div>
 
           <div className="flex items-center justify-between gap-3 pt-1">
             <span className="text-[11px] text-slate-700 font-medium hidden sm:inline">
-              * A senha inicial para o morador é por padrão o próprio número da unidade.
+              * A senha inicial para o morador é por padrão a própria identificação da unidade.
             </span>
 
             <button
@@ -204,7 +217,7 @@ export const AdminPanelScreen: React.FC = () => {
           <div className="relative w-full sm:w-64">
             <input
               type="text"
-              placeholder="Filtrar por apto ou bloco..."
+              placeholder="Filtrar por apto ou vaga..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-white/70 border border-white/80 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-900 placeholder-slate-600 focus:outline-none font-semibold shadow-xs"
@@ -234,25 +247,34 @@ export const AdminPanelScreen: React.FC = () => {
                       type="text"
                       value={editNumero}
                       onChange={(e) => setEditNumero(e.target.value)}
-                      placeholder="Número"
+                      placeholder="Número / Identificação"
                       className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
                     />
-                    <select
-                      value={editBloco}
-                      onChange={(e) => setEditBloco(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
-                    >
-                      {blocos.map((b) => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                    </select>
                     <input
                       type="text"
-                      value={editSenha}
-                      onChange={(e) => setEditSenha(e.target.value)}
-                      placeholder="Senha de Acesso"
+                      value={editVaga}
+                      onChange={(e) => setEditVaga(e.target.value)}
+                      placeholder="Vaga de Garagem"
                       className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
                     />
+                    <div className="relative">
+                      <input
+                        type={showEditSenha ? 'text' : 'password'}
+                        value={editSenha}
+                        onChange={(e) => setEditSenha(e.target.value)}
+                        placeholder="Senha de Acesso"
+                        className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 pr-8 text-xs font-bold text-slate-950"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowEditSenha(!showEditSenha)}
+                        className="p-1 text-slate-500 hover:text-slate-800 absolute right-1.5 top-0.5 rounded-lg"
+                        tabIndex={-1}
+                        title={showEditSenha ? "Ocultar senha" : "Ver senha"}
+                      >
+                        {showEditSenha ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 pt-1">
@@ -273,6 +295,13 @@ export const AdminPanelScreen: React.FC = () => {
               );
             }
 
+            const formatUnitTitle = (num: string) => {
+              if (num.toLowerCase().startsWith('apt') || num.toLowerCase().startsWith('cobertura')) {
+                return num;
+              }
+              return `Apto ${num}`;
+            };
+
             return (
               <div
                 key={u.id}
@@ -282,10 +311,11 @@ export const AdminPanelScreen: React.FC = () => {
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <h4 className="font-black text-base text-slate-950 leading-tight">
-                      Apto {u.numero}
+                      {formatUnitTitle(u.numero)}
                     </h4>
-                    <span className="text-[11px] font-bold text-slate-700">
-                      {u.bloco || 'Bloco A'}
+                    <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1 mt-0.5">
+                      <Car className="w-3 h-3 text-amber-800" />
+                      Vaga: {u.vagaGaragem || 'Sem vaga'}
                     </span>
                   </div>
 

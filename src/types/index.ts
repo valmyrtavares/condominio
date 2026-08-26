@@ -22,6 +22,8 @@ export interface Unidade {
   tipo?: 'Apartamento' | 'Cobertura' | 'Casa';
   vagaGaragem?: string;
   senhaAcesso?: string;
+  senhaPadraoAlterada?: boolean;
+  emailResponsavel?: string;
   statusCadastro?: 'Pendente' | 'Cadastrado';
   moradores: User[];
   fotoCelula?: string;

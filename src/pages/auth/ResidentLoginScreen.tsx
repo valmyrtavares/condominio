@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { useCondo } from '../../context/CondoContext';
-import { Building2, KeyRound, ArrowLeft, AlertCircle, CheckCircle2, Lock, ShieldCheck } from 'lucide-react';
+import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
+import { Building2, KeyRound, ArrowLeft, AlertCircle, CheckCircle2, Lock, Eye, EyeOff } from 'lucide-react';
 
 export const ResidentLoginScreen: React.FC = () => {
   const { loginResident, setCurrentScreen, setIsDrawerOpen } = useCondo();
   const [unidade, setUnidade] = useState('');
   const [senha, setSenha] = useState('');
+  const [showSenha, setShowSenha] = useState(false);
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +83,7 @@ export const ResidentLoginScreen: React.FC = () => {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Ex: 001, 002, 101, 102..."
+                placeholder="Ex: 001, 002, 101 Bloco A, 102..."
                 value={unidade}
                 autoComplete="off"
                 onChange={(e) => {
@@ -99,20 +102,39 @@ export const ResidentLoginScreen: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
-              Senha de Acesso
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
+                Senha de Acesso
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsForgotModalOpen(true)}
+                className="text-[11px] font-extrabold text-amber-900 hover:text-amber-950 hover:underline"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
+            
             <div className="relative">
               <input
-                type="password"
+                type={showSenha ? 'text' : 'password'}
                 placeholder="Sua senha ou o número do apto"
                 value={senha}
                 autoComplete="new-password"
                 onChange={(e) => setSenha(e.target.value)}
-                className="w-full bg-white/80 border border-white rounded-2xl px-4 py-3 pl-10 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
+                className="w-full bg-white/80 border border-white rounded-2xl px-4 py-3 pl-10 pr-10 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
                 required
               />
               <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
+              <button
+                type="button"
+                onClick={() => setShowSenha(!showSenha)}
+                className="p-1 text-slate-500 hover:text-slate-800 absolute right-3.5 top-3 rounded-lg"
+                tabIndex={-1}
+                title={showSenha ? "Ocultar senha" : "Ver senha"}
+              >
+                {showSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
@@ -131,6 +153,14 @@ export const ResidentLoginScreen: React.FC = () => {
         </form>
 
       </div>
+
+      {/* Modal de Recuperação de Senha */}
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+        initialIdentifier={unidade}
+      />
     </div>
   );
 };
+

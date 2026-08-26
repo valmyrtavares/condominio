@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useCondo } from '../../context/CondoContext';
+import { ChangePasswordModal } from '../../components/auth/ChangePasswordModal';
 import { 
   Building2, 
   ArrowLeft, 
@@ -11,12 +12,14 @@ import {
   Sparkles,
   User,
   Briefcase,
+  Mail,
   AlertCircle
 } from 'lucide-react';
 
 interface MoradorInput {
   id: string;
   nome: string;
+  email: string;
   profissao: string;
 }
 
@@ -32,10 +35,11 @@ export const ResidentRegisterScreen: React.FC = () => {
 
   const [fotoPreview, setFotoPreview] = useState<string>('');
   const [moradores, setMoradores] = useState<MoradorInput[]>([
-    { id: '1', nome: '', profissao: '' }
+    { id: '1', nome: '', email: '', profissao: '' }
   ]);
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
   const unidadeNumero = pendingRegistrationUnit?.numero || '001';
   const blocoNome = pendingRegistrationUnit?.bloco || 'Bloco A';
@@ -43,7 +47,7 @@ export const ResidentRegisterScreen: React.FC = () => {
   const handleAddMorador = () => {
     setMoradores(prev => [
       ...prev,
-      { id: `${Date.now()}-${prev.length + 1}`, nome: '', profissao: '' }
+      { id: `${Date.now()}-${prev.length + 1}`, nome: '', email: '', profissao: '' }
     ]);
   };
 
@@ -52,7 +56,7 @@ export const ResidentRegisterScreen: React.FC = () => {
     setMoradores(prev => prev.filter(m => m.id !== id));
   };
 
-  const handleMoradorChange = (id: string, field: 'nome' | 'profissao', value: string) => {
+  const handleMoradorChange = (id: string, field: 'nome' | 'email' | 'profissao', value: string) => {
     setMoradores(prev => prev.map(m => {
       if (m.id === id) {
         return { ...m, [field]: value };
@@ -79,19 +83,53 @@ export const ResidentRegisterScreen: React.FC = () => {
     setErro('');
 
     const primeiroNome = moradores[0]?.nome.trim();
+    const primeiroEmail = moradores[0]?.email.trim();
+
     if (!primeiroNome) {
-      setErro('Por favor, informe ao menos o nome do morador principal.');
+      setErro('Por favor, informe o nome do morador principal.');
       return;
     }
 
+    if (!primeiroEmail || !primeiroEmail.includes('@')) {
+      setErro('Por favor, informe um e-mail válido para recuperação e troca de senha.');
+      return;
+    }
+
+    // Abre o popup de verificação de e-mail e troca de senha padrão
+    setIsChangePasswordModalOpen(true);
+  };
+
+  const handleSaveWithNewPassword = (novaSenha: string) => {
+    setIsChangePasswordModalOpen(false);
     setSucesso(true);
     setTimeout(() => {
       concluirCadastroMorador(
         unidadeNumero,
-        moradores.map(m => ({ nome: m.nome.trim(), profissao: m.profissao.trim() })),
+        moradores.map(m => ({ 
+          nome: m.nome.trim(), 
+          email: m.email.trim(), 
+          profissao: m.profissao.trim() 
+        })),
+        fotoPreview || undefined,
+        novaSenha
+      );
+    }, 400);
+  };
+
+  const handleSaveKeepDefaultPassword = () => {
+    setIsChangePasswordModalOpen(false);
+    setSucesso(true);
+    setTimeout(() => {
+      concluirCadastroMorador(
+        unidadeNumero,
+        moradores.map(m => ({ 
+          nome: m.nome.trim(), 
+          email: m.email.trim(), 
+          profissao: m.profissao.trim() 
+        })),
         fotoPreview || undefined
       );
-    }, 600);
+    }, 400);
   };
 
   const handleSkip = () => {
@@ -119,7 +157,7 @@ export const ResidentRegisterScreen: React.FC = () => {
             Cadastro da Unidade {unidadeNumero}
           </h2>
           <p className="text-xs text-slate-700 font-medium">
-            {blocoNome} • Preencha os dados de quem reside neste apartamento.
+            Preencha os dados dos moradores e e-mail para liberação de acesso.
           </p>
         </div>
 
@@ -135,7 +173,7 @@ export const ResidentRegisterScreen: React.FC = () => {
         {sucesso && (
           <div className="p-3 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs font-bold flex items-center gap-2 animate-in zoom-in-95">
             <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
-            <span>Cadastro concluído com sucesso! Entrando no sistema...</span>
+            <span>Cadastro finalizado com sucesso! Entrando no sistema...</span>
           </div>
         )}
 
@@ -215,7 +253,7 @@ export const ResidentRegisterScreen: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
               {moradores.map((morador, index) => (
                 <div 
                   key={morador.id}
@@ -223,7 +261,7 @@ export const ResidentRegisterScreen: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black uppercase text-slate-700">
-                      {index === 0 ? 'Morador Principal' : `Morador ${index + 1}`}
+                      {index === 0 ? 'Morador Principal (Responsável)' : `Morador ${index + 1}`}
                     </span>
                     {moradores.length > 1 && (
                       <button
@@ -237,28 +275,43 @@ export const ResidentRegisterScreen: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Nome completo *"
+                          value={morador.nome}
+                          onChange={(e) => handleMoradorChange(morador.id, 'nome', e.target.value)}
+                          className="w-full bg-white/90 border border-white rounded-xl px-3 py-2 pl-8 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
+                          required={index === 0}
+                        />
+                        <User className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                      </div>
+
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Profissão (ex: Arquiteto)"
+                          value={morador.profissao}
+                          onChange={(e) => handleMoradorChange(morador.id, 'profissao', e.target.value)}
+                          className="w-full bg-white/90 border border-white rounded-xl px-3 py-2 pl-8 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
+                        />
+                        <Briefcase className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                      </div>
+                    </div>
+
+                    {/* Email Input */}
                     <div className="relative">
                       <input
-                        type="text"
-                        placeholder="Nome completo *"
-                        value={morador.nome}
-                        onChange={(e) => handleMoradorChange(morador.id, 'nome', e.target.value)}
+                        type="email"
+                        placeholder={index === 0 ? "E-mail do morador (obrigatório para recuperação de senha) *" : "E-mail do morador (opcional)"}
+                        value={morador.email}
+                        onChange={(e) => handleMoradorChange(morador.id, 'email', e.target.value)}
                         className="w-full bg-white/90 border border-white rounded-xl px-3 py-2 pl-8 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
                         required={index === 0}
                       />
-                      <User className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
-                    </div>
-
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Profissão (ex: Arquiteto)"
-                        value={morador.profissao}
-                        onChange={(e) => handleMoradorChange(morador.id, 'profissao', e.target.value)}
-                        className="w-full bg-white/90 border border-white rounded-xl px-3 py-2 pl-8 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
-                      />
-                      <Briefcase className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                      <Mail className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
                     </div>
                   </div>
                 </div>
@@ -289,6 +342,16 @@ export const ResidentRegisterScreen: React.FC = () => {
         </form>
 
       </div>
+
+      {/* Change Password / Email check modal */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        unidadeNumero={unidadeNumero}
+        email={moradores[0]?.email || ''}
+        onSaveNewPassword={handleSaveWithNewPassword}
+        onSkip={handleSaveKeepDefaultPassword}
+      />
     </div>
   );
 };
+

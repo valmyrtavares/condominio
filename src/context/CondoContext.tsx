@@ -77,18 +77,25 @@ interface CondoContextType {
   isAdminLoggedIn: boolean;
   loginAdmin: (usuario: string, senha: string) => boolean;
   logoutAdmin: () => void;
-  adicionarUnidade: (numero: string, bloco?: string, senhaAcesso?: string) => void;
-  editarUnidade: (id: string, numero: string, bloco: string, senhaAcesso: string) => void;
+  adicionarUnidade: (numero: string, vagaGaragem?: string, senhaAcesso?: string) => void;
+  editarUnidade: (id: string, numero: string, vagaGaragem: string, senhaAcesso: string) => void;
   excluirUnidade: (id: string) => void;
 
   // Resident Auth & Onboarding State
   isResidentLoggedIn: boolean;
-  residentAuthData: { unidade: string; bloco?: string } | null;
   pendingRegistrationUnit: Unidade | null;
   setPendingRegistrationUnit: (unit: Unidade | null) => void;
   loginResident: (unidadeInput: string, senhaInput: string) => { success: boolean; needsRegistration?: boolean; message?: string };
-  concluirCadastroMorador: (unidadeNumero: string, moradores: { nome: string; profissao?: string }[], fotoUrl?: string) => void;
+  concluirCadastroMorador: (
+    unidadeNumero: string, 
+    moradoresData: { nome: string; email?: string; profissao?: string }[], 
+    fotoUrl?: string, 
+    novaSenha?: string
+  ) => void;
   pularCadastroMorador: (unidadeNumero: string) => void;
+  atualizarSenhaUnidade: (unidadeNumero: string, novaSenha: string) => boolean;
+  solicitarRecuperacaoSenha: (unidadeOuEmail: string) => { success: boolean; emailMascarado?: string; codigoSimulado?: string; message?: string };
+  redefinirSenhaComCodigo: (unidadeOuEmail: string, codigo: string, novaSenha: string) => { success: boolean; message?: string };
   logoutResident: () => void;
   
   // Actions
@@ -216,36 +223,38 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   // Métodos de Gestão de Unidades do Admin
-  const adicionarUnidade = (numero: string, bloco: string = 'Bloco A', senhaAcesso?: string) => {
+  const adicionarUnidade = (numero: string, vagaGaragem: string = '', senhaAcesso?: string) => {
     const numLimpo = numero.trim();
     if (!numLimpo) return;
 
+    const vagaLimpa = vagaGaragem.trim() || `Vaga ${numLimpo}`;
+
     const nova: Unidade = {
-      id: `und-${numLimpo}-${Date.now()}`,
+      id: `und-${numLimpo.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`,
       numero: numLimpo,
-      bloco: bloco.trim() || 'Bloco A',
+      bloco: '',
       tipo: 'Apartamento',
       senhaAcesso: (senhaAcesso && senhaAcesso.trim()) ? senhaAcesso.trim() : numLimpo,
       statusCadastro: 'Pendente',
-      vagaGaragem: `Vaga ${numLimpo}`,
+      vagaGaragem: vagaLimpa,
       moradores: []
     };
 
     setUnidades(prev => {
-      const atualizadas = [nova, ...prev.filter(u => u.numero !== numLimpo || u.bloco !== bloco)];
+      const atualizadas = [nova, ...prev.filter(u => u.numero.toLowerCase() !== numLimpo.toLowerCase())];
       localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
       return atualizadas;
     });
   };
 
-  const editarUnidade = (id: string, numero: string, bloco: string, senhaAcesso: string) => {
+  const editarUnidade = (id: string, numero: string, vagaGaragem: string, senhaAcesso: string) => {
     setUnidades(prev => {
       const atualizadas = prev.map(u => {
         if (u.id === id) {
           return {
             ...u,
             numero: numero.trim(),
-            bloco: bloco.trim(),
+            vagaGaragem: vagaGaragem.trim() || u.vagaGaragem,
             senhaAcesso: senhaAcesso.trim() || numero.trim()
           };
         }
@@ -333,18 +342,19 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const concluirCadastroMorador = (
     unidadeNumero: string,
-    moradoresData: { nome: string; profissao?: string }[],
-    fotoUrl?: string
+    moradoresData: { nome: string; email?: string; profissao?: string }[],
+    fotoUrl?: string,
+    novaSenha?: string
   ) => {
-    const targetUnit = unidades.find(u => u.numero === unidadeNumero) || pendingRegistrationUnit;
+    const targetUnit = unidades.find(u => u.numero.toLowerCase() === unidadeNumero.toLowerCase()) || pendingRegistrationUnit;
     const bloco = targetUnit?.bloco || 'Bloco A';
 
     const novosMoradores: User[] = moradoresData
       .filter(m => m.nome.trim().length > 0)
       .map((m, idx) => ({
-        id: `usr-${unidadeNumero}-${idx + 1}-${Date.now()}`,
+        id: `usr-${unidadeNumero.replace(/\s+/g, '-')}-${idx + 1}-${Date.now()}`,
         nome: m.nome.trim(),
-        email: `morador.${unidadeNumero}.${idx + 1}@condominio.com`,
+        email: m.email?.trim() || `morador.${unidadeNumero.replace(/\s+/g, '')}.${idx + 1}@condominio.com`,
         role: 'morador' as const,
         unidade: unidadeNumero,
         bloco: bloco,
@@ -355,14 +365,19 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (novosMoradores.length === 0) return;
 
     const nomesFormatados = novosMoradores.map(m => m.nome).join(', ');
+    const emailPrincipal = novosMoradores[0]?.email;
+    const senhaFinal = novaSenha?.trim() || targetUnit?.senhaAcesso || unidadeNumero;
 
     setUnidades(prev => {
       const atualizadas = prev.map(u => {
-        if (u.numero === unidadeNumero) {
+        if (u.numero.toLowerCase() === unidadeNumero.toLowerCase()) {
           return {
             ...u,
             statusCadastro: 'Cadastrado' as const,
             moradores: novosMoradores,
+            emailResponsavel: emailPrincipal,
+            senhaAcesso: senhaFinal,
+            senhaPadraoAlterada: Boolean(novaSenha && novaSenha.trim()),
             fotoCelula: fotoUrl || u.fotoCelula,
             nomeCelula: nomesFormatados
           };
@@ -386,6 +401,127 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setPendingRegistrationUnit(null);
     setCurrentScreen('home');
     setIsDrawerOpen(true);
+  };
+
+  const atualizarSenhaUnidade = (unidadeNumero: string, novaSenha: string): boolean => {
+    if (!novaSenha.trim()) return false;
+
+    setUnidades(prev => {
+      const atualizadas = prev.map(u => {
+        if (u.numero.toLowerCase() === unidadeNumero.toLowerCase()) {
+          return {
+            ...u,
+            senhaAcesso: novaSenha.trim(),
+            senhaPadraoAlterada: true
+          };
+        }
+        return u;
+      });
+      localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      return atualizadas;
+    });
+    return true;
+  };
+
+  const solicitarRecuperacaoSenha = (unidadeOuEmail: string): { 
+    success: boolean; 
+    emailMascarado?: string; 
+    codigoSimulado?: string; 
+    message?: string 
+  } => {
+    const termo = unidadeOuEmail.trim().toLowerCase();
+    if (!termo) {
+      return { success: false, message: 'Informe sua unidade ou e-mail cadastrado.' };
+    }
+
+    // Caso seja administrador
+    if (termo === 'admin' || termo === 'admin@condominio.com') {
+      return {
+        success: true,
+        emailMascarado: 'ad***n@condominio.com',
+        codigoSimulado: '123456',
+        message: 'Código de recuperação enviado para o e-mail cadastrado.'
+      };
+    }
+
+    // Busca nas unidades
+    const unidadeEncontrada = unidades.find(u => 
+      u.numero.toLowerCase() === termo ||
+      u.emailResponsavel?.toLowerCase() === termo ||
+      u.moradores.some(m => m.email?.toLowerCase() === termo)
+    );
+
+    if (!unidadeEncontrada) {
+      return { 
+        success: false, 
+        message: 'Unidade ou e-mail não encontrado no condomínio. Verifique o número digitado.' 
+      };
+    }
+
+    const email = unidadeEncontrada.emailResponsavel || 
+      unidadeEncontrada.moradores.find(m => m.email)?.email;
+
+    if (!email) {
+      return {
+        success: false,
+        message: 'Esta unidade ainda não possui um e-mail cadastrado. Utilize a senha padrão (número da unidade) para acessar ou contate a administração.'
+      };
+    }
+
+    // Mascara o e-mail para exibição segura (ex: ro***o@email.com)
+    const partes = email.split('@');
+    const nomeUser = partes[0];
+    const dominio = partes[1] || 'email.com';
+    const emailMascarado = nomeUser.length > 2
+      ? `${nomeUser.slice(0, 2)}***${nomeUser.slice(-1)}@${dominio}`
+      : `${nomeUser.slice(0, 1)}***@${dominio}`;
+
+    return {
+      success: true,
+      emailMascarado,
+      codigoSimulado: '123456',
+      message: 'Código de recuperação enviado com sucesso!'
+    };
+  };
+
+  const redefinirSenhaComCodigo = (
+    unidadeOuEmail: string, 
+    codigo: string, 
+    novaSenha: string
+  ): { success: boolean; message?: string } => {
+    const termo = unidadeOuEmail.trim().toLowerCase();
+    const codigoLimpo = codigo.trim();
+    const senhaLimpa = novaSenha.trim();
+
+    if (!codigoLimpo || codigoLimpo.length < 4) {
+      return { success: false, message: 'Código de verificação inválido ou incompleto.' };
+    }
+
+    if (!senhaLimpa || senhaLimpa.length < 3) {
+      return { success: false, message: 'A nova senha deve ter pelo menos 3 caracteres.' };
+    }
+
+    // Caso admin
+    if (termo === 'admin' || termo === 'admin@condominio.com') {
+      return { success: true, message: 'Senha do administrador redefinida com sucesso!' };
+    }
+
+    const unidadeEncontrada = unidades.find(u => 
+      u.numero.toLowerCase() === termo ||
+      u.emailResponsavel?.toLowerCase() === termo ||
+      u.moradores.some(m => m.email?.toLowerCase() === termo)
+    );
+
+    if (!unidadeEncontrada) {
+      return { success: false, message: 'Unidade não encontrada.' };
+    }
+
+    atualizarSenhaUnidade(unidadeEncontrada.numero, senhaLimpa);
+
+    return { 
+      success: true, 
+      message: 'Senha alterada com sucesso! Você já pode entrar com sua nova senha.' 
+    };
   };
 
   const pularCadastroMorador = (unidadeNumero: string) => {
@@ -884,6 +1020,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       loginResident,
       concluirCadastroMorador,
       pularCadastroMorador,
+      atualizarSenhaUnidade,
+      solicitarRecuperacaoSenha,
+      redefinirSenhaComCodigo,
       logoutResident,
       apoiarReclamacao,
       adicionarComentario,

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useCondo } from '../../context/CondoContext';
-import { ShieldCheck, Lock, User, ArrowLeft, KeyRound, AlertCircle } from 'lucide-react';
+import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
+import { ShieldCheck, Lock, User, ArrowLeft, KeyRound, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export const AdminLoginScreen: React.FC = () => {
   const { loginAdmin, setCurrentScreen } = useCondo();
   const [usuario, setUsuario] = useState('');
   const [senha, setSenha] = useState('');
+  const [showSenha, setShowSenha] = useState(false);
   const [erro, setErro] = useState('');
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +55,7 @@ export const AdminLoginScreen: React.FC = () => {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
           <div className="space-y-1">
             <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
               Usuário Administrador
@@ -62,6 +65,7 @@ export const AdminLoginScreen: React.FC = () => {
                 type="text"
                 placeholder="Ex: admin"
                 value={usuario}
+                autoComplete="off"
                 onChange={(e) => setUsuario(e.target.value)}
                 className="w-full bg-white/80 border border-white rounded-2xl px-4 py-3 pl-10 text-xs text-slate-950 placeholder-slate-500 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
                 required
@@ -72,19 +76,39 @@ export const AdminLoginScreen: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
-              Senha de Acesso
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
+                Senha de Acesso
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsForgotModalOpen(true)}
+                className="text-[11px] font-extrabold text-amber-900 hover:text-amber-950 hover:underline"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
+            
             <div className="relative">
               <input
-                type="password"
+                type={showSenha ? 'text' : 'password'}
                 placeholder="Ex: admin"
                 value={senha}
+                autoComplete="new-password"
                 onChange={(e) => setSenha(e.target.value)}
-                className="w-full bg-white/80 border border-white rounded-2xl px-4 py-3 pl-10 text-xs text-slate-950 placeholder-slate-500 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
+                className="w-full bg-white/80 border border-white rounded-2xl px-4 py-3 pl-10 pr-10 text-xs text-slate-950 placeholder-slate-500 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
                 required
               />
               <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
+              <button
+                type="button"
+                onClick={() => setShowSenha(!showSenha)}
+                className="p-1 text-slate-500 hover:text-slate-800 absolute right-3.5 top-3 rounded-lg"
+                tabIndex={-1}
+                title={showSenha ? "Ocultar senha" : "Ver senha"}
+              >
+                {showSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
@@ -102,6 +126,13 @@ export const AdminLoginScreen: React.FC = () => {
         </form>
 
       </div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+        initialIdentifier={usuario || 'admin'}
+      />
     </div>
   );
 };
