@@ -80,11 +80,16 @@ const MainContent: React.FC = () => {
   );
 };
 
-export default function App() {
+const AppLayout: React.FC = () => {
+  const { currentScreen } = useCondo();
+  const isAdminScreen = currentScreen === 'admin';
+
   return (
-    <CondoProvider>
-      <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-950 text-slate-900 flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative">
-        {/* Fullscreen Building Background Image Shared Across ALL Screens */}
+    <div className={`min-h-screen w-full max-w-full overflow-x-hidden flex flex-col font-sans transition-colors duration-500 relative ${
+      isAdminScreen ? 'bg-[#f4efe6] text-slate-900' : 'bg-slate-950 text-slate-900'
+    }`}>
+      {/* Fullscreen Building Background Image (Hidden on Admin screen to differentiate) */}
+      {!isAdminScreen && (
         <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
           <img
             src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=2000&q=90"
@@ -93,12 +98,25 @@ export default function App() {
           />
           <div className="absolute inset-0 bg-slate-950/30" />
         </div>
+      )}
 
-        <Header />
-        <EspinhaDorsalDrawer />
-        <MainContent />
-        <BottomNav />
-      </div>
+      {/* Admin specific subtle texture & header glow when on admin */}
+      {isAdminScreen && (
+        <div className="fixed inset-0 w-full h-full pointer-events-none z-0 opacity-40 bg-[radial-gradient(#d6c7b2_1px,transparent_1px)] [background-size:16px_16px]" />
+      )}
+
+      <Header />
+      <EspinhaDorsalDrawer />
+      <MainContent />
+      <BottomNav />
+    </div>
+  );
+};
+
+export default function App() {
+  return (
+    <CondoProvider>
+      <AppLayout />
     </CondoProvider>
   );
 }

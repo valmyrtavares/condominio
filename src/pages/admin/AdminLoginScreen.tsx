@@ -23,7 +23,7 @@ export const AdminLoginScreen: React.FC = () => {
 
   return (
     <div className="min-h-[75vh] flex items-center justify-center p-3 animate-in fade-in duration-300">
-      <div className="w-full max-w-md bg-white/55 border-2 border-white/80 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6">
+      <div className="w-full max-w-md bg-white/90 border-2 border-amber-200/80 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
         
         {/* Back button */}
         <button

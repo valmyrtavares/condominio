@@ -4,7 +4,7 @@ import { EditResidentCellModal } from '../components/moradores/EditResidentCellM
 import { Car, Search, Building2, ShieldCheck, Edit3 } from 'lucide-react';
 
 export const MoradoresScreen: React.FC = () => {
-  const { unidades } = useCondo();
+  const { unidades, currentUser, isAdminLoggedIn } = useCondo();
   const [selectedUnidadeId, setSelectedUnidadeId] = useState<string>(unidades[1]?.id || unidades[0]?.id);
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -15,6 +15,14 @@ export const MoradoresScreen: React.FC = () => {
     u.numero.includes(searchTerm) || 
     u.moradores.some(m => m.nome.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const normalizeUnit = (str?: string) => str ? str.toLowerCase().replace(/^apt\s*/, '').trim() : '';
+  const isMyUnit = currentUser?.unidade && (
+    normalizeUnit(currentUser.unidade) === normalizeUnit(selectedUnidade?.numero) ||
+    currentUser.unidade.trim().toLowerCase() === selectedUnidade?.numero?.trim().toLowerCase()
+  );
+  const isSindicoOrAdmin = currentUser?.role === 'sindico' || isAdminLoggedIn;
+  const canEdit = Boolean(isMyUnit || isSindicoOrAdmin);
 
   return (
     <div className="space-y-4 pb-20 animate-in fade-in duration-300">
@@ -102,12 +110,14 @@ export const MoradoresScreen: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => setIsEditModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400 shadow-md font-black text-xs transition-all active:scale-95 shrink-0"
-                >
-                  <Edit3 className="w-3.5 h-3.5" /> Editar
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400 shadow-md font-black text-xs transition-all active:scale-95 shrink-0"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" /> Editar
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -180,13 +190,15 @@ export const MoradoresScreen: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Botão Editar em Amarelo posicionado exatamente onde indicado pelo retângulo */}
-                  <button
-                    onClick={() => setIsEditModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400 shadow-md font-black text-xs transition-all active:scale-95 ml-auto cursor-pointer"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-slate-950" /> Editar
-                  </button>
+                  {/* Botão Editar em Amarelo exibido apenas para o morador desta unidade ou síndico */}
+                  {canEdit && (
+                    <button
+                      onClick={() => setIsEditModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400 shadow-md font-black text-xs transition-all active:scale-95 ml-auto cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-slate-950" /> Editar
+                    </button>
+                  )}
                 </div>
 
               </div>
