@@ -23,6 +23,7 @@ import { UnidadesDisponiveisScreen } from './pages/UnidadesDisponiveisScreen';
 import { AdminLoginScreen } from './pages/admin/AdminLoginScreen';
 import { AdminPanelScreen } from './pages/admin/AdminPanelScreen';
 import { ResidentLoginScreen } from './pages/auth/ResidentLoginScreen';
+import { ResidentRegisterScreen } from './pages/auth/ResidentRegisterScreen';
 
 const MainContent: React.FC = () => {
   const { currentScreen, isAdminLoggedIn } = useCondo();
@@ -37,6 +38,8 @@ const MainContent: React.FC = () => {
         return isAdminLoggedIn ? <AdminPanelScreen /> : <AdminLoginScreen />;
       case 'resident-login':
         return <ResidentLoginScreen />;
+      case 'resident-register':
+        return <ResidentRegisterScreen />;
       case 'moradores':
         return <MoradoresScreen />;
       case 'reclamacoes':

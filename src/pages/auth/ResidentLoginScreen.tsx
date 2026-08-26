@@ -21,9 +21,13 @@ export const ResidentLoginScreen: React.FC = () => {
 
     setSucesso(true);
     setTimeout(() => {
-      setCurrentScreen('home');
-      setIsDrawerOpen(true);
-    }, 600);
+      if (res.needsRegistration) {
+        setCurrentScreen('resident-register');
+      } else {
+        setCurrentScreen('home');
+        setIsDrawerOpen(true);
+      }
+    }, 500);
   };
 
   return (
@@ -63,12 +67,12 @@ export const ResidentLoginScreen: React.FC = () => {
         {sucesso && (
           <div className="p-3 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs font-bold flex items-center gap-2 animate-in zoom-in-95">
             <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
-            <span>Identificação confirmada! Entrando...</span>
+            <span>Apartamento localizado! Carregando...</span>
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
           <div className="space-y-1">
             <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
               Número da Unidade / Apartamento
@@ -76,8 +80,9 @@ export const ResidentLoginScreen: React.FC = () => {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Ex: 101, 102, 204..."
+                placeholder="Ex: 001, 002, 101, 102..."
                 value={unidade}
+                autoComplete="off"
                 onChange={(e) => {
                   setUnidade(e.target.value);
                   // Se o morador ainda não digitou senha, preenche automaticamente para facilitar o primeiro acesso
@@ -102,6 +107,7 @@ export const ResidentLoginScreen: React.FC = () => {
                 type="password"
                 placeholder="Sua senha ou o número do apto"
                 value={senha}
+                autoComplete="new-password"
                 onChange={(e) => setSenha(e.target.value)}
                 className="w-full bg-white/80 border border-white rounded-2xl px-4 py-3 pl-10 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
                 required

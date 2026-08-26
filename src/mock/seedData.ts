@@ -188,6 +188,26 @@ export const MOCK_USERS: User[] = [
 
 export const MOCK_UNIDADES: Unidade[] = [
   {
+    id: 'unid-001',
+    numero: '001',
+    bloco: 'Bloco A',
+    tipo: 'Apartamento',
+    vagaGaragem: 'Vaga 001',
+    statusCadastro: 'Pendente',
+    moradores: [],
+    senhaAcesso: '001'
+  },
+  {
+    id: 'unid-002',
+    numero: '002',
+    bloco: 'Bloco A',
+    tipo: 'Apartamento',
+    vagaGaragem: 'Vaga 002',
+    statusCadastro: 'Pendente',
+    moradores: [],
+    senhaAcesso: '002'
+  },
+  {
     id: 'unid-101',
     numero: '101',
     bloco: 'Bloco A',

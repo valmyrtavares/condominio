@@ -81,10 +81,14 @@ interface CondoContextType {
   editarUnidade: (id: string, numero: string, bloco: string, senhaAcesso: string) => void;
   excluirUnidade: (id: string) => void;
 
-  // Resident Auth State
+  // Resident Auth & Onboarding State
   isResidentLoggedIn: boolean;
   residentAuthData: { unidade: string; bloco?: string } | null;
-  loginResident: (unidadeInput: string, senhaInput: string) => { success: boolean; message?: string };
+  pendingRegistrationUnit: Unidade | null;
+  setPendingRegistrationUnit: (unit: Unidade | null) => void;
+  loginResident: (unidadeInput: string, senhaInput: string) => { success: boolean; needsRegistration?: boolean; message?: string };
+  concluirCadastroMorador: (unidadeNumero: string, moradores: { nome: string; profissao?: string }[], fotoUrl?: string) => void;
+  pularCadastroMorador: (unidadeNumero: string) => void;
   logoutResident: () => void;
   
   // Actions
@@ -107,8 +111,6 @@ interface CondoContextType {
 const CondoContext = createContext<CondoContextType | undefined>(undefined);
 
 export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User>(MOCK_USERS[0]); // Default: Morador Carlos Silva
-  
   // Unidades com persistência em LocalStorage
   const [unidades, setUnidades] = useState<Unidade[]>(() => {
     const saved = localStorage.getItem('condo_unidades_list');
@@ -146,6 +148,32 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
     return null;
+  });
+
+  const [pendingRegistrationUnit, setPendingRegistrationUnit] = useState<Unidade | null>(null);
+
+  const [currentUser, setCurrentUser] = useState<User>(() => {
+    const saved = localStorage.getItem('condo_resident_auth');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const savedUnidades = localStorage.getItem('condo_unidades_list');
+        const list: Unidade[] = savedUnidades ? JSON.parse(savedUnidades) : MOCK_UNIDADES;
+        const u = list.find(item => item.numero === parsed.unidade);
+        if (u && u.moradores && u.moradores.length > 0) {
+          return u.moradores[0];
+        }
+      } catch {}
+    }
+    return {
+      id: 'usr-guest',
+      nome: 'Morador sem dados',
+      email: '',
+      role: 'morador',
+      unidade: '',
+      bloco: '',
+      condominioId: CURRENT_CONDO_ID
+    };
   });
 
   const [reclamacoes, setReclamacoes] = useState<Reclamacao[]>(MOCK_RECLAMACOES);
@@ -251,8 +279,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.removeItem('condo_admin_auth');
   };
 
-  // Autenticação do Morador
-  const loginResident = (unidadeInput: string, senhaInput: string): { success: boolean; message?: string } => {
+  // Autenticação e Cadastro do Morador
+  const loginResident = (unidadeInput: string, senhaInput: string): { success: boolean; needsRegistration?: boolean; message?: string } => {
     const numLimpo = unidadeInput.trim();
     const senhaLimpa = senhaInput.trim();
 
@@ -273,50 +301,135 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return { success: false, message: 'Senha incorreta para esta unidade' };
     }
 
-    // Autenticação bem-sucedida
+    // Verifica se os dados do morador estão configurados
+    const isCadastrado = Boolean(
+      unidadeEncontrada.statusCadastro === 'Cadastrado' &&
+      unidadeEncontrada.moradores && 
+      unidadeEncontrada.moradores.length > 0
+    );
+
+    if (!isCadastrado) {
+      // Se não tem cadastro, direciona para o formulário de cadastro
+      setPendingRegistrationUnit(unidadeEncontrada);
+      return { success: true, needsRegistration: true };
+    }
+
+    // Autenticação bem-sucedida para quem já tem cadastro completo
     const authData = {
       unidade: unidadeEncontrada.numero,
       bloco: unidadeEncontrada.bloco
     };
 
-    const hasData = Boolean(
-      (unidadeEncontrada.moradores && unidadeEncontrada.moradores.length > 0) || 
-      unidadeEncontrada.fotoCelula
-    );
+    setIsResidentLoggedIn(true);
+    setResidentAuthData(authData);
+    localStorage.setItem('condo_resident_auth', JSON.stringify(authData));
+
+    // Atualiza o currentUser para refletir o morador principal
+    const usuarioMorador = unidadeEncontrada.moradores[0];
+    setCurrentUser(usuarioMorador);
+
+    return { success: true, needsRegistration: false };
+  };
+
+  const concluirCadastroMorador = (
+    unidadeNumero: string,
+    moradoresData: { nome: string; profissao?: string }[],
+    fotoUrl?: string
+  ) => {
+    const targetUnit = unidades.find(u => u.numero === unidadeNumero) || pendingRegistrationUnit;
+    const bloco = targetUnit?.bloco || 'Bloco A';
+
+    const novosMoradores: User[] = moradoresData
+      .filter(m => m.nome.trim().length > 0)
+      .map((m, idx) => ({
+        id: `usr-${unidadeNumero}-${idx + 1}-${Date.now()}`,
+        nome: m.nome.trim(),
+        email: `morador.${unidadeNumero}.${idx + 1}@condominio.com`,
+        role: 'morador' as const,
+        unidade: unidadeNumero,
+        bloco: bloco,
+        profissao: m.profissao?.trim() || undefined,
+        condominioId: CURRENT_CONDO_ID
+      }));
+
+    if (novosMoradores.length === 0) return;
+
+    const nomesFormatados = novosMoradores.map(m => m.nome).join(', ');
+
+    setUnidades(prev => {
+      const atualizadas = prev.map(u => {
+        if (u.numero === unidadeNumero) {
+          return {
+            ...u,
+            statusCadastro: 'Cadastrado' as const,
+            moradores: novosMoradores,
+            fotoCelula: fotoUrl || u.fotoCelula,
+            nomeCelula: nomesFormatados
+          };
+        }
+        return u;
+      });
+      localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      return atualizadas;
+    });
+
+    const authData = {
+      unidade: unidadeNumero,
+      bloco: bloco
+    };
 
     setIsResidentLoggedIn(true);
     setResidentAuthData(authData);
+    localStorage.setItem('condo_resident_auth', JSON.stringify(authData));
 
-    // Moradores sem dados configurados não persistem login automático:
-    // devem sempre digitar o número do apto no usuário e na senha
-    if (hasData) {
-      localStorage.setItem('condo_resident_auth', JSON.stringify(authData));
-    } else {
-      localStorage.removeItem('condo_resident_auth');
-    }
+    setCurrentUser(novosMoradores[0]);
+    setPendingRegistrationUnit(null);
+    setCurrentScreen('home');
+    setIsDrawerOpen(true);
+  };
 
-    // Atualiza o currentUser para refletir a unidade
-    const usuarioMorador = (unidadeEncontrada.moradores && unidadeEncontrada.moradores.length > 0)
-      ? unidadeEncontrada.moradores[0]
-      : {
-        id: `usr-morador-${unidadeEncontrada.numero}`,
-        nome: 'Morador sem dados',
-        email: `morador.${unidadeEncontrada.numero}@condominio.com`,
-        role: 'morador' as const,
-        unidade: unidadeEncontrada.numero,
-        bloco: unidadeEncontrada.bloco,
-        condominioId: CURRENT_CONDO_ID
-      };
+  const pularCadastroMorador = (unidadeNumero: string) => {
+    const targetUnit = unidades.find(u => u.numero === unidadeNumero) || pendingRegistrationUnit;
+    const bloco = targetUnit?.bloco || 'Bloco A';
+
+    const usuarioMorador: User = {
+      id: `usr-morador-${unidadeNumero}`,
+      nome: 'Morador sem dados',
+      email: `morador.${unidadeNumero}@condominio.com`,
+      role: 'morador',
+      unidade: unidadeNumero,
+      bloco: bloco,
+      condominioId: CURRENT_CONDO_ID
+    };
+
+    // Apenas sessão em memória, SEM persistência em localStorage para que sempre recomece
+    setIsResidentLoggedIn(true);
+    setResidentAuthData({
+      unidade: unidadeNumero,
+      bloco: bloco
+    });
+    localStorage.removeItem('condo_resident_auth');
 
     setCurrentUser(usuarioMorador);
-
-    return { success: true };
+    setPendingRegistrationUnit(null);
+    setCurrentScreen('home');
+    setIsDrawerOpen(true);
   };
 
   const logoutResident = () => {
     setIsResidentLoggedIn(false);
     setResidentAuthData(null);
+    setPendingRegistrationUnit(null);
     localStorage.removeItem('condo_resident_auth');
+    setCurrentUser({
+      id: 'usr-guest',
+      nome: 'Morador sem dados',
+      email: '',
+      role: 'morador',
+      unidade: '',
+      bloco: '',
+      condominioId: CURRENT_CONDO_ID
+    });
   };
 
   const toggleRole = () => {
@@ -766,7 +879,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       excluirUnidade,
       isResidentLoggedIn,
       residentAuthData,
+      pendingRegistrationUnit,
+      setPendingRegistrationUnit,
       loginResident,
+      concluirCadastroMorador,
+      pularCadastroMorador,
       logoutResident,
       apoiarReclamacao,
       adicionarComentario,
