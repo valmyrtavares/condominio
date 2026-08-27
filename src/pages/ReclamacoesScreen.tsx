@@ -373,25 +373,37 @@ export const ReclamacoesScreen: React.FC = () => {
                       </button>
                     </form>
 
-                    {isCommentsExpanded && rec.comentarios.length > 0 && (
+                    {isCommentsExpanded && rec.comentarios.filter(c => isAdmin || !c.oculto).length > 0 && (
                       <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 pt-1 animate-in fade-in duration-200">
-                        {rec.comentarios.map((com) => (
+                        {rec.comentarios
+                          .filter(c => isAdmin || !c.oculto)
+                          .map((com) => (
                           <div
                             key={com.id}
                             className={`p-2 rounded-xl text-[11px] space-y-0.5 ${
-                              com.oficial
-                                ? 'bg-amber-500/20 border border-amber-400/50'
-                                : 'bg-white/70 border border-white/90 shadow-2xs'
+                              com.oculto
+                                ? 'bg-rose-50/70 border border-rose-300/80 opacity-90'
+                                : com.oficial
+                                  ? 'bg-amber-500/20 border border-amber-400/50'
+                                  : 'bg-white/70 border border-white/90 shadow-2xs'
                             }`}
                           >
-                            <div className="flex items-center justify-between text-[10px]">
-                              <span className={`font-black flex items-center gap-1 ${com.oficial ? 'text-amber-950' : 'text-slate-950'}`}>
-                                {com.oficial ? <ShieldCheck className="w-3 h-3 text-amber-700" /> : <User className="w-3 h-3 text-indigo-700" />}
-                                {com.autorNome}
-                                {com.autorUnidade && (
-                                  <span className="text-slate-600 font-bold">({com.autorUnidade})</span>
+                            <div className="flex items-center justify-between text-[10px] flex-wrap gap-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className={`font-black flex items-center gap-1 ${com.oficial ? 'text-amber-950' : 'text-slate-950'}`}>
+                                  {com.oficial ? <ShieldCheck className="w-3 h-3 text-amber-700" /> : <User className="w-3 h-3 text-indigo-700" />}
+                                  {com.autorNome}
+                                  {com.autorUnidade && (
+                                    <span className="text-slate-600 font-bold">({com.autorUnidade})</span>
+                                  )}
+                                </span>
+
+                                {com.oculto && isAdmin && (
+                                  <span className="px-1.5 py-0.2 rounded bg-rose-200 text-rose-900 border border-rose-300 text-[8px] font-black uppercase">
+                                    Oculto ao Público
+                                  </span>
                                 )}
-                              </span>
+                              </div>
                               <span className="text-slate-500 font-mono text-[9px] font-semibold">{com.data}</span>
                             </div>
                             <p className="text-slate-900 font-semibold pl-4 leading-tight">{com.texto}</p>
@@ -517,27 +529,39 @@ export const ReclamacoesScreen: React.FC = () => {
             <div className="space-y-3 pt-2">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
                 <MessageSquare className="w-4 h-4 text-indigo-700" />
-                Manifestações & Apoios ({selectedReclamacao.comentarios.length})
+                Manifestações & Apoios ({selectedReclamacao.comentarios.filter(c => isAdmin || !c.oculto).length})
               </h4>
 
               <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
-                {selectedReclamacao.comentarios.map((com) => (
+                {selectedReclamacao.comentarios
+                  .filter(c => isAdmin || !c.oculto)
+                  .map((com) => (
                   <div
                     key={com.id}
                     className={`p-3 rounded-2xl text-xs space-y-1 ${
-                      com.oficial
-                        ? 'bg-amber-500/20 border border-amber-400/50'
-                        : 'bg-white/60 border border-white/80'
+                      com.oculto
+                        ? 'bg-rose-50/80 border border-rose-300 opacity-90'
+                        : com.oficial
+                          ? 'bg-amber-500/20 border border-amber-400/50'
+                          : 'bg-white/60 border border-white/80'
                     }`}
                   >
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className={`font-extrabold flex items-center gap-1.5 ${com.oficial ? 'text-amber-950' : 'text-slate-950'}`}>
-                        {com.oficial ? <ShieldCheck className="w-3.5 h-3.5 text-amber-700" /> : <User className="w-3.5 h-3.5 text-indigo-700" />}
-                        {com.autorNome}
-                        {com.autorUnidade && (
-                          <span className="text-slate-600 font-bold">({com.autorUnidade})</span>
+                    <div className="flex items-center justify-between text-[11px] flex-wrap gap-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`font-extrabold flex items-center gap-1.5 ${com.oficial ? 'text-amber-950' : 'text-slate-950'}`}>
+                          {com.oficial ? <ShieldCheck className="w-3.5 h-3.5 text-amber-700" /> : <User className="w-3.5 h-3.5 text-indigo-700" />}
+                          {com.autorNome}
+                          {com.autorUnidade && (
+                            <span className="text-slate-600 font-bold">({com.autorUnidade})</span>
+                          )}
+                        </span>
+
+                        {com.oculto && isAdmin && (
+                          <span className="px-2 py-0.5 rounded bg-rose-200 text-rose-900 border border-rose-300 text-[9px] font-black uppercase">
+                            Ocultado ao Público
+                          </span>
                         )}
-                      </span>
+                      </div>
                       <span className="text-slate-700 font-mono text-[10px] font-bold">{com.data}</span>
                     </div>
                     <p className="text-slate-900 leading-relaxed pl-5 font-semibold">{com.texto}</p>

@@ -174,10 +174,10 @@ export const AssembleiasScreen: React.FC = () => {
       <div>
         <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2 drop-shadow-md">
           <Gavel className="w-5 h-5 text-amber-400" />
-          Assembleias & Reuniões de Condomínio
+          Assembleias do Condomínio
         </h2>
         <p className="text-xs text-amber-100/90 font-medium mt-0.5">
-          Acompanhe convocações formais, reuniões comissões, deliberações de reclamações/reparos e atas registradas com soluções.
+          Acompanhe convocações, pautas em discussão, deliberações com checks de votação e atas oficiais em PDF.
         </p>
       </div>
 
@@ -185,7 +185,7 @@ export const AssembleiasScreen: React.FC = () => {
       <div className="space-y-2.5">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none w-full">
           <span className="text-[10px] font-extrabold uppercase text-amber-100/90 whitespace-nowrap pl-1">
-            Filtrar:
+            Status:
           </span>
           {filterOptions.map((opt) => (
             <button
@@ -205,7 +205,7 @@ export const AssembleiasScreen: React.FC = () => {
         <div className="relative">
           <input
             type="text"
-            placeholder="Buscar por pauta, assunto, reclamação ou reparo (ex: Usina Solar, Portaria, Barulho, Infiltração)..."
+            placeholder="Buscar por pauta ou assunto (ex: Usina Solar, Portaria, Eleição, Fachada)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-white/70 border border-white/80 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs"
@@ -221,7 +221,7 @@ export const AssembleiasScreen: React.FC = () => {
         </span>
 
         {filteredAssembleias.length === 0 ? (
-          <div className="p-8 text-center bg-white/50 border border-white/70 rounded-3xl space-y-3">
+          <div className="p-8 text-center bg-white/95 border border-white rounded-3xl space-y-3 shadow-xl">
             <Gavel className="w-8 h-8 text-amber-600 mx-auto" />
             <p className="text-sm font-black text-slate-950">Nenhuma reunião ou assembleia encontrada.</p>
             {isAdmin && (
@@ -273,14 +273,14 @@ export const AssembleiasScreen: React.FC = () => {
                         {isInformal ? '🤝 Reunião Informal' : '🏛️ Assembleia Geral'}
                       </span>
 
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/70 text-slate-900 border border-white/80">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
                         {assembleia.tipo}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-black text-slate-950 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-800" />
+                        <Clock className="w-3.5 h-3.5 text-indigo-700" />
                         {assembleia.dataHora}
                       </span>
 
@@ -293,7 +293,7 @@ export const AssembleiasScreen: React.FC = () => {
                               setAssembleiaParaAta(assembleia);
                               setIsModalPublicarAtaOpen(true);
                             }}
-                            className="p-1.5 rounded-xl bg-white/80 hover:bg-emerald-100 text-emerald-800 border border-white/90 shadow-2xs hover:text-emerald-950 transition-all cursor-pointer"
+                            className="p-1.5 rounded-xl bg-slate-100 hover:bg-emerald-100 text-emerald-800 border border-slate-200 shadow-2xs hover:text-emerald-950 transition-all cursor-pointer"
                             title="Publicar / Editar Ata Oficial e Soluções"
                           >
                             <FileCheck className="w-3.5 h-3.5" />
@@ -304,7 +304,7 @@ export const AssembleiasScreen: React.FC = () => {
                               setAssembleiaToEdit(assembleia);
                               setIsModalCreateEditOpen(true);
                             }}
-                            className="p-1.5 rounded-xl bg-white/80 hover:bg-white text-slate-800 border border-white/90 shadow-2xs hover:text-amber-700 transition-all cursor-pointer"
+                            className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 shadow-2xs hover:text-amber-700 transition-all cursor-pointer"
                             title="Editar Reunião"
                           >
                             <Pencil className="w-3.5 h-3.5" />
@@ -316,7 +316,7 @@ export const AssembleiasScreen: React.FC = () => {
                                 excluirAssembleia(assembleia.id);
                               }
                             }}
-                            className="p-1.5 rounded-xl bg-white/80 hover:bg-rose-100 text-rose-600 border border-white/90 shadow-2xs hover:text-rose-800 transition-all cursor-pointer"
+                            className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-rose-600 border border-slate-200 shadow-2xs hover:text-rose-800 transition-all cursor-pointer"
                             title="Excluir Reunião"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -324,7 +324,7 @@ export const AssembleiasScreen: React.FC = () => {
                         </div>
                       )}
 
-                      <div className="p-1.5 rounded-full bg-white/70 border border-white/90 text-slate-900 shadow-2xs">
+                      <div className="p-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-900 shadow-2xs">
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </div>
                     </div>
@@ -335,7 +335,7 @@ export const AssembleiasScreen: React.FC = () => {
                       <h3 className="text-sm sm:text-base font-black text-slate-950 tracking-tight leading-tight">
                         {assembleia.titulo}
                       </h3>
-                      <p className="text-xs text-slate-900 font-medium line-clamp-2">
+                      <p className="text-xs text-slate-700 font-medium line-clamp-2">
                         {assembleia.descricaoGeral}
                       </p>
                     </div>
@@ -343,7 +343,7 @@ export const AssembleiasScreen: React.FC = () => {
 
                   {/* Participantes convocados quando for reunião informal */}
                   {isInformal && (
-                    <div className="p-2 rounded-xl bg-indigo-50/80 border border-indigo-200 text-xs text-indigo-950 font-semibold flex items-center gap-1.5">
+                    <div className="p-2 rounded-xl bg-indigo-50/90 border border-indigo-200 text-xs text-indigo-950 font-semibold flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-indigo-700 shrink-0" />
                       <span>
                         Convocados: <strong>{assembleia.participantesDescricao || (assembleia.participantesIds ? `Unidades: ${assembleia.participantesIds.join(', ')}` : 'Participantes selecionados')}</strong>
@@ -351,7 +351,7 @@ export const AssembleiasScreen: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-950/10 text-[11px] text-slate-900 font-bold">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200 text-[11px] text-slate-800 font-bold">
                     <div className="flex items-center gap-3">
                       <span className="flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5 text-indigo-700 shrink-0" />
@@ -368,7 +368,7 @@ export const AssembleiasScreen: React.FC = () => {
                         className={`px-3 py-1 rounded-xl text-[11px] font-extrabold transition-all border shadow-xs active:scale-95 flex items-center gap-1 cursor-pointer ${
                           estaConfirmado 
                             ? 'bg-emerald-600 text-white border-emerald-700' 
-                            : 'bg-white/80 hover:bg-white text-slate-950 border-white/90'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-950 border-slate-300'
                         }`}
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" />

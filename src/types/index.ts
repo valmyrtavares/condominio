@@ -142,6 +142,9 @@ export interface Comentario {
   texto: string;
   data: string;
   oficial?: boolean;
+  oculto?: boolean;
+  motivoOcultacao?: string;
+  ocultadoEm?: string;
 }
 
 export interface Reclamacao {

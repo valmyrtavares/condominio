@@ -74,7 +74,7 @@ const MainContent: React.FC = () => {
   };
 
   return (
-    <main className="w-full max-w-4xl mx-auto px-3 sm:px-4 pt-20 pb-24 min-h-screen">
+    <main className="relative z-10 w-full max-w-4xl mx-auto px-3 sm:px-4 pt-20 pb-24 min-h-screen overflow-x-hidden">
       {renderScreen()}
     </main>
   );

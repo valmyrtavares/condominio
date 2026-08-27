@@ -1,6 +1,20 @@
 import React, { useState } from 'react';
 import { useCondo } from '../../context/CondoContext';
-import { Unidade, AdminUser, AdminRole, ServicoMorador, Funcionario, StatusFuncionario, CategoriaFuncionario, EventoCondominio, Assembleia } from '../../types';
+import { 
+  Unidade, 
+  AdminUser, 
+  AdminRole, 
+  ServicoMorador, 
+  Funcionario, 
+  StatusFuncionario, 
+  CategoriaFuncionario, 
+  EventoCondominio, 
+  Assembleia,
+  Reclamacao,
+  StatusReclamacao,
+  CategoriaReclamacao,
+  Comentario
+} from '../../types';
 import { 
   Building, 
   Plus, 
@@ -49,7 +63,12 @@ import {
   Gavel,
   FileCheck,
   Building2,
-  Scale
+  Scale,
+  MessageSquare,
+  ThumbsUp,
+  Wrench,
+  Send,
+  Filter
 } from 'lucide-react';
 import { PrivateNotifyModal } from '../../components/admin/PrivateNotifyModal';
 import { SuspendServiceModal } from '../../components/admin/SuspendServiceModal';
@@ -106,6 +125,12 @@ export const AdminPanelScreen: React.FC = () => {
     editarAssembleia,
     excluirAssembleia,
     publicarAtaAssembleia,
+    reclamacoes,
+    atualizarStatusReclamacao,
+    toggleOcultarComentario,
+    excluirComentario,
+    excluirReclamacao,
+    transformarEmReparo,
     enviarNotificacaoPrivada
   } = useCondo();
 
@@ -115,6 +140,23 @@ export const AdminPanelScreen: React.FC = () => {
   const [isServicosAdminOpen, setIsServicosAdminOpen] = useState(true);
   const [isEventosAdminOpen, setIsEventosAdminOpen] = useState(true);
   const [isAssembleiasAdminOpen, setIsAssembleiasAdminOpen] = useState(true);
+  const [isReclamacoesAdminOpen, setIsReclamacoesAdminOpen] = useState(true);
+
+  // Reclamações & Ocorrências Moderation State
+  const [searchReclamacao, setSearchReclamacao] = useState('');
+  const [filtroStatusReclamacao, setFiltroStatusReclamacao] = useState('Todas');
+  const [filtroCategoriaReclamacao, setFiltroCategoriaReclamacao] = useState('Todas');
+  const [expandedCommentsInAdmin, setExpandedCommentsInAdmin] = useState<Record<string, boolean>>({});
+  const [motivoOcultacaoModal, setMotivoOcultacaoModal] = useState<{ 
+    isOpen: boolean; 
+    reclamacaoId: string; 
+    comentarioId: string; 
+    autorNome: string; 
+    autorUnidade: string;
+    texto: string;
+  } | null>(null);
+  const [motivoOcultacaoTexto, setMotivoOcultacaoTexto] = useState('Comentário em desacordo com as regras de convivência e moderação do condomínio.');
+  const [enviarNotificacaoAoOcultar, setEnviarNotificacaoAoOcultar] = useState(true);
 
   // Assembleias & Reuniões Moderation State
   const [searchAssembleia, setSearchAssembleia] = useState('');
@@ -2009,6 +2051,488 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
+      {/* SEÇÃO 6: MODERAÇÃO DE RECLAMAÇÕES & OCORRÊNCIAS DOS MORADORES */}
+      {/* ========================================================================= */}
+      <div className="bg-white border-2 border-rose-400 rounded-3xl overflow-hidden shadow-xl">
+        
+        {/* Accordion Header */}
+        <button
+          onClick={() => setIsReclamacoesAdminOpen(!isReclamacoesAdminOpen)}
+          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-gradient-to-r from-rose-50 to-orange-50/50 hover:bg-rose-100/60 transition-colors text-left cursor-pointer border-b border-rose-200"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-md">
+              <MessageSquare className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-black text-slate-950 tracking-tight">
+                  📢 Moderação de Reclamações & Ocorrências
+                </h3>
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-950 border border-rose-300 shadow-2xs">
+                  {reclamacoes.length} Ocorrência(s)
+                </span>
+                {reclamacoes.filter(r => r.status === 'Recebida' || r.status === 'Em análise').length > 0 && (
+                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300 animate-pulse">
+                    {reclamacoes.filter(r => r.status === 'Recebida' || r.status === 'Em análise').length} Pendente(s)
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-600 font-medium mt-0.5">
+                Altere status (recebida, em análise, resolvida), modere e oculte comentários e notifique moradores autores.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-2 rounded-xl bg-white text-slate-700 shadow-xs border border-rose-200">
+            {isReclamacoesAdminOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          </div>
+        </button>
+
+        {/* Accordion Body */}
+        {isReclamacoesAdminOpen && (
+          <div className="p-4 sm:p-6 space-y-5 bg-slate-50/40">
+
+            {/* Filtros e Busca */}
+            <div className="space-y-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                
+                {/* Busca */}
+                <div className="sm:col-span-1 relative">
+                  <input
+                    type="text"
+                    placeholder="Buscar por assunto, morador ou apt..."
+                    value={searchReclamacao}
+                    onChange={(e) => setSearchReclamacao(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-rose-500 shadow-xs"
+                  />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                </div>
+
+                {/* Filtro Status */}
+                <div>
+                  <select
+                    value={filtroStatusReclamacao}
+                    onChange={(e) => setFiltroStatusReclamacao(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-rose-500 shadow-xs cursor-pointer"
+                  >
+                    <option value="Todas">Status: Todos</option>
+                    <option value="Recebida">Recebida</option>
+                    <option value="Em análise">Em análise</option>
+                    <option value="Em andamento">Em andamento</option>
+                    <option value="Resolvida">Resolvida</option>
+                    <option value="Encerrada">Encerrada</option>
+                  </select>
+                </div>
+
+                {/* Filtro Categoria */}
+                <div>
+                  <select
+                    value={filtroCategoriaReclamacao}
+                    onChange={(e) => setFiltroCategoriaReclamacao(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-rose-500 shadow-xs cursor-pointer"
+                  >
+                    <option value="Todas">Categoria: Todas</option>
+                    <option value="Barulho">Barulho</option>
+                    <option value="Limpeza">Limpeza</option>
+                    <option value="Manutenção">Manutenção</option>
+                    <option value="Garagem">Garagem</option>
+                    <option value="Segurança">Segurança</option>
+                    <option value="Animais">Animais</option>
+                    <option value="Convivência">Convivência</option>
+                    <option value="Outros">Outros</option>
+                  </select>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Lista de Reclamações em Cards */}
+            <div className="space-y-4">
+              {reclamacoes
+                .filter(rec => {
+                  const matchesSearch = !searchReclamacao || 
+                    rec.titulo.toLowerCase().includes(searchReclamacao.toLowerCase()) ||
+                    rec.descricao.toLowerCase().includes(searchReclamacao.toLowerCase()) ||
+                    rec.autorNome.toLowerCase().includes(searchReclamacao.toLowerCase()) ||
+                    rec.autorUnidade.toLowerCase().includes(searchReclamacao.toLowerCase());
+
+                  const matchesStatus = filtroStatusReclamacao === 'Todas' || rec.status === filtroStatusReclamacao;
+                  const matchesCategoria = filtroCategoriaReclamacao === 'Todas' || rec.categoria === filtroCategoriaReclamacao;
+
+                  return matchesSearch && matchesStatus && matchesCategoria;
+                })
+                .length === 0 ? (
+                  <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl space-y-2">
+                    <MessageSquare className="w-8 h-8 text-slate-400 mx-auto" />
+                    <p className="text-sm font-bold text-slate-700">Nenhuma ocorrência encontrada com estes filtros.</p>
+                  </div>
+                ) : (
+                  reclamacoes
+                    .filter(rec => {
+                      const matchesSearch = !searchReclamacao || 
+                        rec.titulo.toLowerCase().includes(searchReclamacao.toLowerCase()) ||
+                        rec.descricao.toLowerCase().includes(searchReclamacao.toLowerCase()) ||
+                        rec.autorNome.toLowerCase().includes(searchReclamacao.toLowerCase()) ||
+                        rec.autorUnidade.toLowerCase().includes(searchReclamacao.toLowerCase());
+
+                      const matchesStatus = filtroStatusReclamacao === 'Todas' || rec.status === filtroStatusReclamacao;
+                      const matchesCategoria = filtroCategoriaReclamacao === 'Todas' || rec.categoria === filtroCategoriaReclamacao;
+
+                      return matchesSearch && matchesStatus && matchesCategoria;
+                    })
+                    .map((rec) => {
+                      const isCommentsOpen = expandedCommentsInAdmin[rec.id] !== false; // default open
+                      const hiddenCommentsCount = rec.comentarios.filter(c => c.oculto).length;
+
+                      return (
+                        <div 
+                          key={rec.id}
+                          className="bg-white border-2 border-slate-200 rounded-3xl p-4 sm:p-5 shadow-md space-y-4 transition-all hover:border-slate-300"
+                        >
+                          
+                          {/* Header do Card */}
+                          <div className="flex items-start justify-between gap-3 flex-wrap border-b border-slate-100 pb-3">
+                            <div className="space-y-1 min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-950 border border-rose-300">
+                                  {rec.categoria}
+                                </span>
+                                
+                                <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                  {rec.data}
+                                </span>
+
+                                <span className="text-xs font-black text-slate-950 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                                  Autor: {rec.autorNome} ({rec.autorUnidade})
+                                </span>
+                              </div>
+
+                              <h4 className="text-base font-black text-slate-950 leading-tight">
+                                {rec.titulo}
+                              </h4>
+                            </div>
+
+                            {/* Seletor de Status Interativo */}
+                            <div className="flex items-center gap-2">
+                              <div className="space-y-0.5 text-right">
+                                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                                  Status da Ocorrência:
+                                </span>
+                                <select
+                                  value={rec.status}
+                                  onChange={(e) => atualizarStatusReclamacao(rec.id, e.target.value as StatusReclamacao)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase border-2 shadow-xs cursor-pointer transition-all ${
+                                    rec.status === 'Resolvida' 
+                                      ? 'bg-emerald-100 text-emerald-950 border-emerald-400' 
+                                      : rec.status === 'Em andamento'
+                                        ? 'bg-indigo-100 text-indigo-950 border-indigo-400'
+                                        : rec.status === 'Em análise'
+                                          ? 'bg-amber-100 text-amber-950 border-amber-400'
+                                          : rec.status === 'Encerrada'
+                                            ? 'bg-slate-200 text-slate-900 border-slate-400'
+                                            : 'bg-rose-100 text-rose-950 border-rose-400'
+                                  }`}
+                                >
+                                  <option value="Recebida">📥 Recebida</option>
+                                  <option value="Em análise">🔍 Em análise</option>
+                                  <option value="Em andamento">⚙️ Em andamento</option>
+                                  <option value="Resolvida">✅ Resolvida</option>
+                                  <option value="Encerrada">🔒 Encerrada</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Descrição e Anexos */}
+                          <div className="space-y-2 text-xs text-slate-800 font-medium leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                            <p>{rec.descricao}</p>
+
+                            {rec.anexoUrl && (
+                              <div className="pt-2 border-t border-slate-200">
+                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 block mb-1">
+                                  Anexo da Ocorrência:
+                                </span>
+                                {rec.anexoTipo === 'video' ? (
+                                  <video 
+                                    src={rec.anexoUrl} 
+                                    controls 
+                                    className="max-h-48 rounded-xl border border-slate-300 bg-black/10"
+                                  />
+                                ) : (
+                                  <img 
+                                    src={rec.anexoUrl} 
+                                    alt="Anexo" 
+                                    className="max-h-48 rounded-xl border border-slate-300 object-cover"
+                                  />
+                                )}
+                              </div>
+                            )}
+
+                            {/* Informação de Apoios e Reparo Vinculado */}
+                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 text-[11px] flex-wrap">
+                              <span className="font-bold text-slate-700 flex items-center gap-1">
+                                <ThumbsUp className="w-3.5 h-3.5 text-indigo-700" />
+                                {rec.apoiosCount} moradores apoiam esta causa
+                              </span>
+
+                              {rec.reparoId && (
+                                <span className="font-black text-indigo-900 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                  <Wrench className="w-3 h-3 text-indigo-600" />
+                                  Ordem de Reparo Vinculada: #{rec.reparoId}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Ações da Ocorrência */}
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 flex-wrap">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {!rec.reparoId && rec.status !== 'Resolvida' && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (window.confirm(`Deseja transformar esta reclamação em Ordem de Reparo com cotação de orçamentos?`)) {
+                                      transformarEmReparo(rec.id, rec.titulo, rec.descricao);
+                                      alert('Ordem de Reparo criada com sucesso no módulo de Reparos!');
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-300 text-xs font-black uppercase flex items-center gap-1 transition-all cursor-pointer"
+                                  title="Converter em Ordem de Reparo"
+                                >
+                                  <Wrench className="w-3.5 h-3.5 text-indigo-700" />
+                                  <span>Transformar em Reparo</span>
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const rawUnit = rec.autorUnidade.replace(/[^0-9]/g, '');
+                                  const unitObj: Unidade = unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) || {
+                                    id: `unit-${rawUnit || 'temp'}`,
+                                    numero: rec.autorUnidade,
+                                    bloco: 'A',
+                                    vagaGaragem: '',
+                                    moradores: []
+                                  };
+                                  setSelectedUnidadeParaNotificar(unitObj);
+                                  setIsNotifyModalOpen(true);
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black uppercase flex items-center gap-1 transition-all cursor-pointer"
+                                title="Notificar autor desta reclamação"
+                              >
+                                <Bell className="w-3.5 h-3.5 text-amber-700" />
+                                <span>Notificar Autor</span>
+                              </button>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Tem certeza que deseja excluir permanentemente a ocorrência "${rec.titulo}"?`)) {
+                                  excluirReclamacao(rec.id);
+                                }
+                              }}
+                              className="p-1.5 rounded-xl hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                              title="Excluir Ocorrência"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          {/* ========================================================= */}
+                          {/* SUBSEÇÃO: MODERAÇÃO DE COMENTÁRIOS DA RECLAMAÇÃO */}
+                          {/* ========================================================= */}
+                          <div className="pt-2 border-t-2 border-slate-200 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                                  <MessageSquare className="w-4 h-4 text-indigo-700" />
+                                  Comentários & Apoios Vinculados ({rec.comentarios.length})
+                                </span>
+                                {hiddenCommentsCount > 0 && (
+                                  <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300 text-[9px] font-black uppercase">
+                                    {hiddenCommentsCount} Ocultado(s)
+                                  </span>
+                                )}
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => setExpandedCommentsInAdmin(prev => ({ ...prev, [rec.id]: !isCommentsOpen }))}
+                                className="text-xs font-extrabold text-indigo-800 hover:underline cursor-pointer flex items-center gap-1"
+                              >
+                                {isCommentsOpen ? 'Recolher Comentários' : 'Ver Comentários'}
+                                {isCommentsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+
+                            {isCommentsOpen && (
+                              <div className="space-y-2.5 animate-in fade-in duration-200">
+                                {rec.comentarios.length === 0 ? (
+                                  <p className="text-xs text-slate-500 italic py-2">
+                                    Nenhum comentário ou manifestação registrada nesta ocorrência.
+                                  </p>
+                                ) : (
+                                  rec.comentarios.map((com) => (
+                                    <div
+                                      key={com.id}
+                                      className={`p-3 rounded-2xl border-2 transition-all space-y-2 ${
+                                        com.oculto
+                                          ? 'bg-rose-50/90 border-rose-300 shadow-2xs'
+                                          : com.oficial
+                                            ? 'bg-amber-50 border-amber-300 shadow-2xs'
+                                            : 'bg-white border-slate-200 shadow-xs'
+                                      }`}
+                                    >
+                                      {/* Header do Comentário com Autoria Transparente */}
+                                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                                            com.oficial ? 'bg-amber-500 text-slate-950' : 'bg-indigo-100 text-indigo-900'
+                                          }`}>
+                                            {com.oficial ? <ShieldCheck className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />}
+                                          </div>
+                                          <strong className="text-xs font-black text-slate-950">
+                                            {com.autorNome}
+                                          </strong>
+                                          <span className="text-xs font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                                            {com.autorUnidade || 'Unidade não informada'}
+                                          </span>
+                                          {com.autorRole && (
+                                            <span className="text-[10px] font-bold text-slate-600 uppercase">
+                                              • {com.autorRole}
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[10px] font-mono text-slate-500 font-semibold">
+                                            {com.data}
+                                          </span>
+
+                                          {/* Badge de Ocultação */}
+                                          {com.oculto && (
+                                            <span className="px-2 py-0.5 rounded-md bg-rose-200 text-rose-950 border border-rose-400 text-[9px] font-black uppercase flex items-center gap-1">
+                                              <EyeOff className="w-3 h-3" />
+                                              Oculto ao Público
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Texto do Comentário */}
+                                      <p className="text-xs text-slate-900 font-medium pl-7 leading-relaxed">
+                                        {com.texto}
+                                      </p>
+
+                                      {/* Motivo da Ocultação se houver */}
+                                      {com.oculto && com.motivoOcultacao && (
+                                        <div className="ml-7 p-2 rounded-xl bg-rose-100/90 border border-rose-300 text-[11px] text-rose-950 space-y-0.5 font-semibold">
+                                          <span className="font-black block uppercase text-[9px] text-rose-900">
+                                            Motivo da Moderação Registrado:
+                                          </span>
+                                          <p>{com.motivoOcultacao}</p>
+                                        </div>
+                                      )}
+
+                                      {/* Ações de Moderação do Comentário */}
+                                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 ml-7 flex-wrap">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          
+                                          {/* Botão Ocultar / Reexibir */}
+                                          {com.oculto ? (
+                                            <button
+                                              type="button"
+                                              onClick={() => toggleOcultarComentario(rec.id, com.id)}
+                                              className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                              title="Tornar este comentário visível novamente aos moradores"
+                                            >
+                                              <Eye className="w-3.5 h-3.5" />
+                                              <span>Reexibir ao Público</span>
+                                            </button>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setMotivoOcultacaoModal({
+                                                  isOpen: true,
+                                                  reclamacaoId: rec.id,
+                                                  comentarioId: com.id,
+                                                  autorNome: com.autorNome,
+                                                  autorUnidade: com.autorUnidade,
+                                                  texto: com.texto
+                                                });
+                                                setMotivoOcultacaoTexto('Comentário em desacordo com as diretrizes de respeito e convivência do condomínio.');
+                                                setEnviarNotificacaoAoOcultar(true);
+                                              }}
+                                              className="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 text-[11px] font-black uppercase flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                              title="Ocultar comentário mantendo o registro no banco"
+                                            >
+                                              <EyeOff className="w-3.5 h-3.5 text-rose-600" />
+                                              <span>Ocultar Comentário</span>
+                                            </button>
+                                          )}
+
+                                          {/* Botão Notificar Morador Autor do Comentário */}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const rawUnit = (com.autorUnidade || '').replace(/[^0-9]/g, '');
+                                              const unitObj: Unidade = unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) || {
+                                                id: `unit-${rawUnit || 'temp'}`,
+                                                numero: com.autorUnidade || 'Geral',
+                                                bloco: 'A',
+                                                vagaGaragem: '',
+                                                moradores: []
+                                              };
+                                              setSelectedUnidadeParaNotificar(unitObj);
+                                              setIsNotifyModalOpen(true);
+                                            }}
+                                            className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-950 border border-slate-300 text-[11px] font-black uppercase flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                            title="Enviar notificação privada para a unidade deste morador"
+                                          >
+                                            <Bell className="w-3.5 h-3.5 text-amber-700" />
+                                            <span>Notificar Autor</span>
+                                          </button>
+                                        </div>
+
+                                        {/* Excluir Definitivo */}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (window.confirm(`Tem certeza que deseja excluir permanentemente este comentário de "${com.autorNome}"?`)) {
+                                              excluirComentario(rec.id, com.id);
+                                            }
+                                          }}
+                                          className="p-1 rounded-lg hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                                          title="Excluir Comentário Definitivamente"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                        </div>
+                      );
+                    })
+                )}
+            </div>
+
+          </div>
+        )}
+
+      </div>
+
+      {/* ========================================================================= */}
       {/* MODAL: CRIAR NOVA CATEGORIA / CARGO DINÂMICO */}
       {/* ========================================================================= */}
       {isModalNovaCategoriaOpen && (
@@ -2220,6 +2744,129 @@ export const AdminPanelScreen: React.FC = () => {
         }}
         assembleia={assembleiaParaAtaAdmin}
       />
+
+      {/* Modal de Confirmação e Registro de Ocultação de Comentário */}
+      {motivoOcultacaoModal && motivoOcultacaoModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white border-2 border-rose-400 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-800 flex items-center justify-center">
+                  <EyeOff className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-950">
+                    Ocultar Comentário da Visão Pública
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    O comentário continuará registrado no banco, mas não será mais visível aos moradores.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMotivoOcultacaoModal(null)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Informações do Autor e Conteúdo */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-slate-950">
+                  Autor: {motivoOcultacaoModal.autorNome}
+                </span>
+                <span className="font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                  {motivoOcultacaoModal.autorUnidade}
+                </span>
+              </div>
+              <p className="text-slate-700 italic bg-white p-2 rounded-xl border border-slate-200 leading-relaxed">
+                "{motivoOcultacaoModal.texto}"
+              </p>
+            </div>
+
+            {/* Formulário de Motivo */}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
+                  Motivo da Moderação / Ocultação *
+                </label>
+                <textarea
+                  rows={3}
+                  value={motivoOcultacaoTexto}
+                  onChange={(e) => setMotivoOcultacaoTexto(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-rose-500 resize-none shadow-xs"
+                  placeholder="Ex: Linguagem ofensiva, desrespeito ao regimento ou acusação indevida..."
+                  required
+                />
+              </div>
+
+              {/* Checkbox Notificar */}
+              <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-amber-50/70 border border-amber-200 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={enviarNotificacaoAoOcultar}
+                  onChange={(e) => setEnviarNotificacaoAoOcultar(e.target.checked)}
+                  className="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                />
+                <div className="text-xs">
+                  <strong className="block font-black text-amber-950">
+                    Enviar Notificação Privada ao Morador
+                  </strong>
+                  <span className="text-[11px] text-amber-900">
+                    Avisa automaticamente a unidade {motivoOcultacaoModal.autorUnidade} sobre a moderação e o motivo registrado.
+                  </span>
+                </div>
+              </label>
+            </div>
+
+            {/* Ações */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setMotivoOcultacaoModal(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!motivoOcultacaoTexto.trim()) {
+                    alert('Por favor, informe o motivo da moderação.');
+                    return;
+                  }
+                  toggleOcultarComentario(
+                    motivoOcultacaoModal.reclamacaoId, 
+                    motivoOcultacaoModal.comentarioId, 
+                    motivoOcultacaoTexto.trim()
+                  );
+
+                  if (enviarNotificacaoAoOcultar && motivoOcultacaoModal.autorUnidade) {
+                    const rawUnit = motivoOcultacaoModal.autorUnidade.replace(/[^0-9]/g, '') || motivoOcultacaoModal.autorUnidade;
+                    enviarNotificacaoPrivada(
+                      rawUnit,
+                      `Moderação de Conteúdo: Seu comentário na ocorrência foi ocultado da visualização pública pela administração. Motivo: ${motivoOcultacaoTexto.trim()}`,
+                      'Aviso de Moderação de Comentário'
+                    );
+                  }
+
+                  setMotivoOcultacaoModal(null);
+                }}
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+              >
+                <EyeOff className="w-4 h-4" />
+                <span>Confirmar Ocultação</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

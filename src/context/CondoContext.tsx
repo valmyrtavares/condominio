@@ -149,6 +149,9 @@ interface CondoContextType {
   solicitarReserva: (dependenciaId: string, dataReserva: string, periodo: ReservaDependencia['periodo']) => void;
   cancelarReserva: (reservaId: string) => void;
   atualizarStatusReclamacao: (id: string, novoStatus: StatusReclamacao) => void;
+  toggleOcultarComentario: (reclamacaoId: string, comentarioId: string, motivo?: string) => void;
+  excluirComentario: (reclamacaoId: string, comentarioId: string) => void;
+  excluirReclamacao: (reclamacaoId: string) => void;
   atualizarStatusVaga: (vagaId: string, novoStatus: StatusVaga, dadosAdicionais?: { veiculo?: VeiculoInfo; valorAluguelMensal?: number; observacoes?: string }) => void;
   transformarEmReparo: (reclamacaoId: string, titulo: string, descricao: string) => string;
   selecionarOrcamento: (reparoId: string, orcamentoId: string) => void;
@@ -1812,6 +1815,45 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   };
 
+  const toggleOcultarComentario = (reclamacaoId: string, comentarioId: string, motivo?: string) => {
+    setReclamacoes(prev => prev.map(rec => {
+      if (rec.id === reclamacaoId) {
+        return {
+          ...rec,
+          comentarios: rec.comentarios.map(c => {
+            if (c.id === comentarioId) {
+              const novoOculto = !c.oculto;
+              return {
+                ...c,
+                oculto: novoOculto,
+                motivoOcultacao: novoOculto ? (motivo || 'Ocultado pela moderação administrativa') : undefined,
+                ocultadoEm: novoOculto ? new Date().toLocaleDateString('pt-BR') : undefined
+              };
+            }
+            return c;
+          })
+        };
+      }
+      return rec;
+    }));
+  };
+
+  const excluirComentario = (reclamacaoId: string, comentarioId: string) => {
+    setReclamacoes(prev => prev.map(rec => {
+      if (rec.id === reclamacaoId) {
+        return {
+          ...rec,
+          comentarios: rec.comentarios.filter(c => c.id !== comentarioId)
+        };
+      }
+      return rec;
+    }));
+  };
+
+  const excluirReclamacao = (reclamacaoId: string) => {
+    setReclamacoes(prev => prev.filter(r => r.id !== reclamacaoId));
+  };
+
   return (
     <CondoContext.Provider value={{
       currentUser,
@@ -1893,6 +1935,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       solicitarReserva,
       cancelarReserva,
       atualizarStatusReclamacao,
+      toggleOcultarComentario,
+      excluirComentario,
+      excluirReclamacao,
       atualizarStatusVaga,
       transformarEmReparo,
       selecionarOrcamento,
