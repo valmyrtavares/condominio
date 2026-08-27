@@ -23,6 +23,9 @@ import {
   Dependencia,
   ReservaDependencia,
   Assembleia,
+  AtaAssembleia,
+  StatusAssembleia,
+  PautaAssembleia,
   EventoCondominio,
   UnidadeDisponivel,
   FinalidadeImovel,
@@ -66,7 +69,16 @@ interface CondoContextType {
   dependencias: Dependencia[];
   reservas: ReservaDependencia[];
   assembleias: Assembleia[];
+  adicionarAssembleia: (nova: Omit<Assembleia, 'id' | 'condominioId'>) => void;
+  editarAssembleia: (id: string, dados: Partial<Assembleia>) => void;
+  excluirAssembleia: (id: string) => void;
+  publicarAtaAssembleia: (id: string, ata: AtaAssembleia, status?: StatusAssembleia, pautasAtualizadas?: PautaAssembleia[]) => void;
   eventos: EventoCondominio[];
+  adicionarEvento: (novo: Omit<EventoCondominio, 'id' | 'condominioId'>) => void;
+  editarEvento: (id: string, dados: Partial<EventoCondominio>) => void;
+  excluirEvento: (id: string) => void;
+  suspenderEvento: (id: string, motivo: string) => void;
+  reativarEvento: (id: string) => void;
   unidadesDisponiveis: UnidadeDisponivel[];
   prestacaoContas: PrestacaoContas;
   funcionarios: Funcionario[];
@@ -522,8 +534,149 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [servicosContratados, setServicosContratados] = useState<ServicoContratado[]>(MOCK_SERVICOS_CONTRATADOS);
   const [dependencias] = useState<Dependencia[]>(MOCK_DEPENDENCIAS);
   const [reservas, setReservas] = useState<ReservaDependencia[]>(MOCK_RESERVAS);
-  const [assembleias, setAssembleias] = useState<Assembleia[]>(MOCK_ASSEMBLEIAS);
-  const [eventos, setEventos] = useState<EventoCondominio[]>(MOCK_EVENTOS);
+  // Assembleias e Reuniões Informais com persistência
+  const [assembleias, setAssembleias] = useState<Assembleia[]>(() => {
+    const saved = localStorage.getItem('condo_assembleias_list');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return MOCK_ASSEMBLEIAS.map(a => ({
+      ...a,
+      tipoEncontro: a.tipoEncontro || 'Assembleia Geral',
+      participantesTipo: a.participantesTipo || 'todos'
+    }));
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_assembleias_list', JSON.stringify(assembleias));
+  }, [assembleias]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'condo_assembleias_list' && e.newValue) {
+        try {
+          setAssembleias(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const adicionarAssembleia = (nova: Omit<Assembleia, 'id' | 'condominioId'>) => {
+    const novaAss: Assembleia = {
+      id: `ass-${Date.now()}`,
+      condominioId: CURRENT_CONDO_ID,
+      criadoEm: new Date().toLocaleDateString('pt-BR'),
+      tipoEncontro: nova.tipoEncontro || 'Assembleia Geral',
+      participantesTipo: nova.participantesTipo || (nova.tipoEncontro === 'Reunião Informal' ? 'especificos' : 'todos'),
+      ...nova
+    };
+    setAssembleias(prev => [novaAss, ...prev]);
+  };
+
+  const editarAssembleia = (id: string, dados: Partial<Assembleia>) => {
+    setAssembleias(prev => prev.map(a => a.id === id ? { ...a, ...dados } : a));
+  };
+
+  const excluirAssembleia = (id: string) => {
+    setAssembleias(prev => prev.filter(a => a.id !== id));
+  };
+
+  const publicarAtaAssembleia = (
+    id: string, 
+    ata: AtaAssembleia, 
+    status: StatusAssembleia = 'Realizada com Ata Publicada',
+    pautasAtualizadas?: PautaAssembleia[]
+  ) => {
+    setAssembleias(prev => prev.map(a => {
+      if (a.id === id) {
+        return {
+          ...a,
+          status,
+          ata,
+          pautas: pautasAtualizadas || a.pautas
+        };
+      }
+      return a;
+    }));
+  };
+
+  // Eventos & Celebrações com persistência e moderação
+  const [eventos, setEventos] = useState<EventoCondominio[]>(() => {
+    const saved = localStorage.getItem('condo_eventos_list');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return MOCK_EVENTOS.map(e => ({
+      ...e,
+      ativo: e.ativo !== undefined ? e.ativo : true
+    }));
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_eventos_list', JSON.stringify(eventos));
+  }, [eventos]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'condo_eventos_list' && e.newValue) {
+        try {
+          setEventos(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const adicionarEvento = (novo: Omit<EventoCondominio, 'id' | 'condominioId'>) => {
+    const novoEvento: EventoCondominio = {
+      id: `evt-${Date.now()}`,
+      condominioId: CURRENT_CONDO_ID,
+      ativo: true,
+      criadoEm: new Date().toLocaleDateString('pt-BR'),
+      organizadorId: currentUser.id,
+      organizadorUnidade: currentUser.unidade ? (currentUser.unidade.toLowerCase().startsWith('apt') || currentUser.unidade.toLowerCase().startsWith('cobertura') ? currentUser.unidade : `Apt ${currentUser.unidade}`) : 'Administração',
+      ...novo
+    };
+    setEventos(prev => [novoEvento, ...prev]);
+  };
+
+  const editarEvento = (id: string, dados: Partial<EventoCondominio>) => {
+    setEventos(prev => prev.map(e => e.id === id ? { ...e, ...dados } : e));
+  };
+
+  const excluirEvento = (id: string) => {
+    setEventos(prev => prev.filter(e => e.id !== id));
+  };
+
+  const suspenderEvento = (id: string, motivo: string) => {
+    const target = eventos.find(e => e.id === id);
+    if (!target) return;
+
+    setEventos(prev => prev.map(e => e.id === id ? { ...e, ativo: false, motivoSuspensao: motivo } : e));
+
+    const targetUnidade = target.organizadorUnidade || (target.organizador.includes('Apt') ? target.organizador.replace(/.*(Apt\s*\d+).*/i, '$1') : '');
+    const cleanUnit = targetUnidade.replace(/[^0-9]/g, '');
+
+    if (cleanUnit) {
+      enviarNotificacaoPrivada(
+        cleanUnit,
+        `Aviso da Administração: Seu anúncio de evento "${target.titulo}" foi retirado do mural pelo seguinte motivo: ${motivo}. Para esclarecimentos, contate a administração.`,
+        'alta'
+      );
+    }
+  };
+
+  const reativarEvento = (id: string) => {
+    setEventos(prev => prev.map(e => e.id === id ? { ...e, ativo: true, motivoSuspensao: undefined } : e));
+  };
+
   const [unidadesDisponiveis, setUnidadesDisponiveis] = useState<UnidadeDisponivel[]>(MOCK_UNIDADES_DISPONIVEIS);
   const [prestacaoContas] = useState<PrestacaoContas>(MOCK_PRESTACAO_CONTAS);
 
@@ -1673,7 +1826,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       dependencias,
       reservas,
       assembleias,
+      adicionarAssembleia,
+      editarAssembleia,
+      excluirAssembleia,
+      publicarAtaAssembleia,
       eventos,
+      adicionarEvento,
+      editarEvento,
+      excluirEvento,
+      suspenderEvento,
+      reativarEvento,
       unidadesDisponiveis,
       prestacaoContas,
       funcionarios,

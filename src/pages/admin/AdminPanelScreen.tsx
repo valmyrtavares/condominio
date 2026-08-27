@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCondo } from '../../context/CondoContext';
-import { Unidade, AdminUser, AdminRole, ServicoMorador, Funcionario, StatusFuncionario, CategoriaFuncionario } from '../../types';
+import { Unidade, AdminUser, AdminRole, ServicoMorador, Funcionario, StatusFuncionario, CategoriaFuncionario, EventoCondominio, Assembleia } from '../../types';
 import { 
   Building, 
   Plus, 
@@ -42,11 +42,22 @@ import {
   Activity,
   UserCheck,
   UserX,
-  Star
+  Star,
+  PartyPopper,
+  Pencil,
+  MapPin,
+  Gavel,
+  FileCheck,
+  Building2,
+  Scale
 } from 'lucide-react';
 import { PrivateNotifyModal } from '../../components/admin/PrivateNotifyModal';
 import { SuspendServiceModal } from '../../components/admin/SuspendServiceModal';
 import { EditFuncionarioModal } from '../../components/admin/EditFuncionarioModal';
+import { SuspendEventoModal } from '../../components/admin/SuspendEventoModal';
+import { CreateEditEventoModal } from '../../components/eventos/CreateEditEventoModal';
+import { CreateEditAssembleiaModal } from '../../components/assembleia/CreateEditAssembleiaModal';
+import { PublicarAtaModal } from '../../components/assembleia/PublicarAtaModal';
 
 const AVATARES_SUGERIDOS = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
@@ -83,13 +94,35 @@ export const AdminPanelScreen: React.FC = () => {
     adicionarFuncionario,
     editarFuncionario,
     excluirFuncionario,
-    atualizarStatusFuncionario
+    atualizarStatusFuncionario,
+    eventos,
+    adicionarEvento,
+    editarEvento,
+    excluirEvento,
+    suspenderEvento,
+    reativarEvento,
+    assembleias,
+    adicionarAssembleia,
+    editarAssembleia,
+    excluirAssembleia,
+    publicarAtaAssembleia,
+    enviarNotificacaoPrivada
   } = useCondo();
 
   // Accordion section collapse states
   const [isUnidadesOpen, setIsUnidadesOpen] = useState(true);
   const [isSenhasAdminOpen, setIsSenhasAdminOpen] = useState(true);
   const [isServicosAdminOpen, setIsServicosAdminOpen] = useState(true);
+  const [isEventosAdminOpen, setIsEventosAdminOpen] = useState(true);
+  const [isAssembleiasAdminOpen, setIsAssembleiasAdminOpen] = useState(true);
+
+  // Assembleias & Reuniões Moderation State
+  const [searchAssembleia, setSearchAssembleia] = useState('');
+  const [filtroTipoAssembleia, setFiltroTipoAssembleia] = useState('Todas');
+  const [assembleiaToEditInAdmin, setAssembleiaToEditInAdmin] = useState<Assembleia | null>(null);
+  const [isCreateEditAssembleiaAdminOpen, setIsCreateEditAssembleiaAdminOpen] = useState(false);
+  const [assembleiaParaAtaAdmin, setAssembleiaParaAtaAdmin] = useState<Assembleia | null>(null);
+  const [isPublicarAtaAdminOpen, setIsPublicarAtaAdminOpen] = useState(false);
 
   // Private Notify Modal state
   const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
@@ -99,6 +132,13 @@ export const AdminPanelScreen: React.FC = () => {
   const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [servicoParaSuspender, setServicoParaSuspender] = useState<ServicoMorador | null>(null);
   const [searchServico, setSearchServico] = useState('');
+
+  // Eventos Moderation State
+  const [isSuspendEventoModalOpen, setIsSuspendEventoModalOpen] = useState(false);
+  const [eventoParaSuspender, setEventoParaSuspender] = useState<EventoCondominio | null>(null);
+  const [searchEvento, setSearchEvento] = useState('');
+  const [eventoToEditInAdmin, setEventoToEditInAdmin] = useState<EventoCondominio | null>(null);
+  const [isCreateEditEventoAdminOpen, setIsCreateEditEventoAdminOpen] = useState(false);
 
   // Form Unidades
   const [novoNumero, setNovoNumero] = useState('');
@@ -1457,6 +1497,518 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
+      {/* SEÇÃO 4: MODERAÇÃO DE EVENTOS & MURAL DE CELEBRAÇÕES */}
+      {/* ========================================================================= */}
+      <div className="bg-white/45 border-2 border-white/60 rounded-3xl overflow-hidden shadow-xl backdrop-blur-xs transition-all duration-300">
+        
+        {/* Accordion Header */}
+        <button
+          onClick={() => setIsEventosAdminOpen(prev => !prev)}
+          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left focus:outline-none bg-amber-500/10 hover:bg-amber-500/15 transition-colors cursor-pointer border-b border-amber-400/20"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-900 border border-amber-400/40 flex items-center justify-center shrink-0">
+              <PartyPopper className="w-5 h-5 text-amber-700" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-black text-sm sm:text-base text-slate-950">
+                  Moderação de Eventos & Mural Comunitário
+                </h2>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 border border-amber-400 shadow-2xs">
+                  {eventos.length} {eventos.length === 1 ? 'evento' : 'eventos'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 font-medium">
+                Receba, aprove, tire do ar e notifique moradores sobre celebrações públicas ou particulares.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEventoToEditInAdmin(null);
+                setIsCreateEditEventoAdminOpen(true);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase flex items-center gap-1 shadow-xs cursor-pointer active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[3]" /> Novo Evento
+            </button>
+            <div className="p-1.5 rounded-full bg-white/50 border border-white/60 text-slate-800">
+              {isEventosAdminOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          </div>
+        </button>
+
+        {/* Accordion Content */}
+        {isEventosAdminOpen && (
+          <div className="p-4 sm:p-5 space-y-4 animate-in slide-in-from-top-2 duration-200">
+            
+            {/* Barra de Busca de Eventos */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar por título, organizador, data ou local do evento..."
+                value={searchEvento}
+                onChange={(e) => setSearchEvento(e.target.value)}
+                className="w-full bg-white/70 border border-white/80 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs"
+              />
+              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.8" />
+            </div>
+
+            {/* Grid de Cards de Eventos no Admin */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {eventos
+                .filter(evt => !searchEvento || 
+                  evt.titulo.toLowerCase().includes(searchEvento.toLowerCase()) ||
+                  evt.organizador.toLowerCase().includes(searchEvento.toLowerCase()) ||
+                  evt.local.toLowerCase().includes(searchEvento.toLowerCase()) ||
+                  evt.data.toLowerCase().includes(searchEvento.toLowerCase())
+                )
+                .map((evento) => {
+                  const isAtivo = evento.ativo !== false;
+                  const isPublico = evento.visibilidade === 'Público';
+
+                  return (
+                    <div
+                      key={evento.id}
+                      className={`p-4 rounded-3xl border-2 transition-all shadow-md space-y-3 bg-white/70 ${
+                        isAtivo ? 'border-white/90' : 'border-rose-300 bg-rose-50/40'
+                      }`}
+                    >
+                      {/* Topo: Imagem Thumbnail, Título, Visibilidade e Status */}
+                      <div className="flex items-start gap-3">
+                        <img
+                          src={evento.imagem}
+                          alt={evento.titulo}
+                          className="w-16 h-16 rounded-2xl object-cover border border-slate-300 bg-slate-100 shrink-0 shadow-2xs"
+                        />
+                        <div className="min-w-0 flex-1 space-y-0.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border shadow-2xs ${
+                              isPublico ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-purple-100 text-purple-950 border-purple-300'
+                            }`}>
+                              {evento.visibilidade}
+                            </span>
+                            <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border shadow-2xs ${
+                              isAtivo ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-rose-100 text-rose-950 border-rose-300'
+                            }`}>
+                              {isAtivo ? '🟢 No Mural' : '🔴 Fora do Ar'}
+                            </span>
+                          </div>
+
+                          <h4 className="font-black text-sm text-slate-950 leading-tight truncate">
+                            {evento.titulo}
+                          </h4>
+                          <p className="text-[11px] text-indigo-900 font-extrabold truncate">
+                            {evento.organizador}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Informações de Data e Local */}
+                      <div className="p-2.5 rounded-2xl bg-white/80 border border-white/90 space-y-1 text-xs font-semibold">
+                        <div className="flex items-center gap-1.5 text-slate-700 text-[11px]">
+                          <Clock className="w-3.5 h-3.5 text-indigo-700 shrink-0" />
+                          <span>{evento.data} • {evento.horario}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-slate-700 text-[11px]">
+                          <MapPin className="w-3.5 h-3.5 text-rose-700 shrink-0" />
+                          <span className="truncate">{evento.local}</span>
+                        </div>
+                      </div>
+
+                      {/* Motivo de Suspensão se estiver fora do ar */}
+                      {!isAtivo && evento.motivoSuspensao && (
+                        <div className="p-2.5 rounded-2xl bg-rose-100 border border-rose-200 text-rose-950 text-[11px] space-y-0.5">
+                          <strong className="block font-black flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3 text-rose-700" /> Motivo da Suspensão:
+                          </strong>
+                          <p className="font-medium leading-relaxed">{evento.motivoSuspensao}</p>
+                        </div>
+                      )}
+
+                      {/* Botões de Ação do Admin */}
+                      <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-slate-100">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {isAtivo ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEventoParaSuspender(evento);
+                                setIsSuspendEventoModalOpen(true);
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-black flex items-center gap-1 transition-all cursor-pointer"
+                            >
+                              <AlertTriangle className="w-3 h-3 text-rose-600" /> Tirar do Ar
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => reativarEvento(evento.id)}
+                              className="px-2.5 py-1 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 text-[11px] font-black flex items-center gap-1 transition-all cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-3 h-3 text-emerald-700" /> Reativar no Mural
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const unidadeTarget = evento.organizadorUnidade || evento.organizador;
+                              const numApto = unidadeTarget.replace(/[^0-9]/g, '');
+                              const u = unidades.find(item => item.numero === numApto);
+                              if (u) {
+                                setSelectedUnidadeParaNotificar(u);
+                                setIsNotifyModalOpen(true);
+                              }
+                            }}
+                            className="px-2 py-1 rounded-xl text-amber-800 hover:bg-amber-100 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                            title="Enviar Notificação Privada para o Organizador"
+                          >
+                            <Bell className="w-3 h-3 text-amber-700" /> Notificar
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEventoToEditInAdmin(evento);
+                              setIsCreateEditEventoAdminOpen(true);
+                            }}
+                            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+                            title="Editar Evento"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`Tem certeza que deseja excluir o evento "${evento.titulo}"?`)) {
+                                excluirEvento(evento.id);
+                              }
+                            }}
+                            className="p-1.5 rounded-xl hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                            title="Excluir Definitivamente"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+                  );
+                })}
+            </div>
+
+          </div>
+        )}
+
+      </div>
+
+      {/* ========================================================================= */}
+      {/* SEÇÃO 5: GESTÃO DE ASSEMBLEIAS & REUNIÕES INFORMAIS */}
+      {/* ========================================================================= */}
+      <div className="bg-white/45 border-2 border-white/60 rounded-3xl overflow-hidden shadow-xl backdrop-blur-xs transition-all duration-300">
+        
+        {/* Accordion Header */}
+        <button
+          onClick={() => setIsAssembleiasAdminOpen(prev => !prev)}
+          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left focus:outline-none bg-amber-500/10 hover:bg-amber-500/15 transition-colors cursor-pointer border-b border-amber-400/20"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-900 border border-amber-400/40 flex items-center justify-center shrink-0">
+              <Gavel className="w-5 h-5 text-amber-700" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="font-black text-sm sm:text-base text-slate-950">
+                  Gestão de Assembleias & Reuniões Informais
+                </h2>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 border border-amber-400 shadow-2xs">
+                  {assembleias.length} {assembleias.length === 1 ? 'reunião' : 'reuniões'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 font-medium">
+                Agende assembleias gerais ou reuniões específicas, vincule reclamações/reparos e publique atas com soluções.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setAssembleiaToEditInAdmin(null);
+                setIsCreateEditAssembleiaAdminOpen(true);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase flex items-center gap-1 shadow-xs cursor-pointer active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[3]" /> Nova Reunião
+            </button>
+            <div className="p-1.5 rounded-full bg-white/50 border border-white/60 text-slate-800">
+              {isAssembleiasAdminOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          </div>
+        </button>
+
+        {/* Accordion Content */}
+        {isAssembleiasAdminOpen && (
+          <div className="p-4 sm:p-5 space-y-4 animate-in slide-in-from-top-2 duration-200">
+            
+            {/* Filtros e Busca */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none w-full">
+                <span className="text-[10px] font-extrabold uppercase text-amber-950 whitespace-nowrap pl-1">
+                  Filtrar:
+                </span>
+                {['Todas', 'Assembleias Gerais', 'Reuniões Informais', 'Agendadas', 'Realizadas com Ata'].map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setFiltroTipoAssembleia(opt)}
+                    className={`px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap transition-all border shadow-2xs cursor-pointer ${
+                      filtroTipoAssembleia === opt
+                        ? 'bg-amber-500 text-slate-950 border-amber-400 scale-105'
+                        : 'bg-white/70 text-slate-800 border-white/80 hover:bg-white'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Buscar por pauta, título, reclamação, reparo ou local..."
+                  value={searchAssembleia}
+                  onChange={(e) => setSearchAssembleia(e.target.value)}
+                  className="w-full bg-white/70 border border-white/80 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.8" />
+              </div>
+            </div>
+
+            {/* Grid de Cards de Assembleias no Admin */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {assembleias
+                .filter(a => {
+                  let matchesFilter = true;
+                  if (filtroTipoAssembleia === 'Assembleias Gerais') matchesFilter = a.tipoEncontro !== 'Reunião Informal';
+                  if (filtroTipoAssembleia === 'Reuniões Informais') matchesFilter = a.tipoEncontro === 'Reunião Informal';
+                  if (filtroTipoAssembleia === 'Agendadas') matchesFilter = a.status === 'Agendada';
+                  if (filtroTipoAssembleia === 'Realizadas com Ata') matchesFilter = a.status === 'Realizada com Ata Publicada';
+
+                  const matchesSearch = !searchAssembleia ||
+                    a.titulo.toLowerCase().includes(searchAssembleia.toLowerCase()) ||
+                    a.local.toLowerCase().includes(searchAssembleia.toLowerCase()) ||
+                    a.descricaoGeral.toLowerCase().includes(searchAssembleia.toLowerCase()) ||
+                    a.pautas.some(p => p.titulo.toLowerCase().includes(searchAssembleia.toLowerCase()));
+
+                  return matchesFilter && matchesSearch;
+                })
+                .map((assembleia) => {
+                  const isInformal = assembleia.tipoEncontro === 'Reunião Informal';
+                  const isRealizada = assembleia.status === 'Realizada com Ata Publicada';
+                  const isAguardando = assembleia.status === 'Realizada - Aguardando Ata';
+
+                  return (
+                    <div
+                      key={assembleia.id}
+                      className="p-4 sm:p-5 rounded-3xl border-2 border-white/90 bg-white/75 shadow-md space-y-3.5"
+                    >
+                      {/* Topo do Card */}
+                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                            isInformal
+                              ? 'bg-indigo-100 text-indigo-950 border-indigo-300'
+                              : 'bg-amber-100 text-amber-950 border-amber-300'
+                          }`}>
+                            {isInformal ? '🤝 Reunião Informal' : '🏛️ Assembleia Geral'}
+                          </span>
+
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
+                            {assembleia.tipo}
+                          </span>
+
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-2xs ${
+                            isRealizada
+                              ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
+                              : isAguardando
+                              ? 'bg-amber-100 text-amber-950 border-amber-300'
+                              : 'bg-rose-100 text-rose-950 border-rose-300'
+                          }`}>
+                            {isRealizada ? '✓ Ata Publicada' : isAguardando ? '⏳ Aguardando Ata' : '📅 Agendada'}
+                          </span>
+                        </div>
+
+                        <span className="text-xs font-black text-slate-800 flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-indigo-700" />
+                          {assembleia.dataHora}
+                        </span>
+                      </div>
+
+                      {/* Título e Descrição */}
+                      <div className="space-y-1">
+                        <h4 className="font-black text-sm text-slate-950 leading-tight">
+                          {assembleia.titulo}
+                        </h4>
+                        <p className="text-xs text-slate-700 font-medium line-clamp-2">
+                          {assembleia.descricaoGeral}
+                        </p>
+                      </div>
+
+                      {/* Local e Horários */}
+                      <div className="p-2.5 rounded-2xl bg-white/90 border border-slate-200 text-xs font-semibold space-y-1 text-slate-700">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1 truncate">
+                            <MapPin className="w-3.5 h-3.5 text-rose-700 shrink-0" />
+                            {assembleia.local}
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-500">
+                            1ª {assembleia.primeiraChamada} • 2ª {assembleia.segundaChamada}
+                          </span>
+                        </div>
+
+                        {isInformal && (
+                          <div className="pt-1 border-t border-slate-100 text-[11px] text-indigo-950 font-bold flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5 text-indigo-700 shrink-0" />
+                            <span>
+                              Convocados: {assembleia.participantesDescricao || (assembleia.participantesIds ? `Unidades ${assembleia.participantesIds.join(', ')}` : 'Participantes selecionados')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Pautas Integradas (Itens com Origem) */}
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
+                          Pautas & Deliberações ({assembleia.pautas.length}):
+                        </span>
+                        <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                          {assembleia.pautas.map((p, idx) => (
+                            <div key={p.id || idx} className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                              <div className="flex items-center justify-between gap-1.5">
+                                <strong className="text-[11px] text-slate-950 font-extrabold truncate">
+                                  {idx + 1}. {p.titulo}
+                                </strong>
+                                {p.origemTipo && (
+                                  <span className={`text-[8px] uppercase font-black px-1.5 py-0.5 rounded-md shrink-0 border ${
+                                    p.origemTipo === 'reclamacao'
+                                      ? 'bg-rose-100 text-rose-900 border-rose-200'
+                                      : p.origemTipo === 'reparo'
+                                      ? 'bg-indigo-100 text-indigo-900 border-indigo-200'
+                                      : 'bg-slate-100 text-slate-700 border-slate-200'
+                                  }`}>
+                                    {p.origemTipo === 'reclamacao' ? '📌 Reclamação' : p.origemTipo === 'reparo' ? '🔧 Reparo' : '➕ Geral'}
+                                  </span>
+                                )}
+                              </div>
+                              {p.solucaoAta && (
+                                <p className="text-[10px] font-semibold text-emerald-900 bg-emerald-50 p-1.5 rounded-lg border border-emerald-200 leading-tight">
+                                  ✓ Solução: {p.solucaoAta}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Resumo da Ata Registrada se houver */}
+                      {assembleia.ata && (
+                        <div className="p-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs space-y-1 text-emerald-950">
+                          <strong className="block font-black text-[11px] flex items-center gap-1">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" /> Ata Registrada: {assembleia.ata.numeroAta} ({assembleia.ata.dataLavratura})
+                          </strong>
+                          <p className="text-[11px] font-medium text-slate-800 line-clamp-2 leading-relaxed">
+                            {assembleia.ata.resumoDecisoes}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Botões de Ação do Admin */}
+                      <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-slate-100">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAssembleiaParaAtaAdmin(assembleia);
+                              setIsPublicarAtaAdminOpen(true);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+                          >
+                            <FileCheck className="w-3.5 h-3.5" />
+                            <span>{assembleia.ata ? 'Editar Ata' : 'Publicar Ata & Soluções'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const msg = `Convocação: ${assembleia.tipoEncontro || 'Assembleia'} marcada para ${assembleia.dataHora} no ${assembleia.local}. Pauta: ${assembleia.titulo}.`;
+                              if (isInformal && assembleia.participantesIds && assembleia.participantesIds.length > 0) {
+                                assembleia.participantesIds.forEach(num => {
+                                  enviarNotificacaoPrivada(num, msg, `Convocação: ${assembleia.titulo}`);
+                                });
+                                alert(`Notificação enviada com sucesso para os convocados (${assembleia.participantesIds.join(', ')})!`);
+                              } else {
+                                unidades.forEach(u => {
+                                  enviarNotificacaoPrivada(u.numero, msg, `Convocação Geral: ${assembleia.titulo}`);
+                                });
+                                alert(`Notificação de convocação enviada para todas as unidades do condomínio!`);
+                              }
+                            }}
+                            className="px-2.5 py-1.5 rounded-xl text-amber-800 hover:bg-amber-100 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                            title="Notificar unidades convocadas"
+                          >
+                            <Bell className="w-3.5 h-3.5 text-amber-700" /> Notificar
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAssembleiaToEditInAdmin(assembleia);
+                              setIsCreateEditAssembleiaAdminOpen(true);
+                            }}
+                            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+                            title="Editar Reunião"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`Tem certeza que deseja excluir a reunião "${assembleia.titulo}"?`)) {
+                                excluirAssembleia(assembleia.id);
+                              }
+                            }}
+                            className="p-1.5 rounded-xl hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                            title="Excluir Reunião"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+                  );
+                })}
+            </div>
+
+          </div>
+        )}
+
+      </div>
+
+      {/* ========================================================================= */}
       {/* MODAL: CRIAR NOVA CATEGORIA / CARGO DINÂMICO */}
       {/* ========================================================================= */}
       {isModalNovaCategoriaOpen && (
@@ -1480,41 +2032,36 @@ export const AdminPanelScreen: React.FC = () => {
 
               <button
                 onClick={() => setIsModalNovaCategoriaOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500"
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleAddNovaCategoria} className="space-y-4">
-              
-              {/* Nome do Cargo */}
               <div className="space-y-1">
-                <label className="text-[11px] font-extrabold uppercase text-slate-800">
-                  Nome do Cargo / Categoria:
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
+                  Nome do Cargo / Categoria *
                 </label>
                 <input
                   type="text"
-                  placeholder="Ex: Gerente Predial, Comitê de Obras, Diretor Financeiro..."
+                  placeholder="Ex: Piscineiro, Jardineiro, Eletricista, Manobrista..."
                   value={novaCategoriaNome}
                   onChange={(e) => setNovaCategoriaNome(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"
                   required
-                  autoFocus
                 />
               </div>
 
-              {/* Nível de Acesso */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold uppercase text-slate-800">
-                  Nível de Permissão & Poderes:
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
+                  Nível de Permissão & Poderes *
                 </label>
-                
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setNovaCategoriaTipoAcesso('total')}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                       novaCategoriaTipoAcesso === 'total'
                         ? 'bg-amber-100/90 border-amber-400 ring-2 ring-amber-500/20'
                         : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
@@ -1532,7 +2079,7 @@ export const AdminPanelScreen: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setNovaCategoriaTipoAcesso('morador_destaque')}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                       novaCategoriaTipoAcesso === 'morador_destaque'
                         ? 'bg-amber-100/90 border-amber-400 ring-2 ring-amber-500/20'
                         : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
@@ -1551,41 +2098,33 @@ export const AdminPanelScreen: React.FC = () => {
 
               {/* Descrição Opcional */}
               <div className="space-y-1">
-                <label className="text-[11px] font-extrabold uppercase text-slate-800">
-                  Descrição / Atribuições (Opcional):
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
+                  Descrição / Atribuições (Opcional)
                 </label>
                 <input
                   type="text"
                   placeholder="Ex: Responsável pelas vistorias técnicas e orçamentos de obras"
                   value={novaCategoriaDescricao}
                   onChange={(e) => setNovaCategoriaDescricao(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"
                 />
               </div>
 
-              {/* Categorias Atuais */}
+              {/* Sugestões Rápidas */}
               <div className="space-y-1.5 pt-1">
-                <span className="text-[10px] font-extrabold uppercase text-slate-500 block">
-                  Categorias Ativas ({adminRoles.length}):
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                  Sugestões Rápidas:
                 </span>
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-200">
-                  {adminRoles.map((r) => (
-                    <span 
-                      key={r.id}
-                      className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-800 flex items-center gap-1"
+                <div className="flex flex-wrap gap-1.5">
+                  {['Piscineiro', 'Jardineiro', 'Eletricista', 'Auxiliar de Manutenção', 'Manobrista', 'Zelador Chefe'].map((sug) => (
+                    <button
+                      key={sug}
+                      type="button"
+                      onClick={() => setNovaCategoriaNome(sug)}
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 transition-colors cursor-pointer"
                     >
-                      {r.nome}
-                      {adminRoles.length > 4 && (
-                        <button
-                          type="button"
-                          onClick={() => excluirAdminRole(r.id)}
-                          className="text-rose-600 hover:text-rose-800 ml-1"
-                          title="Excluir Categoria"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </span>
+                      + {sug}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -1595,13 +2134,13 @@ export const AdminPanelScreen: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalNovaCategoriaOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md active:scale-95"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md active:scale-95 cursor-pointer"
                 >
                   Salvar e Adicionar ao Select
                 </button>
@@ -1640,6 +2179,46 @@ export const AdminPanelScreen: React.FC = () => {
           setSelectedFuncionarioToEdit(null);
         }}
         funcionario={selectedFuncionarioToEdit}
+      />
+
+      {/* Modal de Suspensão e Moderação de Eventos */}
+      <SuspendEventoModal
+        isOpen={isSuspendEventoModalOpen}
+        onClose={() => {
+          setIsSuspendEventoModalOpen(false);
+          setEventoParaSuspender(null);
+        }}
+        evento={eventoParaSuspender}
+      />
+
+      {/* Modal de Criação / Edição de Evento pelo Admin */}
+      <CreateEditEventoModal
+        isOpen={isCreateEditEventoAdminOpen}
+        onClose={() => {
+          setIsCreateEditEventoAdminOpen(false);
+          setEventoToEditInAdmin(null);
+        }}
+        eventoToEdit={eventoToEditInAdmin}
+      />
+
+      {/* Modal de Criação / Edição de Assembleia / Reunião pelo Admin */}
+      <CreateEditAssembleiaModal
+        isOpen={isCreateEditAssembleiaAdminOpen}
+        onClose={() => {
+          setIsCreateEditAssembleiaAdminOpen(false);
+          setAssembleiaToEditInAdmin(null);
+        }}
+        assembleiaToEdit={assembleiaToEditInAdmin}
+      />
+
+      {/* Modal de Publicação de Ata & Soluções pelo Admin */}
+      <PublicarAtaModal
+        isOpen={isPublicarAtaAdminOpen}
+        onClose={() => {
+          setIsPublicarAtaAdminOpen(false);
+          setAssembleiaParaAtaAdmin(null);
+        }}
+        assembleia={assembleiaParaAtaAdmin}
       />
 
     </div>

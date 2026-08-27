@@ -345,10 +345,17 @@ export type StatusAssembleia =
   | 'Realizada com Ata Publicada' 
   | 'Realizada - Aguardando Ata';
 
+export type TipoEncontroAssembleia = 'Assembleia Geral' | 'Reunião Informal';
+
+export type OrigemPautaAssembleia = 'reclamacao' | 'reparo' | 'extra';
+
 export interface PautaAssembleia {
   id: string;
   titulo: string;
   descricao: string;
+  origemTipo?: OrigemPautaAssembleia;
+  origemId?: string;
+  solucaoAta?: string;
   aprovada?: boolean; // true = check verde; false = sem check/rejeitada; undefined = agendada
   resultadoVotacao?: string;
 }
@@ -361,12 +368,17 @@ export interface AtaAssembleia {
   registroCartorio?: string;
   resumoDecisoes: string;
   textoCompleto: string;
+  solucoesPautas?: { pautaId: string; solucao: string; aprovada?: boolean }[];
 }
 
 export interface Assembleia {
   id: string;
   titulo: string;
-  tipo: 'Ordinária' | 'Extraordinária';
+  tipo: 'Ordinária' | 'Extraordinária' | 'Reunião de Comissão' | 'Reunião com Moradores' | 'Outro';
+  tipoEncontro?: TipoEncontroAssembleia; // 'Assembleia Geral' | 'Reunião Informal'
+  participantesTipo?: 'todos' | 'especificos';
+  participantesIds?: string[]; // IDs/números das unidades ou cargos convidados
+  participantesDescricao?: string; // Descrição textual dos participantes
   dataHora: string;
   local: string;
   primeiraChamada: string;
@@ -376,6 +388,7 @@ export interface Assembleia {
   pautas: PautaAssembleia[];
   ata?: AtaAssembleia;
   condominioId: string;
+  criadoEm?: string;
 }
 
 export type TipoVisibilidadeEvento = 'Público' | 'Privado';
@@ -387,10 +400,15 @@ export interface EventoCondominio {
   horario: string;
   local: string;
   organizador: string;
+  organizadorId?: string;
+  organizadorUnidade?: string;
   visibilidade: TipoVisibilidadeEvento;
   descricao: string;
   imagem: string;
+  ativo?: boolean;
+  motivoSuspensao?: string;
   linkMaisInfo?: string;
+  criadoEm?: string;
   condominioId: string;
 }
 

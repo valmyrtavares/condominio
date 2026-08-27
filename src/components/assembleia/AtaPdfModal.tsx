@@ -32,8 +32,8 @@ export const AtaPdfModal: React.FC<AtaPdfModalProps> = ({ assembleia, onClose })
   const hashDigital = `SHA256: 4f8a9b2c3d1e7f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a`;
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center pt-20 pb-24 sm:py-6 px-3 sm:px-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
-      <div className="bg-slate-100 border border-slate-300 text-slate-900 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[calc(100vh-170px)] sm:max-h-[85vh] my-auto">
+    <div className="fixed inset-0 z-[100] overflow-y-auto bg-slate-950/80 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-start pt-16 sm:pt-10 pb-28 animate-in fade-in duration-200">
+      <div className="bg-slate-100 border border-slate-300 text-slate-900 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col my-auto">
         
         {/* Header Toolbar do Visualizador PDF */}
         <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
@@ -98,25 +98,21 @@ export const AtaPdfModal: React.FC<AtaPdfModalProps> = ({ assembleia, onClose })
           {/* Dados de Registro e Mesa Diretora */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 font-sans text-[11px]">
             <div className="space-y-1">
-              <p><strong className="text-slate-900">Número da Ata:</strong> <span className="font-mono">{ata.numeroAta}</span></p>
-              <p><strong className="text-slate-900">Data de Realização:</strong> {assembleia.dataHora}</p>
-              <p><strong className="text-slate-900">Local da Sessão:</strong> {assembleia.local}</p>
+              <span className="text-[10px] font-bold uppercase text-slate-500 block">Identificação Cartorial:</span>
+              <p className="font-semibold text-slate-900">{ata.registroCartorio || '1º Oficial de Registro de Imóveis e Títulos de São Paulo'}</p>
+              <p className="font-mono text-slate-600">Número do Livro: A-42 • Folha: 188v</p>
             </div>
             <div className="space-y-1">
-              <p><strong className="text-slate-900">Presidente da Mesa:</strong> {ata.presidenteMesa}</p>
-              <p><strong className="text-slate-900">Secretária da Mesa:</strong> {ata.secretarioMesa}</p>
-              {ata.registroCartorio && (
-                <p className="text-emerald-800 font-bold">
-                  ✓ {ata.registroCartorio}
-                </p>
-              )}
+              <span className="text-[10px] font-bold uppercase text-slate-500 block">Mesa Diretora:</span>
+              <p className="font-semibold text-slate-900">Presidente: {ata.presidenteMesa}</p>
+              <p className="font-semibold text-slate-900">Secretário(a): {ata.secretarioMesa}</p>
             </div>
           </div>
 
-          {/* Deliberações da Ordem do Dia (Checks) */}
-          <div className="space-y-2 font-sans">
-            <h5 className="font-black text-xs text-slate-900 uppercase tracking-wider border-b border-slate-300 pb-1">
-              Pautas Deliberadas & Resultado da Votação
+          {/* Ordem do Dia & Deliberações */}
+          <div className="space-y-2.5">
+            <h5 className="font-sans font-black text-xs text-slate-900 uppercase tracking-wider border-b border-slate-300 pb-1">
+              Pautas Deliberadas & Soluções Homologadas
             </h5>
             <div className="space-y-2">
               {assembleia.pautas.map((pauta, idx) => (
@@ -142,13 +138,18 @@ export const AtaPdfModal: React.FC<AtaPdfModalProps> = ({ assembleia, onClose })
                       </div>
                     )}
                   </div>
-                  <div className="space-y-0.5 min-w-0">
+                  <div className="space-y-1 min-w-0 flex-1">
                     <strong className="text-xs text-slate-950 font-bold block">
                       {idx + 1}. {pauta.titulo}
                     </strong>
                     <p className="text-[11px] text-slate-600 font-normal">
                       {pauta.descricao}
                     </p>
+                    {pauta.solucaoAta && (
+                      <div className="p-2 rounded-lg bg-emerald-100/80 border border-emerald-300 text-[11px] font-sans text-emerald-950 font-semibold mt-1">
+                        ✓ Decisão / Solução: {pauta.solucaoAta}
+                      </div>
+                    )}
                     {pauta.resultadoVotacao && (
                       <span className={`text-[10px] font-black uppercase inline-block mt-1 px-2 py-0.5 rounded ${
                         pauta.aprovada 
