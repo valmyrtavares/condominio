@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCondo } from '../../context/CondoContext';
-import { Unidade, AdminUser, AdminRole } from '../../types';
+import { Unidade, AdminUser, AdminRole, ServicoMorador } from '../../types';
 import { 
   Building, 
   Plus, 
@@ -31,9 +31,14 @@ import {
   Unlock,
   AlertCircle,
   HelpCircle,
-  Bell
+  Bell,
+  Briefcase,
+  MessageCircle,
+  Globe,
+  AlertTriangle
 } from 'lucide-react';
 import { PrivateNotifyModal } from '../../components/admin/PrivateNotifyModal';
+import { SuspendServiceModal } from '../../components/admin/SuspendServiceModal';
 
 const AVATARES_SUGERIDOS = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
@@ -58,16 +63,25 @@ export const AdminPanelScreen: React.FC = () => {
     adicionarAdminUser,
     excluirAdminUser,
     adicionarAdminRole,
-    excluirAdminRole
+    excluirAdminRole,
+    servicosMoradores,
+    reativarServicoMorador,
+    excluirServicoMorador
   } = useCondo();
 
   // Accordion section collapse states
   const [isUnidadesOpen, setIsUnidadesOpen] = useState(true);
   const [isSenhasAdminOpen, setIsSenhasAdminOpen] = useState(true);
+  const [isServicosAdminOpen, setIsServicosAdminOpen] = useState(true);
 
   // Private Notify Modal state
   const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
   const [selectedUnidadeParaNotificar, setSelectedUnidadeParaNotificar] = useState<Unidade | null>(null);
+
+  // Suspend Service Modal state
+  const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
+  const [servicoParaSuspender, setServicoParaSuspender] = useState<ServicoMorador | null>(null);
+  const [searchServico, setSearchServico] = useState('');
 
   // Form Unidades
   const [novoNumero, setNovoNumero] = useState('');
@@ -983,6 +997,196 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
+      {/* SEÇÃO 3: SERVIÇOS DE MORADORES & MODERAÇÃO (CARD RETRÁTIL QUE ABRE E FECHA) */}
+      {/* ========================================================================= */}
+      <div className="bg-white/90 border-2 border-amber-200/80 rounded-3xl shadow-md overflow-hidden transition-all">
+        
+        {/* Accordion Header */}
+        <button
+          type="button"
+          onClick={() => setIsServicosAdminOpen(!isServicosAdminOpen)}
+          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-50/80 hover:bg-amber-100/60 transition-colors text-left border-b border-amber-200/60"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-900 shrink-0">
+              <Briefcase className="w-5 h-5 text-amber-900" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-black text-slate-950">
+                  Serviços de Moradores & Moderação
+                </h3>
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-slate-900 text-amber-300">
+                  {servicosMoradores.length} Anúncios
+                </span>
+                {servicosMoradores.filter(s => !s.ativo).length > 0 && (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-600 text-white">
+                    {servicosMoradores.filter(s => !s.ativo).length} Suspensos
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-600 font-medium">
+                Modere anúncios, suspenda divulgações com irregularidades, notifique a moradia ou reative serviços corrigidos.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+              {isServicosAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+            </span>
+            <div className="p-2 rounded-xl bg-white border border-amber-200 text-slate-700 shadow-2xs">
+              {isServicosAdminOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          </div>
+        </button>
+
+        {/* Accordion Content */}
+        {isServicosAdminOpen && (
+          <div className="p-5 sm:p-6 space-y-5 animate-in fade-in duration-200">
+            
+            {/* Header com Busca */}
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-950">
+                Mural de Anúncios Cadastrados ({servicosMoradores.length})
+              </span>
+
+              <div className="relative w-full sm:w-64">
+                <input
+                  type="text"
+                  placeholder="Filtrar por serviço, morador ou apto..."
+                  value={searchServico}
+                  onChange={(e) => setSearchServico(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-900 placeholder-slate-500 focus:outline-none font-semibold shadow-2xs"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+              </div>
+            </div>
+
+            {/* Grid de Cards de Moderação de Serviços */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {servicosMoradores
+                .filter(s => 
+                  !searchServico ||
+                  s.titulo.toLowerCase().includes(searchServico.toLowerCase()) ||
+                  s.moradorNome.toLowerCase().includes(searchServico.toLowerCase()) ||
+                  s.moradorUnidade.toLowerCase().includes(searchServico.toLowerCase()) ||
+                  s.categoria.toLowerCase().includes(searchServico.toLowerCase())
+                )
+                .map((servico) => {
+                  const isSuspenso = !servico.ativo;
+
+                  return (
+                    <div
+                      key={servico.id}
+                      className={`border rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${
+                        isSuspenso 
+                          ? 'bg-rose-50/80 border-rose-300' 
+                          : 'bg-white border-slate-200 hover:border-amber-400'
+                      }`}
+                    >
+                      {/* Topo: Imagem Thumbnail + Título + Morador */}
+                      <div className="flex items-start gap-3">
+                        <img
+                          src={servico.imagem || '/torta_servico.jpg'}
+                          alt={servico.titulo}
+                          className="w-14 h-14 rounded-xl object-cover border border-amber-300 shadow-2xs shrink-0 bg-slate-100"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[9px] font-black uppercase px-2 py-0.2 rounded-full bg-amber-100 text-amber-950 border border-amber-300 inline-block mb-0.5">
+                            {servico.categoria}
+                          </span>
+                          <h4 className="font-black text-sm text-slate-950 leading-tight truncate">
+                            {servico.titulo}
+                          </h4>
+                          <p className="text-[11px] text-slate-600 font-semibold mt-0.5 truncate">
+                            Morador: <strong>{servico.moradorNome}</strong> (Apto {servico.moradorUnidade || 'N/A'})
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Descrição resumida */}
+                      <p className="text-xs text-slate-700 font-medium line-clamp-2 leading-relaxed">
+                        {servico.descricao}
+                      </p>
+
+                      {/* Banner de Suspensão se estiver suspenso */}
+                      {isSuspenso && (
+                        <div className="p-2.5 rounded-xl bg-rose-100 border border-rose-300 text-rose-950 text-[11px] space-y-0.5">
+                          <strong className="font-black flex items-center gap-1 text-rose-900">
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-700" />
+                            Anúncio Oculto do Mural
+                          </strong>
+                          <p className="text-rose-900/90 font-medium text-[10px]">
+                            <strong>Motivo:</strong> {servico.motivoSuspensao || 'Irregularidade nas diretrizes.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Status & Botões de Ação */}
+                      <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between gap-1 flex-wrap text-xs">
+                        
+                        <div className="flex items-center gap-1">
+                          {isSuspenso ? (
+                            <button
+                              onClick={() => reativarServicoMorador(servico.id)}
+                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-black uppercase flex items-center gap-1 shadow-xs transition-all active:scale-95"
+                              title="Reativar e publicar no mural"
+                            >
+                              <CheckCircle2 className="w-3 h-3 stroke-[3]" /> Reativar
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setServicoParaSuspender(servico);
+                                setIsSuspendModalOpen(true);
+                              }}
+                              className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 border border-rose-300 text-rose-800 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95"
+                              title="Suspender anúncio e entrar em contato com o apartamento"
+                            >
+                              <AlertTriangle className="w-3 h-3 text-rose-700" /> Suspender
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => {
+                              const unit = unidades.find(u => u.numero === servico.moradorUnidade);
+                              setSelectedUnidadeParaNotificar(unit || {
+                                id: `temp-${servico.moradorUnidade}`,
+                                numero: servico.moradorUnidade,
+                                bloco: '',
+                                moradores: []
+                              });
+                              setIsNotifyModalOpen(true);
+                            }}
+                            className="p-1 rounded-lg text-amber-800 hover:text-amber-950 hover:bg-amber-100 transition-colors text-[11px] flex items-center gap-0.5 font-bold"
+                            title="Enviar Notificação Privada para o Apto"
+                          >
+                            <Bell className="w-3 h-3 text-amber-700" /> Notificar
+                          </button>
+                        </div>
+
+                        <button
+                          onClick={() => excluirServicoMorador(servico.id)}
+                          className="p-1 rounded-lg text-rose-600 hover:text-rose-800 hover:bg-rose-100 transition-colors text-[11px] font-bold"
+                          title="Excluir Definitivamente"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+
+                      </div>
+
+                    </div>
+                  );
+                })}
+            </div>
+
+          </div>
+        )}
+
+      </div>
+
+      {/* ========================================================================= */}
       {/* MODAL: CRIAR NOVA CATEGORIA / CARGO DINÂMICO */}
       {/* ========================================================================= */}
       {isModalNovaCategoriaOpen && (
@@ -1146,6 +1350,16 @@ export const AdminPanelScreen: React.FC = () => {
           setSelectedUnidadeParaNotificar(null);
         }}
         unidade={selectedUnidadeParaNotificar}
+      />
+
+      {/* Modal de Suspensão e Moderação de Serviços */}
+      <SuspendServiceModal
+        isOpen={isSuspendModalOpen}
+        onClose={() => {
+          setIsSuspendModalOpen(false);
+          setServicoParaSuspender(null);
+        }}
+        servico={servicoParaSuspender}
       />
 
     </div>

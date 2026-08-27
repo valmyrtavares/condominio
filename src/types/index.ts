@@ -39,6 +39,7 @@ export interface NotificacaoPrivada {
   autorNome: string;
   dataHora: string;
   lida: boolean;
+  lidaEm?: string;
 }
 
 export interface AdminRole {
@@ -80,13 +81,19 @@ export interface Funcionario {
 export interface ServicoMorador {
   id: string;
   titulo: string;
+  subtitulo?: string;
   categoria: string;
   descricao: string;
   imagem?: string;
   moradorNome: string;
   moradorUnidade: string;
+  tipoBotao: 'whatsapp' | 'site';
+  whatsapp?: string;
+  linkSite?: string;
   contato: string;
   ativo: boolean;
+  motivoSuspensao?: string;
+  dataCriacao?: string;
   condominioId: string;
 }
 

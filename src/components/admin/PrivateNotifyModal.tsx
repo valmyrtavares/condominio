@@ -44,8 +44,10 @@ export const PrivateNotifyModal: React.FC<PrivateNotifyModalProps> = ({
     ? unidade.numero
     : `Apto ${unidade.numero}`;
 
+  const normalizeUnit = (str?: string) => str ? str.toLowerCase().replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim() : '';
+
   const notificacoesDestaUnidade = notificacoesPrivadas.filter(
-    n => n.unidadeNumero.toLowerCase() === unidade.numero.toLowerCase()
+    n => normalizeUnit(n.unidadeNumero) === normalizeUnit(unidade.numero)
   );
 
   const handleEnviar = (e: React.FormEvent) => {
@@ -171,24 +173,26 @@ export const PrivateNotifyModal: React.FC<PrivateNotifyModalProps> = ({
                 Nenhuma notificação enviada para esta unidade até o momento.
               </div>
             ) : (
-              <div className="space-y-2 max-h-40 overflow-y-auto">
+              <div className="space-y-2 max-h-48 overflow-y-auto">
                 {notificacoesDestaUnidade.map((n) => (
                   <div 
                     key={n.id} 
-                    className="p-3 rounded-xl bg-white border border-slate-200 space-y-1 text-xs shadow-2xs"
+                    className="p-3 rounded-xl bg-white border border-slate-200 space-y-1.5 text-xs shadow-2xs"
                   >
                     <div className="flex items-center justify-between">
                       <strong className="text-slate-950 font-black">
                         {n.titulo}
                       </strong>
-                      <span className={`text-[9px] font-black uppercase px-2 py-0.2 rounded-full ${
-                        n.lida ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300'
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                        n.lida 
+                          ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' 
+                          : 'bg-amber-100 text-amber-900 border border-amber-300'
                       }`}>
-                        {n.lida ? 'Lida pelo morador' : 'Enviada'}
+                        {n.lida ? '✓ RECEBIDA / LIDA' : 'ENVIADA'}
                       </span>
                     </div>
 
-                    <p className="text-slate-700 font-medium">
+                    <p className="text-slate-700 font-medium whitespace-pre-wrap">
                       {n.mensagem}
                     </p>
 
@@ -196,6 +200,13 @@ export const PrivateNotifyModal: React.FC<PrivateNotifyModalProps> = ({
                       <span>Por: {n.autorNome}</span>
                       <span>{n.dataHora}</span>
                     </div>
+
+                    {n.lida && (
+                      <div className="text-[10px] font-bold text-emerald-800 bg-emerald-50/90 px-2 py-1 rounded-lg flex items-center justify-between border border-emerald-200/60">
+                        <span>Status de entrega:</span>
+                        <span>✓ Recebida e lida pelo morador {n.lidaEm ? `em ${n.lidaEm}` : ''}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

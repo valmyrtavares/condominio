@@ -26,14 +26,18 @@ export const Header: React.FC = () => {
     logoutAdmin,
     setCurrentScreen,
     notificacoesPrivadas,
-    marcarNotificacaoComoLida
+    marcarNotificacaoComoLida,
+    marcarTodasNotificacoesUnidadeComoLidas
   } = useCondo();
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotifPopupOpen, setIsNotifPopupOpen] = useState(false);
 
+  const normalizeUnit = (str?: string) => str ? str.toLowerCase().replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim() : '';
+  const userUnit = normalizeUnit(currentUser?.unidade);
+
   const unitNotifs = notificacoesPrivadas.filter(
-    n => currentUser.unidade && n.unidadeNumero.toLowerCase() === currentUser.unidade.toLowerCase()
+    n => userUnit && normalizeUnit(n.unidadeNumero) === userUnit
   );
   const unreadCount = unitNotifs.filter(n => !n.lida).length;
 
@@ -56,6 +60,13 @@ export const Header: React.FC = () => {
       setCurrentScreen('resident-login');
     } else {
       setIsDrawerOpen(true);
+    }
+  };
+
+  const handleOpenNotifications = () => {
+    setIsNotifPopupOpen(true);
+    if (currentUser.unidade) {
+      marcarTodasNotificacoesUnidadeComoLidas(currentUser.unidade);
     }
   };
 
@@ -101,13 +112,13 @@ export const Header: React.FC = () => {
             <Menu className="w-7 h-7 stroke-[2.5]" />
           </button>
 
-          {/* Right Section: Notifications Bell + Resident Name */}
-          <div className="flex items-center gap-2">
+          {/* Right Section: Notifications Bell + Resident Name + Red Dot Indicator */}
+          <div className="flex items-center gap-2 relative">
             
             {/* Private Notification Bell for Resident */}
             {unitNotifs.length > 0 && (
               <button
-                onClick={() => setIsNotifPopupOpen(true)}
+                onClick={handleOpenNotifications}
                 className={`relative p-2 rounded-2xl transition-all active:scale-95 flex items-center justify-center ${
                   isHome
                     ? 'text-white bg-black/20 hover:bg-black/35 border border-white/20'
@@ -117,7 +128,7 @@ export const Header: React.FC = () => {
               >
                 <Bell className="w-4 h-4 text-amber-400" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[10px] font-black flex items-center justify-center animate-pulse">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[10px] font-black flex items-center justify-center animate-pulse shadow-sm">
                     {unreadCount}
                   </span>
                 )}
@@ -125,22 +136,36 @@ export const Header: React.FC = () => {
             )}
 
             {/* Resident Name - Opens Logout / Profile Modal */}
-            <button
-              onClick={() => setIsProfileOpen(true)}
-              className={`flex items-center gap-2 text-sm font-medium tracking-tight transition-all active:scale-95 px-2.5 py-1.5 rounded-2xl ${
-                isHome 
-                  ? 'text-white/90 hover:text-white bg-black/20 hover:bg-black/35 backdrop-blur-sm border border-white/20' 
-                  : 'text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200/80 border border-slate-200'
-              }`}
-              title="Gerenciar perfil e sessão"
-            >
-              {currentUser.role === 'subsindico' ? (
-                <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
-              ) : (
-                <User className="w-4 h-4 text-white/80 shrink-0" />
+            <div className="relative">
+              <button
+                onClick={() => setIsProfileOpen(true)}
+                className={`flex items-center gap-2 text-sm font-medium tracking-tight transition-all active:scale-95 px-2.5 py-1.5 rounded-2xl ${
+                  isHome 
+                    ? 'text-white/90 hover:text-white bg-black/20 hover:bg-black/35 backdrop-blur-sm border border-white/20' 
+                    : 'text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200/80 border border-slate-200'
+                }`}
+                title="Gerenciar perfil e sessão"
+              >
+                {currentUser.role === 'subsindico' ? (
+                  <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                ) : (
+                  <User className="w-4 h-4 text-white/80 shrink-0" />
+                )}
+                <span className="font-normal">{formattedName}</span>
+              </button>
+
+              {/* Ponto Vermelho Indicador no Alto do Aplicativo (Conforme Imagem 2) */}
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleOpenNotifications}
+                  className="absolute -bottom-3 right-3 w-5 h-5 rounded-full bg-rose-500 border-2 border-white shadow-lg shadow-rose-500/50 flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-transform z-30"
+                  title={`${unreadCount} nova(s) notificação(ões) recebida(s)! Clique para ver.`}
+                >
+                  <span className="w-full h-full rounded-full bg-rose-400 absolute inset-0 animate-ping opacity-75" />
+                  <span className="w-2 h-2 rounded-full bg-white relative z-10" />
+                </button>
               )}
-              <span className="font-normal">{formattedName}</span>
-            </button>
+            </div>
           </div>
 
         </div>
@@ -174,35 +199,34 @@ export const Header: React.FC = () => {
             </div>
 
             <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-              {unitNotifs.map((n) => (
-                <div 
-                  key={n.id}
-                  className={`p-4 rounded-2xl border transition-all space-y-1.5 ${
-                    n.lida ? 'bg-slate-50 border-slate-200' : 'bg-amber-50/80 border-amber-300 shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-black text-xs text-slate-950">
-                      {n.titulo}
-                    </h4>
-                    {!n.lida && (
-                      <button
-                        onClick={() => marcarNotificacaoComoLida(n.id)}
-                        className="text-[10px] font-black uppercase text-amber-900 hover:underline"
-                      >
-                        Marcar como lida
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    {n.mensagem}
-                  </p>
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200/60">
-                    <span>{n.autorNome}</span>
-                    <span>{n.dataHora}</span>
-                  </div>
+              {unitNotifs.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-500">
+                  Nenhuma notificação recebida no momento.
                 </div>
-              ))}
+              ) : (
+                unitNotifs.map((n) => (
+                  <div 
+                    key={n.id}
+                    className="p-4 rounded-2xl border transition-all space-y-1.5 bg-amber-50/80 border-amber-300 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-black text-xs text-slate-950">
+                        {n.titulo}
+                      </h4>
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
+                        Recebida
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                      {n.mensagem}
+                    </p>
+                    <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200/60">
+                      <span>De: {n.autorNome}</span>
+                      <span>{n.dataHora}</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="flex justify-end pt-2 border-t border-slate-100">
@@ -274,6 +298,33 @@ export const Header: React.FC = () => {
             {/* Action Buttons */}
             <div className="space-y-2.5 pt-1">
               
+              {/* Notificações Privadas da Unidade */}
+              <button
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  handleOpenNotifications();
+                }}
+                className={`w-full py-3 px-4 rounded-2xl text-xs font-bold transition-all active:scale-95 flex items-center justify-between border ${
+                  unreadCount > 0
+                    ? 'bg-rose-50 hover:bg-rose-100 border-rose-300 text-rose-950 shadow-sm animate-pulse'
+                    : 'bg-amber-50/70 hover:bg-amber-100/80 border-amber-200 text-amber-950'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Bell className={`w-4 h-4 ${unreadCount > 0 ? 'text-rose-600' : 'text-amber-700'}`} />
+                  Mensagens da Sindicância
+                </span>
+                {unreadCount > 0 ? (
+                  <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white font-black text-[10px] uppercase">
+                    {unreadCount} nova(s)
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-500 font-semibold">
+                    {unitNotifs.length}
+                  </span>
+                )}
+              </button>
+
               {/* Deslogar / Trocar Usuário (Principal) */}
               <button
                 onClick={handleLogout}

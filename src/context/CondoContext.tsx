@@ -25,7 +25,11 @@ import {
   Assembleia,
   EventoCondominio,
   UnidadeDisponivel,
-  FinalidadeImovel
+  FinalidadeImovel,
+  AdminUser,
+  AdminRole,
+  NotificacaoPrivada,
+  ServicoMorador
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -92,9 +96,11 @@ interface CondoContextType {
   notificacoesPrivadas: NotificacaoPrivada[];
   enviarNotificacaoPrivada: (unidadeNumero: string, mensagem: string, titulo?: string) => void;
   marcarNotificacaoComoLida: (notificacaoId: string) => void;
+  marcarTodasNotificacoesUnidadeComoLidas: (unidadeNumero: string) => void;
 
   // Resident Auth & Onboarding State
   isResidentLoggedIn: boolean;
+  residentAuthData: { unidade: string; bloco?: string } | null;
   pendingRegistrationUnit: Unidade | null;
   setPendingRegistrationUnit: (unit: Unidade | null) => void;
   loginResident: (unidadeInput: string, senhaInput: string) => { success: boolean; needsRegistration?: boolean; message?: string };
@@ -126,6 +132,14 @@ interface CondoContextType {
   transformarEmReparo: (reclamacaoId: string, titulo: string, descricao: string) => string;
   selecionarOrcamento: (reparoId: string, orcamentoId: string) => void;
   atualizarStatusReparo: (reparoId: string, novoStatus: StatusReparo) => void;
+
+  // Serviços de Moradores
+  servicosMoradores: ServicoMorador[];
+  adicionarServicoMorador: (servico: Omit<ServicoMorador, 'id' | 'dataCriacao'>) => void;
+  editarServicoMorador: (id: string, servico: Partial<ServicoMorador>) => void;
+  suspenderServicoMorador: (id: string, motivo: string) => void;
+  reativarServicoMorador: (id: string) => void;
+  excluirServicoMorador: (id: string) => void;
 }
 
 const CondoContext = createContext<CondoContextType | undefined>(undefined);
@@ -176,7 +190,173 @@ const DEFAULT_ADMIN_USERS: AdminUser[] = [
   }
 ];
 
+const DEFAULT_SERVICOS_MORADORES: ServicoMorador[] = [
+  {
+    id: 'serv-1',
+    titulo: 'Tortas deliciosas pronta entrega',
+    subtitulo: 'Faço a pronta entrega',
+    categoria: 'Gastronomia',
+    moradorNome: 'Maria',
+    moradorUnidade: '404',
+    descricao: 'Tortas doces e salgadas feitas artesanalmente com ingredientes selecionados. Sabores: Frango com Catupiry, Palmito, Brigadeiro e Limão. Encomendas rápidas e entrega direta no seu apartamento!',
+    imagem: '/torta_servico.jpg',
+    tipoBotao: 'whatsapp',
+    whatsapp: '11998877665',
+    contato: '(11) 99887-7665',
+    ativo: true,
+    dataCriacao: '26/08/2026',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'serv-2',
+    titulo: 'Serviços Jurídicos',
+    subtitulo: 'Trabalhista e de Família',
+    categoria: 'Advocacia & Consultoria',
+    moradorNome: 'Antônio',
+    moradorUnidade: '501',
+    descricao: 'Consultoria e assessoria jurídica especializada em Direito do Trabalho e Direito de Família (divórcio, inventário, pensão alimentícia e guarda). Atendimento com hora marcada e total discrição para moradores.',
+    imagem: '/juridico_servico.jpg',
+    tipoBotao: 'site',
+    linkSite: 'https://antonio-advocacia.exemplo.com.br',
+    contato: 'antonio@advocacia.com',
+    ativo: true,
+    dataCriacao: '26/08/2026',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'serv-3',
+    titulo: 'Passeio com o seu Pet',
+    subtitulo: 'Dog walker de confiança no prédio',
+    categoria: 'Pets',
+    moradorNome: 'Cíntia',
+    moradorUnidade: '103',
+    descricao: 'Passeios de 30 a 60 minutos para cães de todos os portes. Garanto gasto de energia, socialização e segurança para o seu melhor amigo, com a conveniência de um prestador que mora no mesmo condomínio.',
+    imagem: '/dogwalker_servico.jpg',
+    tipoBotao: 'whatsapp',
+    whatsapp: '11988776655',
+    contato: '(11) 98877-6655',
+    ativo: true,
+    dataCriacao: '26/08/2026',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'serv-4',
+    titulo: 'Personal Trainer Thiago Dantas',
+    subtitulo: 'Treinamento funcional e musculação',
+    categoria: 'Saúde & Esportes',
+    moradorNome: 'Thiago',
+    moradorUnidade: '200',
+    descricao: 'Aulas personalizadas focadas no seu objetivo (emagrecimento, hipertrofia ou condicionamento físico). Treine com segurança e eficiência utilizando a própria academia do condomínio.',
+    imagem: '/personal_servico.jpg',
+    tipoBotao: 'whatsapp',
+    whatsapp: '11977665544',
+    contato: '(11) 97766-5544',
+    ativo: true,
+    dataCriacao: '26/08/2026',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'serv-5',
+    titulo: 'Organização e Design',
+    subtitulo: 'Personal Organizer & Design de Interiores',
+    categoria: 'Design & Organização',
+    moradorNome: 'Clara',
+    moradorUnidade: '302',
+    descricao: 'Otimização de ambientes, organização de closets, armários, cozinhas e home office. Projetos de design de interiores sob medida para deixar o seu apartamento prático, funcional e elegante.',
+    imagem: '/organizer_servico.jpg',
+    tipoBotao: 'site',
+    linkSite: 'https://clara-decor.exemplo.com.br',
+    contato: 'contato@claradecor.com',
+    ativo: true,
+    dataCriacao: '26/08/2026',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'serv-6',
+    titulo: 'Faxina Seletiva / Higienização',
+    subtitulo: 'Limpeza ecológica de estofados e tapetes',
+    categoria: 'Limpeza & Cuidados',
+    moradorNome: 'Sandra',
+    moradorUnidade: '102',
+    descricao: 'Higienização profunda e remoção de manchas e odores de sofás, poltronas, colchões e tapetes. Processo antialérgico seguro para crianças e pets, realizado com equipamento profissional de alta sucção.',
+    imagem: '/limpeza_servico.jpg',
+    tipoBotao: 'whatsapp',
+    whatsapp: '11966554433',
+    contato: '(11) 96655-4433',
+    ativo: true,
+    dataCriacao: '26/08/2026',
+    condominioId: CURRENT_CONDO_ID
+  }
+];
+
 export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Serviços de Moradores com persistência em LocalStorage
+  const [servicosMoradores, setServicosMoradores] = useState<ServicoMorador[]>(() => {
+    const saved = localStorage.getItem('condo_servicos_moradores');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return DEFAULT_SERVICOS_MORADORES;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_servicos_moradores', JSON.stringify(servicosMoradores));
+  }, [servicosMoradores]);
+
+  const adicionarServicoMorador = (servico: Omit<ServicoMorador, 'id' | 'dataCriacao'>) => {
+    const novo: ServicoMorador = {
+      ...servico,
+      id: `serv-${Date.now()}`,
+      dataCriacao: new Date().toLocaleDateString('pt-BR'),
+      ativo: true
+    };
+    setServicosMoradores(prev => [novo, ...prev]);
+  };
+
+  const editarServicoMorador = (id: string, servicoAtualizado: Partial<ServicoMorador>) => {
+    setServicosMoradores(prev => prev.map(s => {
+      if (s.id === id) {
+        return {
+          ...s,
+          ...servicoAtualizado
+        };
+      }
+      return s;
+    }));
+  };
+
+  const suspenderServicoMorador = (id: string, motivo: string) => {
+    setServicosMoradores(prev => prev.map(s => {
+      if (s.id === id) {
+        return {
+          ...s,
+          ativo: false,
+          motivoSuspensao: motivo.trim() || 'Irregularidade nas diretrizes de anúncios do condomínio.'
+        };
+      }
+      return s;
+    }));
+  };
+
+  const reativarServicoMorador = (id: string) => {
+    setServicosMoradores(prev => prev.map(s => {
+      if (s.id === id) {
+        return {
+          ...s,
+          ativo: true,
+          motivoSuspensao: undefined
+        };
+      }
+      return s;
+    }));
+  };
+
+  const excluirServicoMorador = (id: string) => {
+    setServicosMoradores(prev => prev.filter(s => s.id !== id));
+  };
+
   // Admin Roles & Categories
   const [adminRoles, setAdminRoles] = useState<AdminRole[]>(() => {
     const saved = localStorage.getItem('condo_admin_roles');
@@ -456,6 +636,19 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('condo_notificacoes_privadas', JSON.stringify(notificacoesPrivadas));
   }, [notificacoesPrivadas]);
 
+  // Sincronização em tempo real entre diferentes abas abertas no navegador
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'condo_notificacoes_privadas' && e.newValue) {
+        try {
+          setNotificacoesPrivadas(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const enviarNotificacaoPrivada = (unidadeNumero: string, mensagem: string, titulo?: string) => {
     const msgLimpa = mensagem.trim();
     if (!msgLimpa) return;
@@ -474,7 +667,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const marcarNotificacaoComoLida = (notificacaoId: string) => {
-    setNotificacoesPrivadas(prev => prev.map(n => n.id === notificacaoId ? { ...n, lida: true } : n));
+    const agora = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    setNotificacoesPrivadas(prev => prev.map(n => n.id === notificacaoId ? { ...n, lida: true, lidaEm: n.lidaEm || agora } : n));
+  };
+
+  const marcarTodasNotificacoesUnidadeComoLidas = (unidadeNumero: string) => {
+    const agora = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    const cleanUnit = (unidadeNumero || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim();
+    if (!cleanUnit) return;
+
+    setNotificacoesPrivadas(prev => prev.map(n => {
+      const nClean = (n.unidadeNumero || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim();
+      if (nClean === cleanUnit && !n.lida) {
+        return { ...n, lida: true, lidaEm: agora };
+      }
+      return n;
+    }));
   };
 
   // Autenticação do Admin
@@ -1292,6 +1500,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       notificacoesPrivadas,
       enviarNotificacaoPrivada,
       marcarNotificacaoComoLida,
+      marcarTodasNotificacoesUnidadeComoLidas,
       isResidentLoggedIn,
       residentAuthData,
       pendingRegistrationUnit,
@@ -1317,7 +1526,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       atualizarStatusVaga,
       transformarEmReparo,
       selecionarOrcamento,
-      atualizarStatusReparo
+      atualizarStatusReparo,
+      servicosMoradores,
+      adicionarServicoMorador,
+      editarServicoMorador,
+      suspenderServicoMorador,
+      reativarServicoMorador,
+      excluirServicoMorador
     }}>
       {children}
     </CondoContext.Provider>
