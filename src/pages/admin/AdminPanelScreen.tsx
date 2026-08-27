@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCondo } from '../../context/CondoContext';
-import { Unidade, AdminUser, AdminRole, ServicoMorador } from '../../types';
+import { Unidade, AdminUser, AdminRole, ServicoMorador, Funcionario, StatusFuncionario, CategoriaFuncionario } from '../../types';
 import { 
   Building, 
   Plus, 
@@ -35,18 +35,30 @@ import {
   Briefcase,
   MessageCircle,
   Globe,
-  AlertTriangle
+  AlertTriangle,
+  Clock,
+  Calendar,
+  Sun,
+  Activity,
+  UserCheck,
+  UserX,
+  Star
 } from 'lucide-react';
 import { PrivateNotifyModal } from '../../components/admin/PrivateNotifyModal';
 import { SuspendServiceModal } from '../../components/admin/SuspendServiceModal';
+import { EditFuncionarioModal } from '../../components/admin/EditFuncionarioModal';
 
 const AVATARES_SUGERIDOS = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=600&q=80'
+  '/ademar_porteiro.png',
+  '/anastacia_faxineira.png',
+  '/jose_casimiro_porteiro.png',
+  '/jose_vigia.png',
+  '/adriana_sindica.png',
+  '/cassia_sub_sindica.png'
 ];
 
 export const AdminPanelScreen: React.FC = () => {
@@ -66,7 +78,12 @@ export const AdminPanelScreen: React.FC = () => {
     excluirAdminRole,
     servicosMoradores,
     reativarServicoMorador,
-    excluirServicoMorador
+    excluirServicoMorador,
+    funcionarios,
+    adicionarFuncionario,
+    editarFuncionario,
+    excluirFuncionario,
+    atualizarStatusFuncionario
   } = useCondo();
 
   // Accordion section collapse states
@@ -98,7 +115,8 @@ export const AdminPanelScreen: React.FC = () => {
   const [editSenha, setEditSenha] = useState('');
   const [showEditSenha, setShowEditSenha] = useState(false);
 
-  // Form Admin & Gestores
+  // Form Admin & Colaboradores / Funcionários
+  const [tipoCadastroColab, setTipoCadastroColab] = useState<'gestao' | 'operacional'>('gestao');
   const [novoAdminNome, setNovoAdminNome] = useState('');
   const [novoAdminUsuario, setNovoAdminUsuario] = useState('');
   const [novoAdminEmail, setNovoAdminEmail] = useState('');
@@ -106,6 +124,14 @@ export const AdminPanelScreen: React.FC = () => {
   const [novoAdminSenha, setNovoAdminSenha] = useState('');
   const [showNovoAdminSenha, setShowNovoAdminSenha] = useState(false);
   const [novoAdminFoto, setNovoAdminFoto] = useState(AVATARES_SUGERIDOS[0]);
+  const [novoColabCargo, setNovoColabCargo] = useState('');
+  const [novoColabCategoria, setNovoColabCategoria] = useState<CategoriaFuncionario>('Portaria');
+  const [novoColabHorario, setNovoColabHorario] = useState('08:00 - 17:00');
+  const [novoColabDisponibilidade, setNovoColabDisponibilidade] = useState('Segunda a Sexta');
+  const [novoColabStatus, setNovoColabStatus] = useState<StatusFuncionario>('Ativo');
+  const [filtroCategoriaColab, setFiltroCategoriaColab] = useState<string>('Todos');
+  const [selectedFuncionarioToEdit, setSelectedFuncionarioToEdit] = useState<Funcionario | null>(null);
+  const [isEditFuncionarioModalOpen, setIsEditFuncionarioModalOpen] = useState(false);
   const [adminSuccessMsg, setAdminSuccessMsg] = useState('');
   const [visibleAdminPasswords, setVisibleAdminPasswords] = useState<{ [key: string]: boolean }>({});
 
@@ -165,29 +191,52 @@ export const AdminPanelScreen: React.FC = () => {
 
   const handleAddAdminUser = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!novoAdminNome.trim() || !novoAdminUsuario.trim() || !novoAdminSenha.trim()) return;
+    if (!novoAdminNome.trim()) return;
 
-    // Descobre o tipo de acesso pelo cargo selecionado
-    const roleObj = adminRoles.find(r => r.nome === novoAdminRoleSelected);
-    const tipoAcesso = roleObj ? roleObj.tipoAcesso : 'morador_destaque';
+    if (tipoCadastroColab === 'gestao') {
+      if (!novoAdminUsuario.trim() || !novoAdminSenha.trim()) return;
 
-    adicionarAdminUser({
-      nome: novoAdminNome.trim(),
-      usuario: novoAdminUsuario.trim().toLowerCase(),
-      email: novoAdminEmail.trim() || `${novoAdminUsuario.trim().toLowerCase()}@condominio.com`,
-      cargo: novoAdminRoleSelected,
-      tipoAcesso: tipoAcesso,
-      foto: novoAdminFoto || AVATARES_SUGERIDOS[0],
-      senha: novoAdminSenha.trim(),
-      ativo: true
-    });
+      const roleObj = adminRoles.find(r => r.nome === novoAdminRoleSelected);
+      const tipoAcesso = roleObj ? roleObj.tipoAcesso : 'morador_destaque';
+
+      adicionarFuncionario({
+        nome: novoAdminNome.trim(),
+        foto: novoAdminFoto || AVATARES_SUGERIDOS[0],
+        funcao: novoAdminRoleSelected,
+        categoria: 'Gestão',
+        horario: tipoAcesso === 'total' ? 'Administração & Plantão' : 'Reuniões e Pareceres',
+        disponibilidade: tipoAcesso === 'total' ? 'Horário Comercial / Emergências' : 'Sob demanda',
+        status: novoColabStatus,
+        email: novoAdminEmail.trim() || `${novoAdminUsuario.trim().toLowerCase()}@condominio.com`,
+        usuario: novoAdminUsuario.trim().toLowerCase(),
+        senha: novoAdminSenha.trim(),
+        tipoAcesso: tipoAcesso
+      });
+
+      setAdminSuccessMsg(`Perfil de ${novoAdminRoleSelected} (${novoAdminNome}) cadastrado com sucesso!`);
+    } else {
+      if (!novoColabCargo.trim()) return;
+
+      adicionarFuncionario({
+        nome: novoAdminNome.trim(),
+        foto: novoAdminFoto || AVATARES_SUGERIDOS[0],
+        funcao: novoColabCargo.trim(),
+        categoria: novoColabCategoria,
+        horario: novoColabHorario.trim() || '08:00 - 17:00',
+        disponibilidade: novoColabDisponibilidade.trim() || 'Segunda a Sexta',
+        status: novoColabStatus,
+        email: novoAdminEmail.trim() || undefined
+      });
+
+      setAdminSuccessMsg(`Funcionário "${novoAdminNome}" (${novoColabCargo}) cadastrado com sucesso!`);
+    }
 
     setNovoAdminNome('');
     setNovoAdminUsuario('');
     setNovoAdminEmail('');
     setNovoAdminSenha('');
+    setNovoColabCargo('');
     setNovoAdminFoto(AVATARES_SUGERIDOS[Math.floor(Math.random() * AVATARES_SUGERIDOS.length)]);
-    setAdminSuccessMsg(`Perfil de ${novoAdminRoleSelected} cadastrado e integrado ao quadro de colaboradores!`);
     setTimeout(() => setAdminSuccessMsg(''), 4000);
   };
 
@@ -617,7 +666,7 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 2: CRIANDO SENHA DE ACESSOS (GESTÃO DE ADMINISTRADORES & CONSELHEIROS) */}
+      {/* SEÇÃO 2: CRIANDO SENHA DE ACESSOS & QUADRO DE FUNCIONÁRIOS E GESTÃO */}
       {/* ========================================================================= */}
       <div className="bg-white/90 border-2 border-amber-200/80 rounded-3xl shadow-md overflow-hidden transition-all">
         
@@ -632,16 +681,16 @@ export const AdminPanelScreen: React.FC = () => {
               <KeyRound className="w-5 h-5 text-amber-900" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-black text-slate-950">
                   Criando senha de acessos & Equipe de Gestão
                 </h3>
                 <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-slate-900 text-amber-300">
-                  {adminUsers.length} Membros Cadastrados
+                  {funcionarios.length} Membros & Colaboradores
                 </span>
               </div>
               <p className="text-xs text-slate-600 font-medium">
-                Síndicos, Subsíndicos, Administradores (Acesso Total) e Conselheiros (Acesso Morador com Destaque na Equipe).
+                Síndicos, Subsíndicos, Portaria, Faxineiros, Vigias, Zeladoria e Colaboradores em Geral.
               </p>
             </div>
           </div>
@@ -668,25 +717,53 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
             )}
 
-            {/* Form de Criação de Novo Administrador / Conselheiro com Foto */}
+            {/* Form de Criação de Novo Membro / Funcionário com Foto */}
             <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs">
-              <div className="flex items-center justify-between gap-2 pb-1 border-b border-amber-200/60">
+              <div className="flex items-center justify-between gap-2 pb-2 border-b border-amber-200/60 flex-wrap">
                 <div className="flex items-center gap-2">
                   <UserPlus className="w-4 h-4 text-amber-800" />
                   <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-950">
-                    Cadastrar Membro da Gestão / Nova Senha
+                    Cadastrar Membro / Funcionário
                   </h4>
                 </div>
 
-                {/* Botão para Gerenciar / Criar Categorias */}
-                <button
-                  type="button"
-                  onClick={() => setIsModalNovaCategoriaOpen(true)}
-                  className="px-2.5 py-1 bg-white hover:bg-amber-100 border border-amber-300 text-amber-950 rounded-lg text-[11px] font-black uppercase flex items-center gap-1 shadow-2xs transition-all"
-                >
-                  <Settings2 className="w-3.5 h-3.5 text-amber-800" />
-                  + Criar Nova Categoria / Cargo
-                </button>
+                {/* Alternador de Tipo de Cadastro: Gestão com Senha vs Funcionário Operacional */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center bg-white/80 p-0.5 rounded-xl border border-amber-200 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => setTipoCadastroColab('gestao')}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${
+                        tipoCadastroColab === 'gestao'
+                          ? 'bg-amber-500 text-slate-950 shadow-xs scale-102'
+                          : 'text-slate-600 hover:text-slate-950'
+                      }`}
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" /> Membro da Gestão (Com Senha)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTipoCadastroColab('operacional')}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${
+                        tipoCadastroColab === 'operacional'
+                          ? 'bg-amber-500 text-slate-950 shadow-xs scale-102'
+                          : 'text-slate-600 hover:text-slate-950'
+                      }`}
+                    >
+                      <Briefcase className="w-3.5 h-3.5" /> Funcionário Operacional (Portaria, Faxina, Vigia...)
+                    </button>
+                  </div>
+
+                  {/* Botão para Gerenciar / Criar Categorias */}
+                  <button
+                    type="button"
+                    onClick={() => setIsModalNovaCategoriaOpen(true)}
+                    className="px-2.5 py-1.5 bg-white hover:bg-amber-100 border border-amber-300 text-amber-950 rounded-xl text-[11px] font-black uppercase flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+                  >
+                    <Settings2 className="w-3.5 h-3.5 text-amber-800" />
+                    + Criar Nova Categoria
+                  </button>
+                </div>
               </div>
 
               <form onSubmit={handleAddAdminUser} className="space-y-4">
@@ -727,13 +804,13 @@ export const AdminPanelScreen: React.FC = () => {
                         Ou escolha um avatar:
                       </span>
                       <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                        {AVATARES_SUGERIDOS.slice(0, 4).map((av, idx) => (
+                        {AVATARES_SUGERIDOS.slice(0, 6).map((av, idx) => (
                           <button
                             key={idx}
                             type="button"
                             onClick={() => setNovoAdminFoto(av)}
-                            className={`w-6 h-6 rounded-full overflow-hidden border-2 transition-all ${
-                              novoAdminFoto === av ? 'border-amber-600 scale-110 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'
+                            className={`w-6 h-6 rounded-full overflow-hidden border-2 transition-all cursor-pointer ${
+                              novoAdminFoto === av ? 'border-amber-600 scale-110 shadow-sm ring-1 ring-amber-400' : 'border-transparent opacity-70 hover:opacity-100'
                             }`}
                           >
                             <img src={av} alt="Avatar" className="w-full h-full object-cover" />
@@ -743,8 +820,10 @@ export const AdminPanelScreen: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Campos de Nome, Usuário, Cargo e Senha */}
+                  {/* Campos do Formulário */}
                   <div className="md:col-span-9 space-y-3">
+                    
+                    {/* Linha de Nome e Cargo */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       
                       {/* Nome Completo */}
@@ -754,7 +833,7 @@ export const AdminPanelScreen: React.FC = () => {
                         </label>
                         <input
                           type="text"
-                          placeholder="Ex: Valmyr Tavares, Dr. Carlos..."
+                          placeholder="Ex: Ademar Lopes, Valmyr Tavares..."
                           value={novoAdminNome}
                           onChange={(e) => setNovoAdminNome(e.target.value)}
                           className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
@@ -762,87 +841,191 @@ export const AdminPanelScreen: React.FC = () => {
                         />
                       </div>
 
-                      {/* Usuário de Login */}
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                          Usuário de Acesso / Login:
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Ex: admin, subsindico, conselheiro1"
-                          value={novoAdminUsuario}
-                          onChange={(e) => setNovoAdminUsuario(e.target.value)}
-                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
-                          required
-                        />
-                      </div>
+                      {/* Cargo / Categoria */}
+                      {tipoCadastroColab === 'gestao' ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                              Categoria / Função:
+                            </label>
+                            <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded border bg-amber-100 text-amber-950 border-amber-300">
+                              🔓 ACESSO TOTAL
+                            </span>
+                          </div>
 
-                      {/* Cargo Dinâmico do Select */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                            Categoria / Função:
-                          </label>
-                          <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded border ${
-                            currentSelectedRole?.tipoAcesso === 'total' 
-                              ? 'bg-amber-100 text-amber-950 border-amber-300' 
-                              : 'bg-indigo-100 text-indigo-950 border-indigo-300'
-                          }`}>
-                            {currentSelectedRole?.tipoAcesso === 'total' ? '🔓 Acesso Total' : '👤 Acesso Morador (Conselho)'}
-                          </span>
+                          <select
+                            value={novoAdminRoleSelected}
+                            onChange={(e) => setNovoAdminRoleSelected(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs cursor-pointer"
+                          >
+                            {adminRoles.map((role) => (
+                              <option key={role.id} value={role.nome}>
+                                {role.nome} {role.tipoAcesso === 'total' ? '(Acesso Irrestrito)' : '(Poder de Morador)'}
+                              </option>
+                            ))}
+                          </select>
                         </div>
-
-                        <select
-                          value={novoAdminRoleSelected}
-                          onChange={(e) => setNovoAdminRoleSelected(e.target.value)}
-                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
-                        >
-                          {adminRoles.map((role) => (
-                            <option key={role.id} value={role.nome}>
-                              {role.nome} {role.tipoAcesso === 'total' ? '(Acesso Irrestrito)' : '(Poder de Morador)'}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Senha com Olho */}
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                          Senha de Acesso:
-                        </label>
-                        <div className="relative">
+                      ) : (
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                            Cargo / Função do Funcionário:
+                          </label>
                           <input
-                            type={showNovoAdminSenha ? 'text' : 'password'}
-                            placeholder="Ex: admin123, 101..."
-                            value={novoAdminSenha}
-                            onChange={(e) => setNovoAdminSenha(e.target.value)}
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pr-9 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                            type="text"
+                            placeholder="Ex: Porteiro Noturno (12x36), Faxineira Chefe, Vigia..."
+                            value={novoColabCargo}
+                            onChange={(e) => setNovoColabCargo(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
                             required
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowNovoAdminSenha(!showNovoAdminSenha)}
-                            className="p-1 text-slate-500 hover:text-slate-800 absolute right-2.5 top-1.5 rounded-lg"
-                            tabIndex={-1}
-                            title={showNovoAdminSenha ? "Ocultar senha" : "Ver senha"}
-                          >
-                            {showNovoAdminSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
                         </div>
-                      </div>
+                      )}
 
+                    </div>
+
+                    {/* Linha de Dados Específicos: Se for Gestão (Usuário/Senha) | Se for Operacional (Categoria, Horário, Escala) */}
+                    {tipoCadastroColab === 'gestao' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        
+                        {/* Usuário de Login */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                            Usuário de Acesso / Login:
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ex: admin, subsindico, conselheiro1"
+                            value={novoAdminUsuario}
+                            onChange={(e) => setNovoAdminUsuario(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                            required
+                          />
+                        </div>
+
+                        {/* Senha com Olho */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                            Senha de Acesso:
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showNovoAdminSenha ? 'text' : 'password'}
+                              placeholder="Ex: admin123, 101..."
+                              value={novoAdminSenha}
+                              onChange={(e) => setNovoAdminSenha(e.target.value)}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pr-9 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                              required
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNovoAdminSenha(!showNovoAdminSenha)}
+                              className="p-1 text-slate-500 hover:text-slate-800 absolute right-2.5 top-1.5 rounded-lg cursor-pointer"
+                              tabIndex={-1}
+                              title={showNovoAdminSenha ? "Ocultar senha" : "Ver senha"}
+                            >
+                              {showNovoAdminSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        
+                        {/* Categoria Operacional */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                            Categoria:
+                          </label>
+                          <select
+                            value={novoColabCategoria}
+                            onChange={(e) => setNovoColabCategoria(e.target.value as CategoriaFuncionario)}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs cursor-pointer"
+                          >
+                            <option value="Portaria">Portaria</option>
+                            <option value="Limpeza">Limpeza</option>
+                            <option value="Segurança">Segurança</option>
+                            <option value="Zeladoria">Zeladoria</option>
+                            <option value="Manutenção">Manutenção</option>
+                            <option value="Gestão">Gestão</option>
+                          </select>
+                        </div>
+
+                        {/* Horário de Turno */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                            Horário de Turno:
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ex: 07:00 - 19:00, 19:00 - 07:00..."
+                            value={novoColabHorario}
+                            onChange={(e) => setNovoColabHorario(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                          />
+                        </div>
+
+                        {/* Escala / Dias */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                            Escala / Dias:
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ex: Escala 12x36, Seg a Sex..."
+                            value={novoColabDisponibilidade}
+                            onChange={(e) => setNovoColabDisponibilidade(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                          />
+                        </div>
+
+                      </div>
+                    )}
+
+                    {/* Status Inicial do Funcionário */}
+                    <div className="space-y-1 bg-white/70 p-2.5 rounded-xl border border-amber-200/80">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                          Status Inicial do Funcionário:
+                        </label>
+                        <span className="text-[10px] font-black uppercase text-slate-800">
+                          {novoColabStatus}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                        {[
+                          { label: 'Ativo', val: 'Ativo', bg: 'bg-emerald-500 text-white' },
+                          { label: 'Férias', val: 'Férias', bg: 'bg-amber-500 text-slate-950' },
+                          { label: 'Doente', val: 'Doente', bg: 'bg-orange-500 text-white' },
+                          { label: 'Ausente', val: 'Ausente', bg: 'bg-rose-500 text-white' },
+                          { label: 'Desligado', val: 'Desligado', bg: 'bg-slate-700 text-white' }
+                        ].map((st) => (
+                          <button
+                            key={st.val}
+                            type="button"
+                            onClick={() => setNovoColabStatus(st.val as StatusFuncionario)}
+                            className={`py-1 px-2 rounded-lg text-[11px] font-black uppercase transition-all border cursor-pointer ${
+                              novoColabStatus === st.val
+                                ? `${st.bg} border-transparent shadow-xs scale-102 ring-2 ring-amber-400`
+                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            {st.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     {/* E-mail e Botão de Salvar */}
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-1 items-end">
                       <div className="sm:col-span-8 space-y-1">
                         <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                          E-mail para Notificações & Recuperação:
+                          E-mail / Contato (Opcional):
                         </label>
                         <div className="relative">
                           <input
                             type="email"
-                            placeholder="Ex: gestao@condominio.com"
+                            placeholder="Ex: colaborador@condominio.com"
                             value={novoAdminEmail}
                             onChange={(e) => setNovoAdminEmail(e.target.value)}
                             className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pl-9 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
@@ -854,10 +1037,10 @@ export const AdminPanelScreen: React.FC = () => {
                       <div className="sm:col-span-4">
                         <button
                           type="submit"
-                          className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95"
+                          className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
                         >
                           <ShieldCheck className="w-4 h-4 stroke-[3]" />
-                          Salvar Membro
+                          Salvar Colaborador
                         </button>
                       </div>
                     </div>
@@ -868,126 +1051,213 @@ export const AdminPanelScreen: React.FC = () => {
               </form>
             </div>
 
-            {/* Lista de Administradores & Gestores com Foto e Permissões */}
+            {/* Lista de Colaboradores & Equipe de Gestão com Foto, Status e Ações */}
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-slate-950">
-                  Equipe de Gestão Cadastrada ({adminUsers.length})
+                  Quadro de Colaboradores & Gestão ({funcionarios.length})
                 </span>
                 
-                <span className="text-[11px] text-slate-600 font-medium">
-                  * Todos os membros com foto aparecem no quadro de colaboradores (aba Funcionários).
-                </span>
+                {/* Filtro por Categoria */}
+                <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+                  {['Todos', 'Gestão', 'Portaria', 'Limpeza', 'Segurança'].map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setFiltroCategoriaColab(cat)}
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase transition-all border cursor-pointer ${
+                        filtroCategoriaColab === cat
+                          ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-xs'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {adminUsers.map((admin) => {
-                  const isPassVisible = visibleAdminPasswords[admin.id];
-                  const isTotal = admin.tipoAcesso === 'total';
+                {funcionarios
+                  .filter(f => filtroCategoriaColab === 'Todos' || (f.categoria || 'Gestão') === filtroCategoriaColab)
+                  .map((func) => {
+                    const isPassVisible = visibleAdminPasswords[func.id];
+                    const currentStatus = func.status || 'Ativo';
 
-                  return (
-                    <div
-                      key={admin.id}
-                      className="bg-white border border-slate-200 hover:border-amber-400 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3"
-                    >
-                      {/* Topo do Card com Foto */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={admin.foto || AVATARES_SUGERIDOS[0]}
-                            alt={admin.nome}
-                            className="w-12 h-12 rounded-2xl object-cover border-2 border-amber-300 shadow-sm bg-slate-100 shrink-0"
-                          />
-                          <div className="min-w-0">
-                            <h4 className="font-black text-sm text-slate-950 leading-tight truncate">
-                              {admin.nome}
-                            </h4>
-                            <p className="text-[11px] text-slate-500 font-semibold truncate mt-0.5">
-                              {admin.email}
-                            </p>
+                    // Status Badge Style Helper
+                    const getStatusColor = (st: string) => {
+                      switch (st) {
+                        case 'Férias':
+                          return { badge: 'bg-amber-100 text-amber-950 border-amber-300', dot: 'bg-amber-500' };
+                        case 'Doente':
+                          return { badge: 'bg-orange-100 text-orange-950 border-orange-300', dot: 'bg-orange-500' };
+                        case 'Ausente':
+                          return { badge: 'bg-rose-100 text-rose-950 border-rose-300', dot: 'bg-rose-500' };
+                        case 'Desligado':
+                          return { badge: 'bg-slate-200 text-slate-700 border-slate-300', dot: 'bg-slate-600' };
+                        case 'Ativo':
+                        default:
+                          return { badge: 'bg-emerald-100 text-emerald-950 border-emerald-300', dot: 'bg-emerald-500' };
+                      }
+                    };
+
+                    const statusStyle = getStatusColor(currentStatus);
+
+                    return (
+                      <div
+                        key={func.id}
+                        className={`bg-white border hover:border-amber-400 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${
+                          currentStatus === 'Desligado' ? 'opacity-70 border-slate-200 bg-slate-50/80' : 'border-slate-200'
+                        }`}
+                      >
+                        {/* Topo do Card com Foto e Indicador de Status */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-3">
+                            <div className="relative shrink-0">
+                              <img
+                                src={func.foto || AVATARES_SUGERIDOS[0]}
+                                alt={func.nome}
+                                className="w-13 h-13 rounded-2xl object-cover border-2 border-amber-300 shadow-sm bg-slate-100"
+                              />
+                              <span 
+                                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white shadow-xs ${statusStyle.dot}`} 
+                                title={`Status: ${currentStatus}`}
+                              />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-black text-sm text-slate-950 leading-tight truncate">
+                                {func.nome}
+                              </h4>
+                              <p className="text-xs text-indigo-900 font-extrabold truncate mt-0.5">
+                                {func.funcao}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Cargo e Nível de Acesso */}
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-900 text-amber-300 border border-slate-800">
-                          {admin.cargo}
-                        </span>
-
-                        <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
-                          isTotal 
-                            ? 'bg-amber-100 text-amber-950 border-amber-300' 
-                            : 'bg-blue-100 text-blue-950 border-blue-300'
-                        }`}>
-                          {isTotal ? '🔓 Acesso Irrestrito' : '👤 Poder de Morador'}
-                        </span>
-                      </div>
-
-                      {/* Dados de Login e Senha */}
-                      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-100/90 border border-slate-200 text-xs">
-                        <div>
-                          <span className="text-[9px] font-extrabold uppercase text-slate-500 block">
-                            Usuário:
+                        {/* Categoria e Status Interativo */}
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-900 text-amber-300 border border-slate-800">
+                            {func.categoria || 'Colaborador'}
                           </span>
-                          <strong className="text-slate-950 font-mono font-black text-xs">
-                            {admin.usuario}
-                          </strong>
-                        </div>
 
-                        <div>
-                          <span className="text-[9px] font-extrabold uppercase text-slate-500 block">
-                            Senha:
-                          </span>
-                          <div className="flex items-center justify-between">
-                            <strong className="text-slate-950 font-mono font-black text-xs">
-                              {isPassVisible ? admin.senha : '••••••••'}
-                            </strong>
-                            <button
-                              type="button"
-                              onClick={() => toggleAdminPasswordVisibility(admin.id)}
-                              className="text-slate-500 hover:text-slate-800 p-0.5 rounded"
-                              title={isPassVisible ? "Ocultar senha" : "Ver senha"}
-                            >
-                              {isPassVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Rodapé do Card com Ações */}
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
-                        <span className="text-[10px] text-slate-500 font-medium">
-                          Cadastrado em {admin.criadoEm}
-                        </span>
-
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(`Painel Condomínio\nNome: ${admin.nome}\nCargo: ${admin.cargo}\nUsuário: ${admin.usuario}\nSenha: ${admin.senha}`);
-                              alert(`Credenciais de ${admin.nome} copiadas!`);
-                            }}
-                            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center gap-1 text-[11px] font-bold"
-                            title="Copiar dados"
+                          {/* Seletor Rápido de Status no próprio Card */}
+                          <select
+                            value={currentStatus}
+                            onChange={(e) => atualizarStatusFuncionario(func.id, e.target.value as StatusFuncionario)}
+                            className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-2xs cursor-pointer focus:outline-none ${statusStyle.badge}`}
+                            title="Alterar status deste colaborador"
                           >
-                            <Copy className="w-3.5 h-3.5" /> Copiar
+                            <option value="Ativo">🟢 Ativo</option>
+                            <option value="Férias">🟡 Férias</option>
+                            <option value="Doente">🟠 Doente</option>
+                            <option value="Ausente">🔴 Ausente</option>
+                            <option value="Desligado">⚫ Desligado</option>
+                          </select>
+                        </div>
+
+                        {/* Informações de Turno & Escala */}
+                        <div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                          <div>
+                            <span className="text-[9px] font-extrabold uppercase text-slate-500 flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-indigo-600" /> Turno:
+                            </span>
+                            <strong className="text-slate-950 font-bold text-[11px] block truncate" title={func.horario}>
+                              {func.horario || 'Integral'}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <span className="text-[9px] font-extrabold uppercase text-slate-500 flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-amber-600" /> Escala:
+                            </span>
+                            <span className="text-slate-800 font-bold text-[11px] block truncate" title={func.disponibilidade}>
+                              {func.disponibilidade || 'Seg a Sex'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Dados de Login e Senha se for membro com credencial de acesso */}
+                        {func.usuario && (
+                          <div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-amber-50/70 border border-amber-200 text-xs">
+                            <div>
+                              <span className="text-[9px] font-extrabold uppercase text-slate-600 block">
+                                Usuário:
+                              </span>
+                              <strong className="text-slate-950 font-mono font-black text-xs">
+                                {func.usuario}
+                              </strong>
+                            </div>
+
+                            <div>
+                              <span className="text-[9px] font-extrabold uppercase text-slate-600 block">
+                                Senha:
+                              </span>
+                              <div className="flex items-center justify-between">
+                                <strong className="text-slate-950 font-mono font-black text-xs">
+                                  {isPassVisible ? (func.senha || 'admin') : '••••••••'}
+                                </strong>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleAdminPasswordVisibility(func.id)}
+                                  className="text-slate-500 hover:text-slate-800 p-0.5 rounded cursor-pointer"
+                                  title={isPassVisible ? "Ocultar senha" : "Ver senha"}
+                                >
+                                  {isPassVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Rodapé do Card com Ações (Editar, Copiar, Excluir) */}
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                          
+                          {/* Botão de Editar */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedFuncionarioToEdit(func);
+                              setIsEditFuncionarioModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg text-amber-800 hover:text-amber-950 hover:bg-amber-100 transition-colors flex items-center gap-1 text-[11px] font-black uppercase cursor-pointer"
+                            title="Editar dados do colaborador"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-amber-800" /> Editar
                           </button>
 
-                          {adminUsers.length > 1 && (
+                          <div className="flex items-center gap-1">
                             <button
-                              onClick={() => excluirAdminUser(admin.id)}
-                              className="p-1.5 rounded-lg text-rose-600 hover:text-rose-800 hover:bg-rose-100 transition-colors flex items-center gap-1 text-[11px] font-bold"
-                              title="Remover Administrador"
+                              type="button"
+                              onClick={() => {
+                                const info = `Condomínio - Colaborador: ${func.nome}\nFunção: ${func.funcao}\nCategoria: ${func.categoria}\nTurno: ${func.horario}\nEscala: ${func.disponibilidade}\nStatus: ${func.status || 'Ativo'}${func.usuario ? `\nUsuário: ${func.usuario}\nSenha: ${func.senha}` : ''}`;
+                                navigator.clipboard.writeText(info);
+                                alert(`Dados de ${func.nome} copiados!`);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                              title="Copiar informações"
+                            >
+                              <Copy className="w-3.5 h-3.5" /> Copiar
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Tem certeza que deseja excluir o cadastro de ${func.nome}?`)) {
+                                  excluirFuncionario(func.id);
+                                }
+                              }}
+                              className="p-1.5 rounded-lg text-rose-600 hover:text-rose-800 hover:bg-rose-100 transition-colors flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                              title="Remover Colaborador"
                             >
                               <Trash2 className="w-3.5 h-3.5" /> Excluir
                             </button>
-                          )}
+                          </div>
                         </div>
-                      </div>
 
-                    </div>
-                  );
-                })}
+                      </div>
+                    );
+                  })}
               </div>
             </div>
 
@@ -1360,6 +1630,16 @@ export const AdminPanelScreen: React.FC = () => {
           setServicoParaSuspender(null);
         }}
         servico={servicoParaSuspender}
+      />
+
+      {/* Modal de Edição de Funcionário / Colaborador */}
+      <EditFuncionarioModal
+        isOpen={isEditFuncionarioModalOpen}
+        onClose={() => {
+          setIsEditFuncionarioModalOpen(false);
+          setSelectedFuncionarioToEdit(null);
+        }}
+        funcionario={selectedFuncionarioToEdit}
       />
 
     </div>

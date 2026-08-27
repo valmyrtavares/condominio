@@ -63,7 +63,18 @@ export interface AdminUser {
   telefone?: string;
 }
 
-export type CategoriaFuncionario = 'Portaria' | 'Limpeza' | 'Segurança' | 'Gestão';
+export type CategoriaFuncionario = 'Portaria' | 'Limpeza' | 'Segurança' | 'Gestão' | 'Manutenção' | 'Zeladoria' | 'Conselho';
+
+export type StatusFuncionario = 'Ativo' | 'Férias' | 'Doente' | 'Ausente' | 'Desligado';
+
+export interface AvaliacaoFuncionario {
+  id: string;
+  funcionarioId: string;
+  usuarioId: string;
+  unidade?: string;
+  nota: number;
+  data: string;
+}
 
 export interface Funcionario {
   id: string;
@@ -73,8 +84,15 @@ export interface Funcionario {
   categoria?: CategoriaFuncionario;
   horario: string;
   disponibilidade: string;
+  status?: StatusFuncionario;
   avaliacoesCount?: number;
   mediaNota?: number;
+  email?: string;
+  telefone?: string;
+  usuario?: string;
+  senha?: string;
+  tipoAcesso?: 'total' | 'morador_destaque';
+  criadoEm?: string;
   condominioId: string;
 }
 
@@ -138,6 +156,7 @@ export interface Reclamacao {
   status: StatusReclamacao;
   apoiosCount: number;
   apoiadoPeloUsuario?: boolean;
+  apoiadores?: string[];
   comentarios: Comentario[];
   reparoId?: string;
   condominioId: string;

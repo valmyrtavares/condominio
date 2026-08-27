@@ -29,7 +29,10 @@ import {
   AdminUser,
   AdminRole,
   NotificacaoPrivada,
-  ServicoMorador
+  ServicoMorador,
+  StatusFuncionario,
+  CategoriaFuncionario,
+  AvaliacaoFuncionario
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -67,6 +70,12 @@ interface CondoContextType {
   unidadesDisponiveis: UnidadeDisponivel[];
   prestacaoContas: PrestacaoContas;
   funcionarios: Funcionario[];
+  adicionarFuncionario: (novo: Omit<Funcionario, 'id' | 'condominioId'>) => void;
+  editarFuncionario: (id: string, dados: Partial<Funcionario>) => void;
+  excluirFuncionario: (id: string) => void;
+  atualizarStatusFuncionario: (id: string, status: StatusFuncionario) => void;
+  avaliacoesFuncionarios: AvaliacaoFuncionario[];
+  avaliarFuncionario: (funcionarioId: string, nota: number) => void;
   espinhaDorsalItems: EspinhaDorsalItem[];
   isDrawerOpen: boolean;
   setIsDrawerOpen: (open: boolean) => void;
@@ -482,7 +491,31 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   });
 
-  const [reclamacoes, setReclamacoes] = useState<Reclamacao[]>(MOCK_RECLAMACOES);
+  const [reclamacoes, setReclamacoes] = useState<Reclamacao[]>(() => {
+    const saved = localStorage.getItem('condo_reclamacoes_list');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return MOCK_RECLAMACOES;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_reclamacoes_list', JSON.stringify(reclamacoes));
+  }, [reclamacoes]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'condo_reclamacoes_list' && e.newValue) {
+        try {
+          setReclamacoes(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
   const [reparos, setReparos] = useState<Reparo[]>(MOCK_REPAROS);
   const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>(MOCK_BENFEITORIAS);
   const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>(MOCK_VAGAS_GARAGEM);
@@ -494,24 +527,175 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [unidadesDisponiveis, setUnidadesDisponiveis] = useState<UnidadeDisponivel[]>(MOCK_UNIDADES_DISPONIVEIS);
   const [prestacaoContas] = useState<PrestacaoContas>(MOCK_PRESTACAO_CONTAS);
 
-  // Funcionários combinando equipe operacional + administradores/conselheiros cadastrados com foto!
-  const [funcionariosOperacionais] = useState<Funcionario[]>(MOCK_FUNCIONARIOS.filter(f => f.categoria !== 'Gestão'));
+  // Funcionários e Equipe de Gestão com persistência
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>(() => {
+    const saved = localStorage.getItem('condo_funcionarios_list');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return MOCK_FUNCIONARIOS.map(f => ({
+      ...f,
+      status: f.status || 'Ativo'
+    }));
+  });
 
-  const funcionarios: Funcionario[] = [
-    // Gestores e Conselheiros cadastrados
-    ...adminUsers.map(adm => ({
-      id: `func-${adm.id}`,
-      nome: adm.nome,
-      foto: adm.foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-      funcao: adm.cargo,
-      categoria: 'Gestão' as const,
-      horario: adm.tipoAcesso === 'total' ? 'Administração & Plantão' : 'Reuniões e Pareceres',
-      disponibilidade: adm.tipoAcesso === 'total' ? 'Horário Comercial / Emergências' : 'Sob demanda',
+  useEffect(() => {
+    localStorage.setItem('condo_funcionarios_list', JSON.stringify(funcionarios));
+  }, [funcionarios]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'condo_funcionarios_list' && e.newValue) {
+        try {
+          setFuncionarios(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const adicionarFuncionario = (novo: Omit<Funcionario, 'id' | 'condominioId'>) => {
+    const funcionarioCompleto: Funcionario = {
+      id: `func-${Date.now()}`,
+      nome: novo.nome.trim(),
+      foto: novo.foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+      funcao: novo.funcao.trim(),
+      categoria: novo.categoria || 'Portaria',
+      horario: novo.horario?.trim() || '08:00 - 17:00',
+      disponibilidade: novo.disponibilidade?.trim() || 'Segunda a Sexta',
+      status: novo.status || 'Ativo',
+      email: novo.email?.trim(),
+      telefone: novo.telefone?.trim(),
+      usuario: novo.usuario?.trim(),
+      senha: novo.senha?.trim(),
+      tipoAcesso: novo.tipoAcesso,
+      criadoEm: `${new Date().toLocaleDateString('pt-BR')}`,
       condominioId: CURRENT_CONDO_ID
-    })),
-    // Funcionários operacionais (portaria, limpeza, segurança)
-    ...funcionariosOperacionais
-  ];
+    };
+
+    setFuncionarios(prev => [funcionarioCompleto, ...prev]);
+
+    if (novo.usuario && novo.senha) {
+      adicionarAdminUser({
+        nome: novo.nome.trim(),
+        usuario: novo.usuario.trim(),
+        email: novo.email?.trim() || `${novo.usuario.trim()}@condominio.com`,
+        cargo: novo.funcao.trim(),
+        tipoAcesso: novo.tipoAcesso || 'total',
+        foto: novo.foto,
+        senha: novo.senha.trim(),
+        ativo: novo.status !== 'Desligado',
+        telefone: novo.telefone?.trim()
+      });
+    }
+  };
+
+  const editarFuncionario = (id: string, dados: Partial<Funcionario>) => {
+    setFuncionarios(prev => prev.map(f => {
+      if (f.id === id) {
+        return {
+          ...f,
+          ...dados
+        };
+      }
+      return f;
+    }));
+  };
+
+  const excluirFuncionario = (id: string) => {
+    setFuncionarios(prev => prev.filter(f => f.id !== id));
+  };
+
+  const atualizarStatusFuncionario = (id: string, status: StatusFuncionario) => {
+    setFuncionarios(prev => prev.map(f => f.id === id ? { ...f, status } : f));
+  };
+
+  // Avaliações anônimas/privadas de funcionários dadas pelos moradores
+  const [avaliacoesFuncionarios, setAvaliacoesFuncionarios] = useState<AvaliacaoFuncionario[]>(() => {
+    const saved = localStorage.getItem('condo_avaliacoes_funcionarios');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_avaliacoes_funcionarios', JSON.stringify(avaliacoesFuncionarios));
+  }, [avaliacoesFuncionarios]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'condo_avaliacoes_funcionarios' && e.newValue) {
+        try {
+          setAvaliacoesFuncionarios(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const avaliarFuncionario = (funcionarioId: string, nota: number) => {
+    const userIdentifier = currentUser?.id || currentUser?.unidade || 'morador-anon';
+    const unidadeMorador = currentUser?.unidade || '';
+
+    const avaliacaoExistente = avaliacoesFuncionarios.find(
+      a => a.funcionarioId === funcionarioId && (a.usuarioId === userIdentifier || (unidadeMorador && a.unidade === unidadeMorador))
+    );
+
+    let novasAvaliacoes: AvaliacaoFuncionario[];
+
+    if (avaliacaoExistente) {
+      novasAvaliacoes = avaliacoesFuncionarios.map(a => 
+        a.id === avaliacaoExistente.id ? { ...a, nota, data: new Date().toLocaleDateString('pt-BR') } : a
+      );
+    } else {
+      const nova: AvaliacaoFuncionario = {
+        id: `aval-${Date.now()}`,
+        funcionarioId,
+        usuarioId: userIdentifier,
+        unidade: unidadeMorador,
+        nota,
+        data: new Date().toLocaleDateString('pt-BR')
+      };
+      novasAvaliacoes = [...avaliacoesFuncionarios, nova];
+    }
+
+    setAvaliacoesFuncionarios(novasAvaliacoes);
+
+    // Recalcula média e contagem do funcionário
+    setFuncionarios(prev => prev.map(f => {
+      if (f.id === funcionarioId) {
+        const baseCount = f.avaliacoesCount || 0;
+        const baseMedia = f.mediaNota || 5.0;
+
+        if (avaliacaoExistente) {
+          const notaAntiga = avaliacaoExistente.nota;
+          const somaTotal = (baseMedia * Math.max(1, baseCount)) - notaAntiga + nota;
+          const novaMedia = Math.min(5.0, Math.max(1.0, somaTotal / Math.max(1, baseCount)));
+          return {
+            ...f,
+            mediaNota: Number(novaMedia.toFixed(1))
+          };
+        } else {
+          const novoCount = baseCount + 1;
+          const somaTotal = (baseMedia * baseCount) + nota;
+          const novaMedia = Math.min(5.0, Math.max(1.0, somaTotal / novoCount));
+          return {
+            ...f,
+            avaliacoesCount: novoCount,
+            mediaNota: Number(novaMedia.toFixed(1))
+          };
+        }
+      }
+      return f;
+    }));
+  };
 
   const [espinhaDorsalItems] = useState<EspinhaDorsalItem[]>(ESPINHA_DORSAL_ITEMS);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
@@ -1056,13 +1240,20 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const apoiarReclamacao = (id: string) => {
+    const userIdentifier = currentUser?.id || currentUser?.unidade || 'morador-anon';
     setReclamacoes(prev => prev.map(rec => {
       if (rec.id === id) {
-        const jaApoiou = rec.apoiadoPeloUsuario;
+        const apoiadores = rec.apoiadores || [];
+        const jaApoiou = apoiadores.includes(userIdentifier) || (rec.apoiadoPeloUsuario && apoiadores.length === 0);
+        const novosApoiadores = jaApoiou
+          ? apoiadores.filter(u => u !== userIdentifier)
+          : [...apoiadores, userIdentifier];
+
         return {
           ...rec,
-          apoiosCount: jaApoiou ? rec.apoiosCount - 1 : rec.apoiosCount + 1,
-          apoiadoPeloUsuario: !jaApoiou
+          apoiosCount: jaApoiou ? Math.max(0, rec.apoiosCount - 1) : rec.apoiosCount + 1,
+          apoiadoPeloUsuario: !jaApoiou,
+          apoiadores: novosApoiadores
         };
       }
       return rec;
@@ -1071,16 +1262,27 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const adicionarComentario = (reclamacaoId: string, texto: string) => {
     if (!texto.trim()) return;
+
+    let unidadeFormatada = '';
+    if (currentUser.unidade) {
+      const uNum = currentUser.unidade.toLowerCase().startsWith('apt') || currentUser.unidade.toLowerCase().startsWith('cobertura')
+        ? currentUser.unidade
+        : `Apt ${currentUser.unidade}`;
+      unidadeFormatada = currentUser.bloco ? `${uNum} - ${currentUser.bloco}` : uNum;
+    } else {
+      unidadeFormatada = currentUser.role === 'sindico' || currentUser.role === 'subsindico' ? 'Administração' : 'Morador';
+    }
+
     const novoComentario = {
       id: `com-${Date.now()}`,
-      autorId: currentUser.id,
-      autorNome: `${currentUser.nome}${currentUser.role !== 'morador' ? ' (Subsíndica)' : ''}`,
+      autorId: currentUser.id || 'usr-anon',
+      autorNome: currentUser.nome || 'Morador',
       autorRole: currentUser.role,
-      autorUnidade: currentUser.role === 'morador' ? `Apt ${currentUser.unidade}` : 'Administração',
+      autorUnidade: unidadeFormatada,
       autorFoto: currentUser.foto,
-      texto,
-      data: 'Hoje às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      oficial: currentUser.role !== 'morador'
+      texto: texto.trim(),
+      data: `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
+      oficial: currentUser.role === 'sindico' || currentUser.role === 'subsindico'
     };
 
     setReclamacoes(prev => prev.map(rec => {
@@ -1475,6 +1677,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unidadesDisponiveis,
       prestacaoContas,
       funcionarios,
+      adicionarFuncionario,
+      editarFuncionario,
+      excluirFuncionario,
+      atualizarStatusFuncionario,
+      avaliacoesFuncionarios,
+      avaliarFuncionario,
       espinhaDorsalItems,
       isDrawerOpen,
       setIsDrawerOpen,
