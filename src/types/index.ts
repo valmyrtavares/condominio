@@ -185,6 +185,12 @@ export type CategoriaReparo =
 export type StatusReparo = 
   | 'Solicitado' 
   | 'Em análise' 
+  | 'Buscando Orçamento' 
+  | 'Análise de Orçamento' 
+  | 'Orçamento Contratado' 
+  | 'Em Execução' 
+  | 'Resolvido' 
+  | 'Cancelado'
   | 'Aguardando Conserto' 
   | 'Orçamento' 
   | 'Aprovado' 
@@ -201,6 +207,8 @@ export interface Orcamento {
   descricao: string;
   prazoDias: number;
   selecionado: boolean;
+  documentoUrl?: string;
+  documentoNome?: string;
 }
 
 export interface TimelineStep {
@@ -231,6 +239,12 @@ export interface Reparo {
   fotosAntes: string[];
   fotosDepois?: string[];
   condominioId: string;
+  apoiosCount: number;
+  apoiadoPeloUsuario?: boolean;
+  apoiadores?: string[];
+  comentarios: Comentario[];
+  anexoUrl?: string;
+  anexoTipo?: 'imagem' | 'video';
 }
 
 export type TipoBenfeitoria = 

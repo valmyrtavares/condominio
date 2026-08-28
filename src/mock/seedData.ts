@@ -446,8 +446,34 @@ export const MOCK_REPAROS: Reparo[] = [
     responsavel: 'Dra. Mariana Costa (Subsíndica)',
     empresaEscolhida: 'Automatiza Tech Condominial',
     valorFinal: 1850.00,
-    status: 'Aprovado',
+    status: 'Orçamento Contratado',
     condominioId: CURRENT_CONDO_ID,
+    apoiosCount: 9,
+    apoiadoPeloUsuario: true,
+    apoiadores: ['usr-morador-102', 'usr-morador-201', 'usr-morador-302'],
+    comentarios: [
+      {
+        id: 'com-rep-m1',
+        autorId: 'usr-admin-401',
+        autorNome: 'Dra. Mariana Costa (Subsíndica)',
+        autorRole: 'subsindico',
+        autorUnidade: 'Administração',
+        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+        texto: 'Proposta da empresa Automatiza Tech aprovada e contratada. O serviço está agendado para execução técnica nesta quinta-feira.',
+        data: '17/08/2026 às 10:30',
+        oficial: true
+      },
+      {
+        id: 'com-rep-m2',
+        autorId: 'usr-morador-101',
+        autorNome: 'Renato Alencar',
+        autorRole: 'morador',
+        autorUnidade: 'Apt 101',
+        autorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+        texto: 'Excelente agilidade na aprovação do orçamento. O portão estava travando constantemente.',
+        data: '17/08/2026 às 11:15'
+      }
+    ],
     orcamentos: [
       {
         id: 'orc-1',
@@ -457,7 +483,9 @@ export const MOCK_REPAROS: Reparo[] = [
         valor: 2100.00,
         descricao: 'Substituição completa por motor Rossi Ninja 1/3hp + mão de obra.',
         prazoDias: 3,
-        selecionado: false
+        selecionado: false,
+        documentoUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        documentoNome: 'Orcamento_PortoesCia_2026.pdf'
       },
       {
         id: 'orc-2',
@@ -467,7 +495,9 @@ export const MOCK_REPAROS: Reparo[] = [
         valor: 1850.00,
         descricao: 'Motor industrial PPA JetFlex de alta velocidade + substituição de roletes blindados e garantia de 12 meses.',
         prazoDias: 2,
-        selecionado: true
+        selecionado: true,
+        documentoUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        documentoNome: 'Proposta_AutomatizaTech_Aprovada.pdf'
       },
       {
         id: 'orc-3',
@@ -477,7 +507,9 @@ export const MOCK_REPAROS: Reparo[] = [
         valor: 2300.00,
         descricao: 'Kit automatizador deslizante reforçado + sensores antiesmagamento.',
         prazoDias: 5,
-        selecionado: false
+        selecionado: false,
+        documentoUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        documentoNome: 'Cotacao_SegurasSP.pdf'
       }
     ],
     timeline: [
@@ -508,7 +540,7 @@ export const MOCK_REPAROS: Reparo[] = [
         titulo: 'Aprovação do Orçamento',
         descricao: 'Proposta da Automatiza Tech (R$ 1.850,00) aprovada por apresentar melhor prazo (2 dias) e garantia de 12 meses.',
         autorRole: 'subsindico',
-        statusAlvo: 'Aprovado'
+        statusAlvo: 'Orçamento Contratado'
       },
       {
         id: 'tl-5',
@@ -516,7 +548,7 @@ export const MOCK_REPAROS: Reparo[] = [
         titulo: 'Agendamento Técnico',
         descricao: 'Equipe técnica agendada para realização do serviço na quinta-feira das 09h às 12h.',
         autorRole: 'subsindico',
-        statusAlvo: 'Agendado'
+        statusAlvo: 'Em Execução'
       }
     ],
     fotosAntes: [
@@ -538,8 +570,23 @@ export const MOCK_REPAROS: Reparo[] = [
     responsavel: 'Dra. Mariana Costa (Subsíndica)',
     empresaEscolhida: 'Vedatech Engenharia e Impermeabilizações',
     valorFinal: 3200.00,
-    status: 'Orçamento',
+    status: 'Análise de Orçamento',
     condominioId: CURRENT_CONDO_ID,
+    apoiosCount: 14,
+    apoiadoPeloUsuario: false,
+    apoiadores: ['usr-morador-302', 'usr-morador-102'],
+    comentarios: [
+      {
+        id: 'com-rep-inf1',
+        autorId: 'usr-morador-302',
+        autorNome: 'Eduardo Prado',
+        autorRole: 'morador',
+        autorUnidade: 'Apt 302 - Bloco B',
+        autorFoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+        texto: 'A água da goteira está caindo bem em cima da lataria dos carros das vagas 30 e 31 em dias de chuva forte.',
+        data: '18/08/2026 às 19:00'
+      }
+    ],
     orcamentos: [
       {
         id: 'orc-inf-1',
@@ -575,7 +622,8 @@ export const MOCK_REPAROS: Reparo[] = [
         data: '19/08/2026',
         titulo: 'Coleta de Laudos e Orçamentos',
         descricao: 'Empresas de impermeabilização visitaram o subsolo para diagnóstico.',
-        autorRole: 'subsindico'
+        autorRole: 'subsindico',
+        statusAlvo: 'Análise de Orçamento'
       }
     ],
     fotosAntes: [
@@ -597,8 +645,24 @@ export const MOCK_REPAROS: Reparo[] = [
     responsavel: 'Zeladoria',
     empresaEscolhida: 'EletroPaulista Reparos',
     valorFinal: 180.00,
-    status: 'Executado',
+    status: 'Resolvido',
     condominioId: CURRENT_CONDO_ID,
+    apoiosCount: 5,
+    apoiadoPeloUsuario: false,
+    apoiadores: ['usr-morador-101'],
+    comentarios: [
+      {
+        id: 'com-rep-led1',
+        autorId: 'usr-admin-401',
+        autorNome: 'Dra. Mariana Costa (Subsíndica)',
+        autorRole: 'subsindico',
+        autorUnidade: 'Administração',
+        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+        texto: 'Reparo simples concluído diretamente pela zeladoria com troca dos dois painéis LED de 18W.',
+        data: '21/08/2026 às 15:30',
+        oficial: true
+      }
+    ],
     orcamentos: [
       {
         id: 'orc-led-1',
@@ -622,10 +686,10 @@ export const MOCK_REPAROS: Reparo[] = [
       {
         id: 'tl-led-2',
         data: '21/08/2026',
-        titulo: 'Serviço Executado',
+        titulo: 'Serviço Executado e Resolvido',
         descricao: 'Substituição das lâmpadas e reatores efetuada com sucesso.',
         autorRole: 'subsindico',
-        statusAlvo: 'Executado'
+        statusAlvo: 'Resolvido'
       }
     ],
     fotosAntes: [
@@ -647,8 +711,23 @@ export const MOCK_REPAROS: Reparo[] = [
     responsavel: 'Dra. Mariana Costa (Subsíndica)',
     empresaEscolhida: 'Vidros & Molas Express',
     valorFinal: 250.00,
-    status: 'Agendado',
+    status: 'Em Execução',
     condominioId: CURRENT_CONDO_ID,
+    apoiosCount: 8,
+    apoiadoPeloUsuario: true,
+    apoiadores: ['usr-morador-102', 'usr-morador-201'],
+    comentarios: [
+      {
+        id: 'com-rep-mola1',
+        autorId: 'usr-morador-102',
+        autorNome: 'Sandra Almeida',
+        autorRole: 'morador',
+        autorUnidade: 'Apt 102',
+        autorFoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+        texto: 'Obrigada pela rápida resposta! O barulho do vidro batendo estava assustando os usuários da academia.',
+        data: '23/08/2026 às 16:20'
+      }
+    ],
     orcamentos: [
       {
         id: 'orc-mola-1',
@@ -672,10 +751,10 @@ export const MOCK_REPAROS: Reparo[] = [
       {
         id: 'tl-mola-2',
         data: '23/08/2026',
-        titulo: 'Visita Técnica Agendada',
+        titulo: 'Visita Técnica Agendada e Início de Execução',
         descricao: 'Técnico fará o conserto amanhã às 14h.',
         autorRole: 'subsindico',
-        statusAlvo: 'Agendado'
+        statusAlvo: 'Em Execução'
       }
     ],
     fotosAntes: [
@@ -694,8 +773,12 @@ export const MOCK_REPAROS: Reparo[] = [
     responsavel: 'Dra. Mariana Costa (Subsíndica)',
     empresaEscolhida: 'Atlas Schindler Serviços',
     valorFinal: 4800.00,
-    status: 'Em análise',
+    status: 'Buscando Orçamento',
     condominioId: CURRENT_CONDO_ID,
+    apoiosCount: 19,
+    apoiadoPeloUsuario: false,
+    apoiadores: ['usr-morador-101', 'usr-morador-201', 'usr-morador-302'],
+    comentarios: [],
     orcamentos: [
       {
         id: 'orc-elev-1',
@@ -724,7 +807,8 @@ export const MOCK_REPAROS: Reparo[] = [
         data: '23/08/2026',
         titulo: 'Vistoria Preventiva',
         descricao: 'Chamado técnico aberto com a empresa mantenedora do elevador.',
-        autorRole: 'subsindico'
+        autorRole: 'subsindico',
+        statusAlvo: 'Buscando Orçamento'
       }
     ],
     fotosAntes: [
@@ -743,8 +827,12 @@ export const MOCK_REPAROS: Reparo[] = [
     responsavel: 'Dra. Mariana Costa (Subsíndica)',
     empresaEscolhida: 'Pinturas Pro SP',
     valorFinal: 2100.00,
-    status: 'Aguardando Conserto',
+    status: 'Solicitado',
     condominioId: CURRENT_CONDO_ID,
+    apoiosCount: 6,
+    apoiadoPeloUsuario: false,
+    apoiadores: ['usr-morador-201'],
+    comentarios: [],
     orcamentos: [
       {
         id: 'orc-pint-1',
@@ -763,7 +851,8 @@ export const MOCK_REPAROS: Reparo[] = [
         data: '24/08/2026',
         titulo: 'Solicitação Aberta',
         descricao: 'Necessidade de renovação da demarcação de piso na garagem.',
-        autorRole: 'morador'
+        autorRole: 'morador',
+        statusAlvo: 'Solicitado'
       }
     ],
     fotosAntes: [

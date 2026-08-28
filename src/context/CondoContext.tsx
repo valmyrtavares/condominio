@@ -3,6 +3,7 @@ import {
   User, 
   Reclamacao, 
   Reparo, 
+  Orcamento,
   PrestacaoContas, 
   Unidade, 
   Funcionario, 
@@ -142,7 +143,13 @@ interface CondoContextType {
   apoiarReclamacao: (id: string) => void;
   adicionarComentario: (reclamacaoId: string, texto: string) => void;
   adicionarReclamacao: (titulo: string, descricao: string, categoria: CategoriaReclamacao, anexoUrl?: string, anexoTipo?: 'imagem' | 'video') => void;
-  adicionarReparo: (titulo: string, descricao: string, porte: PorteReparo, categoria: CategoriaReparo, fotoUrl?: string) => void;
+  adicionarReparo: (titulo: string, descricao: string, porte: PorteReparo, categoria: CategoriaReparo, anexoUrl?: string, anexoTipo?: 'imagem' | 'video') => void;
+  apoiarReparo: (id: string) => void;
+  adicionarComentarioReparo: (reparoId: string, texto: string) => void;
+  toggleOcultarComentarioReparo: (reparoId: string, comentarioId: string, motivo?: string) => void;
+  excluirComentarioReparo: (reparoId: string, comentarioId: string) => void;
+  excluirReparo: (reparoId: string) => void;
+  resolverReparoSimples: (reparoId: string, observacao?: string) => void;
   adicionarBenfeitoria: (titulo: string, subtitulo: string, tipo: TipoBenfeitoria, descricao: string, impactoGestao: string, fotos: string[], investimento?: number, economiaMensal?: number, regrasUso?: string) => void;
   adicionarServicoContratado: (titulo: string, descricao: string, categoria: string, status: StatusServicoContratado, propostas: PropostaEmpresa[], observacoesFinais?: string) => void;
   selecionarPropostaVencedora: (servicoId: string, propostaId: string) => void;
@@ -155,6 +162,8 @@ interface CondoContextType {
   atualizarStatusVaga: (vagaId: string, novoStatus: StatusVaga, dadosAdicionais?: { veiculo?: VeiculoInfo; valorAluguelMensal?: number; observacoes?: string }) => void;
   transformarEmReparo: (reclamacaoId: string, titulo: string, descricao: string) => string;
   selecionarOrcamento: (reparoId: string, orcamentoId: string) => void;
+  adicionarOrcamentoReparo: (reparoId: string, orcamento: Omit<Orcamento, 'id' | 'selecionado'>) => void;
+  excluirOrcamentoReparo: (reparoId: string, orcamentoId: string) => void;
   atualizarStatusReparo: (reparoId: string, novoStatus: StatusReparo) => void;
 
   // Serviços de Moradores
@@ -531,7 +540,31 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
-  const [reparos, setReparos] = useState<Reparo[]>(MOCK_REPAROS);
+  const [reparos, setReparos] = useState<Reparo[]>(() => {
+    const saved = localStorage.getItem('condo_reparos_list');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return MOCK_REPAROS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_reparos_list', JSON.stringify(reparos));
+  }, [reparos]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'condo_reparos_list' && e.newValue) {
+        try {
+          setReparos(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
   const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>(MOCK_BENFEITORIAS);
   const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>(MOCK_VAGAS_GARAGEM);
   const [servicosContratados, setServicosContratados] = useState<ServicoContratado[]>(MOCK_SERVICOS_CONTRATADOS);
@@ -1522,7 +1555,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       ],
       fotosAntes: ['https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&w=600&q=80'],
-      fotosDepois: ['https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=600&q=80']
+      fotosDepois: ['https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=600&q=80'],
+      apoiosCount: reclamacao?.apoiosCount || 0,
+      apoiadoPeloUsuario: reclamacao?.apoiadoPeloUsuario || false,
+      apoiadores: reclamacao?.apoiadores || [],
+      comentarios: []
     };
 
     setReparos(prev => [novoReparo, ...prev]);
@@ -1559,7 +1596,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const selecionarOrcamento = (reparoId: string, orcamentoId: string) => {
     setReparos(prev => prev.map(rep => {
       if (rep.id === reparoId) {
-        const novosOrcamentos = rep.orcamentos.map(o => ({
+        const novosOrcamentos = (rep.orcamentos || []).map(o => ({
           ...o,
           selecionado: o.id === orcamentoId
         }));
@@ -1568,10 +1605,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const novaTimelineStep = {
           id: `tl-orc-${Date.now()}`,
           data: new Date().toLocaleDateString('pt-BR'),
-          titulo: 'Orçamento Selecionado',
-          descricao: `Orçamento da empresa ${selecionado?.empresa} (R$ ${selecionado?.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) selecionado pela administração.`,
+          titulo: 'Orçamento Selecionado & Aprovado',
+          descricao: `Orçamento da empresa ${selecionado?.empresa} (R$ ${selecionado?.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) aprovado pela administração.`,
           autorRole: currentUser.role,
-          statusAlvo: 'Aprovado' as StatusReparo
+          statusAlvo: 'Orçamento Contratado' as StatusReparo
         };
 
         return {
@@ -1579,9 +1616,192 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           orcamentos: novosOrcamentos,
           empresaEscolhida: selecionado?.empresa,
           valorFinal: selecionado?.valor,
-          status: 'Aprovado' as StatusReparo,
-          timeline: [...rep.timeline, novaTimelineStep]
+          status: 'Orçamento Contratado' as StatusReparo,
+          timeline: [...(rep.timeline || []), novaTimelineStep]
         };
+      }
+      return rep;
+    }));
+  };
+
+  const adicionarOrcamentoReparo = (reparoId: string, novoOrcamento: Omit<Orcamento, 'id' | 'selecionado'>) => {
+    const dataHoje = new Date().toLocaleDateString('pt-BR');
+    const orcCompleto: Orcamento = {
+      ...novoOrcamento,
+      id: `orc-${Date.now()}`,
+      selecionado: false
+    };
+
+    setReparos(prev => prev.map(rep => {
+      if (rep.id === reparoId) {
+        const novosOrcs = [...(rep.orcamentos || []), orcCompleto];
+        const novaStep = {
+          id: `tl-orc-add-${Date.now()}`,
+          data: dataHoje,
+          titulo: `Orçamento Publicado: ${novoOrcamento.empresa}`,
+          descricao: `Proposta de R$ ${novoOrcamento.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} cadastrada pela administração. Prazo: ${novoOrcamento.prazoDias} dias.`,
+          autorRole: currentUser.role,
+          statusAlvo: (rep.status === 'Solicitado' || rep.status === 'Buscando Orçamento') ? ('Análise de Orçamento' as StatusReparo) : rep.status
+        };
+
+        const novoStatus = (rep.status === 'Solicitado' || rep.status === 'Buscando Orçamento') ? ('Análise de Orçamento' as StatusReparo) : rep.status;
+
+        return {
+          ...rep,
+          orcamentos: novosOrcs,
+          status: novoStatus,
+          timeline: [...(rep.timeline || []), novaStep]
+        };
+      }
+      return rep;
+    }));
+  };
+
+  const excluirOrcamentoReparo = (reparoId: string, orcamentoId: string) => {
+    setReparos(prev => prev.map(rep => {
+      if (rep.id === reparoId) {
+        const filtrados = (rep.orcamentos || []).filter(o => o.id !== orcamentoId);
+        const foiSelecionado = (rep.orcamentos || []).find(o => o.id === orcamentoId)?.selecionado;
+
+        return {
+          ...rep,
+          orcamentos: filtrados,
+          empresaEscolhida: foiSelecionado ? undefined : rep.empresaEscolhida,
+          valorFinal: foiSelecionado ? undefined : rep.valorFinal
+        };
+      }
+      return rep;
+    }));
+  };
+
+  const apoiarReparo = (id: string) => {
+    const userIdentifier = currentUser?.id || currentUser?.unidade || 'morador-anon';
+    setReparos(prev => prev.map(rep => {
+      if (rep.id === id) {
+        const apoiadores = rep.apoiadores || [];
+        const jaApoiou = apoiadores.includes(userIdentifier) || (rep.apoiadoPeloUsuario && apoiadores.length === 0);
+        const novosApoiadores = jaApoiou
+          ? apoiadores.filter(u => u !== userIdentifier)
+          : [...apoiadores, userIdentifier];
+
+        return {
+          ...rep,
+          apoiosCount: jaApoiou ? Math.max(0, (rep.apoiosCount || 0) - 1) : (rep.apoiosCount || 0) + 1,
+          apoiadoPeloUsuario: !jaApoiou,
+          apoiadores: novosApoiadores
+        };
+      }
+      return rep;
+    }));
+  };
+
+  const adicionarComentarioReparo = (reparoId: string, texto: string) => {
+    if (!texto.trim()) return;
+
+    let unidadeFormatada = '';
+    if (currentUser.unidade) {
+      const uNum = currentUser.unidade.toLowerCase().startsWith('apt') || currentUser.unidade.toLowerCase().startsWith('cobertura')
+        ? currentUser.unidade
+        : `Apt ${currentUser.unidade}`;
+      unidadeFormatada = currentUser.bloco ? `${uNum} - ${currentUser.bloco}` : uNum;
+    } else {
+      unidadeFormatada = currentUser.role === 'sindico' || currentUser.role === 'subsindico' ? 'Administração' : 'Morador';
+    }
+
+    const novoComentario = {
+      id: `com-rep-${Date.now()}`,
+      autorId: currentUser.id || 'usr-anon',
+      autorNome: currentUser.nome || 'Morador',
+      autorRole: currentUser.role,
+      autorUnidade: unidadeFormatada,
+      autorFoto: currentUser.foto,
+      texto: texto.trim(),
+      data: `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
+      oficial: currentUser.role === 'sindico' || currentUser.role === 'subsindico'
+    };
+
+    setReparos(prev => prev.map(rep => {
+      if (rep.id === reparoId) {
+        return {
+          ...rep,
+          comentarios: [...(rep.comentarios || []), novoComentario]
+        };
+      }
+      return rep;
+    }));
+  };
+
+  const toggleOcultarComentarioReparo = (reparoId: string, comentarioId: string, motivo?: string) => {
+    setReparos(prev => prev.map(rep => {
+      if (rep.id === reparoId) {
+        return {
+          ...rep,
+          comentarios: (rep.comentarios || []).map(c => {
+            if (c.id === comentarioId) {
+              const novoOculto = !c.oculto;
+              return {
+                ...c,
+                oculto: novoOculto,
+                motivoOcultacao: novoOculto ? (motivo || 'Ocultado pela moderação administrativa') : undefined,
+                ocultadoEm: novoOculto ? new Date().toLocaleDateString('pt-BR') : undefined
+              };
+            }
+            return c;
+          })
+        };
+      }
+      return rep;
+    }));
+  };
+
+  const excluirComentarioReparo = (reparoId: string, comentarioId: string) => {
+    setReparos(prev => prev.map(rep => {
+      if (rep.id === reparoId) {
+        return {
+          ...rep,
+          comentarios: (rep.comentarios || []).filter(c => c.id !== comentarioId)
+        };
+      }
+      return rep;
+    }));
+  };
+
+  const excluirReparo = (reparoId: string) => {
+    setReparos(prev => prev.filter(r => r.id !== reparoId));
+  };
+
+  const resolverReparoSimples = (reparoId: string, observacao?: string) => {
+    const dataHoje = new Date().toLocaleDateString('pt-BR');
+    setReparos(prev => prev.map(rep => {
+      if (rep.id === reparoId) {
+        const novaStep = {
+          id: `tl-res-${Date.now()}`,
+          data: dataHoje,
+          titulo: 'Reparo Simples Concluído',
+          descricao: observacao || `Problema resolvido diretamente pela zeladoria/administração (${currentUser.nome}). Sem necessidade de cotações externas.`,
+          autorRole: currentUser.role,
+          statusAlvo: 'Resolvido' as StatusReparo
+        };
+
+        const reparoAtualizado = {
+          ...rep,
+          status: 'Resolvido' as StatusReparo,
+          timeline: [...(rep.timeline || []), novaStep]
+        };
+
+        if (rep.reclamacaoId) {
+          setReclamacoes(recs => recs.map(rec => {
+            if (rec.id === rep.reclamacaoId) {
+              return {
+                ...rec,
+                status: 'Resolvida' as StatusReclamacao
+              };
+            }
+            return rec;
+          }));
+        }
+
+        return reparoAtualizado;
       }
       return rep;
     }));
@@ -1608,7 +1828,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         };
 
         // If completed/executed, update linked complaint if any
-        if ((novoStatus === 'Executado' || novoStatus === 'Confirmado') && rep.reclamacaoId) {
+        if ((novoStatus === 'Resolvido' || novoStatus === 'Executado' || novoStatus === 'Confirmado') && rep.reclamacaoId) {
           setReclamacoes(recs => recs.map(rec => {
             if (rec.id === rep.reclamacaoId) {
               return {
@@ -1659,7 +1879,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     descricao: string, 
     porte: PorteReparo, 
     categoria: CategoriaReparo, 
-    fotoUrl?: string
+    anexoUrl?: string,
+    anexoTipo?: 'imagem' | 'video'
   ) => {
     const dataHoje = new Date().toLocaleDateString('pt-BR');
     const novoReparo: Reparo = {
@@ -1669,22 +1890,29 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       porte,
       categoria,
       solicitanteNome: currentUser.nome,
-      solicitanteUnidade: `Apt ${currentUser.unidade} - ${currentUser.bloco}`,
+      solicitanteUnidade: currentUser.role === 'morador' ? `Apt ${currentUser.unidade}${currentUser.bloco ? ` - ${currentUser.bloco}` : ''}` : 'Administração',
       dataSolicitacao: dataHoje,
       responsavel: 'A definir (Administração)',
       status: 'Solicitado',
       condominioId: CURRENT_CONDO_ID,
       orcamentos: [],
+      apoiosCount: 0,
+      apoiadoPeloUsuario: false,
+      apoiadores: [],
+      comentarios: [],
+      anexoUrl,
+      anexoTipo,
       timeline: [
         {
           id: `tl-sol-${Date.now()}`,
           data: dataHoje,
           titulo: 'Solicitação de Reparo Registrada',
           descricao: `Abertura realizada por ${currentUser.nome} (${currentUser.unidade}). Aguardando análise técnica da administração.`,
-          autorRole: currentUser.role
+          autorRole: currentUser.role,
+          statusAlvo: 'Solicitado'
         }
       ],
-      fotosAntes: fotoUrl ? [fotoUrl] : ['https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80']
+      fotosAntes: anexoUrl && anexoTipo !== 'video' ? [anexoUrl] : ['https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80']
     };
 
     setReparos(prev => [novoReparo, ...prev]);
@@ -1929,6 +2157,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adicionarComentario,
       adicionarReclamacao,
       adicionarReparo,
+      apoiarReparo,
+      adicionarComentarioReparo,
+      toggleOcultarComentarioReparo,
+      excluirComentarioReparo,
+      excluirReparo,
+      resolverReparoSimples,
       adicionarBenfeitoria,
       adicionarServicoContratado,
       selecionarPropostaVencedora,
@@ -1941,6 +2175,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       atualizarStatusVaga,
       transformarEmReparo,
       selecionarOrcamento,
+      adicionarOrcamentoReparo,
+      excluirOrcamentoReparo,
       atualizarStatusReparo,
       servicosMoradores,
       adicionarServicoMorador,
