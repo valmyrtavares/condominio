@@ -59,6 +59,8 @@ export const Header: React.FC = () => {
     if (!isResidentLoggedIn) {
       setCurrentScreen('resident-login');
     } else {
+      // Retorna sempre para a tela raiz com a imagem do condomínio e abre o menu
+      setCurrentScreen('home');
       setIsDrawerOpen(true);
     }
   };
