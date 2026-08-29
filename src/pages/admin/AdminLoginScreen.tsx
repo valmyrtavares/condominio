@@ -4,7 +4,7 @@ import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 import { ShieldCheck, Lock, User, ArrowLeft, KeyRound, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export const AdminLoginScreen: React.FC = () => {
-  const { loginAdmin, setCurrentScreen } = useCondo();
+  const { loginAdmin, setCurrentScreen, targetRedirectScreen, setTargetRedirectScreen } = useCondo();
   const [usuario, setUsuario] = useState('');
   const [senha, setSenha] = useState('');
   const [showSenha, setShowSenha] = useState(false);
@@ -16,7 +16,11 @@ export const AdminLoginScreen: React.FC = () => {
     setErro('');
 
     const sucesso = loginAdmin(usuario, senha);
-    if (!sucesso) {
+    if (sucesso) {
+      const dest = targetRedirectScreen || 'admin';
+      setTargetRedirectScreen(null);
+      setCurrentScreen(dest);
+    } else {
       setErro('Usuário ou senha de administrador incorretos. (Dica: admin / admin)');
     }
   };
@@ -27,8 +31,11 @@ export const AdminLoginScreen: React.FC = () => {
         
         {/* Back button */}
         <button
-          onClick={() => setCurrentScreen('home')}
-          className="flex items-center gap-1.5 text-xs text-slate-800 hover:text-slate-950 font-extrabold"
+          onClick={() => {
+            setTargetRedirectScreen(null);
+            setCurrentScreen('home');
+          }}
+          className="flex items-center gap-1.5 text-xs text-slate-800 hover:text-slate-950 font-extrabold cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" /> Voltar ao Início
         </button>
@@ -45,6 +52,15 @@ export const AdminLoginScreen: React.FC = () => {
             Acesso restrito ao síndico para cadastro de unidades e senhas de acesso.
           </p>
         </div>
+
+        {/* Banner de Interceptação Admin */}
+        {targetRedirectScreen && (
+          <div className="p-3 rounded-2xl bg-amber-500/20 border border-amber-400/60 text-amber-950 text-xs font-bold flex items-center gap-2 animate-in zoom-in-95">
+            <Lock className="w-4 h-4 text-amber-800 shrink-0" />
+            <span>Área restrita à gestão. Faça login como síndico para continuar.</span>
+          </div>
+        )}
+
 
         {/* Error Alert */}
         {erro && (

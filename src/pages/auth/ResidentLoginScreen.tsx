@@ -4,7 +4,7 @@ import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 import { Building2, KeyRound, ArrowLeft, AlertCircle, CheckCircle2, Lock, Eye, EyeOff } from 'lucide-react';
 
 export const ResidentLoginScreen: React.FC = () => {
-  const { loginResident, setCurrentScreen, setIsDrawerOpen } = useCondo();
+  const { loginResident, setCurrentScreen, setIsDrawerOpen, targetRedirectScreen, setTargetRedirectScreen } = useCondo();
   const [unidade, setUnidade] = useState('');
   const [senha, setSenha] = useState('');
   const [showSenha, setShowSenha] = useState(false);
@@ -27,7 +27,9 @@ export const ResidentLoginScreen: React.FC = () => {
       if (res.needsRegistration) {
         setCurrentScreen('resident-register');
       } else {
-        setCurrentScreen('home');
+        const dest = targetRedirectScreen || 'home';
+        setTargetRedirectScreen(null);
+        setCurrentScreen(dest);
         setIsDrawerOpen(true);
       }
     }, 500);
@@ -39,8 +41,11 @@ export const ResidentLoginScreen: React.FC = () => {
         
         {/* Back button */}
         <button
-          onClick={() => setCurrentScreen('home')}
-          className="flex items-center gap-1.5 text-xs text-slate-800 hover:text-slate-950 font-extrabold"
+          onClick={() => {
+            setTargetRedirectScreen(null);
+            setCurrentScreen('home');
+          }}
+          className="flex items-center gap-1.5 text-xs text-slate-800 hover:text-slate-950 font-extrabold cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" /> Voltar ao Início
         </button>
@@ -57,6 +62,15 @@ export const ResidentLoginScreen: React.FC = () => {
             Digite o número do seu apartamento e sua senha para liberar o menu completo do condomínio.
           </p>
         </div>
+
+        {/* Banner de Interceptação de Rota Protegida */}
+        {targetRedirectScreen && (
+          <div className="p-3 rounded-2xl bg-amber-500/20 border border-amber-400/60 text-amber-950 text-xs font-bold flex items-center gap-2 animate-in zoom-in-95">
+            <Lock className="w-4 h-4 text-amber-800 shrink-0" />
+            <span>Área exclusiva para moradores. Faça login para acessar o módulo solicitado.</span>
+          </div>
+        )}
+
 
         {/* Error Alert */}
         {erro && (

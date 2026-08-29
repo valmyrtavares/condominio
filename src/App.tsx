@@ -24,9 +24,27 @@ import { AdminLoginScreen } from './pages/admin/AdminLoginScreen';
 import { AdminPanelScreen } from './pages/admin/AdminPanelScreen';
 import { ResidentLoginScreen } from './pages/auth/ResidentLoginScreen';
 import { ResidentRegisterScreen } from './pages/auth/ResidentRegisterScreen';
+import { getRouteConfig } from './router/routes';
 
 const MainContent: React.FC = () => {
-  const { currentScreen, isAdminLoggedIn } = useCondo();
+  const { 
+    currentScreen, 
+    isAdminLoggedIn, 
+    isResidentLoggedIn,
+    setTargetRedirectScreen 
+  } = useCondo();
+
+  const routeConfig = getRouteConfig(currentScreen);
+
+  // Interceptor 1: Rota de Administração protegida por login do Síndico
+  if (routeConfig?.auth === 'admin' && !isAdminLoggedIn) {
+    return <AdminLoginScreen />;
+  }
+
+  // Interceptor 2: Módulo exclusivo de Moradores protegido por login da unidade
+  if (routeConfig?.auth === 'resident' && !isResidentLoggedIn) {
+    return <ResidentLoginScreen />;
+  }
 
   if (currentScreen === 'home') {
     return <HomeScreen />;
@@ -35,7 +53,9 @@ const MainContent: React.FC = () => {
   const renderScreen = () => {
     switch (currentScreen) {
       case 'admin':
-        return isAdminLoggedIn ? <AdminPanelScreen /> : <AdminLoginScreen />;
+        return <AdminPanelScreen />;
+      case 'admin-login':
+        return <AdminLoginScreen />;
       case 'resident-login':
         return <ResidentLoginScreen />;
       case 'resident-register':

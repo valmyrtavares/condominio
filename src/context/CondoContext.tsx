@@ -5,6 +5,8 @@ import {
   Reparo, 
   Orcamento,
   PrestacaoContas, 
+  DespesaItem,
+  ReceitaItem,
   Unidade, 
   Funcionario, 
   StatusReparo, 
@@ -36,7 +38,8 @@ import {
   ServicoMorador,
   StatusFuncionario,
   CategoriaFuncionario,
-  AvaliacaoFuncionario
+  AvaliacaoFuncionario,
+  RegraTopico
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -52,10 +55,14 @@ import {
   MOCK_EVENTOS,
   MOCK_UNIDADES_DISPONIVEIS,
   MOCK_PRESTACAO_CONTAS, 
+  MOCK_MESES_PRESTACAO,
   MOCK_FUNCIONARIOS,
+  MOCK_REGRAS_CONDOMINIO,
   ESPINHA_DORSAL_ITEMS,
   CURRENT_CONDO_ID
 } from '../mock/seedData';
+import { getScreenFromPath, getPathFromScreen, getRouteConfig } from '../router/routes';
+
 
 interface CondoContextType {
   currentUser: User;
@@ -82,6 +89,18 @@ interface CondoContextType {
   reativarEvento: (id: string) => void;
   unidadesDisponiveis: UnidadeDisponivel[];
   prestacaoContas: PrestacaoContas;
+  mesesPrestacao: Record<string, PrestacaoContas>;
+  categoriasDespesa: string[];
+  categoriasReceita: string[];
+  adicionarMesPrestacao: (mesAno: string) => void;
+  adicionarDespesa: (mesAno: string, despesa: Omit<DespesaItem, 'id'>) => void;
+  editarDespesa: (mesAno: string, id: string, despesa: Partial<DespesaItem>) => void;
+  excluirDespesa: (mesAno: string, id: string) => void;
+  adicionarReceita: (mesAno: string, receita: Omit<ReceitaItem, 'id'>) => void;
+  editarReceita: (mesAno: string, id: string, receita: Partial<ReceitaItem>) => void;
+  excluirReceita: (mesAno: string, id: string) => void;
+  adicionarCategoriaDespesa: (categoria: string) => void;
+  adicionarCategoriaReceita: (categoria: string) => void;
   funcionarios: Funcionario[];
   adicionarFuncionario: (novo: Omit<Funcionario, 'id' | 'condominioId'>) => void;
   editarFuncionario: (id: string, dados: Partial<Funcionario>) => void;
@@ -93,7 +112,9 @@ interface CondoContextType {
   isDrawerOpen: boolean;
   setIsDrawerOpen: (open: boolean) => void;
   currentScreen: string;
-  setCurrentScreen: (screen: string) => void;
+  setCurrentScreen: (screen: string, options?: { replace?: boolean }) => void;
+  targetRedirectScreen: string | null;
+  setTargetRedirectScreen: (screen: string | null) => void;
   selectedReclamacaoId: string | null;
   setSelectedReclamacaoId: (id: string | null) => void;
   selectedReparoId: string | null;
@@ -173,6 +194,13 @@ interface CondoContextType {
   suspenderServicoMorador: (id: string, motivo: string) => void;
   reativarServicoMorador: (id: string) => void;
   excluirServicoMorador: (id: string) => void;
+
+  // Regras e Regulamento do Condomínio
+  regrasCondominio: RegraTopico[];
+  adicionarRegraCondominio: (novaRegra: Omit<RegraTopico, 'id'>) => void;
+  editarRegraCondominio: (id: string, dados: Partial<RegraTopico>) => void;
+  excluirRegraCondominio: (id: string) => void;
+  reordenarRegrasCondominio: (regras: RegraTopico[]) => void;
 }
 
 const CondoContext = createContext<CondoContextType | undefined>(undefined);
@@ -389,6 +417,58 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const excluirServicoMorador = (id: string) => {
     setServicosMoradores(prev => prev.filter(s => s.id !== id));
   };
+
+  // Regras e Regulamento do Condomínio State
+  const [regrasCondominio, setRegrasCondominio] = useState<RegraTopico[]>(() => {
+    const saved = localStorage.getItem('condo_regras_list');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return MOCK_REGRAS_CONDOMINIO;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('condo_regras_list', JSON.stringify(regrasCondominio));
+    } catch {}
+  }, [regrasCondominio]);
+
+  const adicionarRegraCondominio = (novaRegra: Omit<RegraTopico, 'id'>) => {
+    const id = `regra-${Date.now()}`;
+    const nova: RegraTopico = {
+      ...novaRegra,
+      id,
+      criadoEm: novaRegra.criadoEm || new Date().toISOString().split('T')[0],
+      ativo: novaRegra.ativo ?? true,
+      ordem: novaRegra.ordem ?? (regrasCondominio.length + 1)
+    };
+    setRegrasCondominio(prev => [...prev, nova]);
+  };
+
+  const editarRegraCondominio = (id: string, dados: Partial<RegraTopico>) => {
+    setRegrasCondominio(prev => prev.map(r => {
+      if (r.id === id) {
+        return {
+          ...r,
+          ...dados,
+          atualizadoEm: new Date().toISOString().split('T')[0]
+        };
+      }
+      return r;
+    }));
+  };
+
+  const excluirRegraCondominio = (id: string) => {
+    setRegrasCondominio(prev => prev.filter(r => r.id !== id));
+  };
+
+  const reordenarRegrasCondominio = (novasRegras: RegraTopico[]) => {
+    setRegrasCondominio(novasRegras);
+  };
+
 
   // Admin Roles & Categories
   const [adminRoles, setAdminRoles] = useState<AdminRole[]>(() => {
@@ -714,7 +794,255 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const [unidadesDisponiveis, setUnidadesDisponiveis] = useState<UnidadeDisponivel[]>(MOCK_UNIDADES_DISPONIVEIS);
-  const [prestacaoContas] = useState<PrestacaoContas>(MOCK_PRESTACAO_CONTAS);
+
+  // Prestação de Contas Mês a Mês & Categorias com persistência
+  const [mesesPrestacao, setMesesPrestacao] = useState<Record<string, PrestacaoContas>>(() => {
+    const saved = localStorage.getItem('condo_meses_prestacao');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return MOCK_MESES_PRESTACAO;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_meses_prestacao', JSON.stringify(mesesPrestacao));
+  }, [mesesPrestacao]);
+
+  const [categoriasDespesa, setCategoriasDespesa] = useState<string[]>(() => {
+    const saved = localStorage.getItem('condo_categorias_despesa');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return [
+      'Manutenção',
+      'Reparo',
+      'Energia Elétrica',
+      'Água e Esgoto',
+      'Limpeza e Conservação',
+      'Salário',
+      'Imposto',
+      'Jardinagem',
+      'Elevadores Manutenção',
+      'Segurança & Portaria'
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_categorias_despesa', JSON.stringify(categoriasDespesa));
+  }, [categoriasDespesa]);
+
+  const [categoriasReceita, setCategoriasReceita] = useState<string[]>(() => {
+    const saved = localStorage.getItem('condo_categorias_receita');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return [
+      'Taxa Condominial',
+      'Fundo de Reserva',
+      'Aplicações Financeiras',
+      'Locações & Serviços',
+      'Multas & Juros',
+      'Taxa Extra',
+      'Acordo de Inadimplência'
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_categorias_receita', JSON.stringify(categoriasReceita));
+  }, [categoriasReceita]);
+
+  const prestacaoContas = mesesPrestacao['Abril / 2026'] || Object.values(mesesPrestacao)[0] || MOCK_PRESTACAO_CONTAS;
+
+  const adicionarMesPrestacao = (mesAno: string) => {
+    const trimmed = mesAno.trim();
+    if (!trimmed) return;
+    setMesesPrestacao(prev => {
+      if (prev[trimmed]) return prev;
+      return {
+        ...prev,
+        [trimmed]: {
+          id: `pc-${trimmed.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+          mesAno: trimmed,
+          receitasTotal: 0,
+          despesasTotal: 0,
+          saldo: 0,
+          despesas: [],
+          receitas: [],
+          condominioId: CURRENT_CONDO_ID
+        }
+      };
+    });
+  };
+
+  const adicionarDespesa = (mesAno: string, despesa: Omit<DespesaItem, 'id'>) => {
+    setMesesPrestacao(prev => {
+      const current = prev[mesAno] || {
+        id: `pc-${mesAno.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        mesAno: mesAno,
+        receitasTotal: 0,
+        despesasTotal: 0,
+        saldo: 0,
+        despesas: [],
+        receitas: [],
+        condominioId: CURRENT_CONDO_ID
+      };
+
+      const novaDespesa: DespesaItem = {
+        ...despesa,
+        id: `desp-${Date.now()}`
+      };
+
+      const novasDespesas = [novaDespesa, ...current.despesas];
+      const despesasTotal = novasDespesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
+      const receitasTotal = current.receitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+
+      return {
+        ...prev,
+        [mesAno]: {
+          ...current,
+          despesas: novasDespesas,
+          despesasTotal,
+          saldo: receitasTotal - despesasTotal
+        }
+      };
+    });
+  };
+
+  const editarDespesa = (mesAno: string, id: string, dados: Partial<DespesaItem>) => {
+    setMesesPrestacao(prev => {
+      const current = prev[mesAno];
+      if (!current) return prev;
+
+      const novasDespesas = current.despesas.map(d => d.id === id ? { ...d, ...dados } : d);
+      const despesasTotal = novasDespesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
+      const receitasTotal = current.receitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+
+      return {
+        ...prev,
+        [mesAno]: {
+          ...current,
+          despesas: novasDespesas,
+          despesasTotal,
+          saldo: receitasTotal - despesasTotal
+        }
+      };
+    });
+  };
+
+  const excluirDespesa = (mesAno: string, id: string) => {
+    setMesesPrestacao(prev => {
+      const current = prev[mesAno];
+      if (!current) return prev;
+
+      const novasDespesas = current.despesas.filter(d => d.id !== id);
+      const despesasTotal = novasDespesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
+      const receitasTotal = current.receitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+
+      return {
+        ...prev,
+        [mesAno]: {
+          ...current,
+          despesas: novasDespesas,
+          despesasTotal,
+          saldo: receitasTotal - despesasTotal
+        }
+      };
+    });
+  };
+
+  const adicionarReceita = (mesAno: string, receita: Omit<ReceitaItem, 'id'>) => {
+    setMesesPrestacao(prev => {
+      const current = prev[mesAno] || {
+        id: `pc-${mesAno.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        mesAno: mesAno,
+        receitasTotal: 0,
+        despesasTotal: 0,
+        saldo: 0,
+        despesas: [],
+        receitas: [],
+        condominioId: CURRENT_CONDO_ID
+      };
+
+      const novaReceita: ReceitaItem = {
+        ...receita,
+        id: `rec-${Date.now()}`
+      };
+
+      const novasReceitas = [novaReceita, ...current.receitas];
+      const receitasTotal = novasReceitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+      const despesasTotal = current.despesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
+
+      return {
+        ...prev,
+        [mesAno]: {
+          ...current,
+          receitas: novasReceitas,
+          receitasTotal,
+          saldo: receitasTotal - despesasTotal
+        }
+      };
+    });
+  };
+
+  const editarReceita = (mesAno: string, id: string, dados: Partial<ReceitaItem>) => {
+    setMesesPrestacao(prev => {
+      const current = prev[mesAno];
+      if (!current) return prev;
+
+      const novasReceitas = current.receitas.map(r => r.id === id ? { ...r, ...dados } : r);
+      const receitasTotal = novasReceitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+      const despesasTotal = current.despesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
+
+      return {
+        ...prev,
+        [mesAno]: {
+          ...current,
+          receitas: novasReceitas,
+          receitasTotal,
+          saldo: receitasTotal - despesasTotal
+        }
+      };
+    });
+  };
+
+  const excluirReceita = (mesAno: string, id: string) => {
+    setMesesPrestacao(prev => {
+      const current = prev[mesAno];
+      if (!current) return prev;
+
+      const novasReceitas = current.receitas.filter(r => r.id !== id);
+      const receitasTotal = novasReceitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+      const despesasTotal = current.despesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
+
+      return {
+        ...prev,
+        [mesAno]: {
+          ...current,
+          receitas: novasReceitas,
+          receitasTotal,
+          saldo: receitasTotal - despesasTotal
+        }
+      };
+    });
+  };
+
+  const adicionarCategoriaDespesa = (categoria: string) => {
+    const trimmed = categoria.trim();
+    if (!trimmed) return;
+    setCategoriasDespesa(prev => prev.includes(trimmed) ? prev : [...prev, trimmed]);
+  };
+
+  const adicionarCategoriaReceita = (categoria: string) => {
+    const trimmed = categoria.trim();
+    if (!trimmed) return;
+    setCategoriasReceita(prev => prev.includes(trimmed) ? prev : [...prev, trimmed]);
+  };
 
   // Funcionários e Equipe de Gestão com persistência
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>(() => {
@@ -889,29 +1217,69 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [espinhaDorsalItems] = useState<EspinhaDorsalItem[]>(ESPINHA_DORSAL_ITEMS);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   
-  // Navigation State
-  const [currentScreen, setCurrentScreen] = useState<string>('home');
+  // Navigation & URL Routing State
+  const [currentScreen, _setCurrentScreen] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const initialPath = window.location.pathname || '/';
+      const hashPath = window.location.hash ? window.location.hash.replace(/^#/, '') : '';
+      const resolved = getScreenFromPath(hashPath || initialPath);
+      return resolved.screen;
+    }
+    return 'home';
+  });
+
+  const [targetRedirectScreen, setTargetRedirectScreen] = useState<string | null>(null);
   const [selectedReclamacaoId, setSelectedReclamacaoId] = useState<string | null>('rec-barulho-gourmet');
   const [selectedReparoId, setSelectedReparoId] = useState<string | null>('rep-motor-portao');
 
-  // Detectar rota /admin digitada na barra de endereço
+  // Atualiza tela e sincroniza URL no navegador via History API
+  const setCurrentScreen = (screen: string, options?: { replace?: boolean }) => {
+    _setCurrentScreen(screen);
+    if (typeof window !== 'undefined') {
+      const targetPath = getPathFromScreen(screen);
+      const currentUrlPath = window.location.pathname;
+
+      if (options?.replace) {
+        window.history.replaceState({ screen }, '', targetPath);
+      } else if (currentUrlPath !== targetPath) {
+        window.history.pushState({ screen }, '', targetPath);
+      }
+
+      const routeConfig = getRouteConfig(screen);
+      if (routeConfig) {
+        document.title = `${routeConfig.title} | Residencial Jardim Paulista`;
+      }
+    }
+  };
+
+  // Escuta os botões Voltar e Avançar do navegador (popstate) e hashchange
   useEffect(() => {
-    const checkAdminRoute = () => {
-      const pathname = window.location.pathname.toLowerCase();
-      const hash = window.location.hash.toLowerCase();
-      if (pathname.includes('/admin') || hash.includes('admin')) {
-        setCurrentScreen('admin');
+    const handleLocationChange = () => {
+      const path = window.location.pathname || '/';
+      const hashPath = window.location.hash ? window.location.hash.replace(/^#/, '') : '';
+      const { screen } = getScreenFromPath(hashPath || path);
+      _setCurrentScreen(screen);
+      const routeConfig = getRouteConfig(screen);
+      if (routeConfig) {
+        document.title = `${routeConfig.title} | Residencial Jardim Paulista`;
       }
     };
 
-    checkAdminRoute();
-    window.addEventListener('popstate', checkAdminRoute);
-    window.addEventListener('hashchange', checkAdminRoute);
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+
+    // Ajusta título na inicialização
+    const initialConfig = getRouteConfig(currentScreen);
+    if (initialConfig && typeof document !== 'undefined') {
+      document.title = `${initialConfig.title} | Residencial Jardim Paulista`;
+    }
+
     return () => {
-      window.removeEventListener('popstate', checkAdminRoute);
-      window.removeEventListener('hashchange', checkAdminRoute);
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
     };
-  }, []);
+  }, [currentScreen]);
+
 
   // Métodos de Gestão de Unidades do Admin
   const adicionarUnidade = (numero: string, vagaGaragem: string = '', senhaAcesso?: string) => {
@@ -2108,6 +2476,18 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       reativarEvento,
       unidadesDisponiveis,
       prestacaoContas,
+      mesesPrestacao,
+      categoriasDespesa,
+      categoriasReceita,
+      adicionarMesPrestacao,
+      adicionarDespesa,
+      editarDespesa,
+      excluirDespesa,
+      adicionarReceita,
+      editarReceita,
+      excluirReceita,
+      adicionarCategoriaDespesa,
+      adicionarCategoriaReceita,
       funcionarios,
       adicionarFuncionario,
       editarFuncionario,
@@ -2120,6 +2500,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setIsDrawerOpen,
       currentScreen,
       setCurrentScreen,
+      targetRedirectScreen,
+      setTargetRedirectScreen,
       selectedReclamacaoId,
       setSelectedReclamacaoId,
       selectedReparoId,
@@ -2183,7 +2565,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       editarServicoMorador,
       suspenderServicoMorador,
       reativarServicoMorador,
-      excluirServicoMorador
+      excluirServicoMorador,
+      regrasCondominio,
+      adicionarRegraCondominio,
+      editarRegraCondominio,
+      excluirRegraCondominio,
+      reordenarRegrasCondominio
     }}>
       {children}
     </CondoContext.Provider>

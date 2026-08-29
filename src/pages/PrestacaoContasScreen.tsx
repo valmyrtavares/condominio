@@ -23,10 +23,19 @@ import { ReceiptPdfModal } from '../components/financeiro/ReceiptPdfModal';
 import { MOCK_MESES_PRESTACAO } from '../mock/seedData';
 
 export const PrestacaoContasScreen: React.FC = () => {
-  const { prestacaoContas: defaultPrestacaoContas } = useCondo();
+  const { 
+    prestacaoContas: defaultPrestacaoContas, 
+    mesesPrestacao, 
+    categoriasDespesa, 
+    categoriasReceita 
+  } = useCondo();
   
+  const availableMonths = Object.keys(mesesPrestacao).length > 0 
+    ? Object.keys(mesesPrestacao) 
+    : Object.keys(MOCK_MESES_PRESTACAO);
+
   // Month selector state
-  const [selectedMonth, setSelectedMonth] = useState<string>('Abril / 2026');
+  const [selectedMonth, setSelectedMonth] = useState<string>(availableMonths[0] || 'Abril / 2026');
   
   // Independent expansion state for each section
   const [isReceitasOpen, setIsReceitasOpen] = useState<boolean>(false);
@@ -41,37 +50,18 @@ export const PrestacaoContasScreen: React.FC = () => {
   const [pdfModalItem, setPdfModalItem] = useState<{ item: DespesaItem | ReceitaItem; tipo: 'despesa' | 'receita' } | null>(null);
 
   // Current month's financial data
-  const currentContas = MOCK_MESES_PRESTACAO[selectedMonth] || defaultPrestacaoContas;
+  const currentContas = mesesPrestacao[selectedMonth] || defaultPrestacaoContas || MOCK_MESES_PRESTACAO[selectedMonth];
 
-  const despesasCategories = [
-    'Todas', 
-    'Manutenção & Reparos', 
-    'Segurança & Portaria', 
-    'Energia Elétrica', 
-    'Água e Esgoto', 
-    'Limpeza & Conservação', 
-    'Elevadores', 
-    'Jardinagem & Paisagismo'
-  ];
+  const despesasCategories = ['Todas', ...categoriasDespesa];
+  const receitasCategories = ['Todas', ...categoriasReceita];
 
-  const receitasCategories = [
-    'Todas', 
-    'Taxa Condominial', 
-    'Fundo de Reserva', 
-    'Aplicações Financeiras', 
-    'Locações & Serviços', 
-    'Multas & Juros'
-  ];
-
-  const filteredDespesas = (currentContas.despesas || []).filter(d => 
+  const filteredDespesas = (currentContas?.despesas || []).filter(d => 
     filterDespesaCat === 'Todas' || d.categoria === filterDespesaCat
   );
 
-  const filteredReceitas = (currentContas.receitas || []).filter(r => 
+  const filteredReceitas = (currentContas?.receitas || []).filter(r => 
     filterReceitaCat === 'Todas' || r.categoria === filterReceitaCat
   );
-
-  const availableMonths = Object.keys(MOCK_MESES_PRESTACAO);
 
   return (
     <div className="space-y-4 pb-20 animate-in fade-in duration-300 w-full max-w-full overflow-x-hidden">

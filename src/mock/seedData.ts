@@ -1,4 +1,4 @@
-import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio, UnidadeDisponivel } from '../types';
+import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio, UnidadeDisponivel, RegraTopico } from '../types';
 
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
@@ -2393,3 +2393,67 @@ export const ESPINHA_DORSAL_ITEMS: EspinhaDorsalItem[] = [
     destaquePoC: true
   }
 ];
+
+export const MOCK_REGRAS_CONDOMINIO: RegraTopico[] = [
+  {
+    id: 'pets',
+    titulo: 'Animais de Estimação (Pets)',
+    categoria: 'Convivência & Pets',
+    conteudo: '<p>É permitida a permanência de <strong>animais domésticos</strong> nas unidades autônomas.</p><p>Nas áreas comuns, observe as seguintes diretrizes:</p><ol><li>Os animais devem estar <strong>sempre na coleira e guia</strong> curta.</li><li>É estritamente <strong>proibida sua circulação livre</strong> ou desacompanhada.</li><li>O tutor é civil e financeiramente responsável pela <strong>limpeza imediata</strong> de qualquer sujeira.</li><li>Em elevadores, dê preferência ao uso do <em>elevador de serviço</em> com seu pet.</li></ol>',
+    palavrasChave: ['pet', 'pets', 'cachorro', 'gato', 'cão', 'animais', 'animal', 'coleira', 'sujeira', 'guia', 'elevador'],
+    criadoEm: '2026-01-10',
+    ativo: true,
+    ordem: 1
+  },
+  {
+    id: 'silencio',
+    titulo: 'Lei do Silêncio e Barulhos',
+    categoria: 'Silêncio & Horários',
+    conteudo: '<p>O horário de <strong>silêncio rigoroso</strong> deve ser respeitado por todos os condôminos:</p><ul><li><strong>Dias de semana:</strong> das 22:00 às 08:00</li><li><strong>Finais de semana e feriados:</strong> das 23:00 às 09:00</li></ul><p>Ruídos excessivos, música alta, reformas, uso de furadeiras ou festas fora dos horários permitidos estão sujeitos a <strong>advertência formal e multa imediata</strong> conforme regimento.</p>',
+    palavrasChave: ['silencio', 'silêncio', 'barulho', 'barulhos', 'som', 'musica', 'música', 'festa', 'festas', 'reforma', 'reformas', 'obra', 'obras', 'furadeira', 'ruido', 'ruídos'],
+    criadoEm: '2026-01-10',
+    ativo: true,
+    ordem: 2
+  },
+  {
+    id: 'piscina',
+    titulo: 'Uso da Piscina',
+    categoria: 'Lazer & Áreas Comuns',
+    conteudo: '<p>A piscina é de uso exclusivo dos moradores e seus convidados autorizados:</p><ol><li><strong>Horário de funcionamento:</strong> de terça a domingo, das 08:00 às 20:00 (segunda fechada para manutenção).</li><li>É <strong>obrigatório o banho de ducha</strong> antes de adentrar na água.</li><li>Proibido levar <strong>copos, garrafas ou recipientes de vidro</strong> para a borda da piscina.</li><li>Crianças menores de 12 anos devem estar <strong>acompanhadas de um adulto responsável</strong>.</li></ol>',
+    palavrasChave: ['piscina', 'piscina abre', 'ducha', 'chuveiro', 'banho', 'vidro', 'copo', 'garrafa', 'criança', 'crianças', 'menor', 'menores', 'acompanhado'],
+    criadoEm: '2026-01-10',
+    ativo: true,
+    ordem: 3
+  },
+  {
+    id: 'salao',
+    titulo: 'Salão de Festas e Churrasqueira',
+    categoria: 'Lazer & Áreas Comuns',
+    conteudo: '<p>Normas para utilização do Salão de Festas e Quiosque com Churrasqueira:</p><ol><li>A reserva deve ser solicitada com no mínimo <strong>15 dias de antecedência</strong> pelo aplicativo.</li><li>A taxa de limpeza e conservação é de <strong>R$ 150,00</strong> debitada no condomínio seguinte.</li><li>O encerramento do evento deve ocorrer até as <strong>22:00 (semana)</strong> ou <strong>23:00 (fins de semana)</strong>.</li><li>O morador requerente responde integralmente por eventuais danos ao patrimônio.</li></ol>',
+    palavrasChave: ['salão', 'salao', 'festa', 'churrasqueira', 'reserva', 'reservar', 'churrasco', 'taxa', 'limpeza', 'antecedência', 'aluguel'],
+    criadoEm: '2026-01-10',
+    ativo: true,
+    ordem: 4
+  },
+  {
+    id: 'garagem',
+    titulo: 'Garagem e Vagas',
+    categoria: 'Garagem & Trânsito',
+    conteudo: '<p>Regras para o bom convívio nos subsolos e áreas de estacionamento:</p><ul><li>Cada unidade deve utilizar <strong>estritamente a vaga demarcada</strong> correspondente.</li><li>É expressamente <strong>proibido estacionar nas faixas de circulação</strong> ou bloquear outras vagas.</li><li>A velocidade máxima permitida no subsolo é de <strong>10 km/h</strong> com faróis baixos acesos.</li><li>Não é permitido guardar entulhos, móveis ou materiais inflamáveis na vaga.</li></ul>',
+    palavrasChave: ['garagem', 'vaga', 'vagas', 'estacionar', 'estacionamento', 'carro', 'moto', 'velocidade', 'limite', 'subsolo', 'faixa'],
+    criadoEm: '2026-01-10',
+    ativo: true,
+    ordem: 5
+  },
+  {
+    id: 'lixo',
+    titulo: 'Lixo e Descartes',
+    categoria: 'Limpeza & Sustentabilidade',
+    conteudo: '<p>Para manutenção da higiene e saúde coletiva:</p><ol><li>O <strong>lixo orgânico e reciclável</strong> deve ser depositado devidamente embalado em sacos plásticos reforçados nas lixeiras do hall de serviço.</li><li>O descarte de <strong>móveis, entulhos de reforma e eletrônicos</strong> é de responsabilidade do morador (contratar caçamba ou ecoponto).</li><li>É proibido deixar caixas e sacolas nos corredores ou áreas de passagem.</li></ol>',
+    palavrasChave: ['lixo', 'descarte', 'descartar', 'reciclar', 'reciclavel', 'reciclável', 'entulho', 'moveis', 'móveis', 'hall', 'serviço', 'sacola'],
+    criadoEm: '2026-01-10',
+    ativo: true,
+    ordem: 6
+  }
+];
+

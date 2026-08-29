@@ -232,7 +232,10 @@ export interface Reparo {
   dataSolicitacao: string;
   responsavel: string;
   empresaEscolhida?: string;
+  empresaContratada?: string;
   valorFinal?: number;
+  valorContratado?: number;
+  orcamentoAprovadoId?: string;
   orcamentos: Orcamento[];
   status: StatusReparo;
   timeline: TimelineStep[];
@@ -454,23 +457,35 @@ export interface UnidadeDisponivel {
 
 export interface DespesaItem {
   id: string;
+  titulo?: string;
   categoria: string;
   descricao: string;
   valor: number;
   data: string;
+  dataVencimento?: string;
   fornecedor: string;
+  parcelas?: string; // ex: "1/1", "2/6", "3/6"
+  comentario?: string;
   reparoId?: string;
   comprovanteUrl?: string;
+  notaFiscalUrl?: string;
+  notaFiscalNome?: string;
 }
 
 export interface ReceitaItem {
   id: string;
+  titulo?: string;
   categoria: string;
   descricao: string;
   valor: number;
   data: string;
+  dataVencimento?: string;
   origem: string;
+  parcelas?: string; // ex: "1/1", "2/6"
+  comentario?: string;
   comprovanteUrl?: string;
+  notaFiscalUrl?: string;
+  notaFiscalNome?: string;
 }
 
 export interface PrestacaoContas {
@@ -493,3 +508,16 @@ export interface EspinhaDorsalItem {
   rota: string;
   destaquePoC?: boolean;
 }
+
+export interface RegraTopico {
+  id: string;
+  titulo: string;
+  categoria: string;
+  conteudo: string; // Conteúdo formatado em rich text (HTML/tags)
+  palavrasChave: string[];
+  criadoEm?: string;
+  atualizadoEm?: string;
+  ativo?: boolean;
+  ordem?: number;
+}
+
