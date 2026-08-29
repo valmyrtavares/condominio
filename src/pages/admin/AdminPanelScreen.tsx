@@ -24,13 +24,16 @@ import {
   RegraTopico,
   UnidadeDisponivel,
   FinalidadeImovel,
-  ServicoContratado
+  ServicoContratado,
+  ItemEnjoei
 } from '../../types';
 import { 
   Building, 
   Plus, 
   Trash2, 
   Edit3, 
+  Edit2,
+  ShoppingBag,
   Check, 
   X, 
   KeyRound, 
@@ -109,6 +112,8 @@ import { ReceiptPdfModal } from '../../components/financeiro/ReceiptPdfModal';
 import { CreateEditRegraModal } from '../../components/admin/CreateEditRegraModal';
 import { CreateEditUnidadeDisponivelModal } from '../../components/admin/CreateEditUnidadeDisponivelModal';
 import { CreateEditServicoContratadoModal } from '../../components/admin/CreateEditServicoContratadoModal';
+import { CreateEditDesapegoModal } from '../../components/enjoei/CreateEditDesapegoModal';
+
 
 
 
@@ -199,7 +204,14 @@ export const AdminPanelScreen: React.FC = () => {
     servicosContratados,
     adicionarServicoContratado,
     editarServicoContratado,
-    excluirServicoContratado
+    excluirServicoContratado,
+    itensEnjoei,
+    adicionarItemEnjoei,
+    editarItemEnjoei,
+    atualizarStatusItemEnjoei,
+    suspenderItemEnjoei,
+    reativarItemEnjoei,
+    excluirItemEnjoei
   } = useCondo();
 
   // Accordion section collapse states (all closed by default on entry)
@@ -214,6 +226,16 @@ export const AdminPanelScreen: React.FC = () => {
   const [isRegrasAdminOpen, setIsRegrasAdminOpen] = useState(false);
   const [isUnidadesDisponiveisSectionOpen, setIsUnidadesDisponiveisSectionOpen] = useState(false);
   const [isFornecedoresSectionOpen, setIsFornecedoresSectionOpen] = useState(false);
+  const [isEnjoeiAdminOpen, setIsEnjoeiAdminOpen] = useState(false);
+
+  // 12. Gestão & Moderação do Enjoei do Condomínio State
+  const [isCreateEditDesapegoModalOpen, setIsCreateEditDesapegoModalOpen] = useState(false);
+  const [itemDesapegoToEditInAdmin, setItemDesapegoToEditInAdmin] = useState<ItemEnjoei | null>(null);
+  const [searchEnjoeiAdmin, setSearchEnjoeiAdmin] = useState('');
+  const [filtroTipoEnjoeiAdmin, setFiltroTipoEnjoeiAdmin] = useState('Todas');
+  const [filtroStatusEnjoeiAdmin, setFiltroStatusEnjoeiAdmin] = useState('Todas');
+  const [motivoSuspenderEnjoeiItem, setMotivoSuspenderEnjoeiItem] = useState<ItemEnjoei | null>(null);
+  const [motivoSuspensaoEnjoeiTexto, setMotivoSuspensaoEnjoeiTexto] = useState('');
 
   // 11. Gestão de Fornecedores & Serviços Contratados State
   const [isCreateEditServicoModalOpen, setIsCreateEditServicoModalOpen] = useState(false);
@@ -5450,6 +5472,335 @@ export const AdminPanelScreen: React.FC = () => {
 
 
 
+      {/* ========================================================================= */}
+      {/* 12. GESTÃO & MODERAÇÃO DO ENJOEI DO CONDOMÍNIO (DESAPEGO, VENDA & TROCAS) */}
+      {/* ========================================================================= */}
+      {(() => {
+        const filteredItensAdmin = itensEnjoei.filter(item => {
+          const matchTipo = filtroTipoEnjoeiAdmin === 'Todas' || item.tipoTransacao === filtroTipoEnjoeiAdmin;
+          const matchStatus = filtroStatusEnjoeiAdmin === 'Todas' || item.status === filtroStatusEnjoeiAdmin;
+          const termo = searchEnjoeiAdmin.toLowerCase().trim();
+          const matchBusca = !termo ||
+            item.titulo.toLowerCase().includes(termo) ||
+            item.descricao.toLowerCase().includes(termo) ||
+            (item.trocaPor && item.trocaPor.toLowerCase().includes(termo)) ||
+            item.moradorNome.toLowerCase().includes(termo) ||
+            item.moradorUnidade.toLowerCase().includes(termo) ||
+            item.categoria.toLowerCase().includes(termo);
+
+          return matchTipo && matchStatus && matchBusca;
+        });
+
+        const totalVendasAdmin = itensEnjoei.filter(i => i.tipoTransacao === 'venda').length;
+        const totalTrocasAdmin = itensEnjoei.filter(i => i.tipoTransacao === 'troca').length;
+        const totalDoacoesAdmin = itensEnjoei.filter(i => i.tipoTransacao === 'doacao' || i.tipoTransacao === 'retirada').length;
+        const totalSuspensosAdmin = itensEnjoei.filter(i => i.status === 'suspenso').length;
+
+        return (
+          <div className="bg-white/45 border border-white/60 rounded-3xl overflow-hidden shadow-xl hover:bg-white/50 transition-all duration-300">
+            
+            {/* Header Sanfonado */}
+            <button
+              onClick={() => setIsEnjoeiAdminOpen(!isEnjoeiAdminOpen)}
+              className="w-full p-4 sm:p-5 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-md font-black shrink-0">
+                  <ShoppingBag className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base sm:text-lg text-slate-950 leading-tight flex items-center gap-2">
+                    12. Gestão & Moderação do Enjoei do Condomínio
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-950 border border-rose-300">
+                      {itensEnjoei.length} anúncios
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-700 font-semibold mt-0.5">
+                    Modere desapegos, vendas, doações e trocas entre moradores. Suspenda anúncios irregulares com notificação automática.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-2 rounded-full bg-white/60 border border-white/80 text-slate-900 shadow-xs shrink-0 ml-2">
+                {isEnjoeiAdminOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
+            </button>
+
+            {/* Conteúdo Expansível */}
+            <div className={`transition-all duration-300 ${isEnjoeiAdminOpen ? 'block' : 'hidden'}`}>
+              <div className="p-4 sm:p-6 border-t border-slate-950/10 space-y-5 bg-white/30">
+                
+                {/* Resumo & Botão de Criação */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-amber-300 text-xs font-black shadow-xs">
+                      {itensEnjoei.length} Desapegos Totais
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-rose-100 text-rose-950 border border-rose-300 text-xs font-black">
+                      🏷️ {totalVendasAdmin} Vendas
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-purple-100 text-purple-950 border border-purple-300 text-xs font-black">
+                      🔄 {totalTrocasAdmin} Trocas
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
+                      🎁 {totalDoacoesAdmin} Doações / Retirada
+                    </div>
+                    {totalSuspensosAdmin > 0 && (
+                      <div className="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-black animate-pulse">
+                        ⚠️ {totalSuspensosAdmin} Suspensos
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setItemDesapegoToEditInAdmin(null);
+                      setIsCreateEditDesapegoModalOpen(true);
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                    <span>+ Novo Anúncio de Desapego</span>
+                  </button>
+                </div>
+
+                {/* Filtros e Busca */}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    
+                    {/* Busca */}
+                    <div className="relative sm:col-span-1">
+                      <input
+                        type="text"
+                        placeholder="Buscar por item, morador, apto..."
+                        value={searchEnjoeiAdmin}
+                        onChange={(e) => setSearchEnjoeiAdmin(e.target.value)}
+                        className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
+                      />
+                      <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+                    </div>
+
+                    {/* Filtro por Modalidade */}
+                    <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none sm:col-span-2">
+                      <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
+                        Tipo:
+                      </span>
+                      {[
+                        { id: 'Todas', label: 'Todas' },
+                        { id: 'venda', label: '🏷️ Venda' },
+                        { id: 'troca', label: '🔄 Troca' },
+                        { id: 'doacao', label: '🎁 Doação' },
+                        { id: 'retirada', label: '📦 Retirada' },
+                        { id: 'emprestimo', label: '🤝 Empréstimo' }
+                      ].map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setFiltroTipoEnjoeiAdmin(t.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                            filtroTipoEnjoeiAdmin === t.id
+                              ? 'bg-rose-500 text-white border-rose-600 font-black shadow-xs'
+                              : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+
+                  </div>
+
+                  {/* Filtro por Status de Moderação */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                    <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
+                      Status:
+                    </span>
+                    {['Todas', 'disponivel', 'negociando', 'concluido', 'suspenso'].map(st => (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setFiltroStatusEnjoeiAdmin(st)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                          filtroStatusEnjoeiAdmin === st
+                            ? 'bg-slate-900 text-amber-300 border-slate-900 font-black shadow-xs'
+                            : 'bg-white/50 text-slate-700 border-white/70 hover:bg-white'
+                        }`}
+                      >
+                        {st === 'Todas' ? 'Todos os Status' : st === 'disponivel' ? 'Disponíveis' : st === 'negociando' ? 'Negociando' : st === 'concluido' ? 'Concluídos' : '⚠️ Suspensos'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Lista de Cards de Desapego para Moderação */}
+                <div className="space-y-3">
+                  {filteredItensAdmin.length === 0 ? (
+                    <div className="p-8 text-center bg-white/40 border border-white/60 rounded-2xl space-y-2">
+                      <p className="text-sm font-bold text-slate-800">Nenhum anúncio encontrado para estes filtros.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchEnjoeiAdmin('');
+                          setFiltroTipoEnjoeiAdmin('Todas');
+                          setFiltroStatusEnjoeiAdmin('Todas');
+                        }}
+                        className="text-xs text-indigo-800 font-black hover:underline cursor-pointer"
+                      >
+                        Limpar todos os filtros
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      {filteredItensAdmin.map(item => {
+                        const isSuspenso = item.status === 'suspenso';
+                        const isConcluido = item.status === 'concluido';
+
+                        return (
+                          <div
+                            key={item.id}
+                            className={`border-2 rounded-2xl p-4 shadow-md transition-all flex flex-col justify-between space-y-3 bg-white/70 ${
+                              isSuspenso 
+                                ? 'border-rose-400 bg-rose-50/50' 
+                                : isConcluido 
+                                  ? 'border-slate-300 bg-slate-100/50' 
+                                  : 'border-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="space-y-2">
+                              
+                              {/* Header do Card */}
+                              <div className="flex items-start gap-3">
+                                <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-200 border border-slate-300 shrink-0 shadow-2xs">
+                                  {item.fotos && item.fotos.length > 0 ? (
+                                    <img src={item.fotos[0]} alt={item.titulo} className="w-full h-full object-cover object-center" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-rose-500">
+                                      <ShoppingBag className="w-5 h-5" />
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="space-y-1 min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-950 border border-rose-300">
+                                      {item.tipoTransacao === 'venda' ? `🏷️ Venda R$ ${item.preco}` : item.tipoTransacao === 'troca' ? '🔄 Troca' : item.tipoTransacao === 'doacao' ? '🎁 Doação' : item.tipoTransacao === 'retirada' ? '📦 Retirada' : '🤝 Empréstimo'}
+                                    </span>
+                                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-900 text-amber-300">
+                                      {item.categoria}
+                                    </span>
+                                    {isSuspenso && (
+                                      <span className="text-[10px] font-black bg-rose-600 text-white px-2 py-0.5 rounded-full">
+                                        ⚠️ Suspenso
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <h4 className="text-sm sm:text-base font-black text-slate-950 leading-tight">
+                                    {item.titulo}
+                                  </h4>
+
+                                  <div className="text-[11px] text-slate-600 font-semibold">
+                                    {item.moradorNome} • <strong className="text-slate-950">{item.moradorUnidade}</strong>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Troca Detalhes */}
+                              {item.tipoTransacao === 'troca' && item.trocaPor && (
+                                <div className="p-2 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-950 font-bold">
+                                  <strong>Troca por:</strong> {item.trocaPor}
+                                </div>
+                              )}
+
+                              {/* Descrição */}
+                              <p className="text-xs text-slate-800 font-medium leading-relaxed bg-white/60 p-2.5 rounded-xl border border-slate-100">
+                                {item.descricao}
+                              </p>
+
+                              {/* Motivo de Suspensão */}
+                              {isSuspenso && item.motivoSuspensao && (
+                                <div className="text-[11px] p-2 bg-rose-100 border border-rose-300 rounded-lg text-rose-950 font-semibold">
+                                  <strong>Motivo da Suspensão:</strong> {item.motivoSuspensao}
+                                </div>
+                              )}
+
+                            </div>
+
+                            {/* Ações de Moderação */}
+                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200">
+                              
+                              {/* Status Suspensão Toggle */}
+                              <div>
+                                {isSuspenso ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => reativarItemEnjoei(item.id)}
+                                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>Reativar Anúncio</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setMotivoSuspenderEnjoeiItem(item);
+                                      setMotivoSuspensaoEnjoeiTexto('Anúncio em desacordo com o regulamento do condomínio.');
+                                    }}
+                                    className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-amber-300"
+                                  >
+                                    <span>⚠️ Suspender</span>
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setItemDesapegoToEditInAdmin(item);
+                                    setIsCreateEditDesapegoModalOpen(true);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 text-xs font-black transition-colors flex items-center gap-1 cursor-pointer border border-slate-300"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5 text-indigo-700" />
+                                  <span>Editar</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm(`Deseja realmente remover o anúncio "${item.titulo}" do Enjoei?`)) {
+                                      excluirItemEnjoei(item.id);
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-black transition-colors flex items-center gap-1 cursor-pointer border border-rose-200"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                  <span>Excluir</span>
+                                </button>
+                              </div>
+
+                            </div>
+
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        );
+      })()}
+
+
+
+
 
       {/* ========================================================================= */}
       {/* MODAL: CRIAR NOVA CATEGORIA / CARGO DINÂMICO */}
@@ -6238,6 +6589,78 @@ export const AdminPanelScreen: React.FC = () => {
         }}
         servicoToEdit={servicoToEditInAdmin}
       />
+
+      {/* Modal de Criação / Edição de Desapegos do Enjoei */}
+      <CreateEditDesapegoModal
+        isOpen={isCreateEditDesapegoModalOpen}
+        onClose={() => {
+          setIsCreateEditDesapegoModalOpen(false);
+          setItemDesapegoToEditInAdmin(null);
+        }}
+        itemToEdit={itemDesapegoToEditInAdmin}
+      />
+
+      {/* Modal de Justificativa de Suspensão de Anúncio no Enjoei */}
+      {motivoSuspenderEnjoeiItem && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="fixed inset-0" onClick={() => setMotivoSuspenderEnjoeiItem(null)} />
+          
+          <div className="relative w-full max-w-md bg-white border-2 border-rose-400 rounded-3xl p-5 shadow-2xl z-10 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-rose-100">
+              <h3 className="font-black text-base text-slate-950 flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-rose-600" />
+                Suspender Anúncio do Enjoei
+              </h3>
+              <button
+                type="button"
+                onClick={() => setMotivoSuspenderEnjoeiItem(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-950 hover:bg-rose-50"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <p className="text-slate-700">
+                Informe o motivo para suspender o anúncio <strong>"{motivoSuspenderEnjoeiItem.titulo}"</strong> de <strong>{motivoSuspenderEnjoeiItem.moradorNome}</strong> ({motivoSuspenderEnjoeiItem.moradorUnidade}).
+              </p>
+              <p className="text-[11px] text-rose-800 font-semibold">
+                Uma notificação privada será enviada automaticamente para o morador explicando a suspensão.
+              </p>
+
+              <textarea
+                rows={3}
+                value={motivoSuspensaoEnjoeiTexto}
+                onChange={(e) => setMotivoSuspensaoEnjoeiTexto(e.target.value)}
+                placeholder="Ex: Item não permitido conforme convenção ou anúncio comercial irregular..."
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-950 font-medium focus:outline-none focus:bg-white focus:border-rose-500 resize-none shadow-xs"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setMotivoSuspenderEnjoeiItem(null)}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (motivoSuspenderEnjoeiItem) {
+                    suspenderItemEnjoei(motivoSuspenderEnjoeiItem.id, motivoSuspensaoEnjoeiTexto);
+                    setMotivoSuspenderEnjoeiItem(null);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black shadow-md"
+              >
+                Confirmar Suspensão
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -1,4 +1,4 @@
-import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio, UnidadeDisponivel, RegraTopico } from '../types';
+import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio, UnidadeDisponivel, RegraTopico, ItemEnjoei } from '../types';
 
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
@@ -2602,6 +2602,15 @@ export const ESPINHA_DORSAL_ITEMS: EspinhaDorsalItem[] = [
     desdobramentos: ['Aluga-se e Vende-se', 'Contato direto do proprietário', 'Acesso exclusivo para condôminos'],
     rota: '/unidades-disponiveis',
     destaquePoC: true
+  },
+  {
+    id: 'enjoei',
+    titulo: 'Enjoei do condomínio',
+    icone: 'ShoppingBag',
+    descricaoCurta: 'Mural de desapego dos moradores: vendas, doações gratuitas, itens para retirada e trocas (permutas).',
+    desdobramentos: ['Vendas e Doações', 'Trocas e Permutas', 'Móveis para Retirada', 'Contato WhatsApp'],
+    rota: '/enjoei',
+    destaquePoC: true
   }
 ];
 
@@ -2667,4 +2676,146 @@ export const MOCK_REGRAS_CONDOMINIO: RegraTopico[] = [
     ordem: 6
   }
 ];
+
+export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
+  {
+    id: 'enj-piano-yamaha',
+    titulo: 'Piano Digital Yamaha P-45 (88 Teclas Pesadas)',
+    descricao: 'Piano digital em perfeito estado com teclas com sensibilidade graduada (GHS), fonte original bivolt, pedal de sustain e suporte em X reforçado. Pouco usado, guardado sempre com capa protetora.',
+    categoria: 'Instrumentos Musicais',
+    tipoTransacao: 'venda',
+    preco: 2400.00,
+    condicao: 'Seminovo (Excelente)',
+    fotos: [
+      'https://images.unsplash.com/photo-1520523839898-507121287c8b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1514117445516-2cefc9c4ec90?auto=format&fit=crop&w=800&q=80'
+    ],
+    moradorNome: 'Eduardo Prado',
+    moradorUnidade: 'Apto 502 - Bloco B',
+    moradorFoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    contatoWhatsapp: '5511988887766',
+    dataPublicacao: '28/08/2026',
+    status: 'disponivel',
+    destaque: true,
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'enj-panela-eletrica',
+    titulo: 'Panela de Pressão Elétrica Electrolux 6L (Nova na Caixa)',
+    descricao: 'Ganhei em um sorteio e nunca usei, caixa lacrada com todos os manuais, copo dosador e colher antiaderente. Gostaria de trocar por uma câmera fotográfica digital ou por um casaco de frio pesado tamanho M (masculino ou unissex).',
+    categoria: 'Eletrodomésticos & Cozinha',
+    tipoTransacao: 'troca',
+    trocaPor: 'Câmera fotográfica semi-profissional ou Casaco de frio pesado Tam M',
+    condicao: 'Novo / Lacrado',
+    fotos: [
+      'https://images.unsplash.com/photo-1584990347449-39908cf83a21?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80'
+    ],
+    moradorNome: 'Juliana Vasconcelos',
+    moradorUnidade: 'Apto 204 - Bloco A',
+    moradorFoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+    contatoWhatsapp: '5511977112233',
+    dataPublicacao: '27/08/2026',
+    status: 'disponivel',
+    destaque: true,
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'enj-sofa-retratil',
+    titulo: 'Sofá Retrátil 3 Lugares Suede Cinza Chumbo',
+    descricao: 'Estamos redecorando a sala e desapegando do sofá. Tecido suede macio, estrutura firme, apenas marcas leves de uso. É GRÁTIS para quem retirar diretamente no apartamento (precisa de 2 pessoas e frete/carreto por conta do vizinho).',
+    categoria: 'Móveis & Decoração',
+    tipoTransacao: 'retirada',
+    preco: 0,
+    condicao: 'Usado (Bom estado)',
+    fotos: [
+      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=800&q=80'
+    ],
+    moradorNome: 'Carlos Menezes',
+    moradorUnidade: 'Apto 701 - Bloco A',
+    moradorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    contatoWhatsapp: '5511999887711',
+    dataPublicacao: '26/08/2026',
+    status: 'disponivel',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'enj-bike-infantil',
+    titulo: 'Bicicleta Infantil Aro 16 Caloi Cecizinha com Rodinhas',
+    descricao: 'Bicicleta infantil com cestinha frontal e rodinhas laterais de apoio removíveis. Minha filha cresceu e não usa mais. Doação sem qualquer custo para famílias com crianças no prédio.',
+    categoria: 'Infantil & Brinquedos',
+    tipoTransacao: 'doacao',
+    preco: 0,
+    condicao: 'Usado (Bom estado)',
+    fotos: [
+      'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=800&q=80'
+    ],
+    moradorNome: 'Mariana Duarte',
+    moradorUnidade: 'Apto 104 - Bloco B',
+    moradorFoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+    contatoWhatsapp: '5511966554411',
+    dataPublicacao: '25/08/2026',
+    status: 'disponivel',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'enj-furadeira-bosch',
+    titulo: 'Furadeira de Impacto Bosch GSB 550W + Jogo de Brocas',
+    descricao: 'Disponibilizo para empréstimo/locação temporária para vizinhos que precisarem furar parede, instalar cortina ou montar móveis. Acompanha chave de mandril e kit de brocas de vídea e aço rápido.',
+    categoria: 'Ferramentas & Casa',
+    tipoTransacao: 'emprestimo',
+    preco: 20.00,
+    condicao: 'Seminovo (Excelente)',
+    fotos: [
+      'https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=800&q=80'
+    ],
+    moradorNome: 'Ricardo Fontes',
+    moradorUnidade: 'Apto 303 - Bloco B',
+    moradorFoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+    contatoWhatsapp: '5511981234567',
+    dataPublicacao: '24/08/2026',
+    status: 'disponivel',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'enj-jaqueta-couro',
+    titulo: 'Jaqueta de Couro Legítimo Masculina (Tam G - Marrom Café)',
+    descricao: 'Jaqueta de couro 100% natural, forrada por dentro, acabamento de primeira linha. Usada 2 vezes apenas. Aceito troca por jogo de videogame PS5 (tipo Spider-Man 2 ou FIFA) ou fone de ouvido bluetooth.',
+    categoria: 'Roupas & Acessórios',
+    tipoTransacao: 'troca',
+    trocaPor: 'Jogos de PS5 ou Fone Bluetooth JBL/Sony',
+    condicao: 'Seminovo (Excelente)',
+    fotos: [
+      'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80'
+    ],
+    moradorNome: 'Gabriel Silveira',
+    moradorUnidade: 'Apto 601 - Bloco B',
+    moradorFoto: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80',
+    contatoWhatsapp: '5511972345678',
+    dataPublicacao: '23/08/2026',
+    status: 'disponivel',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'enj-monitor-gamer',
+    titulo: 'Monitor Gamer AOC 24" 144Hz IPS 1ms FreeSync',
+    descricao: 'Monitor gamer sem dead pixels, suporte com ajuste de altura e rotação para modo vertical. Acompanha cabo DisplayPort original e fonte.',
+    categoria: 'Eletrônicos & Informática',
+    tipoTransacao: 'venda',
+    preco: 520.00,
+    condicao: 'Seminovo (Excelente)',
+    fotos: [
+      'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80'
+    ],
+    moradorNome: 'Lucas Andrade',
+    moradorUnidade: 'Apto 301 - Bloco A',
+    moradorFoto: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+    contatoWhatsapp: '5511983456789',
+    dataPublicacao: '22/08/2026',
+    status: 'disponivel',
+    condominioId: CURRENT_CONDO_ID
+  }
+];
+
 

@@ -519,3 +519,46 @@ export interface RegraTopico {
   ordem?: number;
 }
 
+export type TipoTransacaoEnjoei = 
+  | 'venda'        // Venda com preço em R$
+  | 'doacao'       // Sem custo / Grátis
+  | 'retirada'     // Apenas custo do frete / quem retirar leva
+  | 'troca'        // Troca / Permuta por outro item
+  | 'emprestimo';  // Empréstimo ou aluguel temporário
+
+export type CondicaoItemEnjoei = 
+  | 'Novo / Lacrado'
+  | 'Seminovo (Excelente)'
+  | 'Usado (Bom estado)'
+  | 'Com marcas de uso'
+  | 'Para restauro / Peças';
+
+export type StatusItemEnjoei = 
+  | 'disponivel' 
+  | 'negociando' 
+  | 'concluido' 
+  | 'suspenso';
+
+export interface ItemEnjoei {
+  id: string;
+  titulo: string;
+  descricao: string;
+  categoria: string; // Móveis & Decoração, Eletrodomésticos, Eletrônicos, Roupas, Instrumentos Musicais, Infantil, Esportes, Ferramentas, Livros, Outros
+  tipoTransacao: TipoTransacaoEnjoei;
+  preco?: number;
+  trocaPor?: string; // Especifica o que o morador aceita em troca (ex: panela por casaco ou câmera)
+  condicao: CondicaoItemEnjoei;
+  fotos: string[];
+  moradorNome: string;
+  moradorUnidade: string;
+  moradorFoto?: string;
+  contatoWhatsapp: string;
+  contatoTelefone?: string;
+  dataPublicacao: string;
+  status: StatusItemEnjoei;
+  motivoSuspensao?: string;
+  destaque?: boolean;
+  condominioId: string;
+}
+
+

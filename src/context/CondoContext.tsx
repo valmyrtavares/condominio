@@ -38,7 +38,9 @@ import {
   StatusFuncionario,
   CategoriaFuncionario,
   AvaliacaoFuncionario,
-  RegraTopico
+  RegraTopico,
+  ItemEnjoei,
+  StatusItemEnjoei
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -57,6 +59,7 @@ import {
   MOCK_MESES_PRESTACAO,
   MOCK_FUNCIONARIOS,
   MOCK_REGRAS_CONDOMINIO,
+  MOCK_ITENS_ENJOEI,
   ESPINHA_DORSAL_ITEMS,
   CURRENT_CONDO_ID
 } from '../mock/seedData';
@@ -204,6 +207,15 @@ interface CondoContextType {
   editarRegraCondominio: (id: string, dados: Partial<RegraTopico>) => void;
   excluirRegraCondominio: (id: string) => void;
   reordenarRegrasCondominio: (regras: RegraTopico[]) => void;
+
+  // Enjoei do Condomínio (Desapego, Venda & Trocas)
+  itensEnjoei: ItemEnjoei[];
+  adicionarItemEnjoei: (novo: Omit<ItemEnjoei, 'id' | 'dataPublicacao' | 'status' | 'condominioId'> & { dataPublicacao?: string }) => void;
+  editarItemEnjoei: (id: string, dados: Partial<ItemEnjoei>) => void;
+  atualizarStatusItemEnjoei: (id: string, status: StatusItemEnjoei) => void;
+  suspenderItemEnjoei: (id: string, motivo: string) => void;
+  reativarItemEnjoei: (id: string) => void;
+  excluirItemEnjoei: (id: string) => void;
 }
 
 const CondoContext = createContext<CondoContextType | undefined>(undefined);
@@ -557,6 +569,104 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const excluirServicoContratado = (id: string) => {
     setServicosContratados(prev => prev.filter(s => s.id !== id));
   };
+
+  // Enjoei do Condomínio (Desapego, Venda, Doação, Retirada e Troca) State & CRUD
+  const [itensEnjoei, setItensEnjoei] = useState<ItemEnjoei[]>(() => {
+    const saved = localStorage.getItem('condo_enjoei_items_list');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return MOCK_ITENS_ENJOEI;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('condo_enjoei_items_list', JSON.stringify(itensEnjoei));
+    } catch {}
+  }, [itensEnjoei]);
+
+  const adicionarItemEnjoei = (novo: Omit<ItemEnjoei, 'id' | 'dataPublicacao' | 'status' | 'condominioId'> & { dataPublicacao?: string }) => {
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    const id = `enj-${Date.now()}`;
+    const novoItem: ItemEnjoei = {
+      ...novo,
+      id,
+      dataPublicacao: novo.dataPublicacao || hoje,
+      status: 'disponivel',
+      condominioId: CURRENT_CONDO_ID
+    };
+    setItensEnjoei(prev => [novoItem, ...prev]);
+  };
+
+  const editarItemEnjoei = (id: string, dados: Partial<ItemEnjoei>) => {
+    setItensEnjoei(prev => prev.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          ...dados
+        };
+      }
+      return item;
+    }));
+  };
+
+  const atualizarStatusItemEnjoei = (id: string, status: StatusItemEnjoei) => {
+    setItensEnjoei(prev => prev.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          status
+        };
+      }
+      return item;
+    }));
+  };
+
+  const suspenderItemEnjoei = (id: string, motivo: string) => {
+    const target = itensEnjoei.find(i => i.id === id);
+    setItensEnjoei(prev => prev.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          status: 'suspenso',
+          motivoSuspensao: motivo.trim() || 'Desacordo com as diretrizes de desapego do condomínio.'
+        };
+      }
+      return item;
+    }));
+
+    if (target) {
+      const cleanUnit = target.moradorUnidade.replace(/[^0-9]/g, '');
+      if (cleanUnit) {
+        enviarNotificacaoPrivada(
+          cleanUnit,
+          `Aviso da Administração: Seu anúncio "${target.titulo}" no Enjoei foi suspenso pelo seguinte motivo: ${motivo}.`,
+          'alta'
+        );
+      }
+    }
+  };
+
+  const reativarItemEnjoei = (id: string) => {
+    setItensEnjoei(prev => prev.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          status: 'disponivel',
+          motivoSuspensao: undefined
+        };
+      }
+      return item;
+    }));
+  };
+
+  const excluirItemEnjoei = (id: string) => {
+    setItensEnjoei(prev => prev.filter(item => item.id !== id));
+  };
+
 
 
 
@@ -2508,7 +2618,6 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       reparos,
       benfeitorias,
       vagasGaragem,
-      servicosContratados,
       dependencias,
       reservas,
       assembleias,
@@ -2522,7 +2631,6 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       excluirEvento,
       suspenderEvento,
       reativarEvento,
-      unidadesDisponiveis,
       prestacaoContas,
       mesesPrestacao,
       categoriasDespesa,
@@ -2624,7 +2732,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unidadesDisponiveis,
       adicionarUnidadeDisponivel,
       editarUnidadeDisponivel,
-      excluirUnidadeDisponivel
+      excluirUnidadeDisponivel,
+      itensEnjoei,
+      adicionarItemEnjoei,
+      editarItemEnjoei,
+      atualizarStatusItemEnjoei,
+      suspenderItemEnjoei,
+      reativarItemEnjoei,
+      excluirItemEnjoei
     }}>
       {children}
     </CondoContext.Provider>
