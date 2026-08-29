@@ -21,7 +21,10 @@ import {
   Comentario,
   DespesaItem,
   ReceitaItem,
-  RegraTopico
+  RegraTopico,
+  UnidadeDisponivel,
+  FinalidadeImovel,
+  ServicoContratado
 } from '../../types';
 import { 
   Building, 
@@ -104,6 +107,10 @@ import { CreateMonthModal } from '../../components/financeiro/CreateMonthModal';
 import { CreateCategoryModal } from '../../components/financeiro/CreateCategoryModal';
 import { ReceiptPdfModal } from '../../components/financeiro/ReceiptPdfModal';
 import { CreateEditRegraModal } from '../../components/admin/CreateEditRegraModal';
+import { CreateEditUnidadeDisponivelModal } from '../../components/admin/CreateEditUnidadeDisponivelModal';
+import { CreateEditServicoContratadoModal } from '../../components/admin/CreateEditServicoContratadoModal';
+
+
 
 
 const AVATARES_SUGERIDOS = [
@@ -184,7 +191,15 @@ export const AdminPanelScreen: React.FC = () => {
     regrasCondominio,
     adicionarRegraCondominio,
     editarRegraCondominio,
-    excluirRegraCondominio
+    excluirRegraCondominio,
+    unidadesDisponiveis,
+    adicionarUnidadeDisponivel,
+    editarUnidadeDisponivel,
+    excluirUnidadeDisponivel,
+    servicosContratados,
+    adicionarServicoContratado,
+    editarServicoContratado,
+    excluirServicoContratado
   } = useCondo();
 
   // Accordion section collapse states (all closed by default on entry)
@@ -197,6 +212,22 @@ export const AdminPanelScreen: React.FC = () => {
   const [isReparosAdminOpen, setIsReparosAdminOpen] = useState(false);
   const [isFinanceiroAdminOpen, setIsFinanceiroAdminOpen] = useState(false);
   const [isRegrasAdminOpen, setIsRegrasAdminOpen] = useState(false);
+  const [isUnidadesDisponiveisSectionOpen, setIsUnidadesDisponiveisSectionOpen] = useState(false);
+  const [isFornecedoresSectionOpen, setIsFornecedoresSectionOpen] = useState(false);
+
+  // 11. Gestão de Fornecedores & Serviços Contratados State
+  const [isCreateEditServicoModalOpen, setIsCreateEditServicoModalOpen] = useState(false);
+  const [servicoToEditInAdmin, setServicoToEditInAdmin] = useState<ServicoContratado | null>(null);
+  const [searchFornecedorAdmin, setSearchFornecedorAdmin] = useState('');
+  const [filtroCategoriaFornecedorAdmin, setFiltroCategoriaFornecedorAdmin] = useState('Todas');
+  const [filtroStatusFornecedorAdmin, setFiltroStatusFornecedorAdmin] = useState('Todas');
+
+  // 10. Gestão de Unidades Disponíveis (Aluguel e Venda) State
+  const [isCreateEditUnidadeDisponivelModalOpen, setIsCreateEditUnidadeDisponivelModalOpen] = useState(false);
+  const [unidadeDisponivelToEdit, setUnidadeDisponivelToEdit] = useState<UnidadeDisponivel | null>(null);
+  const [searchUnidadeDisponivel, setSearchUnidadeDisponivel] = useState('');
+  const [filtroFinalidadeAdmin, setFiltroFinalidadeAdmin] = useState<string>('Todas');
+
 
   // 9. Gestão de Regras e Regulamento do Condomínio State
   const [isCreateEditRegraModalOpen, setIsCreateEditRegraModalOpen] = useState(false);
@@ -204,6 +235,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [searchRegra, setSearchRegra] = useState('');
   const [filtroCategoriaRegra, setFiltroCategoriaRegra] = useState('Todas');
   const [expandedRegrasInAdmin, setExpandedRegrasInAdmin] = useState<Record<string, boolean>>({});
+
 
 
   // 8. Gestão Financeira & Prestação de Contas State
@@ -4799,6 +4831,625 @@ export const AdminPanelScreen: React.FC = () => {
         );
       })()}
 
+      {/* ========================================================================= */}
+      {/* SEÇÃO 10: GESTÃO DE UNIDADES DISPONÍVEIS (ALUGUEL & VENDA) */}
+      {/* ========================================================================= */}
+      {(() => {
+        const filteredUnidadesAdmin = unidadesDisponiveis.filter(uni => {
+          const matchModalidade = filtroFinalidadeAdmin === 'Todas' || 
+            uni.finalidade === filtroFinalidadeAdmin || 
+            uni.finalidade === 'Aluga-se ou Vende-se';
+
+          const termo = searchUnidadeDisponivel.toLowerCase().trim();
+          const matchBusca = !termo ||
+            uni.apartamento.toLowerCase().includes(termo) ||
+            uni.bloco.toLowerCase().includes(termo) ||
+            uni.proprietarioNome.toLowerCase().includes(termo) ||
+            uni.descricaoCurta.toLowerCase().includes(termo);
+
+          return matchModalidade && matchBusca;
+        });
+
+        const totalAluguel = unidadesDisponiveis.filter(u => u.finalidade === 'Aluga-se' || u.finalidade === 'Aluga-se ou Vende-se').length;
+        const totalVenda = unidadesDisponiveis.filter(u => u.finalidade === 'Vende-se' || u.finalidade === 'Aluga-se ou Vende-se').length;
+
+        const getBadgeStyle = (fin: FinalidadeImovel) => {
+          switch (fin) {
+            case 'Aluga-se':
+              return 'bg-blue-100 text-blue-950 border-blue-300';
+            case 'Vende-se':
+              return 'bg-emerald-100 text-emerald-950 border-emerald-300';
+            default:
+              return 'bg-purple-100 text-purple-950 border-purple-300';
+          }
+        };
+
+        return (
+          <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl shadow-md overflow-hidden">
+            
+            {/* Accordion Header */}
+            <button
+              type="button"
+              onClick={() => setIsUnidadesDisponiveisSectionOpen(!isUnidadesDisponiveisSectionOpen)}
+              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-100/90 hover:bg-amber-200/70 transition-colors text-left border-b border-amber-200 cursor-pointer select-none active:scale-[0.999]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-950 shrink-0">
+                  <Building2 className="w-5 h-5 text-amber-900" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-black text-slate-950">
+                      10. Gestão de Unidades Disponíveis (Aluguel & Venda)
+                    </h3>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
+                      {unidadesDisponiveis.length} Anúncios Ativos
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-700 font-medium">
+                    Cadastre, edite e modere apartamentos para locação e venda disponíveis no condomínio.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                  {isUnidadesDisponiveisSectionOpen ? 'Recolher seção' : 'Expandir seção'}
+                </span>
+                <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isUnidadesDisponiveisSectionOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
+              </div>
+            </button>
+
+            {/* Accordion Content */}
+            <div 
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
+                isUnidadesDisponiveisSectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
+                
+                {/* Action Bar: Anunciar Nova Unidade + Busca + Filtros */}
+                <div className="bg-white/85 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-950 flex items-center gap-2">
+                        <Tag className="w-4 h-4 text-amber-800" />
+                        Mural de Apartamentos Anunciados
+                      </h4>
+                      <p className="text-[11px] text-slate-600 font-medium">
+                        Todas as unidades adicionadas aqui aparecem automaticamente na tela "Unidades Disponíveis" dos moradores.
+                      </p>
+                    </div>
+
+                    {/* Botão + Anunciar Nova Unidade */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUnidadeDisponivelToEdit(null);
+                        setIsCreateEditUnidadeDisponivelModalOpen(true);
+                      }}
+                      className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+                    >
+                      <Plus className="w-4 h-4 stroke-[3]" />
+                      <span>+ Anunciar Nova Unidade</span>
+                    </button>
+                  </div>
+
+                  {/* Resumo Rápido de Números */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 border-t border-amber-100 text-xs">
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-600">Total Anunciados:</span>
+                      <strong className="text-slate-950 font-black">{unidadesDisponiveis.length}</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-blue-900">Locação:</span>
+                      <strong className="text-blue-950 font-black">{totalAluguel}</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between col-span-2 sm:col-span-1">
+                      <span className="text-[11px] font-bold text-emerald-900">Venda:</span>
+                      <strong className="text-emerald-950 font-black">{totalVenda}</strong>
+                    </div>
+                  </div>
+
+                  {/* Barra de Busca e Filtros de Modalidade */}
+                  <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2 border-t border-amber-100">
+                    <div className="relative flex-1 w-full">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="Buscar por apto, bloco, proprietário ou descrição..."
+                        value={searchUnidadeDisponivel}
+                        onChange={(e) => setSearchUnidadeDisponivel(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"
+                      />
+                      {searchUnidadeDisponivel && (
+                        <button
+                          type="button"
+                          onClick={() => setSearchUnidadeDisponivel('')}
+                          className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-700"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full text-xs">
+                      {['Todas', 'Aluga-se', 'Vende-se'].map(mod => (
+                        <button
+                          key={mod}
+                          type="button"
+                          onClick={() => setFiltroFinalidadeAdmin(mod)}
+                          className={`px-3 py-1.5 rounded-xl text-[11px] font-bold shrink-0 transition-all cursor-pointer ${
+                            filtroFinalidadeAdmin === mod
+                              ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
+                              : 'bg-slate-100 text-slate-700 hover:bg-amber-100 hover:text-slate-950'
+                          }`}
+                        >
+                          {mod}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lista / Grid de Unidades Anunciadas */}
+                <div className="space-y-3">
+                  {filteredUnidadesAdmin.length === 0 ? (
+                    <div className="p-8 rounded-2xl bg-white/70 border border-dashed border-amber-300 text-center space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
+                        <Building2 className="w-6 h-6" />
+                      </div>
+                      <h4 className="text-sm font-black text-slate-800">
+                        Nenhuma unidade disponível encontrada
+                      </h4>
+                      <p className="text-xs text-slate-500 max-w-md mx-auto">
+                        Você pode cadastrar um imóvel para alugar ou vender selecionando um apartamento existente no condomínio.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredUnidadesAdmin.map((uni) => {
+                        const isVenda = uni.finalidade === 'Vende-se';
+
+                        return (
+                          <div
+                            key={uni.id}
+                            className="bg-white/95 border border-amber-200/90 hover:border-amber-400 rounded-2xl p-4 sm:p-5 shadow-xs transition-all space-y-3 flex flex-col justify-between"
+                          >
+                            {/* Card Top: Apto, Bloco, Modalidade e Botões */}
+                            <div className="space-y-3">
+                              <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="p-2 rounded-xl bg-amber-500/20 text-amber-950 font-black border border-amber-400/40">
+                                    <Building2 className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="font-black text-base text-slate-950 leading-tight">
+                                        Apto {uni.apartamento}
+                                      </h4>
+                                      <span className="text-[10px] text-slate-600 font-bold bg-slate-100 px-2 py-0.5 rounded-md">
+                                        {uni.bloco}
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 font-semibold block">
+                                      Anunciado em: {uni.dataAnuncio}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border shadow-2xs ${getBadgeStyle(uni.finalidade)}`}>
+                                  {uni.finalidade === 'Aluga-se' && '🔑 '}
+                                  {uni.finalidade === 'Vende-se' && '🏷️ '}
+                                  {uni.finalidade === 'Aluga-se ou Vende-se' && '✨ '}
+                                  {uni.finalidade}
+                                </span>
+                              </div>
+
+                              {/* Valores em Destaque */}
+                              <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl flex items-center justify-between">
+                                <div>
+                                  <span className="text-[9px] uppercase font-extrabold text-slate-500 block">
+                                    {isVenda ? 'Valor de Venda:' : 'Valor de Locação:'}
+                                  </span>
+                                  <strong className="text-base font-black text-slate-950 tracking-tight font-mono">
+                                    R$ {uni.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    {!isVenda && <span className="text-xs font-normal text-slate-600"> / mês</span>}
+                                  </strong>
+                                </div>
+
+                                {uni.valorCondominio && (
+                                  <div className="text-right text-[10px] text-slate-700 font-semibold space-y-0.5">
+                                    <div>Condomínio: <strong className="text-slate-900 font-mono">R$ {uni.valorCondominio.toFixed(2)}</strong></div>
+                                    {uni.valorIptu && <div>IPTU: <strong className="text-slate-900 font-mono">R$ {uni.valorIptu.toFixed(2)}</strong></div>}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Características: Metragem, Quartos, Suítes, Vagas */}
+                              <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
+                                <div className="p-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                                  <span className="text-[9px] text-slate-500 font-bold block">Área</span>
+                                  <span className="text-[11px] font-black text-slate-950">{uni.metragemM2} m²</span>
+                                </div>
+                                <div className="p-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                                  <span className="text-[9px] text-slate-500 font-bold block">Quartos</span>
+                                  <span className="text-[11px] font-black text-slate-950">{uni.quartos}</span>
+                                </div>
+                                <div className="p-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                                  <span className="text-[9px] text-slate-500 font-bold block">Suítes</span>
+                                  <span className="text-[11px] font-black text-slate-950">{uni.suites}</span>
+                                </div>
+                                <div className="p-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                                  <span className="text-[9px] text-slate-500 font-bold block">Vagas</span>
+                                  <span className="text-[11px] font-black text-slate-950">{uni.vagasGaragem}</span>
+                                </div>
+                              </div>
+
+                              {/* Descrição Curta */}
+                              <p className="text-xs text-slate-700 font-medium leading-relaxed bg-slate-50/60 p-2.5 rounded-xl border border-slate-200 line-clamp-2">
+                                "{uni.descricaoCurta}"
+                              </p>
+
+                              {/* Contato do Proprietário */}
+                              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                                <div>
+                                  <span className="text-[10px] text-slate-500 font-bold block">Responsável:</span>
+                                  <strong className="text-slate-950 font-black">{uni.proprietarioNome}</strong>
+                                </div>
+                                <div className="text-right text-[11px] font-bold text-slate-700 font-mono">
+                                  <div>{uni.proprietarioTelefone}</div>
+                                  <div className="text-emerald-700 font-semibold text-[10px]">WA: +{uni.proprietarioWhatsapp}</div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Botões de Ação do Admin */}
+                            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setUnidadeDisponivelToEdit(uni);
+                                  setIsCreateEditUnidadeDisponivelModalOpen(true);
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-amber-300"
+                              >
+                                <Edit3 className="w-3.5 h-3.5 text-amber-800" />
+                                <span>Editar</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(`Deseja realmente remover o anúncio do Apto ${uni.apartamento}? Ele deixará de aparecer no mural de unidades disponíveis.`)) {
+                                    excluirUnidadeDisponivel(uni.id);
+                                  }
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-rose-200"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                <span>Excluir</span>
+                              </button>
+                            </div>
+
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        );
+      })()}
+
+
+
+      {/* ========================================================================= */}
+      {/* 11. GESTÃO DE FORNECEDORES & SERVIÇOS DO CONDOMÍNIO (CATÁLOGO OFICIAL) */}
+      {/* ========================================================================= */}
+      {(() => {
+        const categoriasFornecedores = [
+          'Todas',
+          ...Array.from(new Set(servicosContratados.map(s => s.categoria).filter(Boolean)))
+        ];
+
+        const filteredFornecedoresAdmin = servicosContratados.filter(s => {
+          const matchCat = filtroCategoriaFornecedorAdmin === 'Todas' || s.categoria.toLowerCase() === filtroCategoriaFornecedorAdmin.toLowerCase();
+          const matchSt = filtroStatusFornecedorAdmin === 'Todas' || s.status === filtroStatusFornecedorAdmin;
+          const termo = searchFornecedorAdmin.toLowerCase().trim();
+          const matchBusca = !termo ||
+            s.empresaNome.toLowerCase().includes(termo) ||
+            s.categoria.toLowerCase().includes(termo) ||
+            s.servicoDescricao.toLowerCase().includes(termo) ||
+            (s.responsavelContato && s.responsavelContato.toLowerCase().includes(termo)) ||
+            (s.cnpj && s.cnpj.includes(termo));
+
+          return matchCat && matchSt && matchBusca;
+        });
+
+        const totalContratadasAdmin = servicosContratados.filter(s => s.status === 'Contratada').length;
+        const totalOrcadasAdmin = servicosContratados.filter(s => s.status === 'Orçada').length;
+
+        return (
+          <div className="bg-white/45 border border-white/60 rounded-3xl overflow-hidden shadow-xl hover:bg-white/50 transition-all duration-300">
+            
+            {/* Header Sanfonado */}
+            <button
+              onClick={() => setIsFornecedoresSectionOpen(!isFornecedoresSectionOpen)}
+              className="w-full p-4 sm:p-5 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center shadow-md font-black shrink-0">
+                  <Briefcase className="w-5 h-5 text-slate-950" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base sm:text-lg text-slate-950 leading-tight flex items-center gap-2">
+                    11. Gestão de Fornecedores & Serviços Contratados
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300">
+                      {servicosContratados.length} empresas
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-700 font-semibold mt-0.5">
+                    Cadastre, edite e organize empresas contratadas e cotações por categoria (Elevadores, Paisagismo, Elétrica, Segurança, etc.)
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-2 rounded-full bg-white/60 border border-white/80 text-slate-900 shadow-xs shrink-0 ml-2">
+                {isFornecedoresSectionOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
+            </button>
+
+            {/* Conteúdo Expansível */}
+            <div className={`transition-all duration-300 ${isFornecedoresSectionOpen ? 'block' : 'hidden'}`}>
+              <div className="p-4 sm:p-6 border-t border-slate-950/10 space-y-5 bg-white/30">
+                
+                {/* Resumo & Botão de Criação */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-amber-300 text-xs font-black shadow-xs">
+                      {servicosContratados.length} Fornecedores Registrados
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
+                      ✓ {totalContratadasAdmin} Contratos Ativos
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-blue-100 text-blue-950 border border-blue-300 text-xs font-black">
+                      📋 {totalOrcadasAdmin} Cotações Orçadas
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setServicoToEditInAdmin(null);
+                      setIsCreateEditServicoModalOpen(true);
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                    <span>+ Cadastrar Fornecedor / Empresa</span>
+                  </button>
+                </div>
+
+                {/* Filtros e Busca */}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    
+                    {/* Busca */}
+                    <div className="relative sm:col-span-1">
+                      <input
+                        type="text"
+                        placeholder="Buscar por empresa, serviço ou CNPJ..."
+                        value={searchFornecedorAdmin}
+                        onChange={(e) => setSearchFornecedorAdmin(e.target.value)}
+                        className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
+                      />
+                      <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+                    </div>
+
+                    {/* Filtro por Situação */}
+                    <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none sm:col-span-2">
+                      <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
+                        Situação:
+                      </span>
+                      {['Todas', 'Contratada', 'Orçada', 'Histórico'].map(st => (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => setFiltroStatusFornecedorAdmin(st)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                            filtroStatusFornecedorAdmin === st
+                              ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
+                              : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
+                          }`}
+                        >
+                          {st === 'Todas' ? 'Todas' : st === 'Contratada' ? '✓ Contratadas' : st === 'Orçada' ? '📋 Orçadas' : '📁 Histórico'}
+                        </button>
+                      ))}
+                    </div>
+
+                  </div>
+
+                  {/* Filtro por Categoria */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                    <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
+                      Categorias:
+                    </span>
+                    {categoriasFornecedores.map(cat => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setFiltroCategoriaFornecedorAdmin(cat)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                          filtroCategoriaFornecedorAdmin === cat
+                            ? 'bg-slate-900 text-amber-300 border-slate-900 font-black shadow-xs'
+                            : 'bg-white/50 text-slate-700 border-white/70 hover:bg-white'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Lista de Cards de Fornecedores */}
+                <div className="space-y-3">
+                  {filteredFornecedoresAdmin.length === 0 ? (
+                    <div className="p-8 text-center bg-white/40 border border-white/60 rounded-2xl space-y-2">
+                      <p className="text-sm font-bold text-slate-800">Nenhum fornecedor encontrado para esta filtragem.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchFornecedorAdmin('');
+                          setFiltroCategoriaFornecedorAdmin('Todas');
+                          setFiltroStatusFornecedorAdmin('Todas');
+                        }}
+                        className="text-xs text-indigo-800 font-black hover:underline cursor-pointer"
+                      >
+                        Limpar todos os filtros
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      {filteredFornecedoresAdmin.map(fornecedor => {
+                        const isContratada = fornecedor.status === 'Contratada';
+
+                        return (
+                          <div
+                            key={fornecedor.id}
+                            className={`border-2 rounded-2xl p-4 shadow-md transition-all flex flex-col justify-between space-y-3 bg-white/70 ${
+                              isContratada 
+                                ? 'border-emerald-300 hover:border-emerald-400' 
+                                : 'border-blue-200 hover:border-blue-300'
+                            }`}
+                          >
+                            <div className="space-y-2">
+                              
+                              {/* Header do Card */}
+                              <div className="flex items-start justify-between gap-2 border-b border-slate-200 pb-2">
+                                <div className="space-y-0.5">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-slate-900 text-amber-300">
+                                      {fornecedor.categoria}
+                                    </span>
+                                    {fornecedor.cnpj && (
+                                      <span className="text-[10px] font-mono text-slate-600 font-semibold">
+                                        CNPJ: {fornecedor.cnpj}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <h4 className="text-sm sm:text-base font-black text-slate-950 leading-tight">
+                                    {fornecedor.empresaNome}
+                                  </h4>
+                                </div>
+
+                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shrink-0 ${
+                                  isContratada 
+                                    ? 'bg-emerald-100 text-emerald-950 border-emerald-300' 
+                                    : 'bg-blue-100 text-blue-950 border-blue-300'
+                                }`}>
+                                  {isContratada ? '✓ Contratada' : '📋 Orçada'}
+                                </span>
+                              </div>
+
+                              {/* Valor */}
+                              {fornecedor.valor && (
+                                <div className="p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                                  <div>
+                                    <span className="text-[9px] uppercase font-bold text-slate-500 block">
+                                      {isContratada ? 'Valor do Contrato:' : 'Valor da Cotação:'}
+                                    </span>
+                                    <span className="text-sm font-black text-slate-950 font-mono">
+                                      R$ {fornecedor.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      {fornecedor.tipoValor === 'mensal' && <span className="text-xs font-normal text-slate-600"> / mês</span>}
+                                      {fornecedor.tipoValor === 'pontual' && <span className="text-xs font-normal text-slate-600"> (obra)</span>}
+                                      {fornecedor.tipoValor === 'semestral' && <span className="text-xs font-normal text-slate-600"> / semestral</span>}
+                                      {fornecedor.tipoValor === 'anual' && <span className="text-xs font-normal text-slate-600"> / ano</span>}
+                                    </span>
+                                  </div>
+                                  {fornecedor.formaPagamento && (
+                                    <span className="text-[10px] text-slate-600 font-semibold max-w-[50%] truncate">
+                                      {fornecedor.formaPagamento}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Escopo */}
+                              <p className="text-xs text-slate-800 font-medium leading-relaxed bg-white/60 p-2.5 rounded-xl border border-slate-100">
+                                {fornecedor.servicoDescricao}
+                              </p>
+
+                              {/* Contatos & Responsável */}
+                              <div className="text-[11px] text-slate-700 space-y-0.5 pt-1">
+                                {fornecedor.responsavelContato && (
+                                  <div>Responsável: <strong className="text-slate-950">{fornecedor.responsavelContato}</strong></div>
+                                )}
+                                <div className="flex items-center gap-3 text-slate-600 flex-wrap">
+                                  <span>Tel: <strong className="text-slate-900">{fornecedor.telefone}</strong></span>
+                                  {fornecedor.email && <span>E-mail: <strong className="text-slate-900">{fornecedor.email}</strong></span>}
+                                </div>
+                              </div>
+
+                              {/* Parecer */}
+                              {fornecedor.observacoes && (
+                                <div className="text-[11px] p-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-950 font-medium">
+                                  <strong>Parecer da Gestão:</strong> {fornecedor.observacoes}
+                                </div>
+                              )}
+
+                            </div>
+
+                            {/* Ações de Edição e Exclusão */}
+                            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setServicoToEditInAdmin(fornecedor);
+                                  setIsCreateEditServicoModalOpen(true);
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-300"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-indigo-700" />
+                                <span>Editar</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(`Deseja realmente remover a empresa ${fornecedor.empresaNome}? Ela deixará de aparecer no catálogo de serviços.`)) {
+                                    excluirServicoContratado(fornecedor.id);
+                                  }
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-rose-200"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                <span>Excluir</span>
+                              </button>
+                            </div>
+
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        );
+      })()}
+
+
+
 
       {/* ========================================================================= */}
       {/* MODAL: CRIAR NOVA CATEGORIA / CARGO DINÂMICO */}
@@ -5566,6 +6217,26 @@ export const AdminPanelScreen: React.FC = () => {
           setRegraToEditInAdmin(null);
         }}
         regraToEdit={regraToEditInAdmin}
+      />
+
+      {/* Modal de Criação / Edição de Unidades Disponíveis (Aluguel e Venda) */}
+      <CreateEditUnidadeDisponivelModal
+        isOpen={isCreateEditUnidadeDisponivelModalOpen}
+        onClose={() => {
+          setIsCreateEditUnidadeDisponivelModalOpen(false);
+          setUnidadeDisponivelToEdit(null);
+        }}
+        unidadeToEdit={unidadeDisponivelToEdit}
+      />
+
+      {/* Modal de Criação / Edição de Fornecedores & Serviços do Condomínio */}
+      <CreateEditServicoContratadoModal
+        isOpen={isCreateEditServicoModalOpen}
+        onClose={() => {
+          setIsCreateEditServicoModalOpen(false);
+          setServicoToEditInAdmin(null);
+        }}
+        servicoToEdit={servicoToEditInAdmin}
       />
 
     </div>

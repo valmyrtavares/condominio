@@ -301,34 +301,32 @@ export interface VagaGaragem {
 }
 
 export type StatusServicoContratado = 
-  | 'Aguardando propostas' 
-  | 'Aguardando avaliação de proposta' 
-  | 'Contratada';
-
-export interface PropostaEmpresa {
-  id: string;
-  empresaNome: string;
-  cnpj?: string;
-  siteUrl: string;
-  valor: number;
-  descricao: string;
-  formaPagamento: string;
-  prazoEntrega: string;
-  jaPrestouServico: boolean;
-  selecionada: boolean;
-}
+  | 'Contratada' 
+  | 'Orçada' 
+  | 'Histórico';
 
 export interface ServicoContratado {
   id: string;
-  titulo: string;
-  data: string;
-  descricao: string;
+  empresaNome: string;
+  cnpj?: string;
   categoria: string;
   status: StatusServicoContratado;
-  propostas: PropostaEmpresa[];
+  servicoDescricao: string;
+  valor?: number;
+  tipoValor?: 'mensal' | 'pontual' | 'semestral' | 'anual';
+  formaPagamento?: string;
+  telefone: string;
+  whatsapp?: string;
+  email?: string;
+  siteUrl?: string;
+  responsavelContato?: string;
+  dataContratoOuOrcamento: string;
+  observacoes?: string;
   condominioId: string;
-  observacoesFinais?: string;
 }
+
+export type EmpresaFornecedor = ServicoContratado;
+
 
 export type TipoDependencia = 'Lazer & Convivência' | 'Esporte & Saúde' | 'Infantil' | 'Infraestrutura & Acesso';
 

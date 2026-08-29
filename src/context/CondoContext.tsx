@@ -22,7 +22,6 @@ import {
   VeiculoInfo,
   ServicoContratado,
   StatusServicoContratado,
-  PropostaEmpresa,
   Dependencia,
   ReservaDependencia,
   Assembleia,
@@ -74,6 +73,9 @@ interface CondoContextType {
   benfeitorias: Benfeitoria[];
   vagasGaragem: VagaGaragem[];
   servicosContratados: ServicoContratado[];
+  adicionarServicoContratado: (novo: Omit<ServicoContratado, 'id' | 'condominioId'>) => void;
+  editarServicoContratado: (id: string, dados: Partial<ServicoContratado>) => void;
+  excluirServicoContratado: (id: string) => void;
   dependencias: Dependencia[];
   reservas: ReservaDependencia[];
   assembleias: Assembleia[];
@@ -88,6 +90,9 @@ interface CondoContextType {
   suspenderEvento: (id: string, motivo: string) => void;
   reativarEvento: (id: string) => void;
   unidadesDisponiveis: UnidadeDisponivel[];
+  adicionarUnidadeDisponivel: (nova: Omit<UnidadeDisponivel, 'id' | 'condominioId' | 'dataAnuncio'> & { dataAnuncio?: string }) => void;
+  editarUnidadeDisponivel: (id: string, dados: Partial<UnidadeDisponivel>) => void;
+  excluirUnidadeDisponivel: (id: string) => void;
   prestacaoContas: PrestacaoContas;
   mesesPrestacao: Record<string, PrestacaoContas>;
   categoriasDespesa: string[];
@@ -172,8 +177,6 @@ interface CondoContextType {
   excluirReparo: (reparoId: string) => void;
   resolverReparoSimples: (reparoId: string, observacao?: string) => void;
   adicionarBenfeitoria: (titulo: string, subtitulo: string, tipo: TipoBenfeitoria, descricao: string, impactoGestao: string, fotos: string[], investimento?: number, economiaMensal?: number, regrasUso?: string) => void;
-  adicionarServicoContratado: (titulo: string, descricao: string, categoria: string, status: StatusServicoContratado, propostas: PropostaEmpresa[], observacoesFinais?: string) => void;
-  selecionarPropostaVencedora: (servicoId: string, propostaId: string) => void;
   solicitarReserva: (dependenciaId: string, dataReserva: string, periodo: ReservaDependencia['periodo']) => void;
   cancelarReserva: (reservaId: string) => void;
   atualizarStatusReclamacao: (id: string, novoStatus: StatusReclamacao) => void;
@@ -469,6 +472,94 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setRegrasCondominio(novasRegras);
   };
 
+  // Unidades Disponíveis (Aluguel e Venda) State & CRUD
+  const [unidadesDisponiveis, setUnidadesDisponiveis] = useState<UnidadeDisponivel[]>(() => {
+    const saved = localStorage.getItem('condo_unidades_disponiveis_list');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return MOCK_UNIDADES_DISPONIVEIS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_unidades_disponiveis_list', JSON.stringify(unidadesDisponiveis));
+  }, [unidadesDisponiveis]);
+
+  const adicionarUnidadeDisponivel = (nova: Omit<UnidadeDisponivel, 'id' | 'condominioId' | 'dataAnuncio'> & { dataAnuncio?: string }) => {
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    const cleanApto = nova.apartamento.toLowerCase().replace(/[^a-z0-9]/g, '') || 'apto';
+    const id = `disp-apto-${cleanApto}-${Date.now()}`;
+    const novaUnidade: UnidadeDisponivel = {
+      ...nova,
+      id,
+      dataAnuncio: nova.dataAnuncio || hoje,
+      condominioId: CURRENT_CONDO_ID
+    };
+    setUnidadesDisponiveis(prev => [novaUnidade, ...prev]);
+  };
+
+  const editarUnidadeDisponivel = (id: string, dados: Partial<UnidadeDisponivel>) => {
+    setUnidadesDisponiveis(prev => prev.map(u => {
+      if (u.id === id) {
+        return {
+          ...u,
+          ...dados
+        };
+      }
+      return u;
+    }));
+  };
+
+  const excluirUnidadeDisponivel = (id: string) => {
+    setUnidadesDisponiveis(prev => prev.filter(u => u.id !== id));
+  };
+
+  // Serviços Contratados & Fornecedores State & CRUD
+  const [servicosContratados, setServicosContratados] = useState<ServicoContratado[]>(() => {
+    const saved = localStorage.getItem('condo_servicos_contratados_list');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return MOCK_SERVICOS_CONTRATADOS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_servicos_contratados_list', JSON.stringify(servicosContratados));
+  }, [servicosContratados]);
+
+  const adicionarServicoContratado = (novo: Omit<ServicoContratado, 'id' | 'condominioId'>) => {
+    const cleanNome = novo.empresaNome.toLowerCase().replace(/[^a-z0-9]/g, '') || 'empresa';
+    const id = `sc-${cleanNome}-${Date.now()}`;
+    const novoServico: ServicoContratado = {
+      ...novo,
+      id,
+      condominioId: CURRENT_CONDO_ID
+    };
+    setServicosContratados(prev => [novoServico, ...prev]);
+  };
+
+  const editarServicoContratado = (id: string, dados: Partial<ServicoContratado>) => {
+    setServicosContratados(prev => prev.map(s => {
+      if (s.id === id) {
+        return {
+          ...s,
+          ...dados
+        };
+      }
+      return s;
+    }));
+  };
+
+  const excluirServicoContratado = (id: string) => {
+    setServicosContratados(prev => prev.filter(s => s.id !== id));
+  };
+
+
+
 
   // Admin Roles & Categories
   const [adminRoles, setAdminRoles] = useState<AdminRole[]>(() => {
@@ -647,7 +738,6 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
   const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>(MOCK_BENFEITORIAS);
   const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>(MOCK_VAGAS_GARAGEM);
-  const [servicosContratados, setServicosContratados] = useState<ServicoContratado[]>(MOCK_SERVICOS_CONTRATADOS);
   const [dependencias] = useState<Dependencia[]>(MOCK_DEPENDENCIAS);
   const [reservas, setReservas] = useState<ReservaDependencia[]>(MOCK_RESERVAS);
   // Assembleias e Reuniões Informais com persistência
@@ -792,8 +882,6 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const reativarEvento = (id: string) => {
     setEventos(prev => prev.map(e => e.id === id ? { ...e, ativo: true, motivoSuspensao: undefined } : e));
   };
-
-  const [unidadesDisponiveis, setUnidadesDisponiveis] = useState<UnidadeDisponivel[]>(MOCK_UNIDADES_DISPONIVEIS);
 
   // Prestação de Contas Mês a Mês & Categorias com persistência
   const [mesesPrestacao, setMesesPrestacao] = useState<Record<string, PrestacaoContas>>(() => {
@@ -2337,46 +2425,6 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   };
 
-  const adicionarServicoContratado = (
-    titulo: string,
-    descricao: string,
-    categoria: string,
-    status: StatusServicoContratado,
-    propostas: PropostaEmpresa[],
-    observacoesFinais?: string
-  ) => {
-    const dataHoje = new Date().toLocaleDateString('pt-BR');
-    const novoServico: ServicoContratado = {
-      id: `sc-${Date.now()}`,
-      titulo,
-      data: dataHoje,
-      descricao,
-      categoria,
-      status,
-      propostas,
-      observacoesFinais,
-      condominioId: CURRENT_CONDO_ID
-    };
-
-    setServicosContratados(prev => [novoServico, ...prev]);
-  };
-
-  const selecionarPropostaVencedora = (servicoId: string, propostaId: string) => {
-    setServicosContratados(prev => prev.map(serv => {
-      if (serv.id === servicoId) {
-        return {
-          ...serv,
-          status: 'Contratada' as StatusServicoContratado,
-          propostas: serv.propostas.map(p => ({
-            ...p,
-            selecionada: p.id === propostaId
-          }))
-        };
-      }
-      return serv;
-    }));
-  };
-
   const solicitarReserva = (
     dependenciaId: string, 
     dataReserva: string, 
@@ -2546,8 +2594,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       excluirReparo,
       resolverReparoSimples,
       adicionarBenfeitoria,
+      servicosContratados,
       adicionarServicoContratado,
-      selecionarPropostaVencedora,
+      editarServicoContratado,
+      excluirServicoContratado,
       solicitarReserva,
       cancelarReserva,
       atualizarStatusReclamacao,
@@ -2570,7 +2620,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adicionarRegraCondominio,
       editarRegraCondominio,
       excluirRegraCondominio,
-      reordenarRegrasCondominio
+      reordenarRegrasCondominio,
+      unidadesDisponiveis,
+      adicionarUnidadeDisponivel,
+      editarUnidadeDisponivel,
+      excluirUnidadeDisponivel
     }}>
       {children}
     </CondoContext.Provider>
