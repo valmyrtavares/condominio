@@ -641,5 +641,60 @@ export interface RegrasMudancaConfig {
   regrasGerais: string[];
 }
 
+// ==========================================
+// PORTARIA, ACESSOS & ENTREGAS
+// ==========================================
+export type TipoVisitante = 'Visita / Familiar' | 'Prestador de Serviço' | 'Delivery / Entregador' | 'Corretor / Vistoriador' | 'Outro';
+export type StatusAutorizacaoAcesso = 'Aguardando Chegada' | 'Entrada Liberada / Presente' | 'Finalizado / Saiu' | 'Cancelado / Expirado';
+
+export interface AutorizacaoAcesso {
+  id: string;
+  moradorId: string;
+  moradorNome: string;
+  unidade: string;
+  bloco?: string;
+  tipoVisitante: TipoVisitante;
+  nomeVisitante: string;
+  documentoRg?: string;
+  telefoneVisitante?: string;
+  fotoVisitante?: string;
+  dataPrevista: string;        // DD/MM/YYYY
+  dataPrevistaIso: string;     // YYYY-MM-DD
+  horarioEstimado: string;     // Ex: "Por volta das 15:30" ou "14h às 16h"
+  deixarEntrarDireto: boolean; // Morador marcou para deixar entrar direto
+  observacoes?: string;
+  status: StatusAutorizacaoAcesso;
+  horarioEntradaReal?: string;
+  horarioSaidaReal?: string;
+  porteiroResponsavel?: string;
+  criadoEm: string;
+  condominioId: string;
+}
+
+export type TipoEncomenda = 'Pacote / Caixa' | 'Envelope / Documento' | 'Delivery / Alimentação' | 'Medicamento' | 'Volume Grande' | 'Outro';
+export type StatusEncomenda = 'Aguardando Retirada' | 'Entregue ao Morador' | 'Devolvido';
+
+export interface EncomendaEntrega {
+  id: string;
+  unidade: string;
+  bloco?: string;
+  destinatarioNome: string;
+  tipo: TipoEncomenda;
+  empresaTransporte: string; // "Mercado Livre", "Amazon", "Correios", "iFood", "Loggi", etc.
+  codigoRastreio?: string;
+  localArmazenamento?: string; // "Armário A - Prateleira 2", "Geladeira da Portaria", "Depósito"
+  fotoPacote?: string;
+  dataRecebimento: string;   // DD/MM/YYYY
+  horaRecebimento: string;   // HH:mm
+  status: StatusEncomenda;
+  porteiroRecebedor: string;
+  dataRetirada?: string;
+  horaRetirada?: string;
+  retiradoPorNome?: string;
+  observacoes?: string;
+  condominioId: string;
+}
+
+
 
 

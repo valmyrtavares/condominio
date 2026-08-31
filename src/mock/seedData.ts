@@ -1,4 +1,4 @@
-import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio, UnidadeDisponivel, RegraTopico, ItemEnjoei, RegistroAtividade, MudancaAgendamento, RegrasMudancaConfig } from '../types';
+import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio, UnidadeDisponivel, RegraTopico, ItemEnjoei, RegistroAtividade, MudancaAgendamento, RegrasMudancaConfig, AutorizacaoAcesso, EncomendaEntrega } from '../types';
 
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
@@ -2629,6 +2629,15 @@ export const ESPINHA_DORSAL_ITEMS: EspinhaDorsalItem[] = [
     desdobramentos: ['Ocorrências do dia', 'Aprovações & Reservas', 'Histórico Cronológico'],
     rota: '/diario-sindico',
     destaquePoC: true
+  },
+  {
+    id: 'portaria',
+    titulo: 'Entregas & Portaria (Acessos)',
+    icone: 'PackageCheck',
+    descricaoCurta: 'Autorize visitas, prestadores e entregas com foto e horário, e receba avisos de encomendas na portaria.',
+    desdobramentos: ['Autorização de Entrada', 'Foto e Horário do Visitante', 'Encomendas & Pacotes', 'Avisos da Portaria'],
+    rota: '/portaria',
+    destaquePoC: true
   }
 ];
 
@@ -3040,6 +3049,138 @@ export const MOCK_REGISTROS_ATIVIDADES: RegistroAtividade[] = [
     condominioId: CURRENT_CONDO_ID
   }
 ];
+
+export const MOCK_AUTORIZACOES_ACESSO: AutorizacaoAcesso[] = [
+  {
+    id: 'acesso-001',
+    moradorId: 'usr-morador-102',
+    moradorNome: 'Marcos Almeida',
+    unidade: '102',
+    bloco: 'Bloco A',
+    tipoVisitante: 'Prestador de Serviço',
+    nomeVisitante: 'Roberto Eletricista (Luz & Força)',
+    documentoRg: '45.123.890-7',
+    telefoneVisitante: '(11) 98111-2233',
+    fotoVisitante: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?auto=format&fit=crop&w=300&q=80',
+    dataPrevista: '31/08/2026',
+    dataPrevistaIso: '2026-08-31',
+    horarioEstimado: 'Por volta das 15:30',
+    deixarEntrarDireto: true,
+    observacoes: 'Vem fazer a troca de disjuntores do quadro de força interno. Pode liberar entrada direto.',
+    status: 'Aguardando Chegada',
+    criadoEm: '31/08/2026 11:20',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'acesso-002',
+    moradorId: 'usr-morador-204',
+    moradorNome: 'Larissa Manoela',
+    unidade: '204',
+    bloco: 'Bloco B',
+    tipoVisitante: 'Visita / Familiar',
+    nomeVisitante: 'Dra. Beatriz Peixoto',
+    documentoRg: '38.990.112-4',
+    telefoneVisitante: '(11) 97654-3210',
+    fotoVisitante: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80',
+    dataPrevista: '31/08/2026',
+    dataPrevistaIso: '2026-08-31',
+    horarioEstimado: 'Entre 17:00 e 18:00',
+    deixarEntrarDireto: false,
+    observacoes: 'Minha prima do Rio. Favor interfonar assim que ela se identificar.',
+    status: 'Aguardando Chegada',
+    criadoEm: '31/08/2026 13:45',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'acesso-003',
+    moradorId: 'usr-morador-301',
+    moradorNome: 'Juliana Costa',
+    unidade: '301',
+    bloco: 'Bloco A',
+    tipoVisitante: 'Delivery / Entregador',
+    nomeVisitante: 'Carlos Silva (Farmácia Pague Menos)',
+    dataPrevista: '31/08/2026',
+    dataPrevistaIso: '2026-08-31',
+    horarioEstimado: '14:00',
+    deixarEntrarDireto: true,
+    observacoes: 'Entrega de medicamentos de uso contínuo. Pode subir até o 3º andar.',
+    status: 'Entrada Liberada / Presente',
+    horarioEntradaReal: '14:05',
+    porteiroResponsavel: 'Ademar Lopes (Portaria)',
+    criadoEm: '31/08/2026 13:10',
+    condominioId: CURRENT_CONDO_ID
+  }
+];
+
+export const MOCK_ENCOMENDAS_ENTREGAS: EncomendaEntrega[] = [
+  {
+    id: 'enc-001',
+    unidade: '102',
+    bloco: 'Bloco A',
+    destinatarioNome: 'Marcos Almeida',
+    tipo: 'Pacote / Caixa',
+    empresaTransporte: 'Mercado Livre (Envio Full)',
+    codigoRastreio: 'MLB-987213401',
+    localArmazenamento: 'Armário A - Prateleira 2',
+    fotoPacote: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80',
+    dataRecebimento: '31/08/2026',
+    horaRecebimento: '11:40',
+    status: 'Aguardando Retirada',
+    porteiroRecebedor: 'Ademar Lopes',
+    observacoes: 'Caixa média lacrada com etiqueta Mercado Livre Full.',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'enc-002',
+    unidade: '102',
+    bloco: 'Bloco A',
+    destinatarioNome: 'Sandra Almeida',
+    tipo: 'Envelope / Documento',
+    empresaTransporte: 'Correios (Sedex)',
+    codigoRastreio: 'QC123456789BR',
+    localArmazenamento: 'Gaveta de Documentos - Portaria',
+    dataRecebimento: '31/08/2026',
+    horaRecebimento: '10:15',
+    status: 'Aguardando Retirada',
+    porteiroRecebedor: 'Ademar Lopes',
+    observacoes: 'Carta registrada com aviso de recebimento.',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'enc-003',
+    unidade: '204',
+    bloco: 'Bloco B',
+    destinatarioNome: 'Larissa Manoela',
+    tipo: 'Delivery / Alimentação',
+    empresaTransporte: 'iFood Supermercados',
+    localArmazenamento: 'Geladeira Térmica da Portaria',
+    dataRecebimento: '31/08/2026',
+    horaRecebimento: '13:00',
+    status: 'Aguardando Retirada',
+    porteiroRecebedor: 'Ademar Lopes',
+    observacoes: '2 sacolas de itens refrigerados guardadas na geladeira.',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'enc-004',
+    unidade: '301',
+    bloco: 'Bloco A',
+    destinatarioNome: 'Juliana Costa',
+    tipo: 'Pacote / Caixa',
+    empresaTransporte: 'Amazon Prime Express',
+    codigoRastreio: 'BR-AMZ-889900',
+    localArmazenamento: 'Armário B',
+    dataRecebimento: '30/08/2026',
+    horaRecebimento: '16:20',
+    status: 'Entregue ao Morador',
+    porteiroRecebedor: 'Valmyr Tavares',
+    dataRetirada: '30/08/2026',
+    horaRetirada: '18:45',
+    retiradoPorNome: 'Juliana Costa',
+    condominioId: CURRENT_CONDO_ID
+  }
+];
+
 
 
 

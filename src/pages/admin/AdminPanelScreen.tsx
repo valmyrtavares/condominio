@@ -56,8 +56,10 @@ import {
   ChevronUp,
   UserPlus,
   Mail,
-  Camera,
+  Camera, 
   Upload,
+  PackageCheck,
+  Package,
   Layers,
   Settings2,
   Lock,
@@ -120,6 +122,8 @@ import { CreateEditUnidadeDisponivelModal } from '../../components/admin/CreateE
 import { CreateEditServicoContratadoModal } from '../../components/admin/CreateEditServicoContratadoModal';
 import { CreateEditDesapegoModal } from '../../components/enjoei/CreateEditDesapegoModal';
 import { CreateEditDependenciaModal } from '../../components/admin/CreateEditDependenciaModal';
+import { CreateAutorizacaoModal } from '../../components/portaria/CreateAutorizacaoModal';
+import { CreateEncomendaModal } from '../../components/portaria/CreateEncomendaModal';
 
 
 
@@ -228,7 +232,15 @@ export const AdminPanelScreen: React.FC = () => {
     atualizarStatusMudanca,
     salvarRegrasMudanca,
     excluirMudanca,
-    registrosAtividades
+    registrosAtividades,
+    autorizacoesAcesso,
+    adicionarAutorizacaoAcesso,
+    atualizarStatusAcesso,
+    excluirAutorizacaoAcesso,
+    encomendasEntregas,
+    adicionarEncomenda,
+    darBaixaEncomenda,
+    excluirEncomenda
   } = useCondo();
 
   // Accordion section collapse states (all closed by default on entry)
@@ -246,6 +258,15 @@ export const AdminPanelScreen: React.FC = () => {
   const [isEnjoeiAdminOpen, setIsEnjoeiAdminOpen] = useState(false);
   const [isDependenciasAdminOpen, setIsDependenciasAdminOpen] = useState(false);
   const [isMudancasAdminOpen, setIsMudancasAdminOpen] = useState(false);
+  const [isPortariaAdminOpen, setIsPortariaAdminOpen] = useState(false);
+
+  // 15. Gestão de Portaria & Acessos State
+  const [abaPortariaAdmin, setAbaPortariaAdmin] = useState<'acessos' | 'encomendas'>('acessos');
+  const [searchPortariaAdmin, setSearchPortariaAdmin] = useState('');
+  const [filtroStatusAcessoAdmin, setFiltroStatusAcessoAdmin] = useState('Todas');
+  const [filtroStatusEncomendaAdmin, setFiltroStatusEncomendaAdmin] = useState('Todas');
+  const [isCreateAutorizacaoAdminOpen, setIsCreateAutorizacaoAdminOpen] = useState(false);
+  const [isCreateEncomendaAdminOpen, setIsCreateEncomendaAdminOpen] = useState(false);
 
   // 14. Gestão de Mudanças State
   const [searchMudancaAdmin, setSearchMudancaAdmin] = useState('');
@@ -6431,6 +6452,507 @@ export const AdminPanelScreen: React.FC = () => {
         );
       })()}
 
+      {/* ========================================================================= */}
+      {/* SEÇÃO 15: GESTÃO DA PORTARIA: ACESSOS, VISITAS & ENCOMENDAS (INDIGO PASTEL) */}
+      {/* ========================================================================= */}
+      {(() => {
+        const totalAguardandoAcesso = autorizacoesAcesso.filter(a => a.status === 'Aguardando Chegada').length;
+        const totalPresentes = autorizacoesAcesso.filter(a => a.status === 'Entrada Liberada / Presente').length;
+        const totalEncomendasPendentes = encomendasEntregas.filter(e => e.status === 'Aguardando Retirada').length;
+
+        const filteredAcessosAdmin = autorizacoesAcesso.filter(a => {
+          const matchStatus = filtroStatusAcessoAdmin === 'Todas' || a.status === filtroStatusAcessoAdmin;
+          const termo = searchPortariaAdmin.toLowerCase().trim();
+          const matchBusca = !termo ||
+            a.nomeVisitante.toLowerCase().includes(termo) ||
+            a.moradorNome.toLowerCase().includes(termo) ||
+            a.unidade.includes(termo) ||
+            a.tipoVisitante.toLowerCase().includes(termo);
+
+          return matchStatus && matchBusca;
+        });
+
+        const filteredEncomendasAdmin = encomendasEntregas.filter(e => {
+          const matchStatus = filtroStatusEncomendaAdmin === 'Todas' || e.status === filtroStatusEncomendaAdmin;
+          const termo = searchPortariaAdmin.toLowerCase().trim();
+          const matchBusca = !termo ||
+            e.destinatarioNome.toLowerCase().includes(termo) ||
+            e.unidade.includes(termo) ||
+            e.empresaTransporte.toLowerCase().includes(termo) ||
+            e.tipo.toLowerCase().includes(termo) ||
+            (e.localArmazenamento && e.localArmazenamento.toLowerCase().includes(termo));
+
+          return matchStatus && matchBusca;
+        });
+
+        return (
+          <div className="bg-indigo-50/70 border-2 border-indigo-300 rounded-3xl shadow-md overflow-hidden">
+            
+            {/* Accordion Header */}
+            <button
+              type="button"
+              onClick={() => setIsPortariaAdminOpen(!isPortariaAdminOpen)}
+              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-indigo-100/90 hover:bg-indigo-200/70 transition-colors text-left border-b border-indigo-200 cursor-pointer select-none active:scale-[0.999]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-indigo-950 shrink-0">
+                  <PackageCheck className="w-5 h-5 text-indigo-900" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-black text-slate-950">
+                      15. Gestão da Portaria: Acessos, Visitas & Encomendas
+                    </h3>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-950 border border-indigo-300">
+                      {autorizacoesAcesso.length} acessos • {encomendasEntregas.length} encomendas
+                    </span>
+                    {totalEncomendasPendentes > 0 && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 animate-pulse">
+                        📦 {totalEncomendasPendentes} a retirar
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-700 font-medium">
+                    Consulte pré-autorizações de visitas e prestadores com foto, registre acessos e controle o recebimento e retirada de pacotes na portaria.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                  {isPortariaAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                </span>
+                <div className="p-2 rounded-xl bg-white border border-indigo-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-indigo-900 transition-transform duration-500 ease-out ${isPortariaAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
+              </div>
+            </button>
+
+            {/* Accordion Content */}
+            <div 
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
+                isPortariaAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="min-h-0 overflow-hidden bg-indigo-50/50 p-4 sm:p-6 space-y-6">
+                
+                {/* Resumo & Ações Rápidas */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/70 p-4 rounded-2xl border border-white/90 shadow-xs">
+                  <div className="flex items-center gap-4 text-xs font-bold text-slate-700 flex-wrap">
+                    <span className="flex items-center gap-1.5 bg-indigo-50 px-2.5 py-1 rounded-xl border border-indigo-200 text-indigo-950 font-black">
+                      <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                      {totalAguardandoAcesso} visitas aguardando
+                    </span>
+                    <span className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200 text-emerald-950 font-black">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      {totalPresentes} visitantes no condomínio
+                    </span>
+                    <span className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200 text-amber-950 font-black">
+                      <Package className="w-3.5 h-3.5 text-amber-600" />
+                      {totalEncomendasPendentes} pacotes na portaria
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateEncomendaAdminOpen(true)}
+                      className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Package className="w-3.5 h-3.5" />
+                      <span>+ Registrar Encomenda</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateAutorizacaoAdminOpen(true)}
+                      className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>+ Autorizar Entrada</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sub-Abas do Painel da Portaria */}
+                <div className="flex items-center gap-2 bg-white/80 p-1.5 rounded-2xl border border-slate-200 shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setAbaPortariaAdmin('acessos')}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      abaPortariaAdmin === 'acessos'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <UserCheck className="w-4 h-4" />
+                    <span>Autorizações de Entrada & Visitas ({filteredAcessosAdmin.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAbaPortariaAdmin('encomendas')}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      abaPortariaAdmin === 'encomendas'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Package className="w-4 h-4" />
+                    <span>Encomendas & Entregas ({filteredEncomendasAdmin.length})</span>
+                  </button>
+                </div>
+
+                {/* Filtros e Busca */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+                  <div className="sm:col-span-2 relative">
+                    <input
+                      type="text"
+                      placeholder={abaPortariaAdmin === 'acessos' ? "Buscar por visitante, morador ou apto..." : "Buscar por morador, pacote, transportadora ou apto..."}
+                      value={searchPortariaAdmin}
+                      onChange={(e) => setSearchPortariaAdmin(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-2xs"
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                  </div>
+
+                  {abaPortariaAdmin === 'acessos' ? (
+                    <div>
+                      <select
+                        value={filtroStatusAcessoAdmin}
+                        onChange={(e) => setFiltroStatusAcessoAdmin(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-2xs cursor-pointer"
+                      >
+                        <option value="Todas">Status: Todos</option>
+                        <option value="Aguardando Chegada">Aguardando Chegada</option>
+                        <option value="Entrada Liberada / Presente">Entrada Liberada / Presente</option>
+                        <option value="Finalizado / Saiu">Finalizado / Saiu</option>
+                        <option value="Cancelado / Expirado">Cancelado / Expirado</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <div>
+                      <select
+                        value={filtroStatusEncomendaAdmin}
+                        onChange={(e) => setFiltroStatusEncomendaAdmin(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-2xs cursor-pointer"
+                      >
+                        <option value="Todas">Status: Todas</option>
+                        <option value="Aguardando Retirada">Aguardando Retirada</option>
+                        <option value="Entregue ao Morador">Entregue ao Morador</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                {/* CONTEÚDO DA ABA 1: AUTORIZAÇÕES DE ENTRADA */}
+                {abaPortariaAdmin === 'acessos' && (
+                  <div>
+                    {filteredAcessosAdmin.length === 0 ? (
+                      <div className="p-8 text-center bg-white/70 rounded-2xl border border-slate-200 space-y-2">
+                        <UserCheck className="w-8 h-8 text-indigo-400 mx-auto" />
+                        <p className="text-xs font-bold text-slate-700">
+                          Nenhum registro de autorização de acesso encontrado com os filtros atuais.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                        {filteredAcessosAdmin.map((acesso) => {
+                          const isAguardando = acesso.status === 'Aguardando Chegada';
+                          const isPresente = acesso.status === 'Entrada Liberada / Presente';
+
+                          return (
+                            <div
+                              key={acesso.id}
+                              className={`border rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${
+                                isPresente ? 'bg-emerald-50/70 border-emerald-300' :
+                                isAguardando ? 'bg-white border-indigo-200' : 'bg-slate-50 border-slate-200 opacity-80'
+                              }`}
+                            >
+                              <div className="space-y-2.5">
+                                <div className="flex items-start gap-3">
+                                  {acesso.fotoVisitante ? (
+                                    <img
+                                      src={acesso.fotoVisitante}
+                                      alt={acesso.nomeVisitante}
+                                      className="w-13 h-13 rounded-2xl object-cover border-2 border-indigo-300 shrink-0 bg-slate-100 shadow-2xs"
+                                    />
+                                  ) : (
+                                    <div className="w-13 h-13 rounded-2xl bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-800 shrink-0">
+                                      <User className="w-6 h-6" />
+                                    </div>
+                                  )}
+
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between gap-1">
+                                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-slate-900 text-indigo-300">
+                                        {acesso.tipoVisitante}
+                                      </span>
+                                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                                        isPresente ? 'bg-emerald-100 text-emerald-950 border-emerald-300' :
+                                        isAguardando ? 'bg-indigo-100 text-indigo-950 border-indigo-300' :
+                                        'bg-slate-200 text-slate-700 border-slate-300'
+                                      }`}>
+                                        {acesso.status}
+                                      </span>
+                                    </div>
+
+                                    <h4 className="font-black text-sm text-slate-950 leading-tight truncate mt-1">
+                                      {acesso.nomeVisitante}
+                                    </h4>
+
+                                    <p className="text-[11px] text-slate-600 font-bold">
+                                      Apto <b>{acesso.unidade}</b> {acesso.bloco && `(${acesso.bloco})`} • {acesso.moradorNome}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Detalhes de Horário & Regra de Entrada */}
+                                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-slate-500 font-bold">Horário Previsto:</span>
+                                    <strong className="text-slate-950 font-black flex items-center gap-1">
+                                      <Clock className="w-3 h-3 text-indigo-600" />
+                                      {acesso.horarioEstimado} ({acesso.dataPrevista})
+                                    </strong>
+                                  </div>
+
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-slate-500 font-bold">Diretriz da Portaria:</span>
+                                    <span className={`font-black text-[11px] ${
+                                      acesso.deixarEntrarDireto ? 'text-emerald-700' : 'text-amber-800'
+                                    }`}>
+                                      {acesso.deixarEntrarDireto ? '✓ Deixar Entrar Direto' : '⚠️ Interfonar antes'}
+                                    </span>
+                                  </div>
+
+                                  {acesso.documentoRg && (
+                                    <div className="text-[10px] text-slate-600 font-mono">
+                                      RG/Doc: {acesso.documentoRg}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {acesso.observacoes && (
+                                  <p className="text-[11px] text-slate-700 font-medium bg-amber-50/70 p-2 rounded-lg border border-amber-200">
+                                    <b>Recado:</b> {acesso.observacoes}
+                                  </p>
+                                )}
+
+                                {acesso.horarioEntradaReal && (
+                                  <div className="text-[10px] text-emerald-950 font-bold bg-emerald-100 p-1.5 rounded-lg">
+                                    Entrou às {acesso.horarioEntradaReal} {acesso.horarioSaidaReal && `• Saiu às ${acesso.horarioSaidaReal}`}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Ações da Portaria */}
+                              <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-200 flex-wrap">
+                                <div className="flex items-center gap-1.5">
+                                  {isAguardando && (
+                                    <button
+                                      type="button"
+                                      onClick={() => atualizarStatusAcesso(acesso.id, 'Entrada Liberada / Presente')}
+                                      className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>Registrar Entrada</span>
+                                    </button>
+                                  )}
+
+                                  {isPresente && (
+                                    <button
+                                      type="button"
+                                      onClick={() => atualizarStatusAcesso(acesso.id, 'Finalizado / Saiu')}
+                                      className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <span>Registrar Saída</span>
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const unit = unidades.find(u => u.numero === acesso.unidade);
+                                      setSelectedUnidadeParaNotificar(unit || {
+                                        id: `temp-${acesso.unidade}`,
+                                        numero: acesso.unidade,
+                                        bloco: acesso.bloco || '',
+                                        moradores: []
+                                      });
+                                      setIsNotifyModalOpen(true);
+                                    }}
+                                    className="p-1.5 rounded-xl text-amber-800 hover:bg-amber-100 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                    title="Notificar Apto"
+                                  >
+                                    <Bell className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm('Deseja excluir este registro de acesso?')) {
+                                      excluirAutorizacaoAcesso(acesso.id);
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* CONTEÚDO DA ABA 2: ENCOMENDAS & ENTREGAS RECEBIDAS */}
+                {abaPortariaAdmin === 'encomendas' && (
+                  <div>
+                    {filteredEncomendasAdmin.length === 0 ? (
+                      <div className="p-8 text-center bg-white/70 rounded-2xl border border-slate-200 space-y-2">
+                        <Package className="w-8 h-8 text-indigo-400 mx-auto" />
+                        <p className="text-xs font-bold text-slate-700">
+                          Nenhum registro de encomenda encontrado com os filtros atuais.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                        {filteredEncomendasAdmin.map((enc) => {
+                          const isPendente = enc.status === 'Aguardando Retirada';
+
+                          return (
+                            <div
+                              key={enc.id}
+                              className={`border rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${
+                                isPendente ? 'bg-amber-50/80 border-amber-300' : 'bg-white border-slate-200'
+                              }`}
+                            >
+                              <div className="space-y-2.5">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black shrink-0 ${
+                                      isPendente ? 'bg-amber-500 text-slate-950' : 'bg-slate-200 text-slate-700'
+                                    }`}>
+                                      <Package className="w-5 h-5" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <span className="text-[10px] font-black uppercase text-indigo-900 block truncate">
+                                        {enc.empresaTransporte}
+                                      </span>
+                                      <h4 className="font-black text-sm text-slate-950 leading-tight truncate">
+                                        Apto {enc.unidade} • {enc.destinatarioNome}
+                                      </h4>
+                                    </div>
+                                  </div>
+
+                                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${
+                                    isPendente ? 'bg-amber-400 text-slate-950 border-amber-500 animate-pulse' : 'bg-emerald-100 text-emerald-950 border-emerald-300'
+                                  }`}>
+                                    {enc.status}
+                                  </span>
+                                </div>
+
+                                {/* Dados da Encomenda */}
+                                <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-slate-500 font-bold">Tipo:</span>
+                                    <strong className="text-slate-950">{enc.tipo}</strong>
+                                  </div>
+
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-slate-500 font-bold">Guardado em:</span>
+                                    <span className="text-indigo-900 font-bold flex items-center gap-1">
+                                      <MapPin className="w-3 h-3 text-indigo-600" />
+                                      {enc.localArmazenamento || 'Portaria'}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center justify-between text-[10px] text-slate-600">
+                                    <span>Recebido: {enc.dataRecebimento} às {enc.horaRecebimento}</span>
+                                    <span>Por: {enc.porteiroRecebedor}</span>
+                                  </div>
+
+                                  {enc.codigoRastreio && (
+                                    <div className="text-[10px] text-slate-700 font-mono bg-slate-100 px-2 py-0.5 rounded">
+                                      Rastreio: {enc.codigoRastreio}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {enc.status === 'Entregue ao Morador' && (
+                                  <div className="text-[10px] text-emerald-950 font-bold bg-emerald-100 p-1.5 rounded-lg">
+                                    ✓ Retirado por {enc.retiradoPorNome || enc.destinatarioNome} em {enc.dataRetirada} às {enc.horaRetirada}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Ações */}
+                              <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-200 flex-wrap">
+                                <div className="flex items-center gap-1.5">
+                                  {isPendente && (
+                                    <button
+                                      type="button"
+                                      onClick={() => darBaixaEncomenda(enc.id)}
+                                      className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                      title="Dar baixa confirmando que o morador retirou o pacote"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>Dar Baixa (Entregue)</span>
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const unit = unidades.find(u => u.numero === enc.unidade);
+                                      setSelectedUnidadeParaNotificar(unit || {
+                                        id: `temp-${enc.unidade}`,
+                                        numero: enc.unidade,
+                                        bloco: enc.bloco || '',
+                                        moradores: []
+                                      });
+                                      setIsNotifyModalOpen(true);
+                                    }}
+                                    className="p-1.5 rounded-xl text-amber-800 hover:bg-amber-100 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                    title="Avisar Morador"
+                                  >
+                                    <Bell className="w-3.5 h-3.5" /> Notificar
+                                  </button>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm('Deseja excluir este registro de encomenda?')) {
+                                      excluirEncomenda(enc.id);
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+            </div>
+
+          </div>
+        );
+      })()}
+
 
 
 
@@ -7304,6 +7826,17 @@ export const AdminPanelScreen: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modais de Portaria & Acessos no Admin */}
+      <CreateAutorizacaoModal
+        isOpen={isCreateAutorizacaoAdminOpen}
+        onClose={() => setIsCreateAutorizacaoAdminOpen(false)}
+      />
+
+      <CreateEncomendaModal
+        isOpen={isCreateEncomendaAdminOpen}
+        onClose={() => setIsCreateEncomendaAdminOpen(false)}
+      />
 
     </div>
   );

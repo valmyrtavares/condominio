@@ -45,7 +45,11 @@ import {
   TipoAtividade,
   MudancaAgendamento,
   StatusMudanca,
-  RegrasMudancaConfig
+  RegrasMudancaConfig,
+  AutorizacaoAcesso,
+  StatusAutorizacaoAcesso,
+  EncomendaEntrega,
+  StatusEncomenda
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -68,6 +72,8 @@ import {
   MOCK_REGISTROS_ATIVIDADES,
   MOCK_MUDANCAS,
   MOCK_REGRAS_MUDANCA,
+  MOCK_AUTORIZACOES_ACESSO,
+  MOCK_ENCOMENDAS_ENTREGAS,
   ESPINHA_DORSAL_ITEMS,
   CURRENT_CONDO_ID
 } from '../mock/seedData';
@@ -152,6 +158,16 @@ interface CondoContextType {
   registrosAtividades: RegistroAtividade[];
   adicionarRegistroAtividade: (reg: Omit<RegistroAtividade, 'id' | 'condominioId'>) => void;
   excluirRegistroAtividade: (id: string) => void;
+
+  // Portaria, Acessos e Encomendas/Entregas
+  autorizacoesAcesso: AutorizacaoAcesso[];
+  adicionarAutorizacaoAcesso: (nova: Omit<AutorizacaoAcesso, 'id' | 'condominioId' | 'criadoEm' | 'status'> & { status?: StatusAutorizacaoAcesso }) => void;
+  atualizarStatusAcesso: (id: string, status: StatusAutorizacaoAcesso, porteiroNome?: string) => void;
+  excluirAutorizacaoAcesso: (id: string) => void;
+  encomendasEntregas: EncomendaEntrega[];
+  adicionarEncomenda: (nova: Omit<EncomendaEntrega, 'id' | 'condominioId' | 'status' | 'dataRecebimento' | 'horaRecebimento'> & { dataRecebimento?: string; horaRecebimento?: string; status?: StatusEncomenda }) => void;
+  darBaixaEncomenda: (id: string, retiradoPorNome?: string) => void;
+  excluirEncomenda: (id: string) => void;
 
   // Admin & Unidades Management
   isAdminLoggedIn: boolean;
@@ -833,6 +849,147 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const excluirMudanca = (id: string) => {
     setMudancas(prev => prev.filter(m => m.id !== id));
+  };
+
+  // ==========================================
+  // PORTARIA: AUTORIZAÇÃO DE ACESSOS E VISITAS
+  // ==========================================
+  const [autorizacoesAcesso, setAutorizacoesAcesso] = useState<AutorizacaoAcesso[]>(() => {
+    const saved = localStorage.getItem('condo_autorizacoes_acesso_list');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return MOCK_AUTORIZACOES_ACESSO;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('condo_autorizacoes_acesso_list', JSON.stringify(autorizacoesAcesso));
+    } catch {}
+  }, [autorizacoesAcesso]);
+
+  const adicionarAutorizacaoAcesso = (nova: Omit<AutorizacaoAcesso, 'id' | 'condominioId' | 'criadoEm' | 'status'> & { status?: StatusAutorizacaoAcesso }) => {
+    const id = `acesso-${Date.now()}`;
+    const agora = new Date();
+    const dataHoraStr = `${agora.toLocaleDateString('pt-BR')} ${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
+    const novaAuth: AutorizacaoAcesso = {
+      ...nova,
+      id,
+      status: nova.status || 'Aguardando Chegada',
+      criadoEm: dataHoraStr,
+      condominioId: CURRENT_CONDO_ID
+    };
+    setAutorizacoesAcesso(prev => [novaAuth, ...prev]);
+
+    // Registra no Diário do Síndico
+    adicionarRegistroAtividade({
+      dataHora: dataHoraStr,
+      dataIso: agora.toISOString().split('T')[0],
+      hora: `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`,
+      tipo: 'seguranca_acesso',
+      titulo: `Autorização de Entrada: ${nova.nomeVisitante}`,
+      descricao: `Apto ${nova.unidade} autorizou a entrada de "${nova.nomeVisitante}" (${nova.tipoVisitante}) para ${nova.dataPrevista} (${nova.horarioEstimado}).`,
+      autorNome: nova.moradorNome,
+      autorUnidade: nova.unidade,
+      autorTipo: 'morador',
+      categoriaBadge: 'Portaria',
+      linkTela: 'portaria'
+    });
+  };
+
+  const atualizarStatusAcesso = (id: string, novoStatus: StatusAutorizacaoAcesso, porteiroNome?: string) => {
+    const agora = new Date();
+    const horaAtual = `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
+
+    setAutorizacoesAcesso(prev => prev.map(a => {
+      if (a.id === id) {
+        return {
+          ...a,
+          status: novoStatus,
+          porteiroResponsavel: porteiroNome || a.porteiroResponsavel || 'Portaria',
+          horarioEntradaReal: novoStatus === 'Entrada Liberada / Presente' ? (a.horarioEntradaReal || horaAtual) : a.horarioEntradaReal,
+          horarioSaidaReal: novoStatus === 'Finalizado / Saiu' ? horaAtual : a.horarioSaidaReal
+        };
+      }
+      return a;
+    }));
+  };
+
+  const excluirAutorizacaoAcesso = (id: string) => {
+    setAutorizacoesAcesso(prev => prev.filter(a => a.id !== id));
+  };
+
+  // ==========================================
+  // PORTARIA: ENCOMENDAS & ENTREGAS
+  // ==========================================
+  const [encomendasEntregas, setEncomendasEntregas] = useState<EncomendaEntrega[]>(() => {
+    const saved = localStorage.getItem('condo_encomendas_entregas_list');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return MOCK_ENCOMENDAS_ENTREGAS;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('condo_encomendas_entregas_list', JSON.stringify(encomendasEntregas));
+    } catch {}
+  }, [encomendasEntregas]);
+
+  const adicionarEncomenda = (nova: Omit<EncomendaEntrega, 'id' | 'condominioId' | 'status' | 'dataRecebimento' | 'horaRecebimento'> & { dataRecebimento?: string; horaRecebimento?: string; status?: StatusEncomenda }) => {
+    const id = `enc-${Date.now()}`;
+    const agora = new Date();
+    const dataStr = nova.dataRecebimento || agora.toLocaleDateString('pt-BR');
+    const horaStr = nova.horaRecebimento || `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
+    
+    const novaEnc: EncomendaEntrega = {
+      ...nova,
+      id,
+      dataRecebimento: dataStr,
+      horaRecebimento: horaStr,
+      status: nova.status || 'Aguardando Retirada',
+      condominioId: CURRENT_CONDO_ID
+    };
+    setEncomendasEntregas(prev => [novaEnc, ...prev]);
+
+    // Envia Notificação Privada automática para a unidade
+    const cleanUnit = nova.unidade.replace(/[^0-9]/g, '');
+    if (cleanUnit) {
+      enviarNotificacaoPrivada(
+        cleanUnit,
+        `📦 Nova Encomenda na Portaria: Chegou um(a) ${nova.tipo} (${nova.empresaTransporte}) para ${nova.destinatarioNome}. Guardado em: ${nova.localArmazenamento || 'Portaria'}.`,
+        'alta'
+      );
+    }
+  };
+
+  const darBaixaEncomenda = (id: string, retiradoPorNome?: string) => {
+    const agora = new Date();
+    const dataStr = agora.toLocaleDateString('pt-BR');
+    const horaStr = `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
+
+    setEncomendasEntregas(prev => prev.map(enc => {
+      if (enc.id === id) {
+        return {
+          ...enc,
+          status: 'Entregue ao Morador',
+          dataRetirada: dataStr,
+          horaRetirada: horaStr,
+          retiradoPorNome: retiradoPorNome || enc.destinatarioNome
+        };
+      }
+      return enc;
+    }));
+  };
+
+  const excluirEncomenda = (id: string) => {
+    setEncomendasEntregas(prev => prev.filter(enc => enc.id !== id));
   };
 
   // Admin Roles & Categories
@@ -2957,7 +3114,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       salvarRegrasMudanca,
       registrosAtividades,
       adicionarRegistroAtividade,
-      excluirRegistroAtividade
+      excluirRegistroAtividade,
+      autorizacoesAcesso,
+      adicionarAutorizacaoAcesso,
+      atualizarStatusAcesso,
+      excluirAutorizacaoAcesso,
+      encomendasEntregas,
+      adicionarEncomenda,
+      darBaixaEncomenda,
+      excluirEncomenda
     }}>
       {children}
     </CondoContext.Provider>

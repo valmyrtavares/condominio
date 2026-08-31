@@ -23,6 +23,7 @@ import { UnidadesDisponiveisScreen } from './pages/UnidadesDisponiveisScreen';
 import { EnjoeiScreen } from './pages/EnjoeiScreen';
 import { MudancasScreen } from './pages/MudancasScreen';
 import { DiarioSindicoScreen } from './pages/DiarioSindicoScreen';
+import { PortariaScreen } from './pages/PortariaScreen';
 import { AdminLoginScreen } from './pages/admin/AdminLoginScreen';
 import { AdminPanelScreen } from './pages/admin/AdminPanelScreen';
 import { ResidentLoginScreen } from './pages/auth/ResidentLoginScreen';
@@ -97,6 +98,8 @@ const MainContent: React.FC = () => {
         return <MudancasScreen />;
       case 'diario-sindico':
         return <DiarioSindicoScreen />;
+      case 'portaria':
+        return <PortariaScreen />;
       default:
         return <GenericModuleScreen moduleId={currentScreen} />;
     }
