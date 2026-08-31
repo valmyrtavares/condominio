@@ -104,6 +104,7 @@ import {
   Wallet,
   Tag,
   BookOpen,
+  ChevronRight,
   Truck
 } from 'lucide-react';
 import { PrivateNotifyModal } from '../../components/admin/PrivateNotifyModal';
@@ -653,20 +654,49 @@ export const AdminPanelScreen: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setCurrentScreen('diario-sindico')}
-            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Diário do Síndico ({registrosAtividades.length})</span>
-          </button>
           <span className="px-3.5 py-1.5 bg-amber-500 text-slate-950 rounded-xl font-black text-xs shadow-xs">
             {unidades.length} Unidades
           </span>
           <span className="px-3.5 py-1.5 bg-slate-900 text-amber-300 rounded-xl font-black text-xs shadow-xs">
             {adminUsers.length} Administradores & Gestores
           </span>
+        </div>
+      </div>
+
+      {/* Card Exclusivo do Diário do Síndico & Linha do Tempo (Acesso Somente para Administradores) */}
+      <div 
+        onClick={() => setCurrentScreen('diario-sindico')}
+        className="bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-950 text-white rounded-3xl p-5 sm:p-6 border-2 border-indigo-500/40 shadow-xl cursor-pointer hover:border-indigo-400 hover:shadow-indigo-500/10 transition-all group select-none"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 group-hover:scale-110 transition-transform shrink-0">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-500/30 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-400/30">
+                  Exclusivo da Administração
+                </span>
+                <span className="text-[10px] font-extrabold text-slate-400">
+                  {registrosAtividades.length} eventos registrados
+                </span>
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-white group-hover:text-indigo-200 transition-colors mt-0.5">
+                Diário do Síndico • Linha do Tempo & Galeria de Atividades
+              </h3>
+              <p className="text-xs text-slate-300 font-medium max-w-2xl mt-0.5">
+                Acompanhe em ordem cronológica tudo o que aconteceu no condomínio: ocorrências, aprovações de mudanças, novos moradores, manutenções e registros de portaria do dia a dia.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+            <span className="px-4 py-2.5 rounded-2xl bg-indigo-600 group-hover:bg-indigo-500 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-md group-hover:shadow-indigo-500/25">
+              <span>Abrir Diário Cronológico</span>
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </span>
+          </div>
         </div>
       </div>
 

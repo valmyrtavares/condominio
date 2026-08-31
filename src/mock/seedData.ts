@@ -2622,15 +2622,6 @@ export const ESPINHA_DORSAL_ITEMS: EspinhaDorsalItem[] = [
     destaquePoC: true
   },
   {
-    id: 'diario-sindico',
-    titulo: 'Diário do Síndico (Feed Diário)',
-    icone: 'BookOpen',
-    descricaoCurta: 'Galeria e linha do tempo de tudo o que aconteceu no condomínio dia a dia para controle da gestão.',
-    desdobramentos: ['Ocorrências do dia', 'Aprovações & Reservas', 'Histórico Cronológico'],
-    rota: '/diario-sindico',
-    destaquePoC: true
-  },
-  {
     id: 'portaria',
     titulo: 'Entregas & Portaria (Acessos)',
     icone: 'PackageCheck',
