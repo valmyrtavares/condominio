@@ -5239,38 +5239,50 @@ export const AdminPanelScreen: React.FC = () => {
         const totalOrcadasAdmin = servicosContratados.filter(s => s.status === 'Orçada').length;
 
         return (
-          <div className="bg-white/45 border border-white/60 rounded-3xl overflow-hidden shadow-xl hover:bg-white/50 transition-all duration-300">
+          <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl shadow-md overflow-hidden">
             
-            {/* Header Sanfonado */}
+            {/* Accordion Header */}
             <button
+              type="button"
               onClick={() => setIsFornecedoresSectionOpen(!isFornecedoresSectionOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-100/90 hover:bg-amber-200/70 transition-colors text-left border-b border-amber-200 cursor-pointer select-none active:scale-[0.999]"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center shadow-md font-black shrink-0">
-                  <Briefcase className="w-5 h-5 text-slate-950" />
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-950 shrink-0">
+                  <Briefcase className="w-5 h-5 text-amber-900" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base sm:text-lg text-slate-950 leading-tight flex items-center gap-2">
-                    11. Gestão de Fornecedores & Serviços Contratados
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-black text-slate-950">
+                      11. Gestão de Fornecedores & Serviços Contratados
+                    </h3>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
                       {servicosContratados.length} empresas
                     </span>
-                  </h3>
-                  <p className="text-xs text-slate-700 font-semibold mt-0.5">
+                  </div>
+                  <p className="text-xs text-slate-700 font-medium">
                     Cadastre, edite e organize empresas contratadas e cotações por categoria (Elevadores, Paisagismo, Elétrica, Segurança, etc.)
                   </p>
                 </div>
               </div>
 
-              <div className="p-2 rounded-full bg-white/60 border border-white/80 text-slate-900 shadow-xs shrink-0 ml-2">
-                {isFornecedoresSectionOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                  {isFornecedoresSectionOpen ? 'Recolher seção' : 'Expandir seção'}
+                </span>
+                <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isFornecedoresSectionOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
               </div>
             </button>
 
-            {/* Conteúdo Expansível */}
-            <div className={`transition-all duration-300 ${isFornecedoresSectionOpen ? 'block' : 'hidden'}`}>
-              <div className="p-4 sm:p-6 border-t border-slate-950/10 space-y-5 bg-white/30">
+            {/* Accordion Content */}
+            <div 
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
+                isFornecedoresSectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
                 
                 {/* Resumo & Botão de Criação */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
@@ -5537,38 +5549,50 @@ export const AdminPanelScreen: React.FC = () => {
         const totalSuspensosAdmin = itensEnjoei.filter(i => i.status === 'suspenso').length;
 
         return (
-          <div className="bg-white/45 border border-white/60 rounded-3xl overflow-hidden shadow-xl hover:bg-white/50 transition-all duration-300">
+          <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl shadow-md overflow-hidden">
             
-            {/* Header Sanfonado */}
+            {/* Accordion Header */}
             <button
+              type="button"
               onClick={() => setIsEnjoeiAdminOpen(!isEnjoeiAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-100/90 hover:bg-amber-200/70 transition-colors text-left border-b border-amber-200 cursor-pointer select-none active:scale-[0.999]"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-md font-black shrink-0">
-                  <ShoppingBag className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center text-rose-950 shrink-0">
+                  <ShoppingBag className="w-5 h-5 text-rose-700" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base sm:text-lg text-slate-950 leading-tight flex items-center gap-2">
-                    12. Gestão & Moderação do Enjoei do Condomínio
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-950 border border-rose-300">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-black text-slate-950">
+                      12. Gestão & Moderação do Enjoei do Condomínio
+                    </h3>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-rose-200 text-rose-950 border border-rose-300">
                       {itensEnjoei.length} anúncios
                     </span>
-                  </h3>
-                  <p className="text-xs text-slate-700 font-semibold mt-0.5">
+                  </div>
+                  <p className="text-xs text-slate-700 font-medium">
                     Modere desapegos, vendas, doações e trocas entre moradores. Suspenda anúncios irregulares com notificação automática.
                   </p>
                 </div>
               </div>
 
-              <div className="p-2 rounded-full bg-white/60 border border-white/80 text-slate-900 shadow-xs shrink-0 ml-2">
-                {isEnjoeiAdminOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                  {isEnjoeiAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                </span>
+                <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isEnjoeiAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
               </div>
             </button>
 
-            {/* Conteúdo Expansível */}
-            <div className={`transition-all duration-300 ${isEnjoeiAdminOpen ? 'block' : 'hidden'}`}>
-              <div className="p-4 sm:p-6 border-t border-slate-950/10 space-y-5 bg-white/30">
+            {/* Accordion Content */}
+            <div 
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
+                isEnjoeiAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
                 
                 {/* Resumo & Botão de Criação */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
@@ -5869,38 +5893,50 @@ export const AdminPanelScreen: React.FC = () => {
         });
 
         return (
-          <div className="bg-white/45 border border-white/60 rounded-3xl overflow-hidden shadow-xl hover:bg-white/50 transition-all duration-300">
+          <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl shadow-md overflow-hidden">
             
-            {/* Header Sanfonado */}
+            {/* Accordion Header */}
             <button
+              type="button"
               onClick={() => setIsDependenciasAdminOpen(!isDependenciasAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-100/90 hover:bg-amber-200/70 transition-colors text-left border-b border-amber-200 cursor-pointer select-none active:scale-[0.999]"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center shadow-md font-black shrink-0">
-                  <Building2 className="w-5 h-5 text-slate-950" />
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-950 shrink-0">
+                  <Building2 className="w-5 h-5 text-amber-900" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base sm:text-lg text-slate-950 leading-tight flex items-center gap-2">
-                    13. Gestão de Dependências & Áreas Comuns
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-black text-slate-950">
+                      13. Gestão de Dependências & Áreas Comuns
+                    </h3>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
                       {dependencias.length} espaços
                     </span>
-                  </h3>
-                  <p className="text-xs text-slate-700 font-semibold mt-0.5">
+                  </div>
+                  <p className="text-xs text-slate-700 font-medium">
                     Cadastre, edite fotos, regras de uso, horários, capacidade e taxas de agendamento de cada espaço do condomínio.
                   </p>
                 </div>
               </div>
 
-              <div className="p-2 rounded-full bg-white/60 border border-white/80 text-slate-900 shadow-xs shrink-0 ml-2">
-                {isDependenciasAdminOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                  {isDependenciasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                </span>
+                <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isDependenciasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
               </div>
             </button>
 
-            {/* Conteúdo Expansível */}
-            <div className={`transition-all duration-300 ${isDependenciasAdminOpen ? 'block' : 'hidden'}`}>
-              <div className="p-4 sm:p-6 border-t border-slate-950/10 space-y-5 bg-white/30">
+            {/* Accordion Content */}
+            <div 
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
+                isDependenciasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
                 
                 {/* Resumo & Botão de Criação */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
@@ -6167,21 +6203,24 @@ export const AdminPanelScreen: React.FC = () => {
         });
 
         return (
-          <div className="bg-white/45 border border-white/60 rounded-3xl overflow-hidden shadow-xl hover:bg-white/50 transition-all duration-300">
+          <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl shadow-md overflow-hidden">
             
-            {/* Header Sanfonado */}
+            {/* Accordion Header */}
             <button
+              type="button"
               onClick={() => setIsMudancasAdminOpen(!isMudancasAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-100/90 hover:bg-amber-200/70 transition-colors text-left border-b border-amber-200 cursor-pointer select-none active:scale-[0.999]"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center shadow-md font-black shrink-0">
-                  <Truck className="w-5 h-5 text-slate-950" />
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-950 shrink-0">
+                  <Truck className="w-5 h-5 text-amber-900" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base sm:text-lg text-slate-950 leading-tight flex items-center gap-2">
-                    14. Gestão & Autorização de Mudanças
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-black text-slate-950">
+                      14. Gestão & Autorização de Mudanças
+                    </h3>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
                       {mudancas.length} agendadas
                     </span>
                     {totalPendentes > 0 && (
@@ -6189,21 +6228,30 @@ export const AdminPanelScreen: React.FC = () => {
                         ⚠️ {totalPendentes} pendentes
                       </span>
                     )}
-                  </h3>
-                  <p className="text-xs text-slate-700 font-semibold mt-0.5">
+                  </div>
+                  <p className="text-xs text-slate-700 font-medium">
                     Aprove ou recuse agendamentos de mudança, consulte veículos na portaria e gerencie regras de elevador de serviço.
                   </p>
                 </div>
               </div>
 
-              <div className="p-2 rounded-full bg-white/60 border border-white/80 text-slate-900 shadow-xs shrink-0 ml-2">
-                {isMudancasAdminOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                  {isMudancasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                </span>
+                <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isMudancasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
               </div>
             </button>
 
-            {/* Conteúdo Expansível */}
-            <div className={`transition-all duration-300 ${isMudancasAdminOpen ? 'block' : 'hidden'}`}>
-              <div className="p-4 sm:p-6 border-t border-slate-950/10 space-y-5 bg-white/30">
+            {/* Accordion Content */}
+            <div 
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
+                isMudancasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
                 
                 {/* Resumo */}
                 <div className="flex items-center gap-2 flex-wrap bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
