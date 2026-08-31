@@ -80,6 +80,9 @@ interface CondoContextType {
   editarServicoContratado: (id: string, dados: Partial<ServicoContratado>) => void;
   excluirServicoContratado: (id: string) => void;
   dependencias: Dependencia[];
+  adicionarDependencia: (nova: Omit<Dependencia, 'id' | 'condominioId'>) => void;
+  editarDependencia: (id: string, dados: Partial<Dependencia>) => void;
+  excluirDependencia: (id: string) => void;
   reservas: ReservaDependencia[];
   assembleias: Assembleia[];
   adicionarAssembleia: (nova: Omit<Assembleia, 'id' | 'condominioId'>) => void;
@@ -848,7 +851,48 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
   const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>(MOCK_BENFEITORIAS);
   const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>(MOCK_VAGAS_GARAGEM);
-  const [dependencias] = useState<Dependencia[]>(MOCK_DEPENDENCIAS);
+  // Dependências & Áreas Comuns com persistência
+  const [dependencias, setDependencias] = useState<Dependencia[]>(() => {
+    const saved = localStorage.getItem('condo_dependencias_list');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return MOCK_DEPENDENCIAS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('condo_dependencias_list', JSON.stringify(dependencias));
+  }, [dependencias]);
+
+  const adicionarDependencia = (nova: Omit<Dependencia, 'id' | 'condominioId'>) => {
+    const cleanNome = nova.nome.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'dep';
+    const id = `dep-${cleanNome}-${Date.now()}`;
+    const novaDep: Dependencia = {
+      ...nova,
+      id,
+      condominioId: CURRENT_CONDO_ID
+    };
+    setDependencias(prev => [novaDep, ...prev]);
+  };
+
+  const editarDependencia = (id: string, dados: Partial<Dependencia>) => {
+    setDependencias(prev => prev.map(d => {
+      if (d.id === id) {
+        return {
+          ...d,
+          ...dados
+        };
+      }
+      return d;
+    }));
+  };
+
+  const excluirDependencia = (id: string) => {
+    setDependencias(prev => prev.filter(d => d.id !== id));
+  };
+
   const [reservas, setReservas] = useState<ReservaDependencia[]>(MOCK_RESERVAS);
   // Assembleias e Reuniões Informais com persistência
   const [assembleias, setAssembleias] = useState<Assembleia[]>(() => {
@@ -2619,6 +2663,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       benfeitorias,
       vagasGaragem,
       dependencias,
+      adicionarDependencia,
+      editarDependencia,
+      excluirDependencia,
       reservas,
       assembleias,
       adicionarAssembleia,

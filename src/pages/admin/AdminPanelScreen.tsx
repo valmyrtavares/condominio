@@ -25,7 +25,9 @@ import {
   UnidadeDisponivel,
   FinalidadeImovel,
   ServicoContratado,
-  ItemEnjoei
+  ItemEnjoei,
+  Dependencia,
+  TipoDependencia
 } from '../../types';
 import { 
   Building, 
@@ -113,6 +115,7 @@ import { CreateEditRegraModal } from '../../components/admin/CreateEditRegraModa
 import { CreateEditUnidadeDisponivelModal } from '../../components/admin/CreateEditUnidadeDisponivelModal';
 import { CreateEditServicoContratadoModal } from '../../components/admin/CreateEditServicoContratadoModal';
 import { CreateEditDesapegoModal } from '../../components/enjoei/CreateEditDesapegoModal';
+import { CreateEditDependenciaModal } from '../../components/admin/CreateEditDependenciaModal';
 
 
 
@@ -211,7 +214,11 @@ export const AdminPanelScreen: React.FC = () => {
     atualizarStatusItemEnjoei,
     suspenderItemEnjoei,
     reativarItemEnjoei,
-    excluirItemEnjoei
+    excluirItemEnjoei,
+    dependencias,
+    adicionarDependencia,
+    editarDependencia,
+    excluirDependencia
   } = useCondo();
 
   // Accordion section collapse states (all closed by default on entry)
@@ -227,6 +234,14 @@ export const AdminPanelScreen: React.FC = () => {
   const [isUnidadesDisponiveisSectionOpen, setIsUnidadesDisponiveisSectionOpen] = useState(false);
   const [isFornecedoresSectionOpen, setIsFornecedoresSectionOpen] = useState(false);
   const [isEnjoeiAdminOpen, setIsEnjoeiAdminOpen] = useState(false);
+  const [isDependenciasAdminOpen, setIsDependenciasAdminOpen] = useState(false);
+
+  // 13. Gestão de Dependências & Áreas Comuns State
+  const [isCreateEditDependenciaModalOpen, setIsCreateEditDependenciaModalOpen] = useState(false);
+  const [dependenciaToEditInAdmin, setDependenciaToEditInAdmin] = useState<Dependencia | null>(null);
+  const [searchDependenciaAdmin, setSearchDependenciaAdmin] = useState('');
+  const [filtroTipoDependenciaAdmin, setFiltroTipoDependenciaAdmin] = useState('Todas');
+  const [filtroRegimeDependenciaAdmin, setFiltroRegimeDependenciaAdmin] = useState('Todas');
 
   // 12. Gestão & Moderação do Enjoei do Condomínio State
   const [isCreateEditDesapegoModalOpen, setIsCreateEditDesapegoModalOpen] = useState(false);
@@ -5798,6 +5813,315 @@ export const AdminPanelScreen: React.FC = () => {
         );
       })()}
 
+      {/* ========================================================================= */}
+      {/* SEÇÃO 13: GESTÃO DE DEPENDÊNCIAS & ÁREAS COMUNS (CARD RETRÁTIL) */}
+      {/* ========================================================================= */}
+      {(() => {
+        const totalReservaveis = dependencias.filter(d => d.requerReserva).length;
+        const totalUsoLivre = dependencias.filter(d => !d.requerReserva).length;
+
+        const tiposDisponiveis = [
+          'Todas',
+          'Lazer & Convivência',
+          'Esporte & Saúde',
+          'Infantil',
+          'Infraestrutura & Acesso'
+        ];
+
+        const filteredDependenciasAdmin = dependencias.filter(dep => {
+          const matchTipo = filtroTipoDependenciaAdmin === 'Todas' || dep.tipo === filtroTipoDependenciaAdmin;
+          const matchRegime = filtroRegimeDependenciaAdmin === 'Todas' || 
+            (filtroRegimeDependenciaAdmin === 'reservavel' && dep.requerReserva) ||
+            (filtroRegimeDependenciaAdmin === 'livre' && !dep.requerReserva);
+          const termo = searchDependenciaAdmin.toLowerCase().trim();
+          const matchBusca = !termo ||
+            dep.nome.toLowerCase().includes(termo) ||
+            dep.descricao.toLowerCase().includes(termo) ||
+            dep.tipo.toLowerCase().includes(termo) ||
+            dep.comodidades.some(c => c.toLowerCase().includes(termo));
+
+          return matchTipo && matchRegime && matchBusca;
+        });
+
+        return (
+          <div className="bg-white/45 border border-white/60 rounded-3xl overflow-hidden shadow-xl hover:bg-white/50 transition-all duration-300">
+            
+            {/* Header Sanfonado */}
+            <button
+              onClick={() => setIsDependenciasAdminOpen(!isDependenciasAdminOpen)}
+              className="w-full p-4 sm:p-5 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center shadow-md font-black shrink-0">
+                  <Building2 className="w-5 h-5 text-slate-950" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base sm:text-lg text-slate-950 leading-tight flex items-center gap-2">
+                    13. Gestão de Dependências & Áreas Comuns
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300">
+                      {dependencias.length} espaços
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-700 font-semibold mt-0.5">
+                    Cadastre, edite fotos, regras de uso, horários, capacidade e taxas de agendamento de cada espaço do condomínio.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-2 rounded-full bg-white/60 border border-white/80 text-slate-900 shadow-xs shrink-0 ml-2">
+                {isDependenciasAdminOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
+            </button>
+
+            {/* Conteúdo Expansível */}
+            <div className={`transition-all duration-300 ${isDependenciasAdminOpen ? 'block' : 'hidden'}`}>
+              <div className="p-4 sm:p-6 border-t border-slate-950/10 space-y-5 bg-white/30">
+                
+                {/* Resumo & Botão de Criação */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-amber-300 text-xs font-black shadow-xs">
+                      {dependencias.length} Espaços Totais
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-purple-100 text-purple-950 border border-purple-300 text-xs font-black">
+                      📅 {totalReservaveis} Reserváveis
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
+                      ✨ {totalUsoLivre} de Uso Livre
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDependenciaToEditInAdmin(null);
+                      setIsCreateEditDependenciaModalOpen(true);
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                    <span>+ Cadastrar Nova Dependência</span>
+                  </button>
+                </div>
+
+                {/* Filtros e Busca */}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    
+                    {/* Busca */}
+                    <div className="relative sm:col-span-1">
+                      <input
+                        type="text"
+                        placeholder="Buscar por nome, comodidade..."
+                        value={searchDependenciaAdmin}
+                        onChange={(e) => setSearchDependenciaAdmin(e.target.value)}
+                        className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
+                      />
+                      <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+                    </div>
+
+                    {/* Filtro por Regime */}
+                    <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none sm:col-span-2">
+                      <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
+                        Regime:
+                      </span>
+                      {[
+                        { id: 'Todas', label: 'Todas' },
+                        { id: 'reservavel', label: '📅 Requer Reserva' },
+                        { id: 'livre', label: '✨ Uso Livre' }
+                      ].map(reg => (
+                        <button
+                          key={reg.id}
+                          type="button"
+                          onClick={() => setFiltroRegimeDependenciaAdmin(reg.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                            filtroRegimeDependenciaAdmin === reg.id
+                              ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
+                              : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
+                          }`}
+                        >
+                          {reg.label}
+                        </button>
+                      ))}
+                    </div>
+
+                  </div>
+
+                  {/* Filtro por Categoria */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                    <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
+                      Categorias:
+                    </span>
+                    {tiposDisponiveis.map(tp => (
+                      <button
+                        key={tp}
+                        type="button"
+                        onClick={() => setFiltroTipoDependenciaAdmin(tp)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                          filtroTipoDependenciaAdmin === tp
+                            ? 'bg-slate-900 text-amber-300 border-slate-900 font-black shadow-xs'
+                            : 'bg-white/50 text-slate-700 border-white/70 hover:bg-white'
+                        }`}
+                      >
+                        {tp}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Grid de Cards das Dependências */}
+                <div className="space-y-3">
+                  {filteredDependenciasAdmin.length === 0 ? (
+                    <div className="p-8 text-center bg-white/40 border border-white/60 rounded-2xl space-y-2">
+                      <p className="text-sm font-bold text-slate-800">Nenhum espaço encontrado com os filtros aplicados.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchDependenciaAdmin('');
+                          setFiltroTipoDependenciaAdmin('Todas');
+                          setFiltroRegimeDependenciaAdmin('Todas');
+                        }}
+                        className="text-xs text-indigo-800 font-black hover:underline cursor-pointer"
+                      >
+                        Limpar filtros
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredDependenciasAdmin.map(dep => {
+                        return (
+                          <div
+                            key={dep.id}
+                            className="border-2 border-slate-200 hover:border-amber-300 rounded-3xl p-4 bg-white/80 shadow-md transition-all flex flex-col justify-between space-y-3.5"
+                          >
+                            <div className="space-y-3">
+                              
+                              {/* Imagem + Badges */}
+                              <div className="relative h-40 rounded-2xl overflow-hidden bg-slate-900 border border-slate-200">
+                                <img
+                                  src={dep.foto}
+                                  alt={dep.nome}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = '/Salão de festas.jpg';
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent p-3 flex flex-col justify-between">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-950/80 text-amber-300 border border-amber-400/40 backdrop-blur-xs">
+                                      {dep.tipo}
+                                    </span>
+                                    <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md ${
+                                      dep.requerReserva
+                                        ? 'bg-purple-600 text-white'
+                                        : 'bg-emerald-600 text-white'
+                                    }`}>
+                                      {dep.requerReserva ? '📅 Requer Reserva' : '✨ Uso Livre'}
+                                    </span>
+                                  </div>
+
+                                  <div>
+                                    <h4 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-md">
+                                      {dep.nome}
+                                    </h4>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Info Metas */}
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div className="p-2 rounded-xl bg-slate-100/80 border border-slate-200 flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                                  <span className="font-bold text-slate-800 truncate text-[11px]">
+                                    {dep.horarioFuncionamento}
+                                  </span>
+                                </div>
+                                <div className="p-2 rounded-xl bg-slate-100/80 border border-slate-200 flex items-center gap-1.5">
+                                  <Users className="w-3.5 h-3.5 text-indigo-700 shrink-0" />
+                                  <span className="font-bold text-slate-800 text-[11px]">
+                                    Até {dep.capacidadePessoas} pessoas
+                                  </span>
+                                </div>
+                              </div>
+
+                              {dep.taxaReserva !== undefined && dep.taxaReserva > 0 && (
+                                <div className="p-2 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-between text-xs">
+                                  <span className="text-[10px] uppercase font-black text-purple-900">
+                                    Taxa de Manutenção/Limpeza:
+                                  </span>
+                                  <span className="font-black text-purple-950 font-mono">
+                                    R$ {dep.taxaReserva.toFixed(2)}
+                                  </span>
+                                </div>
+                              )}
+
+                              <p className="text-xs text-slate-600 font-medium line-clamp-2">
+                                {dep.descricao}
+                              </p>
+
+                              {/* Comodidades & Regras Resumo */}
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-extrabold uppercase text-slate-700 block">
+                                  Comodidades ({dep.comodidades.length}) • Regras ({dep.regrasUso.length})
+                                </span>
+                                <div className="flex flex-wrap gap-1">
+                                  {dep.comodidades.slice(0, 3).map((com, cIdx) => (
+                                    <span key={cIdx} className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                                      ✓ {com}
+                                    </span>
+                                  ))}
+                                  {dep.comodidades.length > 3 && (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500">
+                                      +{dep.comodidades.length - 3} mais
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                            </div>
+
+                            {/* Ações Administrativas */}
+                            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDependenciaToEditInAdmin(dep);
+                                  setIsCreateEditDependenciaModalOpen(true);
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-300"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-indigo-700" />
+                                <span>Editar</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(`Deseja realmente remover a dependência "${dep.nome}" do condomínio?`)) {
+                                    excluirDependencia(dep.id);
+                                  }
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-rose-200"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                <span>Excluir</span>
+                              </button>
+                            </div>
+
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        );
+      })()}
+
 
 
 
@@ -6598,6 +6922,16 @@ export const AdminPanelScreen: React.FC = () => {
           setItemDesapegoToEditInAdmin(null);
         }}
         itemToEdit={itemDesapegoToEditInAdmin}
+      />
+
+      {/* Modal de Criação / Edição de Dependências e Áreas Comuns */}
+      <CreateEditDependenciaModal
+        isOpen={isCreateEditDependenciaModalOpen}
+        onClose={() => {
+          setIsCreateEditDependenciaModalOpen(false);
+          setDependenciaToEditInAdmin(null);
+        }}
+        dependenciaToEdit={dependenciaToEditInAdmin}
       />
 
       {/* Modal de Justificativa de Suspensão de Anúncio no Enjoei */}
