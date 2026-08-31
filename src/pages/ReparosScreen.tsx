@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCondo } from '../context/CondoContext';
-import { PorteReparo, CategoriaReparo, StatusReparo } from '../types';
+import { PorteReparo, CategoriaReparo, StatusReparo, Reparo } from '../types';
 import { 
   Wrench, 
   Clock, 
@@ -21,7 +21,9 @@ import {
   EyeOff,
   Lock,
   Zap,
-  Filter
+  Filter,
+  ChevronDown,
+  Trash2
 } from 'lucide-react';
 import { StatusBadge } from '../components/layout/StatusBadge';
 import { BudgetComparator } from '../components/reparos/BudgetComparator';
@@ -31,15 +33,18 @@ export const ReparosScreen: React.FC = () => {
   const { 
     reparos, 
     currentUser, 
-    selectedReparoId, 
-    setSelectedReparoId, 
     adicionarReparo,
     apoiarReparo,
     adicionarComentarioReparo,
     atualizarStatusReparo,
     resolverReparoSimples,
-    setCurrentScreen
+    excluirReparo,
+    setCurrentScreen,
+    isAdminLoggedIn
   } = useCondo();
+
+  // Accordion Expand State
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Form State
   const [titulo, setTitulo] = useState('');
@@ -55,22 +60,37 @@ export const ReparosScreen: React.FC = () => {
   const [filterResident, setFilterResident] = useState<string>('');
   const [filterDate, setFilterDate] = useState<string>('');
 
-  // Comment inputs & expansion
-  const [novoComentarioTexto, setNovoComentarioTexto] = useState<string>('');
+  // Comment inputs
   const [cardCommentsInput, setCardCommentsInput] = useState<Record<string, string>>({});
-  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
 
-  const selectedReparo = reparos.find(r => r.id === selectedReparoId) || reparos[0];
-  const isAdmin = currentUser.role === 'subsindico' || currentUser.role === 'sindico';
-
+  const isAdmin = currentUser.role === 'subsindico' || currentUser.role === 'sindico' || Boolean(isAdminLoggedIn);
   const userIdentifier = currentUser?.id || currentUser?.unidade || '';
-  const selectedReparoApoiado = selectedReparo 
-    ? ((selectedReparo.apoiadores && userIdentifier ? selectedReparo.apoiadores.includes(userIdentifier) : false) || Boolean(selectedReparo.apoiadoPeloUsuario))
-    : false;
 
   const userDisplayUnidade = currentUser?.unidade 
     ? (currentUser.unidade.toLowerCase().startsWith('apt') || currentUser.unidade.toLowerCase().startsWith('cobertura') ? currentUser.unidade : `Apt ${currentUser.unidade}`)
     : (currentUser?.role !== 'morador' ? 'Administração' : 'Morador');
+
+  const toggleExpand = (id: string) => {
+    setExpandedId(prev => (prev === id ? null : id));
+  };
+
+  const checkIsOwner = (rep: Reparo) => {
+    if (isAdmin) return true;
+    const userUnidade = currentUser.unidade ? currentUser.unidade.replace(/[^0-9]/g, '') : '';
+    const repUnidade = rep.solicitanteUnidade ? rep.solicitanteUnidade.replace(/[^0-9]/g, '') : '';
+    return (
+      (userUnidade && repUnidade && userUnidade === repUnidade) ||
+      (currentUser.nome && rep.solicitanteNome.toLowerCase().includes(currentUser.nome.toLowerCase()))
+    );
+  };
+
+  const handleDeleteReparo = (id: string, titulo: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`Tem certeza que deseja excluir a solicitação de reparo "${titulo}"?`)) {
+      excluirReparo(id);
+      if (expandedId === id) setExpandedId(null);
+    }
+  };
 
   const categoriasOptions: CategoriaReparo[] = [
     'Pintura',
@@ -126,20 +146,12 @@ export const ReparosScreen: React.FC = () => {
     if (fileInput) fileInput.value = '';
   };
 
-  const handleSendDetailComentario = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!novoComentarioTexto.trim() || !selectedReparo) return;
-    adicionarComentarioReparo(selectedReparo.id, novoComentarioTexto.trim());
-    setNovoComentarioTexto('');
-  };
-
   const handleSendCardComentario = (e: React.FormEvent, repId: string) => {
     e.preventDefault();
     const text = cardCommentsInput[repId];
     if (!text?.trim()) return;
     adicionarComentarioReparo(repId, text.trim());
     setCardCommentsInput(prev => ({ ...prev, [repId]: '' }));
-    setExpandedComments(prev => ({ ...prev, [repId]: true }));
   };
 
   // Date formatting for comparison
@@ -178,7 +190,7 @@ export const ReparosScreen: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5 pb-24 animate-in fade-in duration-300 w-full max-w-full overflow-x-hidden">
+    <div className="space-y-4 pb-24 animate-in fade-in duration-300 w-full max-w-full overflow-x-hidden">
       
       {/* Page Title Header */}
       <div className="flex items-center justify-between">
@@ -410,494 +422,405 @@ export const ReparosScreen: React.FC = () => {
 
       </div>
 
-      {/* Grid Layout: Lista à esquerda e Detalhes à direita */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full max-w-full">
-        
-        {/* Left Column: Repairs List */}
-        <div className="lg:col-span-5 space-y-3 w-full max-w-full min-w-0">
+      {/* Lista de Reparos & Manutenções (Cards Curtos Expansíveis com Animação Fluida) */}
+      <div className="space-y-3 w-full max-w-full">
+        <div className="flex items-center justify-between">
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-white drop-shadow block">
-            Lista de Reparos & Manutenções ({filteredReparos.length})
+            LISTA DE REPAROS & MANUTENÇÕES ({filteredReparos.length})
           </span>
+        </div>
 
-          {filteredReparos.length === 0 ? (
-            <div className="p-5 text-center bg-white/30 rounded-3xl border border-white/40 text-xs font-semibold text-slate-800 w-full">
-              Nenhum reparo encontrado com os filtros selecionados.
-            </div>
-          ) : (
-            filteredReparos.map((rep) => {
-              const isSelected = rep.id === selectedReparoId;
-              const isApoiado = (rep.apoiadores && userIdentifier ? rep.apoiadores.includes(userIdentifier) : false) || Boolean(rep.apoiadoPeloUsuario);
-              const comentariosCount = rep.comentarios?.length || 0;
-              const isCommentsExpanded = Boolean(expandedComments[rep.id]);
+        {filteredReparos.length === 0 ? (
+          <div className="p-8 text-center bg-white/40 border border-white/60 rounded-3xl space-y-2">
+            <Wrench className="w-8 h-8 text-amber-700 mx-auto" />
+            <p className="text-sm font-black text-slate-950">Nenhum reparo encontrado no momento.</p>
+            <p className="text-xs text-slate-700 font-medium">Tente ajustar os filtros acima ou solicite um novo reparo.</p>
+          </div>
+        ) : (
+          filteredReparos.map((rep) => {
+            const isExpanded = expandedId === rep.id;
+            const isApoiado = (rep.apoiadores && userIdentifier ? rep.apoiadores.includes(userIdentifier) : false) || Boolean(rep.apoiadoPeloUsuario);
+            const isOwner = checkIsOwner(rep);
+            const comentariosCount = rep.comentarios?.length || 0;
 
-              return (
-                <div
-                  key={rep.id}
-                  onClick={() => setSelectedReparoId(rep.id)}
-                  className={`p-4 rounded-3xl border transition-all cursor-pointer shadow-lg space-y-2.5 ${
-                    isSelected
-                      ? 'bg-white/65 border-amber-400 ring-2 ring-amber-400/30 scale-102'
-                      : 'bg-white/45 border-white/60 hover:bg-white/55'
-                  }`}
+            return (
+              <div 
+                key={rep.id}
+                className={`bg-white/45 border-2 rounded-3xl overflow-hidden shadow-xl hover:bg-white/50 transition-all duration-300 backdrop-blur-xs ${
+                  isExpanded ? 'border-amber-400/90 ring-2 ring-amber-400/20' : 'border-white/60'
+                }`}
+              >
+                {/* Header section (Always visible) */}
+                <button
+                  type="button"
+                  onClick={() => toggleExpand(rep.id)}
+                  className="w-full p-4 flex items-center justify-between gap-3 text-left focus:outline-none cursor-pointer select-none"
                 >
-                  <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded border uppercase ${getPorteBadgeStyle(rep.porte)}`}>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded border uppercase shadow-2xs ${getPorteBadgeStyle(rep.porte)}`}>
                         {rep.porte}
                       </span>
                       <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-slate-900/10 text-slate-900 border border-slate-900/20">
                         {rep.categoria}
                       </span>
+                      <StatusBadge status={rep.status} />
                     </div>
-                    <StatusBadge status={rep.status} />
-                  </div>
 
-                  <h3 className="font-extrabold text-sm text-slate-950 leading-snug">
-                    {rep.titulo}
-                  </h3>
+                    <h3 className="text-sm font-extrabold text-slate-950 leading-tight">
+                      {rep.titulo}
+                    </h3>
 
-                  <p className="text-xs text-slate-800 line-clamp-2 font-medium">
-                    {rep.descricao}
-                  </p>
-
-                  <div className="pt-2 border-t border-slate-900/10 flex items-center justify-between text-xs text-slate-700">
-                    <span className="text-[11px] text-slate-950 font-extrabold truncate max-w-[45%]">
-                      {rep.solicitanteNome} • {rep.solicitanteUnidade}
-                    </span>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {/* Apoio Button */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          apoiarReparo(rep.id);
-                        }}
-                        className={`px-2.5 py-1 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 shadow-2xs active:scale-90 cursor-pointer ${
-                          isApoiado
-                            ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm border border-amber-400 font-black scale-105'
-                            : 'bg-white/80 hover:bg-white text-slate-800 border border-white/90'
-                        }`}
-                        title={isApoiado ? "Você apoiou este reparo (clique para remover apoio)" : "Clique no joinha para apoiar a urgência deste reparo"}
-                      >
-                        <ThumbsUp className={`w-3.5 h-3.5 ${isApoiado ? 'fill-slate-950 stroke-[2.5]' : 'text-amber-800'}`} />
-                        <span>{rep.apoiosCount || 0}</span>
-                      </button>
-
-                      {/* Comments Toggle Button */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setExpandedComments(prev => ({ ...prev, [rep.id]: !prev[rep.id] }));
-                        }}
-                        className={`px-2.5 py-1 rounded-xl text-xs font-extrabold flex items-center gap-1 border shadow-2xs cursor-pointer transition-all active:scale-95 ${
-                          isCommentsExpanded
-                            ? 'bg-indigo-700 text-white border-indigo-800'
-                            : 'bg-white/80 hover:bg-white text-slate-800 border border-white/90'
-                        }`}
-                        title="Ver ou ocultar manifestações sobre o reparo"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5 text-indigo-500" />
-                        <span>{comentariosCount}</span>
-                      </button>
-
+                    <p className="text-[10px] text-amber-950 font-bold flex flex-wrap items-center gap-2">
+                      <span className="flex items-center gap-1">
+                        <User className="w-3 h-3 text-indigo-700" />
+                        {rep.solicitanteNome} • {rep.solicitanteUnidade}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-amber-800" />
+                        {rep.dataSolicitacao}
+                      </span>
                       {rep.valorFinal && (
-                        <span className="text-emerald-900 bg-emerald-100/90 border border-emerald-300 px-2 py-0.5 rounded-lg font-black text-[11px] whitespace-nowrap">
-                          R$ {rep.valorFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
+                        <>
+                          <span>•</span>
+                          <span className="text-emerald-950 bg-emerald-100/90 border border-emerald-300 px-2 py-0.5 rounded-lg font-black text-[10px] whitespace-nowrap">
+                            R$ {rep.valorFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </>
                       )}
-                    </div>
+                    </p>
                   </div>
 
-                  {/* Inline quick comment input & drawer */}
-                  <div 
-                    className="pt-2 border-t border-slate-900/10 space-y-2"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <form 
-                      onSubmit={(e) => handleSendCardComentario(e, rep.id)}
-                      className="flex items-center gap-1.5"
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Botão de Apoios no Header */}
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        apoiarReparo(rep.id);
+                      }}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 shadow-2xs active:scale-90 cursor-pointer ${
+                        isApoiado
+                          ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400 font-black scale-105'
+                          : 'bg-white/80 hover:bg-white text-slate-800 border border-white/90'
+                      }`}
+                      title={isApoiado ? "Você apoiou este reparo (clique para remover apoio)" : "Clique para apoiar a urgência deste reparo"}
                     >
-                      <input
-                        type="text"
-                        placeholder={`Comentar ou apoiar como ${userDisplayUnidade}...`}
-                        value={cardCommentsInput[rep.id] || ''}
-                        onChange={(e) => setCardCommentsInput(prev => ({ ...prev, [rep.id]: e.target.value }))}
-                        className="flex-1 bg-white/80 border border-white/90 rounded-xl px-3 py-1.5 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-2xs"
-                      />
-                      <button
-                        type="submit"
-                        disabled={!cardCommentsInput[rep.id]?.trim()}
-                        className="p-1.5 px-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:hover:bg-amber-500 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1 shadow-2xs transition-all active:scale-95 cursor-pointer shrink-0"
-                        title="Publicar comentário sobre este reparo"
-                      >
-                        <Send className="w-3 h-3" />
-                        <span className="text-[11px] hidden sm:inline font-black">Enviar</span>
-                      </button>
-                    </form>
+                      <ThumbsUp className={`w-3.5 h-3.5 ${isApoiado ? 'fill-slate-950 stroke-[2.5]' : 'text-amber-800'}`} />
+                      <span>{rep.apoiosCount || 0}</span>
+                    </div>
 
-                    {isCommentsExpanded && rep.comentarios && rep.comentarios.length > 0 && (
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 pt-1 animate-in fade-in duration-200">
-                        {rep.comentarios.map((com) => {
-                          const isModerado = Boolean(com.oculto);
+                    {/* Botão Contador de Comentários */}
+                    <div 
+                      className="px-2.5 py-1 rounded-xl text-xs font-extrabold flex items-center gap-1 border border-white/90 bg-white/80 text-slate-800 shadow-2xs"
+                      title={`${comentariosCount} comentários`}
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-indigo-700" />
+                      <span>{comentariosCount}</span>
+                    </div>
 
-                          return (
-                            <div
-                              key={com.id}
-                              className={`p-2.5 rounded-xl text-[11px] space-y-1 transition-all ${
-                                isModerado
-                                  ? isAdmin
-                                    ? 'bg-rose-50/80 border border-rose-300'
-                                    : 'bg-slate-100/70 border border-slate-200/90'
-                                  : com.oficial
-                                    ? 'bg-amber-500/20 border border-amber-400/50'
-                                    : 'bg-white/70 border border-white/90 shadow-2xs'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between text-[10px] flex-wrap gap-1">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className={`font-black flex items-center gap-1 ${com.oficial ? 'text-amber-950' : 'text-slate-950'}`}>
-                                    {com.oficial ? <ShieldCheck className="w-3 h-3 text-amber-700" /> : <User className="w-3 h-3 text-indigo-700" />}
-                                    {com.autorNome}
-                                    {com.autorUnidade && (
-                                      <span className="text-slate-600 font-bold">({com.autorUnidade})</span>
-                                    )}
-                                  </span>
-
-                                  {isModerado && (
-                                    <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase flex items-center gap-1 border ${
-                                      isAdmin
-                                        ? 'bg-rose-200 text-rose-900 border-rose-300'
-                                        : 'bg-slate-200 text-slate-700 border-slate-300'
-                                    }`}>
-                                      <EyeOff className="w-2.5 h-2.5 text-slate-500" />
-                                      {isAdmin ? 'Ocultado ao Público' : 'Conteúdo Indisponível'}
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="text-slate-500 font-mono text-[9px] font-semibold">{com.data}</span>
-                              </div>
-
-                              {isModerado && !isAdmin ? (
-                                <div className="relative pl-4 space-y-1">
-                                  <p className="blur-[3.5px] select-none pointer-events-none text-slate-400 font-medium leading-tight">
-                                    {com.texto}
-                                  </p>
-                                  <span className="text-[10px] text-slate-600 font-bold flex items-center gap-1">
-                                    <Lock className="w-3 h-3 text-slate-500" />
-                                    Comentário moderado pela administração
-                                  </span>
-                                </div>
-                              ) : (
-                                <p className="text-slate-900 font-semibold pl-4 leading-tight">{com.texto}</p>
-                              )}
-                            </div>
-                          );
-                        })}
+                    {/* Botão Excluir (Dono / Admin) */}
+                    {isOwner && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteReparo(rep.id, rep.titulo, e)}
+                          className="p-1.5 rounded-xl bg-white/80 hover:bg-rose-100 text-rose-600 border border-white/90 shadow-2xs hover:text-rose-800 transition-all cursor-pointer"
+                          title="Excluir solicitação de reparo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     )}
+
+                    {/* Botão Chevron com rotação animada */}
+                    <div className="p-1.5 rounded-full bg-white/50 border border-white/60 text-slate-800">
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-300 ease-out ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
+                    </div>
                   </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+                </button>
 
-        {/* Right Column: Selected Repair Detail Page */}
-        {selectedReparo ? (
-          <div className="lg:col-span-7 bg-white/45 border border-white/60 rounded-3xl p-5 space-y-5 shadow-xl">
-            
-            {/* Header Detail */}
-            <div className="flex items-center justify-between border-b border-slate-900/10 pb-3 flex-wrap gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-xs font-extrabold px-2.5 py-1 rounded border uppercase ${getPorteBadgeStyle(selectedReparo.porte)}`}>
-                  {selectedReparo.porte} Reparo
-                </span>
-                <span className="text-xs font-extrabold px-2.5 py-1 rounded bg-amber-500/20 text-amber-950 border border-amber-400/40">
-                  {selectedReparo.categoria}
-                </span>
-                <StatusBadge status={selectedReparo.status} />
-              </div>
-              <span className="text-[11px] text-slate-800 font-mono font-bold flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" /> {selectedReparo.dataSolicitacao}
-              </span>
-            </div>
+                {/* Expandable Section com Animação Suave Grid */}
+                <div 
+                  className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out overflow-hidden ${
+                    isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                  }`}
+                >
+                  <div className="min-h-0 overflow-hidden">
+                    <div className="px-4 pb-4 space-y-3.5 border-t border-slate-950/10 pt-3">
+                      
+                      {/* Descrição Detalhada */}
+                      <div className="bg-white/60 p-4 rounded-2xl border border-white/80 text-xs text-slate-900 leading-relaxed font-semibold space-y-2">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-700 block">
+                          Descrição do Problema & Impacto:
+                        </span>
+                        <p>{rep.descricao}</p>
 
-            <div>
-              <h2 className="text-lg font-extrabold text-slate-950 leading-tight">
-                {selectedReparo.titulo}
-              </h2>
-              <p className="text-xs text-slate-700 mt-1 font-semibold">
-                Solicitado por: <span className="text-slate-950 font-extrabold">{selectedReparo.solicitanteNome}</span> ({selectedReparo.solicitanteUnidade})
-              </p>
-            </div>
-
-            {/* Description & Media Attachment */}
-            <div className="bg-white/60 p-4 rounded-2xl border border-white/80 text-xs text-slate-900 leading-relaxed font-semibold">
-              <p>{selectedReparo.descricao}</p>
-
-              {selectedReparo.anexoUrl && (
-                <div className="mt-3 pt-3 border-t border-slate-900/10">
-                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-600 block mb-1">
-                    Anexo / Evidência Enviada:
-                  </span>
-                  {selectedReparo.anexoTipo === 'video' ? (
-                    <video
-                      src={selectedReparo.anexoUrl}
-                      controls
-                      className="w-full max-h-64 rounded-xl border border-slate-300 bg-black/10 object-contain shadow-sm"
-                    />
-                  ) : (
-                    <img
-                      src={selectedReparo.anexoUrl}
-                      alt="Anexo do Reparo"
-                      className="w-full max-h-64 rounded-xl border border-slate-300 bg-slate-100 object-cover shadow-sm cursor-pointer hover:opacity-95 transition-opacity"
-                      onClick={() => window.open(selectedReparo.anexoUrl, '_blank')}
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Apoios Summary / Interaction */}
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/60 border border-white/80">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-900 flex items-center justify-center">
-                  <ThumbsUp className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-xs font-black text-slate-950 block">
-                    {selectedReparo.apoiosCount || 0} moradores apoiam a prioridade deste reparo
-                  </span>
-                  <span className="text-[10px] text-slate-600 font-medium">
-                    Ajuda a administração a mapear a urgência coletiva do problema
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => apoiarReparo(selectedReparo.id)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black transition-all shadow-md active:scale-95 cursor-pointer ${
-                  selectedReparoApoiado
-                    ? 'bg-amber-500 text-slate-950 border border-amber-600 shadow-amber-500/30 scale-105'
-                    : 'bg-white/80 hover:bg-amber-50 text-amber-950 border border-amber-400'
-                }`}
-              >
-                <ThumbsUp className={`w-4 h-4 ${selectedReparoApoiado ? 'fill-slate-950 stroke-[2.5]' : ''}`} />
-                {selectedReparoApoiado ? 'Apoiado ✓' : 'Apoiar Reparo'}
-              </button>
-            </div>
-
-            {/* Admin Control Bar: Evolution of Repair Status */}
-            {isAdmin && (
-              <div className="p-4 rounded-2xl bg-amber-500/20 border border-amber-400/60 space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="text-xs font-extrabold text-amber-950 flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-amber-700" /> Gestão da Ordem de Serviço (Administração)
-                  </span>
-                  
-                  {/* Atalho de 1 clique para reparo simples */}
-                  {selectedReparo.status !== 'Resolvido' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const obs = prompt('Observação de conclusão (Ex: Lâmpada trocada pela zeladoria):', 'Serviço pontual executado diretamente pela equipe interna.');
-                        if (obs !== null) {
-                          resolverReparoSimples(selectedReparo.id, obs);
-                        }
-                      }}
-                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black flex items-center gap-1 shadow-md transition-all active:scale-95 cursor-pointer"
-                      title="Para lâmpadas queimadas, portas tortas ou serviços rápidos sem necessidade de cotações"
-                    >
-                      <Zap className="w-3.5 h-3.5" />
-                      <span>⚡ Resolver Reparo Direto (Simples)</span>
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {statusOptions.map((st) => (
-                    <button
-                      key={st}
-                      onClick={() => atualizarStatusReparo(selectedReparo.id, st)}
-                      className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all border cursor-pointer ${
-                        selectedReparo.status === st
-                          ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-md scale-105'
-                          : 'bg-white/60 text-slate-900 border-white/80 hover:bg-white/80'
-                      }`}
-                    >
-                      {st}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Photos Before / After */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                <ImageIcon className="w-4 h-4 text-sky-700" />
-                Evidências do Serviço (Fotos Antes & Conclusão)
-              </h4>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="relative rounded-2xl overflow-hidden border border-white/80 h-36 group shadow-md">
-                  <img
-                    src={selectedReparo.fotosAntes[0] || 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80'}
-                    alt="Antes do reparo"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                  <div className="absolute inset-0 bg-slate-950/30 flex items-end p-2">
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-rose-600 text-white shadow-2xs">
-                      Problema Constatado
-                    </span>
-                  </div>
-                </div>
-
-                <div className="relative rounded-2xl overflow-hidden border border-white/80 h-36 group shadow-md">
-                  <img
-                    src={selectedReparo.fotosDepois?.[0] || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80'}
-                    alt="Depois do reparo"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                  <div className="absolute inset-0 bg-slate-950/30 flex items-end p-2">
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-600 text-white shadow-2xs">
-                      {selectedReparo.status === 'Resolvido' || selectedReparo.status === 'Executado' || selectedReparo.status === 'Confirmado' ? 'Serviço Concluído ✓' : 'Previsão de Entrega'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 3 Quotes Competitor Comparator (Orçamentos) - se houver */}
-            {selectedReparo.orcamentos && selectedReparo.orcamentos.length > 0 && (
-              <BudgetComparator
-                reparoId={selectedReparo.id}
-                orcamentos={selectedReparo.orcamentos}
-              />
-            )}
-
-            {/* Timeline View */}
-            <div className="space-y-3 pt-2">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-indigo-700" />
-                Linha do Tempo de Evolução ({selectedReparo.timeline?.length || 0} etapas)
-              </h4>
-
-              <TimelineView steps={selectedReparo.timeline || []} />
-            </div>
-
-            {/* Comments & Manifestações Section */}
-            <div className="space-y-3 pt-2 border-t border-slate-900/10">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                <MessageSquare className="w-4 h-4 text-indigo-700" />
-                Manifestações & Acompanhamento ({selectedReparo.comentarios?.length || 0})
-              </h4>
-
-              <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
-                {!selectedReparo.comentarios || selectedReparo.comentarios.length === 0 ? (
-                  <p className="text-xs text-slate-600 italic p-3 bg-white/40 rounded-xl">
-                    Nenhum comentário ou manifestação ainda. Seja o primeiro a comentar.
-                  </p>
-                ) : (
-                  selectedReparo.comentarios.map((com) => {
-                    const isModerado = Boolean(com.oculto);
-
-                    return (
-                      <div
-                        key={com.id}
-                        className={`p-3 rounded-2xl text-xs space-y-1.5 transition-all ${
-                          isModerado
-                            ? isAdmin
-                              ? 'bg-rose-50/80 border-2 border-rose-300'
-                              : 'bg-slate-100/80 border border-slate-200'
-                            : com.oficial
-                              ? 'bg-amber-500/20 border border-amber-400/50'
-                              : 'bg-white/60 border border-white/80'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between text-[11px] flex-wrap gap-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className={`font-extrabold flex items-center gap-1.5 ${com.oficial ? 'text-amber-950' : 'text-slate-950'}`}>
-                              {com.oficial ? <ShieldCheck className="w-3.5 h-3.5 text-amber-700" /> : <User className="w-3.5 h-3.5 text-indigo-700" />}
-                              {com.autorNome}
-                              {com.autorUnidade && (
-                                <span className="text-slate-600 font-bold">({com.autorUnidade})</span>
-                              )}
+                        {/* Anexo Enviado (Imagem ou Vídeo) */}
+                        {rep.anexoUrl && (
+                          <div className="mt-3 pt-2.5 border-t border-slate-900/10">
+                            <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-600 block mb-1.5">
+                              Evidência / Anexo Enviado:
                             </span>
-
-                            {isModerado && (
-                              <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase flex items-center gap-1 border ${
-                                isAdmin
-                                  ? 'bg-rose-200 text-rose-900 border-rose-300'
-                                  : 'bg-slate-200 text-slate-700 border-slate-300'
-                              }`}>
-                                <EyeOff className="w-3 h-3 text-slate-500" />
-                                {isAdmin ? 'Ocultado ao Público' : 'Conteúdo Indisponível'}
-                              </span>
+                            {rep.anexoTipo === 'video' ? (
+                              <video
+                                src={rep.anexoUrl}
+                                controls
+                                className="w-full max-h-72 rounded-xl border border-slate-300 bg-black/10 object-contain shadow-sm"
+                              />
+                            ) : (
+                              <img
+                                src={rep.anexoUrl}
+                                alt="Anexo do Reparo"
+                                className="w-full max-h-72 rounded-xl border border-slate-300 bg-slate-100 object-cover shadow-sm cursor-pointer hover:opacity-95 transition-opacity"
+                                onClick={() => window.open(rep.anexoUrl, '_blank')}
+                              />
                             )}
                           </div>
-                          <span className="text-slate-700 font-mono text-[10px] font-bold">{com.data}</span>
-                        </div>
-
-                        {isModerado && !isAdmin ? (
-                          <div className="pl-5 space-y-1">
-                            <p className="blur-[4px] select-none pointer-events-none text-slate-400 font-medium leading-relaxed">
-                              {com.texto}
-                            </p>
-                            <div className="p-2 rounded-xl bg-slate-200/60 border border-slate-300 text-[11px] text-slate-700 font-semibold flex items-center gap-1.5">
-                              <Lock className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                              <span>Este comentário foi moderado pela administração e está indisponível para visualização pública.</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-slate-900 leading-relaxed pl-5 font-semibold">{com.texto}</p>
                         )}
                       </div>
-                    );
-                  })
-                )}
+
+                      {/* Fotos de Evidências Antes & Depois */}
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                          <ImageIcon className="w-3.5 h-3.5 text-sky-700" />
+                          Evidências do Serviço (Fotos Antes & Conclusão)
+                        </span>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="relative rounded-2xl overflow-hidden border border-white/80 h-36 group shadow-md bg-slate-900">
+                            <img
+                              src={rep.fotosAntes[0] || 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80'}
+                              alt="Antes do reparo"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                            <div className="absolute inset-0 bg-slate-950/40 flex items-end p-2.5">
+                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-rose-600 text-white shadow-2xs">
+                                Problema Constatado
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="relative rounded-2xl overflow-hidden border border-white/80 h-36 group shadow-md bg-slate-900">
+                            <img
+                              src={rep.fotosDepois?.[0] || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80'}
+                              alt="Depois do reparo"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                            <div className="absolute inset-0 bg-slate-950/40 flex items-end p-2.5">
+                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-600 text-white shadow-2xs">
+                                {rep.status === 'Resolvido' || rep.status === 'Executado' || rep.status === 'Confirmado' ? 'Serviço Concluído ✓' : 'Previsão de Entrega'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Comparador de 3 Orçamentos (se houver cotações) */}
+                      {rep.orcamentos && rep.orcamentos.length > 0 && (
+                        <BudgetComparator
+                          reparoId={rep.id}
+                          orcamentos={rep.orcamentos}
+                        />
+                      )}
+
+                      {/* Linha do Tempo de Evolução */}
+                      <div className="space-y-2 pt-1">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-indigo-700" />
+                          Linha do Tempo de Evolução ({rep.timeline?.length || 0} etapas)
+                        </span>
+
+                        <TimelineView steps={rep.timeline || []} />
+                      </div>
+
+                      {/* Card de Apoios / Urgência */}
+                      <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/60 border border-white/80 flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-900 flex items-center justify-center">
+                            <ThumbsUp className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-black text-slate-950 block">
+                              {rep.apoiosCount || 0} moradores apoiam a prioridade deste reparo
+                            </span>
+                            <span className="text-[10px] text-slate-600 font-medium">
+                              Ajuda a administração a mapear a urgência coletiva do problema
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => apoiarReparo(rep.id)}
+                          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black transition-all shadow-md active:scale-95 cursor-pointer ${
+                            isApoiado
+                              ? 'bg-amber-500 text-slate-950 border border-amber-600 shadow-amber-500/30 scale-105'
+                              : 'bg-white/80 hover:bg-amber-50 text-amber-950 border border-amber-400'
+                          }`}
+                        >
+                          <ThumbsUp className={`w-4 h-4 ${isApoiado ? 'fill-slate-950 stroke-[2.5]' : ''}`} />
+                          {isApoiado ? 'Apoiado ✓' : 'Apoiar Reparo'}
+                        </button>
+                      </div>
+
+                      {/* Gestão da Administração (Alteração de Status e Resolução Rápida se for admin) */}
+                      {isAdmin && (
+                        <div className="p-3.5 rounded-2xl bg-amber-500/20 border border-amber-400/60 space-y-2.5">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <span className="text-xs font-extrabold text-amber-950 flex items-center gap-1.5">
+                              <ShieldCheck className="w-4 h-4 text-amber-700" /> Gestão da Ordem de Serviço (Administração)
+                            </span>
+                            
+                            {rep.status !== 'Resolvido' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const obs = prompt('Observação de conclusão (Ex: Lâmpada trocada pela zeladoria):', 'Serviço pontual executado diretamente pela equipe interna.');
+                                  if (obs !== null) {
+                                    resolverReparoSimples(rep.id, obs);
+                                  }
+                                }}
+                                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black flex items-center gap-1 shadow-md transition-all active:scale-95 cursor-pointer"
+                                title="Para lâmpadas queimadas, portas tortas ou serviços rápidos sem necessidade de cotações"
+                              >
+                                <Zap className="w-3.5 h-3.5" />
+                                <span>⚡ Resolver Reparo Direto (Simples)</span>
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {statusOptions.map((st) => (
+                              <button
+                                key={st}
+                                onClick={() => atualizarStatusReparo(rep.id, st)}
+                                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all border cursor-pointer ${
+                                  rep.status === st
+                                    ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-md scale-105'
+                                    : 'bg-white/60 text-slate-900 border-white/80 hover:bg-white/80'
+                                }`}
+                              >
+                                {st}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Seção de Manifestações & Comentários */}
+                      <div className="space-y-2.5 pt-1">
+                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                          <MessageSquare className="w-4 h-4 text-indigo-700" />
+                          Manifestações & Acompanhamento ({comentariosCount})
+                        </h4>
+
+                        {comentariosCount > 0 && (
+                          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            {rep.comentarios?.map((com) => {
+                              const isModerado = Boolean(com.oculto);
+
+                              return (
+                                <div
+                                  key={com.id}
+                                  className={`p-3 rounded-2xl text-xs space-y-1.5 transition-all ${
+                                    isModerado
+                                      ? isAdmin
+                                        ? 'bg-rose-50/80 border-2 border-rose-300'
+                                        : 'bg-slate-100/80 border border-slate-200'
+                                      : com.oficial
+                                        ? 'bg-amber-500/20 border border-amber-400/50'
+                                        : 'bg-white/60 border border-white/80'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between text-[11px] flex-wrap gap-1">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className={`font-extrabold flex items-center gap-1.5 ${com.oficial ? 'text-amber-950' : 'text-slate-950'}`}>
+                                        {com.oficial ? <ShieldCheck className="w-3.5 h-3.5 text-amber-700" /> : <User className="w-3.5 h-3.5 text-indigo-700" />}
+                                        {com.autorNome}
+                                        {com.autorUnidade && (
+                                          <span className="text-slate-600 font-bold">({com.autorUnidade})</span>
+                                        )}
+                                      </span>
+
+                                      {isModerado && (
+                                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase flex items-center gap-1 border ${
+                                          isAdmin
+                                            ? 'bg-rose-200 text-rose-900 border-rose-300'
+                                            : 'bg-slate-200 text-slate-700 border-slate-300'
+                                        }`}>
+                                          <EyeOff className="w-3 h-3 text-slate-500" />
+                                          {isAdmin ? 'Ocultado ao Público' : 'Conteúdo Indisponível'}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="text-slate-700 font-mono text-[10px] font-bold">{com.data}</span>
+                                  </div>
+
+                                  {isModerado && !isAdmin ? (
+                                    <div className="pl-5 space-y-1">
+                                      <p className="blur-[4px] select-none pointer-events-none text-slate-400 font-medium leading-relaxed">
+                                        {com.texto}
+                                      </p>
+                                      <div className="p-2 rounded-xl bg-slate-200/60 border border-slate-300 text-[11px] text-slate-700 font-semibold flex items-center gap-1.5">
+                                        <Lock className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                                        <span>Este comentário foi moderado pela administração e está indisponível para visualização pública.</span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <p className="text-slate-900 leading-relaxed pl-5 font-semibold">{com.texto}</p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Formulário de Adicionar Comentário no Card */}
+                        <form onSubmit={(e) => handleSendCardComentario(e, rep.id)} className="flex gap-2 pt-1">
+                          <input
+                            type="text"
+                            placeholder={isAdmin ? "Escrever parecer técnico ou posicionamento..." : `Comentar ou manifestar apoio como ${userDisplayUnidade}...`}
+                            value={cardCommentsInput[rep.id] || ''}
+                            onChange={(e) => setCardCommentsInput(prev => ({ ...prev, [rep.id]: e.target.value }))}
+                            className="flex-1 bg-white/70 border border-white/90 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-700 focus:outline-none focus:bg-white font-semibold shadow-xs"
+                          />
+                          <button
+                            type="submit"
+                            disabled={!cardCommentsInput[rep.id]?.trim()}
+                            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:hover:bg-amber-500 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-md cursor-pointer shrink-0"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            Enviar
+                          </button>
+                        </form>
+                      </div>
+
+                      {/* Link to Prestação de Contas */}
+                      <div className="p-3 rounded-2xl bg-white/60 border border-white/80 flex items-center justify-between text-xs font-semibold">
+                        <span className="text-slate-900">
+                          Gasto de <strong className="text-emerald-800 font-extrabold">{rep.valorFinal ? `R$ ${rep.valorFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Cotação em andamento'}</strong> registrado na Prestação de Contas.
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentScreen('prestacao-contas')}
+                          className="text-indigo-700 font-extrabold hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          Consultar Contas <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+
               </div>
-
-              {/* Add Comment Form */}
-              <form onSubmit={handleSendDetailComentario} className="flex gap-2 pt-2">
-                <input
-                  type="text"
-                  placeholder={isAdmin ? "Escrever parecer técnico ou posicionamento da sindicância..." : `Escrever comentário como ${userDisplayUnidade}...`}
-                  value={novoComentarioTexto}
-                  onChange={(e) => setNovoComentarioTexto(e.target.value)}
-                  className="flex-1 bg-white/70 border border-white/90 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-700 focus:outline-none focus:bg-white font-semibold shadow-xs"
-                />
-                <button
-                  type="submit"
-                  disabled={!novoComentarioTexto.trim()}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:hover:bg-amber-500 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-md cursor-pointer"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  Enviar
-                </button>
-              </form>
-            </div>
-
-            {/* Link to Accounts */}
-            <div className="p-4 rounded-2xl bg-white/60 border border-white/80 flex items-center justify-between text-xs font-semibold">
-              <span className="text-slate-900">
-                Gasto de <strong className="text-emerald-800 font-extrabold">{selectedReparo.valorFinal ? `R$ ${selectedReparo.valorFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Cotação em andamento'}</strong> registrado na Prestação de Contas.
-              </span>
-              <button
-                onClick={() => setCurrentScreen('prestacao-contas')}
-                className="text-indigo-700 font-extrabold hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                Consultar Contas <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-          </div>
-        ) : null}
-
+            );
+          })
+        )}
       </div>
+
     </div>
   );
 };
+
