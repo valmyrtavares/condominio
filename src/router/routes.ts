@@ -32,7 +32,9 @@ export const ROUTES: RouteConfig[] = [
   { id: 'funcionarios', path: '/funcionarios', aliases: ['/equipe', '/colaboradores'], title: 'Quadro de Funcionários', auth: 'resident' },
   { id: 'unidades-disponiveis', path: '/unidades-disponiveis', aliases: ['/imoveis', '/aluguel', '/venda'], title: 'Unidades Disponíveis', auth: 'resident' },
   { id: 'servicos-moradores', path: '/servicos-moradores', aliases: ['/anuncios', '/classificados'], title: 'Serviços dos Moradores', auth: 'resident' },
-  { id: 'enjoei', path: '/enjoei', aliases: ['/desapego', '/trocas', '/bazar'], title: 'Enjoei do Condomínio', auth: 'resident' }
+  { id: 'enjoei', path: '/enjoei', aliases: ['/desapego', '/trocas', '/bazar'], title: 'Enjoei do Condomínio', auth: 'resident' },
+  { id: 'mudancas', path: '/mudancas', aliases: ['/mudanca', '/carretos', '/fretes'], title: 'Mudanças & Carretos', auth: 'resident' },
+  { id: 'diario-sindico', path: '/diario-sindico', aliases: ['/diario', '/ocorrencias-diarias', '/feed-atividades'], title: 'Diário do Síndico', auth: 'admin' }
 ];
 
 /**

@@ -561,4 +561,85 @@ export interface ItemEnjoei {
   condominioId: string;
 }
 
+// ==========================================
+// DIÁRIO DO SÍNDICO / FEED CRONOLÓGICO DE ATIVIDADES
+// ==========================================
+export type TipoAtividade = 
+  | 'morador_novo'
+  | 'morador_atualizado'
+  | 'reclamacao_aberta'
+  | 'reclamacao_resolvida'
+  | 'reparo_aberto'
+  | 'reparo_orcamento'
+  | 'reparo_concluido'
+  | 'reserva_solicitada'
+  | 'reserva_cancelada'
+  | 'mudanca_agendada'
+  | 'mudanca_aprovada'
+  | 'mudanca_recusada'
+  | 'assembleia_publicada'
+  | 'evento_criado'
+  | 'enjoei_publicado'
+  | 'financeiro_lancamento'
+  | 'aviso_geral'
+  | 'seguranca_acesso';
+
+export interface RegistroAtividade {
+  id: string;
+  dataHora: string;       // "31/08/2026 14:30"
+  dataIso: string;        // "2026-08-31"
+  hora: string;           // "14:30"
+  tipo: TipoAtividade;
+  titulo: string;
+  descricao: string;
+  autorNome: string;
+  autorUnidade?: string;
+  autorFoto?: string;
+  autorTipo: 'morador' | 'admin' | 'sistema' | 'portaria';
+  linkTela?: string;      // ID da tela para navegação rápida
+  categoriaBadge?: string;
+  condominioId: string;
+}
+
+// ==========================================
+// MÓDULO DE GESTÃO & AGENDAMENTO DE MUDANÇAS
+// ==========================================
+export type TipoMudanca = 'Entrada (Novo Morador)' | 'Saída (Desocupação)' | 'Carreto / Mobília Pesada';
+export type StatusMudanca = 'Pendente de Aprovação' | 'Confirmada' | 'Recusada' | 'Concluída';
+
+export interface MudancaAgendamento {
+  id: string;
+  moradorId: string;
+  moradorNome: string;
+  moradorTelefone?: string;
+  unidade: string;
+  bloco?: string;
+  tipo: TipoMudanca;
+  dataMudanca: string;    // "15/09/2026"
+  dataMudancaIso: string; // "2026-09-15"
+  periodo: 'Manhã (08h às 13h)' | 'Tarde (13h às 18h)' | 'Integral (08h às 17h)';
+  status: StatusMudanca;
+  motivoRecusa?: string;
+  transportadora?: string;
+  placaVeiculo?: string;
+  nomeMotorista?: string;
+  rgMotorista?: string;
+  precisaElevadorServico: boolean;
+  precisaAcolchoamentoElevador: boolean;
+  termoCienciaAssinado: boolean;
+  observacoes?: string;
+  criadoEm: string;
+  condominioId: string;
+}
+
+export interface RegrasMudancaConfig {
+  horarioSegundaSexta: string;
+  horarioSabado: string;
+  domingosFeriadosPermitido: boolean;
+  antecedenciaMinimaDias: number;
+  taxaMudanca?: number;
+  regrasGerais: string[];
+}
+
+
 

@@ -21,6 +21,8 @@ import { FuncionariosScreen } from './pages/FuncionariosScreen';
 import { EventosScreen } from './pages/EventosScreen';
 import { UnidadesDisponiveisScreen } from './pages/UnidadesDisponiveisScreen';
 import { EnjoeiScreen } from './pages/EnjoeiScreen';
+import { MudancasScreen } from './pages/MudancasScreen';
+import { DiarioSindicoScreen } from './pages/DiarioSindicoScreen';
 import { AdminLoginScreen } from './pages/admin/AdminLoginScreen';
 import { AdminPanelScreen } from './pages/admin/AdminPanelScreen';
 import { ResidentLoginScreen } from './pages/auth/ResidentLoginScreen';
@@ -91,6 +93,10 @@ const MainContent: React.FC = () => {
         return <RegrasCondominioScreen />;
       case 'enjoei':
         return <EnjoeiScreen />;
+      case 'mudancas':
+        return <MudancasScreen />;
+      case 'diario-sindico':
+        return <DiarioSindicoScreen />;
       default:
         return <GenericModuleScreen moduleId={currentScreen} />;
     }

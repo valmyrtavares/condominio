@@ -1,4 +1,4 @@
-import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio, UnidadeDisponivel, RegraTopico, ItemEnjoei } from '../types';
+import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio, UnidadeDisponivel, RegraTopico, ItemEnjoei, RegistroAtividade, MudancaAgendamento, RegrasMudancaConfig } from '../types';
 
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
@@ -2611,6 +2611,24 @@ export const ESPINHA_DORSAL_ITEMS: EspinhaDorsalItem[] = [
     desdobramentos: ['Vendas e Doações', 'Trocas e Permutas', 'Móveis para Retirada', 'Contato WhatsApp'],
     rota: '/enjoei',
     destaquePoC: true
+  },
+  {
+    id: 'mudancas',
+    titulo: 'Mudanças & Carretos',
+    icone: 'Truck',
+    descricaoCurta: 'Agendamento de mudanças de entrada/saída, horários permitidos e reserva de elevador com acolchoado.',
+    desdobramentos: ['Entrada e Desocupação', 'Carretos e Entregas Pesadas', 'Reserva de Elevador', 'Autorização Portaria'],
+    rota: '/mudancas',
+    destaquePoC: true
+  },
+  {
+    id: 'diario-sindico',
+    titulo: 'Diário do Síndico (Feed Diário)',
+    icone: 'BookOpen',
+    descricaoCurta: 'Galeria e linha do tempo de tudo o que aconteceu no condomínio dia a dia para controle da gestão.',
+    desdobramentos: ['Ocorrências do dia', 'Aprovações & Reservas', 'Histórico Cronológico'],
+    rota: '/diario-sindico',
+    destaquePoC: true
   }
 ];
 
@@ -2817,5 +2835,211 @@ export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
     condominioId: CURRENT_CONDO_ID
   }
 ];
+
+export const MOCK_REGRAS_MUDANCA: RegrasMudancaConfig = {
+  horarioSegundaSexta: '08:00 às 17:00 (Segunda a Sexta-feira)',
+  horarioSabado: '08:00 às 13:00 (Sábado)',
+  domingosFeriadosPermitido: false,
+  antecedenciaMinimaDias: 2,
+  taxaMudanca: 120.00,
+  regrasGerais: [
+    'Obrigatório o agendamento prévio com antecedência mínima de 48 horas.',
+    'A portaria somente liberará caminhões e carretos com autorização confirmada no sistema.',
+    'O zelador providenciará a colocação do acolchoado de proteção no elevador de serviço antes do início.',
+    'Caminhões de mudança devem estacionar estritamente na baia indicada pela portaria.',
+    'É expressamente proibido o uso do elevador social para transporte de móveis, caixas pesadas e eletrodomésticos.',
+    'O descarte de caixas de papelão e embalagens deve ser desmontado e colocado no depósito de recicláveis.',
+    'Eventuais danos a paredes, espelhos ou portas serão vistoriados e de responsabilidade da unidade.'
+  ]
+};
+
+export const MOCK_MUDANCAS: MudancaAgendamento[] = [
+  {
+    id: 'mud-001',
+    moradorId: 'usr-morador-301',
+    moradorNome: 'Juliana Costa',
+    moradorTelefone: '(11) 98765-4321',
+    unidade: '301',
+    bloco: 'Bloco A',
+    tipo: 'Entrada (Novo Morador)',
+    dataMudanca: '05/09/2026',
+    dataMudancaIso: '2026-09-05',
+    periodo: 'Manhã (08h às 13h)',
+    status: 'Confirmada',
+    transportadora: 'Granero Mudanças & Logística',
+    placaVeiculo: 'BRA2E19',
+    nomeMotorista: 'Carlos Eduardo Santos',
+    rgMotorista: '34.567.890-X',
+    precisaElevadorServico: true,
+    precisaAcolchoamentoElevador: true,
+    termoCienciaAssinado: true,
+    observacoes: 'Mudança residencial completa vinda de Curitiba. Caminhão baú médio.',
+    criadoEm: '29/08/2026 10:15',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'mud-002',
+    moradorId: 'usr-morador-502',
+    moradorNome: 'Ricardo Mendonça',
+    moradorTelefone: '(11) 99123-8877',
+    unidade: '502',
+    bloco: 'Bloco B',
+    tipo: 'Carreto / Mobília Pesada',
+    dataMudanca: '02/09/2026',
+    dataMudancaIso: '2026-09-02',
+    periodo: 'Tarde (13h às 18h)',
+    status: 'Confirmada',
+    transportadora: 'Fretes & Carretos SP Express',
+    placaVeiculo: 'DKM4A55',
+    nomeMotorista: 'Márcio Nogueira',
+    precisaElevadorServico: true,
+    precisaAcolchoamentoElevador: true,
+    termoCienciaAssinado: true,
+    observacoes: 'Entrega de sofá retrátil novo de 3 lugares e mesa de jantar com 6 cadeiras.',
+    criadoEm: '30/08/2026 16:40',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'mud-003',
+    moradorId: 'usr-morador-101',
+    moradorNome: 'Fernanda Lima',
+    moradorTelefone: '(11) 98222-1133',
+    unidade: '101',
+    bloco: 'Bloco A',
+    tipo: 'Saída (Desocupação)',
+    dataMudanca: '12/09/2026',
+    dataMudancaIso: '2026-09-12',
+    periodo: 'Integral (08h às 17h)',
+    status: 'Pendente de Aprovação',
+    transportadora: 'TransMudança Express',
+    placaVeiculo: 'FGH8J99',
+    precisaElevadorServico: true,
+    precisaAcolchoamentoElevador: true,
+    termoCienciaAssinado: true,
+    observacoes: 'Término do contrato de locação. Vistoria final marcada para a segunda-feira.',
+    criadoEm: '31/08/2026 09:30',
+    condominioId: CURRENT_CONDO_ID
+  }
+];
+
+export const MOCK_REGISTROS_ATIVIDADES: RegistroAtividade[] = [
+  {
+    id: 'act-001',
+    dataHora: '31/08/2026 14:10',
+    dataIso: '2026-08-31',
+    hora: '14:10',
+    tipo: 'reclamacao_aberta',
+    titulo: 'Nova Reclamação Registrada',
+    descricao: 'Apto 204 registrou reclamação de barulho excessivo no 3º andar após às 22h.',
+    autorNome: 'Larissa Manoela',
+    autorUnidade: '204',
+    autorTipo: 'morador',
+    categoriaBadge: 'Ocorrência',
+    linkTela: 'reclamacoes',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'act-002',
+    dataHora: '31/08/2026 11:35',
+    dataIso: '2026-08-31',
+    hora: '11:35',
+    tipo: 'reserva_solicitada',
+    titulo: 'Reserva de Espaço Confirmada',
+    descricao: 'Apto 102 agendou o Salão de Festas & Espaço Gourmet para 18/09 (Turno Noite).',
+    autorNome: 'Marcos Almeida',
+    autorUnidade: '102',
+    autorTipo: 'morador',
+    categoriaBadge: 'Reservas',
+    linkTela: 'dependencias',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'act-003',
+    dataHora: '31/08/2026 09:30',
+    dataIso: '2026-08-31',
+    hora: '09:30',
+    tipo: 'mudanca_agendada',
+    titulo: 'Solicitação de Mudança de Saída',
+    descricao: 'Apto 101 solicitou agendamento de mudança para 12/09 com proteção de elevador.',
+    autorNome: 'Fernanda Lima',
+    autorUnidade: '101',
+    autorTipo: 'morador',
+    categoriaBadge: 'Mudanças',
+    linkTela: 'mudancas',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'act-004',
+    dataHora: '30/08/2026 17:45',
+    dataIso: '2026-08-30',
+    hora: '17:45',
+    tipo: 'reparo_orcamento',
+    titulo: 'Novo Orçamento de Reparo Anexado',
+    descricao: 'Administração publicou orçamento de R$ 1.850,00 da Automatiza Tech para o portão da garagem.',
+    autorNome: 'Adriana Silva (Síndica)',
+    autorTipo: 'admin',
+    categoriaBadge: 'Reparos',
+    linkTela: 'reparos',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'act-005',
+    dataHora: '30/08/2026 15:20',
+    dataIso: '2026-08-30',
+    hora: '15:20',
+    tipo: 'morador_novo',
+    titulo: 'Novo Condômino Cadastrado',
+    descricao: 'Unidade 403 teve cadastro ativado para Dr. Marcelo Antunes.',
+    autorNome: 'Administração',
+    autorTipo: 'admin',
+    categoriaBadge: 'Moradores',
+    linkTela: 'moradores',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'act-006',
+    dataHora: '30/08/2026 10:00',
+    dataIso: '2026-08-30',
+    hora: '10:00',
+    tipo: 'enjoei_publicado',
+    titulo: 'Novo Desapego no Bazar Enjoei',
+    descricao: 'Apto 201 publicou "Bicicleta Caloi Aro 29" no mural de desapegos.',
+    autorNome: 'Paula Souza',
+    autorUnidade: '201',
+    autorTipo: 'morador',
+    categoriaBadge: 'Enjoei',
+    linkTela: 'enjoei',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'act-007',
+    dataHora: '29/08/2026 14:00',
+    dataIso: '2026-08-29',
+    hora: '14:00',
+    tipo: 'financeiro_lancamento',
+    titulo: 'Prestação de Contas Atualizada',
+    descricao: 'Inserido comprovante fiscal de manutenção da piscina (R$ 680,00).',
+    autorNome: 'Conselho Fiscal',
+    autorTipo: 'admin',
+    categoriaBadge: 'Financeiro',
+    linkTela: 'prestacao-contas',
+    condominioId: CURRENT_CONDO_ID
+  },
+  {
+    id: 'act-008',
+    dataHora: '28/08/2026 18:30',
+    dataIso: '2026-08-28',
+    hora: '18:30',
+    tipo: 'assembleia_publicada',
+    titulo: 'Ata de Assembleia Publicada',
+    descricao: 'Ata da Assembleia Geral Ordinária de Agosto homologada e disponível para download.',
+    autorNome: 'Adriana Silva (Síndica)',
+    autorTipo: 'admin',
+    categoriaBadge: 'Assembleia',
+    linkTela: 'assembleias',
+    condominioId: CURRENT_CONDO_ID
+  }
+];
+
 
 

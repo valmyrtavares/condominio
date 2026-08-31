@@ -40,7 +40,12 @@ import {
   AvaliacaoFuncionario,
   RegraTopico,
   ItemEnjoei,
-  StatusItemEnjoei
+  StatusItemEnjoei,
+  RegistroAtividade,
+  TipoAtividade,
+  MudancaAgendamento,
+  StatusMudanca,
+  RegrasMudancaConfig
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -60,6 +65,9 @@ import {
   MOCK_FUNCIONARIOS,
   MOCK_REGRAS_CONDOMINIO,
   MOCK_ITENS_ENJOEI,
+  MOCK_REGISTROS_ATIVIDADES,
+  MOCK_MUDANCAS,
+  MOCK_REGRAS_MUDANCA,
   ESPINHA_DORSAL_ITEMS,
   CURRENT_CONDO_ID
 } from '../mock/seedData';
@@ -130,6 +138,20 @@ interface CondoContextType {
   setSelectedReclamacaoId: (id: string | null) => void;
   selectedReparoId: string | null;
   setSelectedReparoId: (id: string | null) => void;
+
+  // Mudanças e Carretos
+  mudancas: MudancaAgendamento[];
+  regrasMudanca: RegrasMudancaConfig;
+  adicionarMudanca: (nova: Omit<MudancaAgendamento, 'id' | 'condominioId' | 'criadoEm'>) => void;
+  atualizarStatusMudanca: (id: string, status: StatusMudanca, motivoRecusa?: string) => void;
+  editarMudanca: (id: string, dados: Partial<MudancaAgendamento>) => void;
+  excluirMudanca: (id: string) => void;
+  salvarRegrasMudanca: (novasRegras: RegrasMudancaConfig) => void;
+
+  // Diário do Síndico & Galeria Cronológica de Ocorrências
+  registrosAtividades: RegistroAtividade[];
+  adicionarRegistroAtividade: (reg: Omit<RegistroAtividade, 'id' | 'condominioId'>) => void;
+  excluirRegistroAtividade: (id: string) => void;
 
   // Admin & Unidades Management
   isAdminLoggedIn: boolean;
@@ -670,9 +692,148 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setItensEnjoei(prev => prev.filter(item => item.id !== id));
   };
 
+  // ==========================================
+  // DIÁRIO DO SÍNDICO & FEED CRONOLÓGICO DE ATIVIDADES
+  // ==========================================
+  const [registrosAtividades, setRegistrosAtividades] = useState<RegistroAtividade[]>(() => {
+    const saved = localStorage.getItem('condo_registros_atividades_list');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return MOCK_REGISTROS_ATIVIDADES;
+  });
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('condo_registros_atividades_list', JSON.stringify(registrosAtividades));
+    } catch {}
+  }, [registrosAtividades]);
 
+  const adicionarRegistroAtividade = (reg: Omit<RegistroAtividade, 'id' | 'condominioId'>) => {
+    const id = `act-${Date.now()}`;
+    const novoReg: RegistroAtividade = {
+      ...reg,
+      id,
+      condominioId: CURRENT_CONDO_ID
+    };
+    setRegistrosAtividades(prev => [novoReg, ...prev]);
+  };
 
+  const excluirRegistroAtividade = (id: string) => {
+    setRegistrosAtividades(prev => prev.filter(r => r.id !== id));
+  };
+
+  // ==========================================
+  // GESTÃO & AGENDAMENTO DE MUDANÇAS
+  // ==========================================
+  const [regrasMudanca, setRegrasMudanca] = useState<RegrasMudancaConfig>(() => {
+    const saved = localStorage.getItem('condo_regras_mudanca');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return MOCK_REGRAS_MUDANCA;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('condo_regras_mudanca', JSON.stringify(regrasMudanca));
+    } catch {}
+  }, [regrasMudanca]);
+
+  const salvarRegrasMudanca = (novasRegras: RegrasMudancaConfig) => {
+    setRegrasMudanca(novasRegras);
+  };
+
+  const [mudancas, setMudancas] = useState<MudancaAgendamento[]>(() => {
+    const saved = localStorage.getItem('condo_mudancas_list');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return MOCK_MUDANCAS;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('condo_mudancas_list', JSON.stringify(mudancas));
+    } catch {}
+  }, [mudancas]);
+
+  const adicionarMudanca = (nova: Omit<MudancaAgendamento, 'id' | 'condominioId' | 'criadoEm'>) => {
+    const id = `mud-${Date.now()}`;
+    const agora = new Date();
+    const dataHoraStr = `${agora.toLocaleDateString('pt-BR')} ${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
+    const novaMudanca: MudancaAgendamento = {
+      ...nova,
+      id,
+      criadoEm: dataHoraStr,
+      condominioId: CURRENT_CONDO_ID
+    };
+    setMudancas(prev => [novaMudanca, ...prev]);
+
+    // Registra automaticamente no Diário do Síndico
+    adicionarRegistroAtividade({
+      dataHora: dataHoraStr,
+      dataIso: agora.toISOString().split('T')[0],
+      hora: `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`,
+      tipo: 'mudanca_agendada',
+      titulo: `Agendamento de Mudança (${nova.tipo})`,
+      descricao: `Unidade ${nova.unidade} agendou mudança para o dia ${nova.dataMudanca} (${nova.periodo}).`,
+      autorNome: nova.moradorNome,
+      autorUnidade: nova.unidade,
+      autorTipo: 'morador',
+      categoriaBadge: 'Mudanças',
+      linkTela: 'mudancas'
+    });
+  };
+
+  const atualizarStatusMudanca = (id: string, novoStatus: StatusMudanca, motivoRecusa?: string) => {
+    const target = mudancas.find(m => m.id === id);
+    setMudancas(prev => prev.map(m => {
+      if (m.id === id) {
+        return {
+          ...m,
+          status: novoStatus,
+          motivoRecusa: motivoRecusa !== undefined ? motivoRecusa : m.motivoRecusa
+        };
+      }
+      return m;
+    }));
+
+    if (target) {
+      const cleanUnit = target.unidade.replace(/[^0-9]/g, '');
+      if (cleanUnit) {
+        if (novoStatus === 'Confirmada') {
+          enviarNotificacaoPrivada(
+            cleanUnit,
+            `Mudança Confirmada: Seu agendamento para o dia ${target.dataMudanca} (${target.periodo}) foi aprovado pela administração e comunicado à portaria.`,
+            'Confirmação de Mudança'
+          );
+        } else if (novoStatus === 'Recusada') {
+          enviarNotificacaoPrivada(
+            cleanUnit,
+            `Aviso de Mudança: O agendamento para ${target.dataMudanca} não pôde ser aprovado. Motivo: ${motivoRecusa || 'Conflito de horário ou manutenção de elevador.'}`,
+            'Agendamento de Mudança'
+          );
+        }
+      }
+    }
+  };
+
+  const editarMudanca = (id: string, dados: Partial<MudancaAgendamento>) => {
+    setMudancas(prev => prev.map(m => (m.id === id ? { ...m, ...dados } : m)));
+  };
+
+  const excluirMudanca = (id: string) => {
+    setMudancas(prev => prev.filter(m => m.id !== id));
+  };
 
   // Admin Roles & Categories
   const [adminRoles, setAdminRoles] = useState<AdminRole[]>(() => {
@@ -2786,7 +2947,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       atualizarStatusItemEnjoei,
       suspenderItemEnjoei,
       reativarItemEnjoei,
-      excluirItemEnjoei
+      excluirItemEnjoei,
+      mudancas,
+      regrasMudanca,
+      adicionarMudanca,
+      atualizarStatusMudanca,
+      editarMudanca,
+      excluirMudanca,
+      salvarRegrasMudanca,
+      registrosAtividades,
+      adicionarRegistroAtividade,
+      excluirRegistroAtividade
     }}>
       {children}
     </CondoContext.Provider>

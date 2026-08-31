@@ -27,7 +27,10 @@ import {
   ServicoContratado,
   ItemEnjoei,
   Dependencia,
-  TipoDependencia
+  TipoDependencia,
+  MudancaAgendamento,
+  StatusMudanca,
+  RegrasMudancaConfig
 } from '../../types';
 import { 
   Building, 
@@ -97,7 +100,8 @@ import {
   Landmark,
   Wallet,
   Tag,
-  BookOpen
+  BookOpen,
+  Truck
 } from 'lucide-react';
 import { PrivateNotifyModal } from '../../components/admin/PrivateNotifyModal';
 import { SuspendServiceModal } from '../../components/admin/SuspendServiceModal';
@@ -218,7 +222,13 @@ export const AdminPanelScreen: React.FC = () => {
     dependencias,
     adicionarDependencia,
     editarDependencia,
-    excluirDependencia
+    excluirDependencia,
+    mudancas,
+    regrasMudanca,
+    atualizarStatusMudanca,
+    salvarRegrasMudanca,
+    excluirMudanca,
+    registrosAtividades
   } = useCondo();
 
   // Accordion section collapse states (all closed by default on entry)
@@ -235,6 +245,13 @@ export const AdminPanelScreen: React.FC = () => {
   const [isFornecedoresSectionOpen, setIsFornecedoresSectionOpen] = useState(false);
   const [isEnjoeiAdminOpen, setIsEnjoeiAdminOpen] = useState(false);
   const [isDependenciasAdminOpen, setIsDependenciasAdminOpen] = useState(false);
+  const [isMudancasAdminOpen, setIsMudancasAdminOpen] = useState(false);
+
+  // 14. Gestão de Mudanças State
+  const [searchMudancaAdmin, setSearchMudancaAdmin] = useState('');
+  const [filtroStatusMudancaAdmin, setFiltroStatusMudancaAdmin] = useState('Todas');
+  const [motivoRecusaMudancaModal, setMotivoRecusaMudancaModal] = useState<MudancaAgendamento | null>(null);
+  const [motivoRecusaMudancaTexto, setMotivoRecusaMudancaTexto] = useState('');
 
   // 13. Gestão de Dependências & Áreas Comuns State
   const [isCreateEditDependenciaModalOpen, setIsCreateEditDependenciaModalOpen] = useState(false);
@@ -613,7 +630,15 @@ export const AdminPanelScreen: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setCurrentScreen('diario-sindico')}
+            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Diário do Síndico ({registrosAtividades.length})</span>
+          </button>
           <span className="px-3.5 py-1.5 bg-amber-500 text-slate-950 rounded-xl font-black text-xs shadow-xs">
             {unidades.length} Unidades
           </span>
@@ -6105,6 +6130,242 @@ export const AdminPanelScreen: React.FC = () => {
                               >
                                 <Trash2 className="w-3.5 h-3.5 text-rose-600" />
                                 <span>Excluir</span>
+                              </button>
+                            </div>
+
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        );
+      })()}
+
+      {/* ========================================================================= */}
+      {/* SEÇÃO 14: GESTÃO & AUTORIZAÇÃO DE MUDANÇAS E CARRETOS */}
+      {/* ========================================================================= */}
+      {(() => {
+        const totalPendentes = mudancas.filter(m => m.status === 'Pendente de Aprovação').length;
+        const totalConfirmadas = mudancas.filter(m => m.status === 'Confirmada').length;
+
+        const filteredMudancasAdmin = mudancas.filter(mud => {
+          const matchStatus = filtroStatusMudancaAdmin === 'Todas' || mud.status === filtroStatusMudancaAdmin;
+          const termo = searchMudancaAdmin.toLowerCase().trim();
+          const matchBusca = !termo ||
+            mud.moradorNome.toLowerCase().includes(termo) ||
+            mud.unidade.includes(termo) ||
+            (mud.transportadora && mud.transportadora.toLowerCase().includes(termo)) ||
+            (mud.placaVeiculo && mud.placaVeiculo.toLowerCase().includes(termo));
+
+          return matchStatus && matchBusca;
+        });
+
+        return (
+          <div className="bg-white/45 border border-white/60 rounded-3xl overflow-hidden shadow-xl hover:bg-white/50 transition-all duration-300">
+            
+            {/* Header Sanfonado */}
+            <button
+              onClick={() => setIsMudancasAdminOpen(!isMudancasAdminOpen)}
+              className="w-full p-4 sm:p-5 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center shadow-md font-black shrink-0">
+                  <Truck className="w-5 h-5 text-slate-950" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base sm:text-lg text-slate-950 leading-tight flex items-center gap-2">
+                    14. Gestão & Autorização de Mudanças
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300">
+                      {mudancas.length} agendadas
+                    </span>
+                    {totalPendentes > 0 && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 animate-pulse">
+                        ⚠️ {totalPendentes} pendentes
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-xs text-slate-700 font-semibold mt-0.5">
+                    Aprove ou recuse agendamentos de mudança, consulte veículos na portaria e gerencie regras de elevador de serviço.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-2 rounded-full bg-white/60 border border-white/80 text-slate-900 shadow-xs shrink-0 ml-2">
+                {isMudancasAdminOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
+            </button>
+
+            {/* Conteúdo Expansível */}
+            <div className={`transition-all duration-300 ${isMudancasAdminOpen ? 'block' : 'hidden'}`}>
+              <div className="p-4 sm:p-6 border-t border-slate-950/10 space-y-5 bg-white/30">
+                
+                {/* Resumo */}
+                <div className="flex items-center gap-2 flex-wrap bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
+                  <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-amber-300 text-xs font-black shadow-xs">
+                    {mudancas.length} Mudanças no Total
+                  </div>
+                  <div className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
+                    ✓ {totalConfirmadas} Confirmadas
+                  </div>
+                  {totalPendentes > 0 && (
+                    <div className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-black">
+                      ⏳ {totalPendentes} Pendentes de Análise
+                    </div>
+                  )}
+                </div>
+
+                {/* Filtros e Busca */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                  <div className="sm:col-span-7 relative">
+                    <input
+                      type="text"
+                      placeholder="Buscar por morador, apto, empresa, placa..."
+                      value={searchMudancaAdmin}
+                      onChange={(e) => setSearchMudancaAdmin(e.target.value)}
+                      className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+                  </div>
+
+                  <div className="sm:col-span-5 flex items-center gap-1 overflow-x-auto scrollbar-none">
+                    {['Todas', 'Pendente de Aprovação', 'Confirmada', 'Recusada'].map(st => (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setFiltroStatusMudancaAdmin(st)}
+                        className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                          filtroStatusMudancaAdmin === st
+                            ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
+                            : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
+                        }`}
+                      >
+                        {st === 'Todas' ? 'Todas' : st === 'Pendente de Aprovação' ? '⏳ Pendentes' : st === 'Confirmada' ? '✓ Confirmadas' : '❌ Recusadas'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Lista das Mudanças */}
+                <div className="space-y-3">
+                  {filteredMudancasAdmin.length === 0 ? (
+                    <div className="p-6 text-center bg-white/40 border border-white/60 rounded-2xl text-xs font-bold text-slate-700">
+                      Nenhum agendamento de mudança para esta filtragem.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      {filteredMudancasAdmin.map((mud) => {
+                        const isPendente = mud.status === 'Pendente de Aprovação';
+                        const isConfirmada = mud.status === 'Confirmada';
+                        const isRecusada = mud.status === 'Recusada';
+
+                        return (
+                          <div
+                            key={mud.id}
+                            className={`border-2 rounded-2xl p-4 shadow-md transition-all flex flex-col justify-between space-y-3 bg-white/80 ${
+                              isPendente 
+                                ? 'border-amber-400 bg-amber-50/50' 
+                                : isConfirmada 
+                                  ? 'border-emerald-300' 
+                                  : 'border-rose-200'
+                            }`}
+                          >
+                            <div className="space-y-2">
+                              <div className="flex items-start justify-between gap-2 border-b border-slate-200 pb-2">
+                                <div>
+                                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-slate-900 text-amber-300">
+                                    {mud.tipo}
+                                  </span>
+                                  <h4 className="text-sm sm:text-base font-black text-slate-950 mt-1">
+                                    Unidade {mud.unidade} {mud.bloco && `(${mud.bloco})`} • {mud.moradorNome}
+                                  </h4>
+                                </div>
+
+                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shrink-0 ${
+                                  isConfirmada ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : isPendente ? 'bg-amber-100 text-amber-950 border-amber-300' : 'bg-rose-100 text-rose-950 border-rose-300'
+                                }`}>
+                                  {mud.status}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div className="p-2 rounded-xl bg-white border border-slate-200 space-y-0.5">
+                                  <span className="text-[9px] uppercase font-bold text-slate-500 block">Data & Turno:</span>
+                                  <strong className="text-slate-950 block text-[11px]">{mud.dataMudanca}</strong>
+                                  <span className="text-[10px] text-slate-600 block">{mud.periodo}</span>
+                                </div>
+
+                                <div className="p-2 rounded-xl bg-white border border-slate-200 space-y-0.5">
+                                  <span className="text-[9px] uppercase font-bold text-slate-500 block">Veículo / Transportadora:</span>
+                                  <strong className="text-slate-950 block text-[11px] truncate">{mud.transportadora || 'Particular'}</strong>
+                                  <span className="text-[10px] font-mono text-indigo-900 font-bold block">{mud.placaVeiculo || 'Placa a informar'}</span>
+                                </div>
+                              </div>
+
+                              {mud.observacoes && (
+                                <p className="text-xs text-slate-700 font-medium p-2 rounded-xl bg-white/60 border border-slate-200">
+                                  <b>Obs:</b> {mud.observacoes}
+                                </p>
+                              )}
+
+                              {mud.motivoRecusa && (
+                                <p className="text-xs text-rose-800 font-bold p-2 rounded-xl bg-rose-50 border border-rose-200">
+                                  <b>Motivo Recusa:</b> {mud.motivoRecusa}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Ações de Aprovação */}
+                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200">
+                              <div className="flex items-center gap-1.5">
+                                {isPendente && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => atualizarStatusMudanca(mud.id, 'Confirmada')}
+                                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>Aprovar</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setMotivoRecusaMudancaModal(mud);
+                                        setMotivoRecusaMudancaTexto('Conflito de horário ou necessidade de vistoria prévia.');
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-950 text-xs font-black transition-colors border border-rose-300 cursor-pointer"
+                                    >
+                                      <span>Recusar</span>
+                                    </button>
+                                  </>
+                                )}
+
+                                {isConfirmada && (
+                                  <span className="text-xs font-bold text-emerald-900 flex items-center gap-1">
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                    Liberado na Portaria
+                                  </span>
+                                )}
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm('Deseja excluir este registro de mudança?')) {
+                                    excluirMudanca(mud.id);
+                                  }
+                                }}
+                                className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                title="Excluir"
+                              >
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
 
