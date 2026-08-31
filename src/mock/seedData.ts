@@ -1,4 +1,4 @@
-import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio, UnidadeDisponivel, RegraTopico, ItemEnjoei, RegistroAtividade, MudancaAgendamento, RegrasMudancaConfig, AutorizacaoAcesso, EncomendaEntrega } from '../types';
+import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, EspinhaDorsalItem, Benfeitoria, VagaGaragem, ServicoContratado, Dependencia, ReservaDependencia, Assembleia, EventoCondominio, UnidadeDisponivel, RegraTopico, ItemEnjoei, RegistroAtividade, MudancaAgendamento, RegrasMudancaConfig, AutorizacaoAcesso, EncomendaEntrega, CondominioProfile } from '../types';
 
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
@@ -3171,6 +3171,64 @@ export const MOCK_ENCOMENDAS_ENTREGAS: EncomendaEntrega[] = [
     condominioId: CURRENT_CONDO_ID
   }
 ];
+
+export const MOCK_CONDOMINIOS: CondominioProfile[] = [
+  {
+    id: 'condo-jardim-paulista',
+    slug: 'jardim-paulista',
+    nome: 'Residencial Jardim Paulista',
+    endereco: 'Alameda Campinas, 1200 - Jardim Paulista, São Paulo - SP',
+    cidade: 'São Paulo',
+    estado: 'SP',
+    totalUnidades: 48,
+    totalBlocos: 2,
+    fotoFachada: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=85',
+    senhaAdminGeral: 'admin',
+    emailAdmin: 'gestao@jardimpaulista.com.br',
+    nomeSindico: 'Adriana Silva',
+    telefoneSindico: '(11) 98765-4321',
+    status: 'ativo',
+    criadoEm: '01/01/2026',
+    modeloInicial: 'exemplo'
+  },
+  {
+    id: 'condo-edificio-aurora',
+    slug: 'edificio-aurora',
+    nome: 'Edifício Aurora Imperial',
+    endereco: 'Rua Oscar Freire, 850 - Cerqueira César, São Paulo - SP',
+    cidade: 'São Paulo',
+    estado: 'SP',
+    totalUnidades: 32,
+    totalBlocos: 1,
+    fotoFachada: 'https://images.unsplash.com/photo-1567496898669-ee935f5f647a?auto=format&fit=crop&w=1200&q=85',
+    senhaAdminGeral: 'aurora2026',
+    emailAdmin: 'sindico@edificioaurora.com.br',
+    nomeSindico: 'Dr. Roberto Peixoto',
+    telefoneSindico: '(11) 99123-4567',
+    status: 'ativo',
+    criadoEm: '15/02/2026',
+    modeloInicial: 'limpo'
+  },
+  {
+    id: 'condo-reserva-passaros',
+    slug: 'reserva-dos-passaros',
+    nome: 'Condomínio Reserva dos Pássaros',
+    endereco: 'Av. das Gaivotas, 400 - Moema, São Paulo - SP',
+    cidade: 'São Paulo',
+    estado: 'SP',
+    totalUnidades: 64,
+    totalBlocos: 4,
+    fotoFachada: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=85',
+    senhaAdminGeral: 'passaros123',
+    emailAdmin: 'contato@reservapassaros.com.br',
+    nomeSindico: 'Claudio Nogueira',
+    telefoneSindico: '(11) 97788-9900',
+    status: 'ativo',
+    criadoEm: '20/03/2026',
+    modeloInicial: 'exemplo'
+  }
+];
+
 
 
 

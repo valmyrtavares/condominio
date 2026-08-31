@@ -35,15 +35,29 @@ export const ROUTES: RouteConfig[] = [
   { id: 'enjoei', path: '/enjoei', aliases: ['/desapego', '/trocas', '/bazar'], title: 'Enjoei do Condomínio', auth: 'resident' },
   { id: 'mudancas', path: '/mudancas', aliases: ['/mudanca', '/carretos', '/fretes'], title: 'Mudanças & Carretos', auth: 'resident' },
   { id: 'diario-sindico', path: '/diario-sindico', aliases: ['/diario', '/ocorrencias-diarias', '/feed-atividades'], title: 'Diário do Síndico', auth: 'admin' },
-  { id: 'portaria', path: '/portaria', aliases: ['/entregas', '/encomendas', '/acessos', '/visitas'], title: 'Entregas & Portaria', auth: 'resident' }
+  { id: 'portaria', path: '/portaria', aliases: ['/entregas', '/encomendas', '/acessos', '/visitas'], title: 'Entregas & Portaria', auth: 'resident' },
+  
+  // SuperAdmin Master Route
+  { id: 'master', path: '/master', aliases: ['/superadmin', '/master/admin'], title: 'SuperAdmin Master', auth: 'public' }
 ];
 
 /**
  * Converte um caminho de URL para o ID da tela correspondente
  */
-export const getScreenFromPath = (pathname: string): { screen: string; route?: RouteConfig } => {
+export const getScreenFromPath = (pathname: string): { screen: string; route?: RouteConfig; tenantSlug?: string } => {
   const cleanPath = (pathname || '/').toLowerCase().replace(/\/+$/, '') || '/';
   
+  // Suporte a rotas dinâmicas de tenant /c/:slug e /c/:slug/admin
+  const tenantAdminMatch = cleanPath.match(/^\/c\/([a-z0-9-]+)\/admin$/);
+  if (tenantAdminMatch) {
+    return { screen: 'admin', tenantSlug: tenantAdminMatch[1] };
+  }
+
+  const tenantHomeMatch = cleanPath.match(/^\/c\/([a-z0-9-]+)$/);
+  if (tenantHomeMatch) {
+    return { screen: 'home', tenantSlug: tenantHomeMatch[1] };
+  }
+
   for (const route of ROUTES) {
     if (route.path === cleanPath || (route.aliases && route.aliases.includes(cleanPath))) {
       return { screen: route.id, route };

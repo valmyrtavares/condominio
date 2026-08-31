@@ -49,7 +49,10 @@ import {
   AutorizacaoAcesso,
   StatusAutorizacaoAcesso,
   EncomendaEntrega,
-  StatusEncomenda
+  StatusEncomenda,
+  CondominioProfile,
+  StatusCondominio,
+  ModeloInicialCondominio
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -74,6 +77,7 @@ import {
   MOCK_REGRAS_MUDANCA,
   MOCK_AUTORIZACOES_ACESSO,
   MOCK_ENCOMENDAS_ENTREGAS,
+  MOCK_CONDOMINIOS,
   ESPINHA_DORSAL_ITEMS,
   CURRENT_CONDO_ID
 } from '../mock/seedData';
@@ -168,6 +172,18 @@ interface CondoContextType {
   adicionarEncomenda: (nova: Omit<EncomendaEntrega, 'id' | 'condominioId' | 'status' | 'dataRecebimento' | 'horaRecebimento'> & { dataRecebimento?: string; horaRecebimento?: string; status?: StatusEncomenda }) => void;
   darBaixaEncomenda: (id: string, retiradoPorNome?: string) => void;
   excluirEncomenda: (id: string) => void;
+
+  // SuperAdmin Master & Multi-Tenant Condominios
+  condominios: CondominioProfile[];
+  currentCondo: CondominioProfile;
+  adicionarCondominio: (novo: Omit<CondominioProfile, 'id' | 'criadoEm'>) => CondominioProfile;
+  editarCondominio: (id: string, dados: Partial<CondominioProfile>) => void;
+  excluirCondominio: (id: string) => void;
+  alternarStatusCondominio: (id: string) => void;
+  selecionarCondominio: (slugOuId: string) => void;
+  isMasterLoggedIn: boolean;
+  loginMaster: (senha: string) => boolean;
+  logoutMaster: () => void;
 
   // Admin & Unidades Management
   isAdminLoggedIn: boolean;
@@ -990,6 +1006,142 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const excluirEncomenda = (id: string) => {
     setEncomendasEntregas(prev => prev.filter(enc => enc.id !== id));
+  };
+
+  // ==========================================
+  // SUPERADMIN & MULTI-TENANT CONDOMÍNIOS
+  // ==========================================
+  const [condominios, setCondominios] = useState<CondominioProfile[]>(() => {
+    const saved = localStorage.getItem('condo_multi_condominios_list');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return MOCK_CONDOMINIOS;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('condo_multi_condominios_list', JSON.stringify(condominios));
+    } catch {}
+  }, [condominios]);
+
+  const [currentCondoId, setCurrentCondoId] = useState<string>(() => {
+    const saved = localStorage.getItem('condo_active_tenant_id');
+    return saved || 'condo-jardim-paulista';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('condo_active_tenant_id', currentCondoId);
+    } catch {}
+  }, [currentCondoId]);
+
+  const currentCondo: CondominioProfile = condominios.find(c => c.id === currentCondoId || c.slug === currentCondoId) || condominios[0] || MOCK_CONDOMINIOS[0];
+
+  // SuperAdmin Master Auth
+  const [isMasterLoggedIn, setIsMasterLoggedIn] = useState<boolean>(() => {
+    return localStorage.getItem('condo_superadmin_master_auth') === 'true';
+  });
+
+  const loginMaster = (senha: string): boolean => {
+    if (senha.trim() === 'master2026' || senha.trim() === 'admin' || senha.trim() === 'master') {
+      setIsMasterLoggedIn(true);
+      localStorage.setItem('condo_superadmin_master_auth', 'true');
+      return true;
+    }
+    return false;
+  };
+
+  const logoutMaster = () => {
+    setIsMasterLoggedIn(false);
+    localStorage.removeItem('condo_superadmin_master_auth');
+  };
+
+  const selecionarCondominio = (slugOuId: string) => {
+    const target = condominios.find(c => c.id === slugOuId || c.slug === slugOuId);
+    if (target) {
+      setCurrentCondoId(target.id);
+    }
+  };
+
+  const adicionarCondominio = (novo: Omit<CondominioProfile, 'id' | 'criadoEm'>): CondominioProfile => {
+    const cleanSlug = (novo.slug || novo.nome)
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    const id = `condo-${cleanSlug || Date.now()}`;
+    const agora = new Date();
+    const dataStr = agora.toLocaleDateString('pt-BR');
+
+    const novoCondo: CondominioProfile = {
+      ...novo,
+      id,
+      slug: cleanSlug || `condo-${Date.now()}`,
+      criadoEm: dataStr,
+      status: novo.status || 'ativo'
+    };
+
+    setCondominios(prev => [novoCondo, ...prev]);
+
+    // Se o modelo for "limpo", gera as unidades automáticas vazias para aquele condomínio
+    if (novo.modeloInicial === 'limpo') {
+      const novasUnidadesLimpo: Unidade[] = [];
+      const totalUnits = novo.totalUnidades || 16;
+      const blocos = novo.totalBlocos || 1;
+
+      for (let i = 1; i <= totalUnits; i++) {
+        const andar = Math.floor((i - 1) / 4) + 1;
+        const num = (i - 1) % 4 + 1;
+        const numeroApto = `${andar}0${num}`;
+        const blocoLetra = String.fromCharCode(65 + ((i - 1) % blocos));
+
+        novasUnidadesLimpo.push({
+          id: `unit-${id}-${numeroApto}-${blocoLetra}`,
+          numero: numeroApto,
+          bloco: `Bloco ${blocoLetra}`,
+          tipo: 'Apartamento',
+          statusCadastro: 'Pendente',
+          senhaAcesso: '1234',
+          senhaPadraoAlterada: false,
+          moradores: []
+        });
+      }
+      try {
+        localStorage.setItem(`condo_unidades_list_${id}`, JSON.stringify(novasUnidadesLimpo));
+      } catch {}
+    }
+
+    return novoCondo;
+  };
+
+  const editarCondominio = (id: string, dados: Partial<CondominioProfile>) => {
+    setCondominios(prev => prev.map(c => {
+      if (c.id === id) {
+        return { ...c, ...dados };
+      }
+      return c;
+    }));
+  };
+
+  const excluirCondominio = (id: string) => {
+    setCondominios(prev => prev.filter(c => c.id !== id));
+  };
+
+  const alternarStatusCondominio = (id: string) => {
+    setCondominios(prev => prev.map(c => {
+      if (c.id === id) {
+        return {
+          ...c,
+          status: c.status === 'ativo' ? 'bloqueado' : 'ativo'
+        };
+      }
+      return c;
+    }));
   };
 
   // Admin Roles & Categories
@@ -3122,7 +3274,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       encomendasEntregas,
       adicionarEncomenda,
       darBaixaEncomenda,
-      excluirEncomenda
+      excluirEncomenda,
+      condominios,
+      currentCondo,
+      adicionarCondominio,
+      editarCondominio,
+      excluirCondominio,
+      alternarStatusCondominio,
+      selecionarCondominio,
+      isMasterLoggedIn,
+      loginMaster,
+      logoutMaster
     }}>
       {children}
     </CondoContext.Provider>

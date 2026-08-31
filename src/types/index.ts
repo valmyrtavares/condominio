@@ -695,6 +695,32 @@ export interface EncomendaEntrega {
   condominioId: string;
 }
 
+// ==========================================
+// SUPERADMIN & MULTI-TENANT PROFILES
+// ==========================================
+export type StatusCondominio = 'ativo' | 'bloqueado' | 'em_implantacao';
+export type ModeloInicialCondominio = 'limpo' | 'exemplo';
+
+export interface CondominioProfile {
+  id: string;                    // ex: "condo-jardim-paulista", "condo-aurora"
+  slug: string;                  // ex: "jardim-paulista", "edificio-aurora"
+  nome: string;                  // ex: "Residencial Jardim Paulista"
+  endereco: string;              // ex: "Av. Paulista, 1500 - Bela Vista, SP"
+  cidade?: string;
+  estado?: string;
+  totalUnidades: number;
+  totalBlocos?: number;
+  fotoFachada?: string;
+  senhaAdminGeral: string;       // Senha mestre do síndico
+  emailAdmin?: string;
+  nomeSindico?: string;
+  telefoneSindico?: string;
+  status: StatusCondominio;
+  criadoEm: string;
+  modeloInicial: ModeloInicialCondominio;
+}
+
+
 
 
 

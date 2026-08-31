@@ -24,6 +24,8 @@ import { EnjoeiScreen } from './pages/EnjoeiScreen';
 import { MudancasScreen } from './pages/MudancasScreen';
 import { DiarioSindicoScreen } from './pages/DiarioSindicoScreen';
 import { PortariaScreen } from './pages/PortariaScreen';
+import { SuperAdminLoginScreen } from './pages/master/SuperAdminLoginScreen';
+import { SuperAdminDashboardScreen } from './pages/master/SuperAdminDashboardScreen';
 import { AdminLoginScreen } from './pages/admin/AdminLoginScreen';
 import { AdminPanelScreen } from './pages/admin/AdminPanelScreen';
 import { ResidentLoginScreen } from './pages/auth/ResidentLoginScreen';
@@ -35,8 +37,13 @@ const MainContent: React.FC = () => {
     currentScreen, 
     isAdminLoggedIn, 
     isResidentLoggedIn,
+    isMasterLoggedIn,
     setTargetRedirectScreen 
   } = useCondo();
+
+  if (currentScreen === 'master') {
+    return isMasterLoggedIn ? <SuperAdminDashboardScreen /> : <SuperAdminLoginScreen />;
+  }
 
   const routeConfig = getRouteConfig(currentScreen);
 
@@ -100,6 +107,8 @@ const MainContent: React.FC = () => {
         return <DiarioSindicoScreen />;
       case 'portaria':
         return <PortariaScreen />;
+      case 'master':
+        return isMasterLoggedIn ? <SuperAdminDashboardScreen /> : <SuperAdminLoginScreen />;
       default:
         return <GenericModuleScreen moduleId={currentScreen} />;
     }
@@ -113,8 +122,13 @@ const MainContent: React.FC = () => {
 };
 
 const AppLayout: React.FC = () => {
-  const { currentScreen } = useCondo();
+  const { currentScreen, currentCondo, setCurrentScreen } = useCondo();
   const isAdminScreen = currentScreen === 'admin';
+  const isMasterScreen = currentScreen === 'master';
+
+  if (isMasterScreen) {
+    return <MainContent />;
+  }
 
   return (
     <div className={`min-h-screen w-full max-w-full overflow-x-hidden flex flex-col font-sans transition-colors duration-500 relative ${
@@ -124,8 +138,8 @@ const AppLayout: React.FC = () => {
       {!isAdminScreen && (
         <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
           <img
-            src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=2000&q=90"
-            alt="Residencial Jardim Paulista"
+            src={currentCondo?.fotoFachada || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=2000&q=90"}
+            alt={currentCondo?.nome || "Residencial Jardim Paulista"}
             className="w-full h-full object-cover object-center opacity-85"
           />
           <div className="absolute inset-0 bg-slate-950/30" />
@@ -141,6 +155,21 @@ const AppLayout: React.FC = () => {
       <EspinhaDorsalDrawer />
       <MainContent />
       <BottomNav />
+
+      {/* Floating SuperAdmin Portal Shortcut (Bottom-right discrete button) */}
+      <div className="fixed bottom-20 right-3 z-40">
+        <button
+          type="button"
+          onClick={() => setCurrentScreen('master')}
+          className="p-2.5 rounded-full bg-slate-900/90 hover:bg-slate-800 text-amber-400 border border-amber-500/40 shadow-xl backdrop-blur-md transition-all hover:scale-110 active:scale-95 cursor-pointer flex items-center justify-center group"
+          title="Abrir Painel SuperAdmin Master (/master)"
+        >
+          <span className="text-sm">👑</span>
+          <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-out whitespace-nowrap text-[11px] font-black text-amber-300 px-0 group-hover:px-1.5">
+            SuperAdmin Master
+          </span>
+        </button>
+      </div>
     </div>
   );
 };
