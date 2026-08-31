@@ -5239,24 +5239,24 @@ export const AdminPanelScreen: React.FC = () => {
         const totalOrcadasAdmin = servicosContratados.filter(s => s.status === 'Orçada').length;
 
         return (
-          <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl shadow-md overflow-hidden">
+          <div className="bg-sky-50/70 border-2 border-sky-300 rounded-3xl shadow-md overflow-hidden">
             
             {/* Accordion Header */}
             <button
               type="button"
               onClick={() => setIsFornecedoresSectionOpen(!isFornecedoresSectionOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-100/90 hover:bg-amber-200/70 transition-colors text-left border-b border-amber-200 cursor-pointer select-none active:scale-[0.999]"
+              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-sky-100/90 hover:bg-sky-200/70 transition-colors text-left border-b border-sky-200 cursor-pointer select-none active:scale-[0.999]"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-950 shrink-0">
-                  <Briefcase className="w-5 h-5 text-amber-900" />
+                <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-950 shrink-0">
+                  <Briefcase className="w-5 h-5 text-sky-900" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
                       11. Gestão de Fornecedores & Serviços Contratados
                     </h3>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-sky-200 text-sky-950 border border-sky-300">
                       {servicosContratados.length} empresas
                     </span>
                   </div>
@@ -5270,8 +5270,8 @@ export const AdminPanelScreen: React.FC = () => {
                 <span className="text-xs font-bold text-slate-600 hidden sm:inline">
                   {isFornecedoresSectionOpen ? 'Recolher seção' : 'Expandir seção'}
                 </span>
-                <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isFornecedoresSectionOpen ? 'rotate-180' : 'rotate-0'}`} />
+                <div className="p-2 rounded-xl bg-white border border-sky-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-sky-900 transition-transform duration-500 ease-out ${isFornecedoresSectionOpen ? 'rotate-180' : 'rotate-0'}`} />
                 </div>
               </div>
             </button>
@@ -5282,7 +5282,7 @@ export const AdminPanelScreen: React.FC = () => {
                 isFornecedoresSectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
-              <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
+              <div className="min-h-0 overflow-hidden bg-sky-50/50 p-4 sm:p-6 space-y-6">
                 
                 {/* Resumo & Botão de Criação */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
@@ -5549,17 +5549,17 @@ export const AdminPanelScreen: React.FC = () => {
         const totalSuspensosAdmin = itensEnjoei.filter(i => i.status === 'suspenso').length;
 
         return (
-          <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl shadow-md overflow-hidden">
+          <div className="bg-rose-50/70 border-2 border-rose-300 rounded-3xl shadow-md overflow-hidden">
             
             {/* Accordion Header */}
             <button
               type="button"
               onClick={() => setIsEnjoeiAdminOpen(!isEnjoeiAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-100/90 hover:bg-amber-200/70 transition-colors text-left border-b border-amber-200 cursor-pointer select-none active:scale-[0.999]"
+              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-rose-100/90 hover:bg-rose-200/70 transition-colors text-left border-b border-rose-200 cursor-pointer select-none active:scale-[0.999]"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center text-rose-950 shrink-0">
-                  <ShoppingBag className="w-5 h-5 text-rose-700" />
+                  <ShoppingBag className="w-5 h-5 text-rose-900" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -5580,8 +5580,8 @@ export const AdminPanelScreen: React.FC = () => {
                 <span className="text-xs font-bold text-slate-600 hidden sm:inline">
                   {isEnjoeiAdminOpen ? 'Recolher seção' : 'Expandir seção'}
                 </span>
-                <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isEnjoeiAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                <div className="p-2 rounded-xl bg-white border border-rose-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-rose-900 transition-transform duration-500 ease-out ${isEnjoeiAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
                 </div>
               </div>
             </button>
@@ -5592,7 +5592,7 @@ export const AdminPanelScreen: React.FC = () => {
                 isEnjoeiAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
-              <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
+              <div className="min-h-0 overflow-hidden bg-rose-50/50 p-4 sm:p-6 space-y-6">
                 
                 {/* Resumo & Botão de Criação */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
@@ -5893,24 +5893,24 @@ export const AdminPanelScreen: React.FC = () => {
         });
 
         return (
-          <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl shadow-md overflow-hidden">
+          <div className="bg-emerald-50/70 border-2 border-emerald-300 rounded-3xl shadow-md overflow-hidden">
             
             {/* Accordion Header */}
             <button
               type="button"
               onClick={() => setIsDependenciasAdminOpen(!isDependenciasAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-100/90 hover:bg-amber-200/70 transition-colors text-left border-b border-amber-200 cursor-pointer select-none active:scale-[0.999]"
+              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-emerald-100/90 hover:bg-emerald-200/70 transition-colors text-left border-b border-emerald-200 cursor-pointer select-none active:scale-[0.999]"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-950 shrink-0">
-                  <Building2 className="w-5 h-5 text-amber-900" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-950 shrink-0">
+                  <Building2 className="w-5 h-5 text-emerald-900" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
                       13. Gestão de Dependências & Áreas Comuns
                     </h3>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
                       {dependencias.length} espaços
                     </span>
                   </div>
@@ -5924,8 +5924,8 @@ export const AdminPanelScreen: React.FC = () => {
                 <span className="text-xs font-bold text-slate-600 hidden sm:inline">
                   {isDependenciasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
                 </span>
-                <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isDependenciasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                <div className="p-2 rounded-xl bg-white border border-emerald-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-emerald-900 transition-transform duration-500 ease-out ${isDependenciasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
                 </div>
               </div>
             </button>
@@ -5936,7 +5936,7 @@ export const AdminPanelScreen: React.FC = () => {
                 isDependenciasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
-              <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
+              <div className="min-h-0 overflow-hidden bg-emerald-50/50 p-4 sm:p-6 space-y-6">
                 
                 {/* Resumo & Botão de Criação */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
@@ -6203,28 +6203,28 @@ export const AdminPanelScreen: React.FC = () => {
         });
 
         return (
-          <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl shadow-md overflow-hidden">
+          <div className="bg-orange-50/70 border-2 border-orange-300 rounded-3xl shadow-md overflow-hidden">
             
             {/* Accordion Header */}
             <button
               type="button"
               onClick={() => setIsMudancasAdminOpen(!isMudancasAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-100/90 hover:bg-amber-200/70 transition-colors text-left border-b border-amber-200 cursor-pointer select-none active:scale-[0.999]"
+              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-orange-100/90 hover:bg-orange-200/70 transition-colors text-left border-b border-orange-200 cursor-pointer select-none active:scale-[0.999]"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-950 shrink-0">
-                  <Truck className="w-5 h-5 text-amber-900" />
+                <div className="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-400/40 flex items-center justify-center text-orange-950 shrink-0">
+                  <Truck className="w-5 h-5 text-orange-900" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
                       14. Gestão & Autorização de Mudanças
                     </h3>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-orange-200 text-orange-950 border border-orange-300">
                       {mudancas.length} agendadas
                     </span>
                     {totalPendentes > 0 && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 animate-pulse">
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-500 text-slate-950 animate-pulse">
                         ⚠️ {totalPendentes} pendentes
                       </span>
                     )}
@@ -6239,8 +6239,8 @@ export const AdminPanelScreen: React.FC = () => {
                 <span className="text-xs font-bold text-slate-600 hidden sm:inline">
                   {isMudancasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
                 </span>
-                <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isMudancasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                <div className="p-2 rounded-xl bg-white border border-orange-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-orange-900 transition-transform duration-500 ease-out ${isMudancasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
                 </div>
               </div>
             </button>
@@ -6251,7 +6251,7 @@ export const AdminPanelScreen: React.FC = () => {
                 isMudancasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
-              <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
+              <div className="min-h-0 overflow-hidden bg-orange-50/50 p-4 sm:p-6 space-y-6">
                 
                 {/* Resumo */}
                 <div className="flex items-center gap-2 flex-wrap bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
