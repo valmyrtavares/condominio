@@ -45,6 +45,14 @@ export const storage = getStorage(app);
 // =========================================================================
 
 /**
+ * Sanitiza objetos para o Firestore (remove propriedades undefined que o Firebase rejeita)
+ */
+export const sanitizarParaFirestore = (obj: any): any => {
+  if (obj === null || obj === undefined) return null;
+  return JSON.parse(JSON.stringify(obj, (k, v) => (v === undefined ? null : v)));
+};
+
+/**
  * Escuta a coleção 'condominios' em tempo real na nuvem do Firestore
  */
 export const ouvirCondominiosFirestore = (callback: (condos: any[]) => void) => {
@@ -57,7 +65,7 @@ export const ouvirCondominiosFirestore = (callback: (condos: any[]) => void) => 
       });
       callback(lista);
     }, (error) => {
-      console.warn('Aviso: Firestore em modo offline ou aguardando permissão:', error);
+      console.warn('Aviso: Firestore listener:', error);
     });
   } catch (err) {
     console.warn('Erro ao configurar listener do Firestore:', err);
@@ -70,14 +78,15 @@ export const ouvirCondominiosFirestore = (callback: (condos: any[]) => void) => 
  */
 export const salvarCondominioNoFirestore = async (condo: any) => {
   try {
-    const condoRef = doc(db, 'condominios', condo.id);
+    const limpo = sanitizarParaFirestore(condo);
+    const condoRef = doc(db, 'condominios', limpo.id);
     await setDoc(condoRef, {
-      ...condo,
+      ...limpo,
       atualizadoEm: new Date().toISOString()
     }, { merge: true });
     return { success: true };
   } catch (error: any) {
-    console.error('Erro ao salvar condomínio no Firestore:', error);
+    console.error('🔥 Erro ao salvar condomínio no Firestore:', error);
     return { success: false, error: error.message };
   }
 };
@@ -91,10 +100,11 @@ export const excluirCondominioNoFirestore = async (condoId: string) => {
     await deleteDoc(condoRef);
     return { success: true };
   } catch (error: any) {
-    console.error('Erro ao excluir condomínio no Firestore:', error);
+    console.error('🔥 Erro ao excluir condomínio no Firestore:', error);
     return { success: false, error: error.message };
   }
 };
+
 
 
 // =========================================================================
