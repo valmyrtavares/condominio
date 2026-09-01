@@ -132,16 +132,25 @@ export const SuperAdminDashboardScreen: React.FC = () => {
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
+  /**
+   * Entra de fato no Painel Administrativo do Condomínio em UMA NOVA ABA
+   */
   const handleOpenPainelAdministrativo = (condo: CondominioProfile) => {
     selecionarCondominio(condo.id);
     loginAdmin('admin', condo.senhaAdminGeral || 'admin');
-    setCurrentScreen('admin');
+    const targetUrl = `${window.location.origin}/c/${condo.slug}/admin`;
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
 
+  /**
+   * Entra de fato na Área do Cliente / Morador do Condomínio em UMA NOVA ABA
+   */
   const handleOpenAreaCliente = (condo: CondominioProfile) => {
     selecionarCondominio(condo.id);
-    setCurrentScreen('home');
+    const targetUrl = `${window.location.origin}/c/${condo.slug}`;
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
+
 
   const handleConfirmSuspender = (condoId: string, novoStatus: 'ativo' | 'bloqueado', motivo?: string) => {
     editarCondominio(condoId, { status: novoStatus, motivoBloqueio: motivo });

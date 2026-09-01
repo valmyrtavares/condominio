@@ -20,14 +20,29 @@ import { loginFirebaseEmailSenha, enviarEmailRecuperacaoSenha } from '../../serv
 
 export const SuperAdminLoginScreen: React.FC = () => {
   const { loginMaster, setCurrentScreen } = useCondo();
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
+  
+  // Memória local de credenciais salva diretamente no localStorage
+  const [email, setEmail] = useState(() => {
+    try {
+      return localStorage.getItem('condo_master_saved_email') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [senha, setSenha] = useState(() => {
+    try {
+      return localStorage.getItem('condo_master_saved_password') || '';
+    } catch {
+      return '';
+    }
+  });
+  
+  const [lembrarCredenciais, setLembrarCredenciais] = useState(true);
   const [showSenha, setShowSenha] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [erroMsg, setErroMsg] = useState('');
   const [sucessoMsg, setSucessoMsg] = useState('');
   const [modoRecuperacao, setModoRecuperacao] = useState(false);
-
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +53,17 @@ export const SuperAdminLoginScreen: React.FC = () => {
       setErroMsg('Por favor, informe a senha.');
       return;
     }
+
+    // Salva ou remove da memória do localStorage conforme escolha
+    try {
+      if (lembrarCredenciais) {
+        localStorage.setItem('condo_master_saved_email', email.trim());
+        localStorage.setItem('condo_master_saved_password', senha);
+      } else {
+        localStorage.removeItem('condo_master_saved_email');
+        localStorage.removeItem('condo_master_saved_password');
+      }
+    } catch {}
 
     setIsLoading(true);
 
@@ -146,15 +172,28 @@ export const SuperAdminLoginScreen: React.FC = () => {
         )}
 
         {!modoRecuperacao ? (
-          /* Login Form */
-          <form onSubmit={handleLogin} className="space-y-4">
+          /* Login Form - Protegido contra popup do Chrome com memória em localStorage */
+          <form 
+            onSubmit={handleLogin} 
+            autoComplete="off" 
+            data-form-type="other"
+            className="space-y-4"
+          >
+            {/* Hidden dummy fields to prevent browser autofill prompt */}
+            <input type="text" name="prevent_autofill_user" className="hidden" tabIndex={-1} autoComplete="off" />
+            <input type="password" name="prevent_autofill_pass" className="hidden" tabIndex={-1} autoComplete="new-password" />
+
             <div className="space-y-1.5">
               <label className="text-xs font-black uppercase text-slate-300 flex items-center gap-1.5">
                 <Mail className="w-3.5 h-3.5 text-amber-400" /> Seu E-mail Master:
               </label>
               <input
                 type="email"
-                autoFocus
+                name="condo_master_usr_input"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
                 placeholder="seu-email@exemplo.com"
                 value={email}
                 onChange={(e) => {
@@ -186,6 +225,8 @@ export const SuperAdminLoginScreen: React.FC = () => {
               <div className="relative">
                 <input
                   type={showSenha ? "text" : "password"}
+                  name="condo_master_pwd_input"
+                  autoComplete="new-password"
                   required
                   placeholder="Digite sua senha..."
                   value={senha}
@@ -205,6 +246,20 @@ export const SuperAdminLoginScreen: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* Checkbox de Memória Segura no LocalStorage */}
+            <div className="flex items-center gap-2 pt-1">
+              <label className="flex items-center gap-2 text-xs text-slate-400 hover:text-slate-300 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={lembrarCredenciais}
+                  onChange={(e) => setLembrarCredenciais(e.target.checked)}
+                  className="rounded border-slate-700 text-amber-500 focus:ring-amber-500/20 bg-slate-950"
+                />
+                <span>Lembrar minhas credenciais na memória deste navegador</span>
+              </label>
+            </div>
+
 
 
             <button

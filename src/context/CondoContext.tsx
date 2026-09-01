@@ -1031,9 +1031,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [condominios]);
 
   const [currentCondoId, setCurrentCondoId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const resolved = getScreenFromPath(window.location.pathname);
+      if (resolved.tenantSlug) {
+        const found = condominios.find(c => c.slug === resolved.tenantSlug || c.id === resolved.tenantSlug);
+        if (found) return found.id;
+      }
+    }
     const saved = localStorage.getItem('condo_active_tenant_id');
     return saved || 'condo-jardim-paulista';
   });
+
 
   useEffect(() => {
     try {
