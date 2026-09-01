@@ -28,6 +28,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { CreateEditCondominioModal } from '../../components/master/CreateEditCondominioModal';
+import { executarSeedCompletoFirestore } from '../../services/firebase';
 
 export const SuperAdminDashboardScreen: React.FC = () => {
   const { 
@@ -37,7 +38,24 @@ export const SuperAdminDashboardScreen: React.FC = () => {
     alternarStatusCondominio, 
     logoutMaster, 
     setCurrentScreen,
-    loginAdmin
+    loginAdmin,
+    unidades,
+    reclamacoes,
+    reparos,
+    benfeitorias,
+    vagasGaragem,
+    servicosContratados,
+    dependencias,
+    reservas,
+    assembleias,
+    eventos,
+    funcionarios,
+    regrasCondominio,
+    itensEnjoei,
+    mudancas,
+    registrosAtividades,
+    autorizacoesAcesso,
+    encomendasEntregas
   } = useCondo();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,8 +63,57 @@ export const SuperAdminDashboardScreen: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [condoToEdit, setCondoToEdit] = useState<CondominioProfile | null>(null);
 
+  const [isSyncingFirestore, setIsSyncingFirestore] = useState(false);
+  const [syncStatusMsg, setSyncStatusMsg] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+
   const [showPasswordMap, setShowPasswordMap] = useState<Record<string, boolean>>({});
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+
+  const handleSyncFirestore = async () => {
+    setIsSyncingFirestore(true);
+    setSyncStatusMsg(null);
+    try {
+      const res = await executarSeedCompletoFirestore({
+        condominios,
+        unidades,
+        moradores: [],
+        funcionarios,
+        regras: regrasCondominio,
+        dependencias,
+        vagas: vagasGaragem,
+        servicosContratados,
+        assembleias,
+        eventos,
+        reclamacoes,
+        reparos,
+        itensEnjoei,
+        mudancas,
+        diario: registrosAtividades,
+        acessos: autorizacoesAcesso,
+        encomendas: encomendasEntregas
+      });
+
+      if (res.success) {
+        setSyncStatusMsg({
+          type: 'success',
+          msg: `Nuvem sincronizada com sucesso! Coleção "condominios" e todas as subcoleções foram criadas no Firestore.`
+        });
+      } else {
+        setSyncStatusMsg({
+          type: 'error',
+          msg: `Aviso na sincronização: ${res.error || 'Verifique as regras do Firestore no console'}`
+        });
+      }
+    } catch (err: any) {
+      setSyncStatusMsg({
+        type: 'error',
+        msg: `Erro de conexão: ${err.message}`
+      });
+    } finally {
+      setIsSyncingFirestore(false);
+      setTimeout(() => setSyncStatusMsg(null), 8000);
+    }
+  };
 
   const totalUnidadesGlobal = condominios.reduce((acc, c) => acc + (c.totalUnidades || 0), 0);
   const totalAtivos = condominios.filter(c => c.status === 'ativo').length;
@@ -137,18 +204,49 @@ export const SuperAdminDashboardScreen: React.FC = () => {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setCondoToEdit(null);
-            setIsModalOpen(true);
-          }}
-          className="px-6 py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm rounded-2xl shadow-xl shadow-amber-500/25 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer shrink-0"
-        >
-          <Plus className="w-5 h-5 stroke-[3]" />
-          <span>+ Criar Novo Condomínio</span>
-        </button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={handleSyncFirestore}
+            disabled={isSyncingFirestore}
+            className="px-5 py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-xs rounded-2xl shadow-lg shadow-indigo-500/25 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer border border-indigo-400/40"
+            title="Envia a base de dados de todos os condomínios e subcoleções para o Firestore"
+          >
+            <Cloud className={`w-4 h-4 ${isSyncingFirestore ? 'animate-spin text-amber-400' : 'text-sky-300'}`} />
+            <span>{isSyncingFirestore ? 'Sincronizando Firestore...' : '🔄 Sincronizar Nuvem Firestore'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCondoToEdit(null);
+              setIsModalOpen(true);
+            }}
+            className="px-6 py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm rounded-2xl shadow-xl shadow-amber-500/25 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer shrink-0"
+          >
+            <Plus className="w-5 h-5 stroke-[3]" />
+            <span>+ Criar Novo Condomínio</span>
+          </button>
+        </div>
       </div>
+
+      {/* Sync Status Banner */}
+      {syncStatusMsg && (
+        <div className={`p-4 rounded-2xl border flex items-center gap-3 font-bold text-xs animate-in zoom-in-95 duration-200 shadow-md ${
+          syncStatusMsg.type === 'success' 
+            ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-200' 
+            : 'bg-rose-500/20 border-rose-400/50 text-rose-200'
+        }`}>
+          {syncStatusMsg.type === 'success' ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          ) : (
+            <Cloud className="w-5 h-5 text-rose-400 shrink-0" />
+          )}
+          <div className="flex-1">
+            <strong>{syncStatusMsg.type === 'success' ? 'Sucesso no Firebase:' : 'Aviso:'}</strong> {syncStatusMsg.msg}
+          </div>
+        </div>
+      )}
 
       {/* Global Metrics Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
