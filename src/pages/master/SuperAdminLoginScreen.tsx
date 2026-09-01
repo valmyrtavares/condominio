@@ -12,7 +12,9 @@ import {
   Mail,
   CheckCircle2,
   HelpCircle,
-  Loader2
+  Loader2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { loginFirebaseEmailSenha, enviarEmailRecuperacaoSenha } from '../../services/firebase';
 
@@ -20,10 +22,12 @@ export const SuperAdminLoginScreen: React.FC = () => {
   const { loginMaster, setCurrentScreen } = useCondo();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [showSenha, setShowSenha] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [erroMsg, setErroMsg] = useState('');
   const [sucessoMsg, setSucessoMsg] = useState('');
   const [modoRecuperacao, setModoRecuperacao] = useState(false);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,18 +182,30 @@ export const SuperAdminLoginScreen: React.FC = () => {
                   Esqueci minha senha
                 </button>
               </div>
-              <input
-                type="password"
-                required
-                placeholder="Digite sua senha..."
-                value={senha}
-                onChange={(e) => {
-                  setSenha(e.target.value);
-                  setErroMsg('');
-                }}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all placeholder:text-slate-600"
-              />
+              
+              <div className="relative">
+                <input
+                  type={showSenha ? "text" : "password"}
+                  required
+                  placeholder="Digite sua senha..."
+                  value={senha}
+                  onChange={(e) => {
+                    setSenha(e.target.value);
+                    setErroMsg('');
+                  }}
+                  className="w-full bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 pr-11 text-white text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all placeholder:text-slate-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSenha(!showSenha)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-400 transition-colors p-1 cursor-pointer"
+                  title={showSenha ? "Ocultar senha" : "Ver senha digitada"}
+                >
+                  {showSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
+
 
             <button
               type="submit"
