@@ -45,8 +45,19 @@ export const ROUTES: RouteConfig[] = [
  * Converte um caminho de URL para o ID da tela correspondente
  */
 export const getScreenFromPath = (pathname: string): { screen: string; route?: RouteConfig; tenantSlug?: string } => {
-  const cleanPath = (pathname || '/').toLowerCase().replace(/\/+$/, '') || '/';
+  // Remove query string e hash se vierem juntos no pathname
+  let rawPath = (pathname || '/').split('?')[0].split('#')[0];
+  const cleanPath = rawPath.toLowerCase().replace(/\/+$/, '') || '/';
   
+  // Tratamento especial para preview com parâmetros da Hostinger (ex: ?nocache=.../master)
+  if (typeof window !== 'undefined') {
+    const fullUrl = window.location.href.toLowerCase();
+    if (fullUrl.includes('/master') || fullUrl.includes('screen=master')) {
+      const masterRoute = ROUTES.find(r => r.id === 'master');
+      return { screen: 'master', route: masterRoute };
+    }
+  }
+
   // Suporte a rotas dinâmicas de tenant /c/:slug e /c/:slug/admin
   const tenantAdminMatch = cleanPath.match(/^\/c\/([a-z0-9-]+)\/admin$/);
   if (tenantAdminMatch) {
@@ -73,6 +84,7 @@ export const getScreenFromPath = (pathname: string): { screen: string; route?: R
 
   return { screen: 'home', route: ROUTES[0] };
 };
+
 
 /**
  * Converte o ID de uma tela no caminho canônico de URL
