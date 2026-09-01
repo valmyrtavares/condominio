@@ -82,8 +82,16 @@ import {
   CURRENT_CONDO_ID
 } from '../mock/seedData';
 import { getScreenFromPath, getPathFromScreen, getRouteConfig } from '../router/routes';
-import { auth, logoutFirebaseAuth } from '../services/firebase';
+import { 
+  auth, 
+  logoutFirebaseAuth, 
+  ouvirCondominiosFirestore, 
+  salvarCondominioNoFirestore, 
+  excluirCondominioNoFirestore 
+} from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+
+
 
 
 interface CondoContextType {
@@ -1058,13 +1066,24 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     // Sincroniza sessão com o Firebase Auth
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setIsMasterLoggedIn(true);
         localStorage.setItem('condo_superadmin_master_auth', 'true');
       }
     });
-    return () => unsubscribe();
+
+    // Sincroniza a lista de condomínios em tempo real com o Cloud Firestore
+    const unsubscribeCondos = ouvirCondominiosFirestore((condosDaNuvem) => {
+      if (Array.isArray(condosDaNuvem) && condosDaNuvem.length > 0) {
+        setCondominios(condosDaNuvem);
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+      unsubscribeCondos();
+    };
   }, []);
 
   const loginMaster = (senha: string): boolean => {
@@ -1082,7 +1101,6 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.removeItem('condo_superadmin_master_auth');
     logoutFirebaseAuth().catch(() => {});
   };
-
 
   const selecionarCondominio = (slugOuId: string) => {
     const target = condominios.find(c => c.id === slugOuId || c.slug === slugOuId);
@@ -1111,6 +1129,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setCondominios(prev => [novoCondo, ...prev]);
+
+    // Persiste imediatamente no Cloud Firestore
+    salvarCondominioNoFirestore(novoCondo).catch(console.error);
 
     // Se o modelo for "limpo", gera as unidades automáticas vazias para aquele condomínio
     if (novo.modeloInicial === 'limpo') {
@@ -1146,7 +1167,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const editarCondominio = (id: string, dados: Partial<CondominioProfile>) => {
     setCondominios(prev => prev.map(c => {
       if (c.id === id) {
-        return { ...c, ...dados };
+        const atualizado = { ...c, ...dados };
+        salvarCondominioNoFirestore(atualizado).catch(console.error);
+        return atualizado;
       }
       return c;
     }));
@@ -1154,19 +1177,23 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const excluirCondominio = (id: string) => {
     setCondominios(prev => prev.filter(c => c.id !== id));
+    excluirCondominioNoFirestore(id).catch(console.error);
   };
 
   const alternarStatusCondominio = (id: string) => {
     setCondominios(prev => prev.map(c => {
       if (c.id === id) {
-        return {
+        const alterado = {
           ...c,
-          status: c.status === 'ativo' ? 'bloqueado' : 'ativo'
+          status: (c.status === 'ativo' ? 'bloqueado' : 'ativo') as StatusCondominio
         };
+        salvarCondominioNoFirestore(alterado).catch(console.error);
+        return alterado;
       }
       return c;
     }));
   };
+
 
   // Admin Roles & Categories
   const [adminRoles, setAdminRoles] = useState<AdminRole[]>(() => {

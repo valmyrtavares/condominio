@@ -19,7 +19,8 @@ import {
   deleteDoc, 
   query, 
   where,
-  writeBatch
+  writeBatch,
+  onSnapshot
 } from 'firebase/firestore';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 
@@ -38,6 +39,63 @@ export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getA
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// =========================================================================
+// SERVIÇO DE SINCRONIZAÇÃO E PERSISTÊNCIA EM TEMPO REAL NO FIRESTORE
+// =========================================================================
+
+/**
+ * Escuta a coleção 'condominios' em tempo real na nuvem do Firestore
+ */
+export const ouvirCondominiosFirestore = (callback: (condos: any[]) => void) => {
+  try {
+    const colRef = collection(db, 'condominios');
+    return onSnapshot(colRef, (snapshot) => {
+      const lista: any[] = [];
+      snapshot.forEach((doc) => {
+        lista.push({ id: doc.id, ...doc.data() });
+      });
+      callback(lista);
+    }, (error) => {
+      console.warn('Aviso: Firestore em modo offline ou aguardando permissão:', error);
+    });
+  } catch (err) {
+    console.warn('Erro ao configurar listener do Firestore:', err);
+    return () => {};
+  }
+};
+
+/**
+ * Salva ou atualiza os metadados de um condomínio na coleção raiz 'condominios'
+ */
+export const salvarCondominioNoFirestore = async (condo: any) => {
+  try {
+    const condoRef = doc(db, 'condominios', condo.id);
+    await setDoc(condoRef, {
+      ...condo,
+      atualizadoEm: new Date().toISOString()
+    }, { merge: true });
+    return { success: true };
+  } catch (error: any) {
+    console.error('Erro ao salvar condomínio no Firestore:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Exclui um condomínio da coleção raiz 'condominios'
+ */
+export const excluirCondominioNoFirestore = async (condoId: string) => {
+  try {
+    const condoRef = doc(db, 'condominios', condoId);
+    await deleteDoc(condoRef);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Erro ao excluir condomínio no Firestore:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 
 // =========================================================================
 // SERVIÇOS DE AUTENTICAÇÃO COM FIREBASE AUTH
@@ -123,24 +181,8 @@ export const logoutFirebaseAuth = async () => {
 // =========================================================================
 
 /**
- * Salva ou atualiza os metadados de um condomínio na coleção raiz 'condominios'
- */
-export const salvarCondominioNoFirestore = async (condo: any) => {
-  try {
-    const condoRef = doc(db, 'condominios', condo.id);
-    await setDoc(condoRef, {
-      ...condo,
-      atualizadoEm: new Date().toISOString()
-    }, { merge: true });
-    return { success: true };
-  } catch (error: any) {
-    console.error('Erro ao salvar condomínio no Firestore:', error);
-    return { success: false, error: error.message };
-  }
-};
-
-/**
  * Sincroniza uma subcoleção inteira de um condomínio (ex: unidades, moradores, regras, etc.)
+
  */
 export const sincronizarSubcolecaoTenant = async (
   condoId: string, 
