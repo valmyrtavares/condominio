@@ -701,6 +701,16 @@ export interface EncomendaEntrega {
 export type StatusCondominio = 'ativo' | 'bloqueado' | 'em_implantacao';
 export type ModeloInicialCondominio = 'limpo' | 'exemplo';
 
+export interface NotificacaoMasterCondo {
+  id: string;
+  condominioId: string;
+  titulo: string;
+  mensagem: string;
+  tipo: 'cobranca' | 'aviso' | 'urgente' | 'sistema';
+  dataEnvio: string;
+  lida: boolean;
+}
+
 export interface CondominioProfile {
   id: string;                    // ex: "condo-jardim-paulista", "condo-aurora"
   slug: string;                  // ex: "jardim-paulista", "edificio-aurora"
@@ -718,7 +728,16 @@ export interface CondominioProfile {
   status: StatusCondominio;
   criadoEm: string;
   modeloInicial: ModeloInicialCondominio;
+  
+  // Campos de Gestão Master e Financeiro
+  dataImplementacao?: string;      // Ex: "01/01/2026"
+  diaVencimento?: number;          // Ex: 10
+  statusEmDia?: boolean;           // true = em dia, false = atrasado/pendente
+  valorMensalidade?: number;       // Ex: 450.00
+  statusMensalidade?: 'pago' | 'pendente' | 'atrasado';
+  motivoBloqueio?: string;         // Ex: "Inadimplência de mensalidade da plataforma"
 }
+
 
 
 

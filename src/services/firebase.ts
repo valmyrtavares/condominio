@@ -1,5 +1,14 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  sendPasswordResetEmail, 
+  signOut, 
+  onAuthStateChanged,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { 
   getFirestore, 
   collection, 
   doc, 
@@ -26,8 +35,88 @@ export const firebaseConfig = {
 
 // Inicialização segura do Firebase (evita inicializações duplicadas)
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// =========================================================================
+// SERVIÇOS DE AUTENTICAÇÃO COM FIREBASE AUTH
+// =========================================================================
+
+/**
+ * Realiza login com E-mail e Senha no Firebase Authentication
+ */
+export const loginFirebaseEmailSenha = async (email: string, pass: string) => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email.trim(), pass);
+    return { success: true, user: userCredential.user };
+  } catch (error: any) {
+    let msg = 'Erro ao realizar login.';
+    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      msg = 'E-mail ou senha incorretos.';
+    } else if (error.code === 'auth/invalid-email') {
+      msg = 'Formato de e-mail inválido.';
+    } else if (error.code === 'auth/too-many-requests') {
+      msg = 'Muitas tentativas sem sucesso. Aguarde alguns instantes.';
+    } else if (error.message) {
+      msg = error.message;
+    }
+    return { success: false, error: msg };
+  }
+};
+
+/**
+ * Cadastra um novo usuário no Firebase Auth
+ */
+export const criarUsuarioFirebaseAuth = async (email: string, pass: string) => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), pass);
+    return { success: true, user: userCredential.user };
+  } catch (error: any) {
+    let msg = 'Erro ao criar conta.';
+    if (error.code === 'auth/email-already-in-use') {
+      msg = 'Este e-mail já está em uso por outro usuário.';
+    } else if (error.code === 'auth/weak-password') {
+      msg = 'A senha deve ter pelo menos 6 caracteres.';
+    } else if (error.message) {
+      msg = error.message;
+    }
+    return { success: false, error: msg };
+  }
+};
+
+/**
+ * Envia e-mail de redefinição/recuperação de senha oficial do Firebase
+ */
+export const enviarEmailRecuperacaoSenha = async (email: string) => {
+  try {
+    await sendPasswordResetEmail(auth, email.trim());
+    return { success: true };
+  } catch (error: any) {
+    let msg = 'Erro ao enviar e-mail de recuperação.';
+    if (error.code === 'auth/user-not-found') {
+      msg = 'Nenhum usuário encontrado com este e-mail.';
+    } else if (error.code === 'auth/invalid-email') {
+      msg = 'Formato de e-mail inválido.';
+    } else if (error.message) {
+      msg = error.message;
+    }
+    return { success: false, error: msg };
+  }
+};
+
+/**
+ * Desconecta a sessão atual no Firebase Auth
+ */
+export const logoutFirebaseAuth = async () => {
+  try {
+    await signOut(auth);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
 
 // =========================================================================
 // SERVIÇO DE SINCRONIZAÇÃO E SEED AUTOMÁTICO PARA O FIRESTORE MULTI-TENANT

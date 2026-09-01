@@ -3189,7 +3189,12 @@ export const MOCK_CONDOMINIOS: CondominioProfile[] = [
     telefoneSindico: '(11) 98765-4321',
     status: 'ativo',
     criadoEm: '01/01/2026',
-    modeloInicial: 'exemplo'
+    modeloInicial: 'exemplo',
+    dataImplementacao: '01/01/2026',
+    diaVencimento: 10,
+    statusEmDia: true,
+    valorMensalidade: 480.00,
+    statusMensalidade: 'pago'
   },
   {
     id: 'condo-edificio-aurora',
@@ -3207,7 +3212,12 @@ export const MOCK_CONDOMINIOS: CondominioProfile[] = [
     telefoneSindico: '(11) 99123-4567',
     status: 'ativo',
     criadoEm: '15/02/2026',
-    modeloInicial: 'limpo'
+    modeloInicial: 'limpo',
+    dataImplementacao: '15/02/2026',
+    diaVencimento: 15,
+    statusEmDia: true,
+    valorMensalidade: 350.00,
+    statusMensalidade: 'pago'
   },
   {
     id: 'condo-reserva-passaros',
@@ -3225,9 +3235,15 @@ export const MOCK_CONDOMINIOS: CondominioProfile[] = [
     telefoneSindico: '(11) 97788-9900',
     status: 'ativo',
     criadoEm: '20/03/2026',
-    modeloInicial: 'exemplo'
+    modeloInicial: 'exemplo',
+    dataImplementacao: '20/03/2026',
+    diaVencimento: 5,
+    statusEmDia: false,
+    valorMensalidade: 620.00,
+    statusMensalidade: 'pendente'
   }
 ];
+
 
 
 
