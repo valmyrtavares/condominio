@@ -91,6 +91,8 @@ export const Header: React.FC = () => {
     setCurrentScreen('admin');
   };
 
+  const isAdminPage = currentScreen === 'admin' || currentScreen === 'diario-sindico';
+
   return (
     <>
       <header className={`fixed top-0 left-0 right-0 z-40 px-4 py-4 transition-colors ${
@@ -98,7 +100,9 @@ export const Header: React.FC = () => {
           ? 'bg-transparent text-white' 
           : 'bg-white/90 backdrop-blur-md border-b border-slate-200 text-slate-900 shadow-2xs'
       }`}>
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className={`mx-auto flex items-center justify-between transition-all ${
+          isAdminPage ? 'max-w-[1650px] px-2 sm:px-6' : 'max-w-4xl'
+        }`}>
           
           {/* Left: Floating Hamburger Icon without background */}
           <button

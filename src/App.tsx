@@ -114,12 +114,16 @@ const MainContent: React.FC = () => {
     }
   };
 
-  return (
-    <main className="relative z-10 w-full max-w-4xl mx-auto px-3 sm:px-4 pt-20 pb-24 min-h-screen overflow-x-hidden">
-      {renderScreen()}
-    </main>
-  );
-};
+    const isAdminPage = currentScreen === 'admin' || currentScreen === 'diario-sindico';
+
+    return (
+      <main className={`relative z-10 w-full mx-auto px-3 sm:px-6 pt-20 pb-24 min-h-screen overflow-x-hidden ${
+        isAdminPage ? 'max-w-[1650px] sm:px-8' : 'max-w-4xl'
+      }`}>
+        {renderScreen()}
+      </main>
+    );
+  };
 
 const AppLayout: React.FC = () => {
   const { currentScreen, currentCondo, setCurrentScreen } = useCondo();

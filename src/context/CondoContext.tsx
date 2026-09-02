@@ -87,9 +87,68 @@ import {
   logoutFirebaseAuth, 
   ouvirCondominiosFirestore, 
   salvarCondominioNoFirestore, 
-  excluirCondominioNoFirestore 
+  excluirCondominioNoFirestore,
+  ouvirSubcolecaoFirestore,
+  salvarUnidadeNoFirestore,
+  excluirDocumentoSubcolecaoFirestore,
+  sincronizarSubcolecaoTenant,
+  limparESubstituirSubcolecaoFirestore
 } from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+
+/**
+ * Formata o número do apartamento baseado no item base do 1º andar e no número do andar atual.
+ * Exemplo A: "11" -> Andar 1 = "11", Andar 2 = "21", Andar 3 = "31"...
+ * Exemplo B: "13" -> Andar 1 = "13", Andar 2 = "23", Andar 3 = "33"...
+ * Exemplo C: "01" -> Andar 1 = "01", Andar 2 = "11", Andar 3 = "21"...
+ * Exemplo D: "101" -> Andar 1 = "101", Andar 2 = "201", Andar 3 = "301"...
+ */
+export function formatarNumeroAptoPorAndar(itemBase: string, floorIndex: number): string {
+  const clean = itemBase.trim().replace(/[^0-9a-zA-Z]/g, '');
+  if (!clean) return `${floorIndex}01`;
+
+  if (/^\d+$/.test(clean)) {
+    // Caso 1: Números de 2 dígitos começando com 1 (ex: "11", "12", "13", "15", "17", "19")
+    if (clean.length === 2 && clean.startsWith('1')) {
+      const sufixo = clean.slice(1);
+      return `${floorIndex}${sufixo}`;
+    }
+
+    // Caso 2: Números de 3 dígitos começando com 1 (ex: "101", "102", "104")
+    if (clean.length === 3 && clean.startsWith('1')) {
+      const sufixo = clean.slice(1);
+      return `${floorIndex}${sufixo}`;
+    }
+
+    // Caso 3: Números de 2 dígitos começando com 0 (ex: "01", "02", "04", "05")
+    if (clean.length === 2 && clean.startsWith('0')) {
+      const sufixo = clean.slice(1);
+      if (floorIndex === 1) {
+        return clean;
+      }
+      return `${floorIndex - 1}${sufixo}`;
+    }
+
+    // Caso 4: Números de 1 dígito (ex: "1", "2", "3")
+    if (clean.length === 1) {
+      if (floorIndex === 1) {
+        return `0${clean}`;
+      }
+      return `${floorIndex - 1}${clean}`;
+    }
+
+    // Caso 5: Outros números de 2 dígitos (ex: "21", "22")
+    if (clean.length === 2) {
+      const sufixo = clean.slice(1);
+      return `${floorIndex}${sufixo}`;
+    }
+
+    const sufixo = clean.slice(-2);
+    return `${floorIndex}${sufixo}`;
+  }
+
+  return `${floorIndex}${clean}`;
+}
 
 /**
  * Função utilitária para gerar unidades a partir da quantidade total de unidades,
@@ -121,32 +180,7 @@ export function gerarUnidadesPorPadraoEAndar(
         if (unitCounter >= totalUnidades) break;
 
         const itemBase = patternItems[pos];
-        let numeroApto = '';
-
-        if (/^\d+$/.test(itemBase)) {
-          if (itemBase.length >= 3 && itemBase.startsWith('1')) {
-            const sufixo = itemBase.slice(1);
-            numeroApto = `${floorIndex}${sufixo}`;
-          } else if (itemBase.length === 2 && itemBase.startsWith('1')) {
-            const sufixo = itemBase.slice(1);
-            numeroApto = `${floorIndex}${sufixo}`;
-          } else if (itemBase.length === 2 && itemBase.startsWith('0')) {
-            const sufixo = itemBase.slice(1);
-            if (floorIndex === 1) {
-              numeroApto = itemBase;
-            } else {
-              numeroApto = `${floorIndex - 1}${sufixo}`;
-            }
-          } else {
-            if (floorIndex === 1) {
-              numeroApto = itemBase;
-            } else {
-              numeroApto = `${floorIndex - 1}${itemBase}`;
-            }
-          }
-        } else {
-          numeroApto = `${floorIndex}${itemBase}`;
-        }
+        const numeroApto = formatarNumeroAptoPorAndar(itemBase, floorIndex);
 
         unitCounter++;
         const blocoLetra = String.fromCharCode(65 + ((unitCounter - 1) % blocos));
@@ -1248,6 +1282,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         localStorage.setItem(`condo_unidades_list_${id}`, JSON.stringify(novasUnidadesLimpo));
       } catch {}
+      limparESubstituirSubcolecaoFirestore(id, 'unidades', novasUnidadesLimpo).catch(console.error);
     }
 
     return novoCondo;
@@ -1258,6 +1293,35 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (c.id === id) {
         const atualizado = { ...c, ...dados };
         salvarCondominioNoFirestore(atualizado).catch(console.error);
+
+        // Se alterou totalAndares, padraoPrimeiroAndar ou totalUnidades, regenera a sequência de apartamentos
+        if (
+          dados.padraoPrimeiroAndar !== undefined || 
+          dados.totalAndares !== undefined || 
+          dados.totalUnidades !== undefined
+        ) {
+          const totalUnits = atualizado.totalUnidades || 75;
+          const novasUnidades = gerarUnidadesPorPadraoEAndar(
+            totalUnits,
+            atualizado.totalAndares,
+            atualizado.padraoPrimeiroAndar,
+            id,
+            atualizado.totalBlocos || 1
+          );
+
+          if (currentCondoId === id) {
+            setUnidades(novasUnidades);
+          }
+
+          try {
+            localStorage.setItem(`condo_unidades_list_${id}`, JSON.stringify(novasUnidades));
+            localStorage.setItem('condo_unidades_list', JSON.stringify(novasUnidades));
+          } catch {}
+
+          // Limpa unidades antigas e salva as novas na subcoleção condominios/{id}/unidades no Firestore
+          limparESubstituirSubcolecaoFirestore(id, 'unidades', novasUnidades).catch(console.error);
+        }
+
         return atualizado;
       }
       return c;
@@ -1364,6 +1428,35 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Sincroniza a lista de unidades quando o condomínio ativo muda (ex: Mona Lisa com 75 unidades)
   useEffect(() => {
     if (!currentCondoId) return;
+
+    // 1. Ouvinte em tempo real da subcoleção no Cloud Firestore
+    const unsubscribeUnits = ouvirSubcolecaoFirestore(currentCondoId, 'unidades', (unidadesFirestore) => {
+      if (Array.isArray(unidadesFirestore) && unidadesFirestore.length > 0) {
+        setUnidades(unidadesFirestore);
+        try {
+          localStorage.setItem(`condo_unidades_list_${currentCondoId}`, JSON.stringify(unidadesFirestore));
+          localStorage.setItem('condo_unidades_list', JSON.stringify(unidadesFirestore));
+        } catch {}
+      } else if (Array.isArray(unidadesFirestore) && unidadesFirestore.length === 0) {
+        // Se a subcoleção na nuvem estiver vazia, gera e grava no Firestore imediatamente
+        const expectedTotal = currentCondo?.totalUnidades || 75;
+        const initialList = gerarUnidadesPorPadraoEAndar(
+          expectedTotal,
+          currentCondo?.totalAndares,
+          currentCondo?.padraoPrimeiroAndar,
+          currentCondoId,
+          currentCondo?.totalBlocos || 1
+        );
+        setUnidades(initialList);
+        try {
+          localStorage.setItem(`condo_unidades_list_${currentCondoId}`, JSON.stringify(initialList));
+          localStorage.setItem('condo_unidades_list', JSON.stringify(initialList));
+        } catch {}
+        limparESubstituirSubcolecaoFirestore(currentCondoId, 'unidades', initialList).catch(console.error);
+      }
+    });
+
+    // 2. Fallback de carregamento local imediato enquanto o Firestore responde
     const keyTenant = `condo_unidades_list_${currentCondoId}`;
     const savedTenant = localStorage.getItem(keyTenant);
     let list: Unidade[] = [];
@@ -1390,6 +1483,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         currentCondoId,
         currentCondo?.totalBlocos || 1
       );
+      sincronizarSubcolecaoTenant(currentCondoId, 'unidades', list).catch(console.error);
     } else if (list.length < expectedTotal) {
       const needed = expectedTotal - list.length;
       const blocos = currentCondo?.totalBlocos || 1;
@@ -1409,9 +1503,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           moradores: []
         });
       }
+      sincronizarSubcolecaoTenant(currentCondoId, 'unidades', list).catch(console.error);
     }
 
     setUnidades(list);
+
+    return () => {
+      unsubscribeUnits();
+    };
   }, [currentCondoId, currentCondo?.totalUnidades, currentCondo?.totalAndares, currentCondo?.padraoPrimeiroAndar]);
 
   // Admin Auth State
@@ -2204,6 +2303,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       moradores: []
     };
 
+    salvarUnidadeNoFirestore(currentCondoId, nova).catch(console.error);
+
     setUnidades(prev => {
       const atualizadas = [nova, ...prev.filter(u => u.numero.toLowerCase() !== numLimpo.toLowerCase())];
       try {
@@ -2215,15 +2316,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const editarUnidade = (id: string, numero: string, vagaGaragem: string, senhaAcesso: string) => {
+    let unidadeSalva: Unidade | null = null;
     setUnidades(prev => {
       const atualizadas = prev.map(u => {
         if (u.id === id) {
-          return {
+          unidadeSalva = {
             ...u,
             numero: numero.trim(),
             vagaGaragem: vagaGaragem.trim() || u.vagaGaragem,
             senhaAcesso: senhaAcesso.trim() || numero.trim()
           };
+          return unidadeSalva;
         }
         return u;
       });
@@ -2233,9 +2336,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       } catch {}
       return atualizadas;
     });
+    if (unidadeSalva) {
+      salvarUnidadeNoFirestore(currentCondoId, unidadeSalva).catch(console.error);
+    }
   };
 
   const excluirUnidade = (id: string) => {
+    excluirDocumentoSubcolecaoFirestore(currentCondoId, 'unidades', id).catch(console.error);
     setUnidades(prev => {
       const atualizadas = prev.filter(u => u.id !== id);
       try {
@@ -2247,17 +2354,19 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const toggleUnidadeSemMoradores = (id: string) => {
+    let unidadeSalva: Unidade | null = null;
     setUnidades(prev => {
       const atualizadas = prev.map(u => {
         if (u.id === id) {
           const novoSemMoradores = !u.semMoradores;
-          return {
+          unidadeSalva = {
             ...u,
             semMoradores: novoSemMoradores,
             statusCadastro: novoSemMoradores 
               ? ('Vazio' as const) 
               : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' as const : 'Pendente' as const)
           };
+          return unidadeSalva;
         }
         return u;
       });
@@ -2267,6 +2376,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       } catch {}
       return atualizadas;
     });
+    if (unidadeSalva) {
+      salvarUnidadeNoFirestore(currentCondoId, unidadeSalva).catch(console.error);
+    }
   };
 
   const gerarUnidadesAutomaticas = (quantidade?: number) => {
@@ -2306,6 +2418,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       localStorage.setItem(`condo_unidades_list_${currentCondo?.id}`, JSON.stringify(novas));
       localStorage.setItem('condo_unidades_list', JSON.stringify(novas));
     } catch {}
+    if (currentCondoId) {
+      limparESubstituirSubcolecaoFirestore(currentCondoId, 'unidades', novas).catch(console.error);
+    }
   };
 
   // Notificações Privadas

@@ -191,8 +191,114 @@ export const logoutFirebaseAuth = async () => {
 // =========================================================================
 
 /**
- * Sincroniza uma subcoleção inteira de um condomínio (ex: unidades, moradores, regras, etc.)
+ * Escuta em tempo real documentos de uma subcoleção do condomínio (ex: condominios/condoId/unidades)
+ */
+export const ouvirSubcolecaoFirestore = (
+  condoId: string,
+  nomeSubcolecao: string,
+  callback: (itens: any[]) => void
+) => {
+  try {
+    if (!condoId) return () => {};
+    const colRef = collection(db, 'condominios', condoId, nomeSubcolecao);
+    return onSnapshot(colRef, (snapshot) => {
+      const lista: any[] = [];
+      snapshot.forEach((docSnap) => {
+        lista.push({ id: docSnap.id, ...docSnap.data() });
+      });
 
+      // Ordenação previsível por andar e id
+      if (nomeSubcolecao === 'unidades') {
+        lista.sort((a, b) => {
+          if (a.andar !== undefined && b.andar !== undefined && a.andar !== b.andar) {
+            return a.andar - b.andar;
+          }
+          return (a.id || '').localeCompare(b.id || '', undefined, { numeric: true });
+        });
+      }
+
+      callback(lista);
+    }, (error) => {
+      console.warn(`Aviso: Firestore subcoleção ${nomeSubcolecao} listener:`, error);
+    });
+  } catch (err) {
+    console.warn(`Erro ao configurar listener do Firestore para ${nomeSubcolecao}:`, err);
+    return () => {};
+  }
+};
+
+/**
+ * Salva ou atualiza uma única unidade na subcoleção do condomínio
+ */
+export const salvarUnidadeNoFirestore = async (condoId: string, unidade: any) => {
+  try {
+    if (!condoId || !unidade || !unidade.id) return { success: false };
+    const limpo = sanitizarParaFirestore(unidade);
+    const docRef = doc(db, 'condominios', condoId, 'unidades', unidade.id);
+    await setDoc(docRef, { ...limpo, condoId }, { merge: true });
+    return { success: true };
+  } catch (error: any) {
+    console.error('🔥 Erro ao salvar unidade no Firestore:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Exclui um documento de uma subcoleção do condomínio
+ */
+export const excluirDocumentoSubcolecaoFirestore = async (condoId: string, nomeSubcolecao: string, docId: string) => {
+  try {
+    if (!condoId || !docId) return { success: false };
+    const docRef = doc(db, 'condominios', condoId, nomeSubcolecao, docId);
+    await deleteDoc(docRef);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`🔥 Erro ao excluir documento ${docId} em ${nomeSubcolecao}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Limpa uma subcoleção existente (remove todos os documentos antigos)
+ * e grava os novos itens na nuvem Firestore
+ */
+export const limparESubstituirSubcolecaoFirestore = async (
+  condoId: string, 
+  nomeSubcolecao: string, 
+  novosItens: any[]
+) => {
+  try {
+    if (!condoId) return { success: false, error: 'CondoId ausente' };
+    const colRef = collection(db, 'condominios', condoId, nomeSubcolecao);
+    const snapshot = await getDocs(colRef);
+    
+    // 1. Exclui em lote todos os documentos antigos que existiam na subcoleção
+    const batchDelete = writeBatch(db);
+    snapshot.forEach((docSnap) => {
+      batchDelete.delete(docSnap.ref);
+    });
+    await batchDelete.commit();
+
+    // 2. Insere os novos documentos limpos
+    const batchInsert = writeBatch(db);
+    for (const item of novosItens) {
+      const docId = item.id || `unit-${condoId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      const docRef = doc(db, 'condominios', condoId, nomeSubcolecao, docId);
+      const limpo = sanitizarParaFirestore(item);
+      batchInsert.set(docRef, { ...limpo, condoId });
+    }
+    await batchInsert.commit();
+    
+    console.log(`✅ Subcoleção ${nomeSubcolecao} limpa e recriada com sucesso no Firestore (${novosItens.length} itens).`);
+    return { success: true, count: novosItens.length };
+  } catch (error: any) {
+    console.error(`🔥 Erro ao limpar e substituir subcoleção ${nomeSubcolecao} no condomínio ${condoId}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Sincroniza uma subcoleção inteira de um condomínio (ex: unidades, moradores, regras, etc.)
  */
 export const sincronizarSubcolecaoTenant = async (
   condoId: string, 
@@ -204,7 +310,8 @@ export const sincronizarSubcolecaoTenant = async (
     for (const item of itens) {
       const docId = item.id || `doc-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
       const docRef = doc(db, 'condominios', condoId, nomeSubcolecao, docId);
-      batch.set(docRef, { ...item, condoId }, { merge: true });
+      const limpo = sanitizarParaFirestore(item);
+      batch.set(docRef, { ...limpo, condoId }, { merge: true });
     }
     await batch.commit();
     return { success: true, count: itens.length };
