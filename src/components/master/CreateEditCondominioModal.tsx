@@ -49,6 +49,8 @@ export const CreateEditCondominioModal: React.FC<CreateEditCondominioModalProps>
   const [estado, setEstado] = useState('SP');
   const [totalUnidades, setTotalUnidades] = useState<number>(32);
   const [totalBlocos, setTotalBlocos] = useState<number>(1);
+  const [totalAndares, setTotalAndares] = useState<number | ''>('');
+  const [padraoPrimeiroAndar, setPadraoPrimeiroAndar] = useState<string>('');
   const [fotoFachada, setFotoFachada] = useState('');
   const [senhaAdminGeral, setSenhaAdminGeral] = useState('admin');
   const [nomeSindico, setNomeSindico] = useState('');
@@ -70,6 +72,8 @@ export const CreateEditCondominioModal: React.FC<CreateEditCondominioModalProps>
       setEstado(condominioToEdit.estado || 'SP');
       setTotalUnidades(condominioToEdit.totalUnidades || 32);
       setTotalBlocos(condominioToEdit.totalBlocos || 1);
+      setTotalAndares(condominioToEdit.totalAndares || '');
+      setPadraoPrimeiroAndar(condominioToEdit.padraoPrimeiroAndar || '');
       setFotoFachada(condominioToEdit.fotoFachada || FOTOS_FACHADAS_SUGERIDAS[0]);
       setSenhaAdminGeral(condominioToEdit.senhaAdminGeral || 'admin');
       setNomeSindico(condominioToEdit.nomeSindico || '');
@@ -85,6 +89,8 @@ export const CreateEditCondominioModal: React.FC<CreateEditCondominioModalProps>
       setEstado('SP');
       setTotalUnidades(32);
       setTotalBlocos(1);
+      setTotalAndares('');
+      setPadraoPrimeiroAndar('');
       setFotoFachada(FOTOS_FACHADAS_SUGERIDAS[0]);
       setSenhaAdminGeral('admin');
       setNomeSindico('');
@@ -137,6 +143,8 @@ export const CreateEditCondominioModal: React.FC<CreateEditCondominioModalProps>
       return;
     }
 
+    const numAndares = typeof totalAndares === 'number' && totalAndares > 0 ? totalAndares : undefined;
+
     if (isEditing && condominioToEdit) {
       editarCondominio(condominioToEdit.id, {
         nome: nome.trim(),
@@ -146,6 +154,8 @@ export const CreateEditCondominioModal: React.FC<CreateEditCondominioModalProps>
         estado: estado.trim(),
         totalUnidades: Number(totalUnidades) || 16,
         totalBlocos: Number(totalBlocos) || 1,
+        totalAndares: numAndares,
+        padraoPrimeiroAndar: padraoPrimeiroAndar.trim() || undefined,
         fotoFachada: fotoFachada.trim(),
         senhaAdminGeral: senhaAdminGeral.trim(),
         nomeSindico: nomeSindico.trim() || undefined,
@@ -162,6 +172,8 @@ export const CreateEditCondominioModal: React.FC<CreateEditCondominioModalProps>
         estado: estado.trim() || 'SP',
         totalUnidades: Number(totalUnidades) || 16,
         totalBlocos: Number(totalBlocos) || 1,
+        totalAndares: numAndares,
+        padraoPrimeiroAndar: padraoPrimeiroAndar.trim() || undefined,
         fotoFachada: fotoFachada.trim() || FOTOS_FACHADAS_SUGERIDAS[0],
         senhaAdminGeral: senhaAdminGeral.trim() || 'admin',
         nomeSindico: nomeSindico.trim() || undefined,
@@ -290,35 +302,80 @@ export const CreateEditCondominioModal: React.FC<CreateEditCondominioModalProps>
             </div>
           </div>
 
-          {/* Estrutura: Total de Unidades e Blocos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-950/40 p-4 rounded-2xl border border-slate-800">
-            <div className="space-y-1">
-              <label className="text-[11px] font-extrabold uppercase text-slate-300 flex items-center gap-1">
-                <Layers className="w-3.5 h-3.5 text-amber-400" /> Quantidade de Unidades / Aptos:
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={500}
-                value={totalUnidades}
-                onChange={(e) => setTotalUnidades(parseInt(e.target.value) || 1)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold"
-              />
+          {/* Estrutura: Total de Unidades, Blocos e Andares */}
+          <div className="space-y-3 bg-slate-950/40 p-4 rounded-2xl border border-slate-800">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold uppercase text-slate-300 flex items-center gap-1">
+                  <Layers className="w-3.5 h-3.5 text-amber-400" /> Total de Unidades:
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={totalUnidades}
+                  onChange={(e) => setTotalUnidades(parseInt(e.target.value) || 1)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold uppercase text-slate-300">
+                  Total de Blocos:
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={totalBlocos}
+                  onChange={(e) => setTotalBlocos(parseInt(e.target.value) || 1)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold uppercase text-slate-300 flex items-center gap-1">
+                  <Building2 className="w-3.5 h-3.5 text-amber-400" /> Total de Andares:
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  placeholder="Ex: 12 (opcional)"
+                  value={totalAndares}
+                  onChange={(e) => setTotalAndares(e.target.value ? parseInt(e.target.value) : '')}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold"
+                />
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[11px] font-extrabold uppercase text-slate-300">
-                Quantidade de Blocos / Torres:
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={totalBlocos}
-                onChange={(e) => setTotalBlocos(parseInt(e.target.value) || 1)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold"
-              />
-            </div>
+            {/* Padrão do 1º Andar (Aparece se totalAndares for informado) */}
+            {typeof totalAndares === 'number' && totalAndares > 0 && (
+              <div className="space-y-1.5 pt-2 border-t border-slate-800/80 animate-in fade-in duration-200">
+                <label className="text-[11px] font-extrabold uppercase text-amber-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Padrão de Apartamentos do 1º Andar:
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: 11, 12, 13  OU  01 02 04 05 07 08"
+                  value={padraoPrimeiroAndar}
+                  onChange={(e) => setPadraoPrimeiroAndar(e.target.value)}
+                  className="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3.5 py-2 text-amber-300 font-mono font-bold text-sm"
+                />
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-[11px] text-slate-300 leading-relaxed space-y-1">
+                  <p className="font-bold text-amber-300 flex items-center gap-1">
+                    <HelpCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    Gerador automático de numeração por andares ativado!
+                  </p>
+                  <p>
+                    Se o 1º andar tiver os APs <code className="bg-slate-900 px-1 py-0.5 rounded text-amber-300">11 12 13</code>, os andares seguintes gerarão automaticamente <code className="bg-slate-900 px-1 py-0.5 rounded text-amber-300">21 22 23</code> (2º andar), <code className="bg-slate-900 px-1 py-0.5 rounded text-amber-300">31 32 33</code> (3º andar)... até o total de <strong>{totalUnidades} APs</strong>.
+                  </p>
+                  <p className="text-slate-400">
+                    O último andar será truncado com o saldo exato restante. As senhas padrão serão réplicas dos APs e as vagas ficarão em branco.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Senha Mestre do Síndico & Dados de Contato */}

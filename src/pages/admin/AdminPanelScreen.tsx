@@ -42,12 +42,17 @@ import {
   Check, 
   X, 
   KeyRound, 
-  LogOut, 
+  LogOut,
+  Table,
+  LayoutGrid,
+  Wand2,
+  Sparkles, 
   ShieldCheck, 
   Search, 
   CheckCircle2, 
   Copy, 
   ArrowLeft,
+  ArrowLeftRight,
   Users,
   User,
   Car,
@@ -151,6 +156,8 @@ export const AdminPanelScreen: React.FC = () => {
     editarUnidade, 
     excluirUnidade, 
     toggleUnidadeSemMoradores,
+    gerarUnidadesAutomaticas,
+    currentCondo,
     logoutAdmin, 
     setCurrentScreen,
     adminUsers,
@@ -450,6 +457,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [showNovaSenha, setShowNovaSenha] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
+  const [viewModeUnidades, setViewModeUnidades] = useState<'table' | 'cards'>('table');
 
   // Edit inline unidade
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -834,214 +842,510 @@ export const AdminPanelScreen: React.FC = () => {
 
             {/* Busca e Lista / Fila de Unidades */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-950">
-                  Fila de Unidades ({filteredUnidades.length})
-                </span>
+              <div className="flex items-center justify-between gap-3 flex-wrap bg-slate-100/90 p-3 rounded-2xl border border-slate-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-950 flex items-center gap-1.5">
+                    Fila de Unidades ({filteredUnidades.length})
+                  </span>
+                  <span className="text-[10px] font-bold bg-amber-100 text-amber-950 px-2 py-0.5 rounded-full border border-amber-300">
+                    Total Esperado: {currentCondo?.totalUnidades || 75}
+                  </span>
+                </div>
 
-                <div className="relative w-full sm:w-64">
-                  <input
-                    type="text"
-                    placeholder="Filtrar por apto ou vaga..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-900 placeholder-slate-500 focus:outline-none font-semibold shadow-2xs"
-                  />
-                  <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                <div className="flex items-center gap-2 flex-wrap ml-auto">
+                  {/* Botão de Preenchimento Automático para N Unidades */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const total = currentCondo?.totalUnidades || 75;
+                      if (window.confirm(`Deseja gerar/preencher automaticamente a fila com as ${total} unidades do condomínio com senhas padrão iguais ao número de cada AP?`)) {
+                        gerarUnidadesAutomaticas(total);
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-xs transition-all active:scale-95"
+                    title={`Gerar ${currentCondo?.totalUnidades || 75} unidades automaticamente`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Preencher {currentCondo?.totalUnidades || 75} Unidades</span>
+                  </button>
+
+                  {/* Toggle Tabela vs Cards */}
+                  <div className="flex items-center bg-white rounded-xl p-0.5 border border-slate-300 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => setViewModeUnidades('table')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                        viewModeUnidades === 'table'
+                          ? 'bg-slate-950 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+                      }`}
+                      title="Visualizar em Tabela Prática"
+                    >
+                      <Table className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Tabela</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewModeUnidades('cards')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                        viewModeUnidades === 'cards'
+                          ? 'bg-slate-950 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+                      }`}
+                      title="Visualizar em Cards"
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Cards</span>
+                    </button>
+                  </div>
+
+                  {/* Campo de Filtro */}
+                  <div className="relative w-full sm:w-56">
+                    <input
+                      type="text"
+                      placeholder="Filtrar por apto ou vaga..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-900 placeholder-slate-500 focus:outline-none font-semibold shadow-2xs"
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2" />
+                  </div>
                 </div>
               </div>
 
-              {/* Grid de Cards de Unidades na Fila */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {filteredUnidades.map((u) => {
-                  const isEditing = editingId === u.id;
-                  const senhaDisplay = u.senhaAcesso || u.numero;
+              {/* VISÃO 1: TABELA PRÁTICA COMPLETA DE UNIDADES */}
+              {viewModeUnidades === 'table' ? (
+                <div className="space-y-2">
+                  {/* Indicador de rolagem carrossel no mobile */}
+                  <div className="sm:hidden flex items-center justify-between text-[11px] font-bold text-amber-900 bg-amber-100/90 px-3.5 py-2 rounded-xl border border-amber-300 shadow-2xs">
+                    <span className="flex items-center gap-1.5 font-black">
+                      <ArrowLeftRight className="w-3.5 h-3.5 text-amber-800" />
+                      Deslize para os lados para ver todas as colunas (Carrossel)
+                    </span>
+                    <span className="text-[9px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-md uppercase">
+                      ↔ Scroll
+                    </span>
+                  </div>
 
-                  if (isEditing) {
-                    return (
-                      <div
-                        key={u.id}
-                        className="bg-amber-100/90 border-2 border-amber-400 rounded-2xl p-3.5 shadow-md space-y-2.5 animate-in zoom-in-95 duration-150"
-                      >
-                        <span className="text-[10px] uppercase font-black text-amber-950 block">
-                          Editando Unidade
-                        </span>
-                        
-                        <div className="space-y-1.5">
-                          <input
-                            type="text"
-                            value={editNumero}
-                            onChange={(e) => setEditNumero(e.target.value)}
-                            placeholder="Número / Identificação"
-                            className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
-                          />
-                          <input
-                            type="text"
-                            value={editVaga}
-                            onChange={(e) => setEditVaga(e.target.value)}
-                            placeholder="Vaga de Garagem"
-                            className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
-                          />
-                          <div className="relative">
+                  <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white shadow-xs max-h-[650px] overflow-y-auto custom-scrollbar touch-pan-x">
+                    <table className="w-full text-left text-xs border-collapse min-w-[920px]">
+                      <thead>
+                        <tr className="bg-slate-950 text-slate-100 uppercase text-[10px] font-black tracking-wider sticky top-0 z-10 shadow-xs">
+                          <th className="py-3 px-3.5 min-w-[150px]">Nome da Unidade</th>
+                          <th className="py-3 px-3.5 min-w-[100px]">Andar</th>
+                          <th className="py-3 px-3.5 min-w-[160px]">Vaga da Garagem</th>
+                          <th className="py-3 px-3.5 min-w-[130px]">Senha Padrão</th>
+                          <th className="py-3 px-2.5 text-center min-w-[90px]">Vazio</th>
+                          <th className="py-3 px-3.5 text-center min-w-[110px]">Status</th>
+                          <th className="py-3 px-3.5 text-right min-w-[280px]">Ações & Salvar</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
+                        {filteredUnidades.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-8 text-center text-slate-500 font-semibold">
+                              Nenhuma unidade encontrada. Use o botão no topo para gerar automaticamente.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredUnidades.map((u) => {
+                            const isEditing = editingId === u.id;
+                            const senhaDisplay = u.senhaAcesso || u.numero || '----';
+                            const isVazio = Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+                            const badgeText = isVazio 
+                              ? 'Sem Moradores' 
+                              : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente');
+                            const badgeStyle = isVazio
+                              ? 'bg-slate-100 text-slate-800 border-slate-300'
+                              : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300');
+
+                            return (
+                              <tr 
+                                key={u.id} 
+                                className={`hover:bg-amber-50/60 transition-colors ${isEditing ? 'bg-amber-100/70 font-semibold' : ''}`}
+                              >
+                                {/* 1. Nome da Unidade */}
+                                <td className="py-2.5 px-3.5">
+                                  {isEditing ? (
+                                    <input
+                                      type="text"
+                                      value={editNumero}
+                                      onChange={(e) => setEditNumero(e.target.value)}
+                                      placeholder="Ex: 101 ou Apto 12"
+                                      className="w-32 bg-white border border-amber-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 shadow-2xs focus:ring-2 focus:ring-amber-500"
+                                    />
+                                  ) : (
+                                    u.numero ? (
+                                      <span className="font-black text-slate-950 text-xs sm:text-sm">
+                                        {u.numero.toLowerCase().startsWith('apt') || u.numero.toLowerCase().startsWith('cobertura')
+                                          ? u.numero 
+                                          : `Apto ${u.numero}`}
+                                      </span>
+                                    ) : (
+                                      <span className="text-slate-400 italic text-xs font-normal bg-slate-100 border border-dashed border-slate-300 px-2 py-1 rounded-md inline-block">
+                                        Clique em editar...
+                                      </span>
+                                    )
+                                  )}
+                                </td>
+
+                                {/* 2. Coluna ANDAR */}
+                                <td className="py-2.5 px-3.5">
+                                  <span className="text-[11px] font-black text-amber-950 bg-amber-100/90 border border-amber-300/80 px-2 py-0.5 rounded-md inline-block whitespace-nowrap shadow-2xs">
+                                    {u.andar ? `${u.andar}º Andar` : '1º Andar'}
+                                  </span>
+                                </td>
+
+                                {/* 3. Vaga da Garagem */}
+                                <td className="py-2.5 px-3.5">
+                                  {isEditing ? (
+                                    <input
+                                      type="text"
+                                      value={editVaga}
+                                      onChange={(e) => setEditVaga(e.target.value)}
+                                      placeholder="Ex: Vaga 12 / G-11"
+                                      className="w-36 bg-white border border-amber-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 shadow-2xs focus:ring-2 focus:ring-amber-500"
+                                    />
+                                  ) : (
+                                    u.vagaGaragem ? (
+                                      <span className="text-slate-700 font-bold flex items-center gap-1 text-xs">
+                                        <Car className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+                                        {u.vagaGaragem}
+                                      </span>
+                                    ) : (
+                                      <span className="text-slate-400 italic text-xs font-normal bg-slate-50 border border-dashed border-slate-300 px-2 py-1 rounded-md inline-block">
+                                        Vazia (Preencher)
+                                      </span>
+                                    )
+                                  )}
+                                </td>
+
+                                {/* 4. Senha Padrão */}
+                                <td className="py-2.5 px-3.5">
+                                  {isEditing ? (
+                                    <div className="relative w-32">
+                                      <input
+                                        type={showEditSenha ? 'text' : 'password'}
+                                        value={editSenha}
+                                        onChange={(e) => setEditSenha(e.target.value)}
+                                        placeholder="Senha"
+                                        className="w-full bg-white border border-amber-500 rounded-lg px-2 py-1 pr-7 text-xs font-mono font-bold text-slate-950 shadow-2xs focus:ring-2 focus:ring-amber-500"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowEditSenha(!showEditSenha)}
+                                        className="p-1 text-slate-500 hover:text-slate-800 absolute right-1 top-0.5"
+                                        tabIndex={-1}
+                                      >
+                                        {showEditSenha ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-2 py-1 rounded-lg">
+                                      <KeyRound className="w-3 h-3 text-amber-800 shrink-0" />
+                                      <span className="font-mono font-black text-slate-950 text-xs">{senhaDisplay}</span>
+                                      <button
+                                        onClick={() => handleCopySenha(u)}
+                                        className="p-0.5 hover:bg-slate-200 rounded text-slate-600 transition-colors ml-0.5"
+                                        title="Copiar dados de acesso"
+                                      >
+                                        {copiadoId === u.id ? (
+                                          <Check className="w-3 h-3 text-emerald-700" />
+                                        ) : (
+                                          <Copy className="w-3 h-3" />
+                                        )}
+                                      </button>
+                                    </div>
+                                  )}
+                                </td>
+
+                                {/* 5. Coluna Vazio */}
+                                <td className="py-2.5 px-2.5 text-center">
+                                  <label className="inline-flex items-center gap-1 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={isVazio}
+                                      onChange={() => toggleUnidadeSemMoradores(u.id)}
+                                      className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer accent-amber-600"
+                                    />
+                                    <span className={`text-[10px] uppercase ${isVazio ? 'text-slate-950 font-black' : 'text-slate-500 font-bold'}`}>
+                                      Vazio
+                                    </span>
+                                  </label>
+                                </td>
+
+                                {/* 6. Status */}
+                                <td className="py-2.5 px-3.5 text-center">
+                                  <span className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full border inline-block ${badgeStyle}`}>
+                                    {badgeText}
+                                  </span>
+                                </td>
+
+                                {/* 7. Ações & Botão Salvar Por Unidade */}
+                                <td className="py-2.5 px-3.5 text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    {isEditing ? (
+                                      <>
+                                        <button
+                                          onClick={() => handleSaveEdit(u.id)}
+                                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                                          title="Salvar alterações desta unidade"
+                                        >
+                                          <Check className="w-3.5 h-3.5 stroke-[3]" /> Salvar
+                                        </button>
+                                        <button
+                                          onClick={() => setEditingId(null)}
+                                          className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                          title="Cancelar edição"
+                                        >
+                                          <X className="w-3.5 h-3.5" />
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button
+                                          onClick={() => handleStartEdit(u)}
+                                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                                          title="Salvar/Editar Unidade"
+                                        >
+                                          <Check className="w-3 h-3 stroke-[3]" />
+                                          <span>Salvar</span>
+                                        </button>
+
+                                        <button
+                                          onClick={() => handleStartEdit(u)}
+                                          className="px-2 py-1 rounded-lg text-slate-800 bg-slate-100 hover:bg-amber-100 border border-slate-300 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                          title="Editar Unidade"
+                                        >
+                                          <Edit3 className="w-3.5 h-3.5 text-slate-700" />
+                                          <span className="hidden sm:inline">Editar</span>
+                                        </button>
+
+                                        <button
+                                          onClick={() => {
+                                            setSelectedUnidadeParaNotificar(u);
+                                            setIsNotifyModalOpen(true);
+                                          }}
+                                          className="px-2 py-1 rounded-lg text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                          title="Notificar Moradia Privadamente"
+                                        >
+                                          <Bell className="w-3.5 h-3.5 text-amber-800" />
+                                          <span className="hidden sm:inline">Notificar</span>
+                                        </button>
+
+                                        <button
+                                          onClick={() => excluirUnidade(u.id)}
+                                          className="px-2 py-1 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                          title="Excluir Unidade"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                          <span className="hidden sm:inline">Excluir</span>
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                /* VISÃO 2: GRID DE CARDS DE UNIDADES */
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto p-1">
+                  {filteredUnidades.map((u) => {
+                    const isEditing = editingId === u.id;
+                    const senhaDisplay = u.senhaAcesso || u.numero;
+
+                    if (isEditing) {
+                      return (
+                        <div
+                          key={u.id}
+                          className="bg-amber-100/90 border-2 border-amber-400 rounded-2xl p-3.5 shadow-md space-y-2.5 animate-in zoom-in-95 duration-150"
+                        >
+                          <span className="text-[10px] uppercase font-black text-amber-950 block">
+                            Editando Unidade
+                          </span>
+                          
+                          <div className="space-y-1.5">
                             <input
-                              type={showEditSenha ? 'text' : 'password'}
-                              value={editSenha}
-                              onChange={(e) => setEditSenha(e.target.value)}
-                              placeholder="Senha de Acesso"
-                              className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 pr-8 text-xs font-bold text-slate-950"
+                              type="text"
+                              value={editNumero}
+                              onChange={(e) => setEditNumero(e.target.value)}
+                              placeholder="Número / Identificação"
+                              className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
                             />
+                            <input
+                              type="text"
+                              value={editVaga}
+                              onChange={(e) => setEditVaga(e.target.value)}
+                              placeholder="Vaga de Garagem"
+                              className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
+                            />
+                            <div className="relative">
+                              <input
+                                type={showEditSenha ? 'text' : 'password'}
+                                value={editSenha}
+                                onChange={(e) => setEditSenha(e.target.value)}
+                                placeholder="Senha de Acesso"
+                                className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 pr-8 text-xs font-bold text-slate-950"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowEditSenha(!showEditSenha)}
+                                className="p-1 text-slate-500 hover:text-slate-800 absolute right-1.5 top-0.5 rounded-lg"
+                                tabIndex={-1}
+                                title={showEditSenha ? "Ocultar senha" : "Ver senha"}
+                              >
+                                {showEditSenha ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 pt-1">
                             <button
-                              type="button"
-                              onClick={() => setShowEditSenha(!showEditSenha)}
-                              className="p-1 text-slate-500 hover:text-slate-800 absolute right-1.5 top-0.5 rounded-lg"
-                              tabIndex={-1}
-                              title={showEditSenha ? "Ocultar senha" : "Ver senha"}
+                              onClick={() => handleSaveEdit(u.id)}
+                              className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1"
                             >
-                              {showEditSenha ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              <Check className="w-3.5 h-3.5" /> Salvar
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold"
+                            >
+                              <X className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
+                      );
+                    }
 
-                        <div className="flex items-center gap-1.5 pt-1">
+                    const formatUnitTitle = (num: string) => {
+                      if (num.toLowerCase().startsWith('apt') || num.toLowerCase().startsWith('cobertura')) {
+                        return num;
+                      }
+                      return `Apto ${num}`;
+                    };
+
+                    const isVazio = Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+                    const badgeText = isVazio 
+                      ? 'Sem Moradores' 
+                      : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente');
+                    const badgeStyle = isVazio
+                      ? 'bg-slate-200 text-slate-800 border-slate-300'
+                      : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300');
+
+                    return (
+                      <div
+                        key={u.id}
+                        className={`bg-white border ${
+                          isVazio ? 'border-slate-300 bg-slate-50/60' : 'border-slate-200 hover:border-amber-400'
+                        } rounded-2xl p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-2.5 overflow-hidden`}
+                      >
+                        {/* Topo do Card de Unidade */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-black text-sm sm:text-base text-slate-950 leading-tight truncate">
+                              {formatUnitTitle(u.numero)}
+                            </h4>
+                            <span className="text-[10px] sm:text-[11px] font-bold text-slate-600 flex items-center gap-1 mt-0.5 truncate">
+                              <Car className="w-3 h-3 text-amber-800 shrink-0" />
+                              Vaga: {u.vagaGaragem || 'Sem vaga'}
+                            </span>
+                          </div>
+
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${badgeStyle}`}>
+                            {badgeText}
+                          </span>
+                        </div>
+
+                        {/* Senha e Credencial */}
+                        <div className="p-2 rounded-xl bg-slate-100/90 border border-slate-200 flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-1 text-slate-700 min-w-0 truncate">
+                            <KeyRound className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+                            <span className="text-[10px] font-extrabold uppercase shrink-0">Senha:</span>
+                            <strong className="text-slate-950 font-mono font-black ml-1 truncate">{senhaDisplay}</strong>
+                          </div>
+
                           <button
-                            onClick={() => handleSaveEdit(u.id)}
-                            className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1"
+                            onClick={() => handleCopySenha(u)}
+                            className="p-1 rounded-lg hover:bg-slate-200 text-slate-700 transition-colors shrink-0"
+                            title="Copiar dados de acesso"
                           >
-                            <Check className="w-3.5 h-3.5" /> Salvar
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold"
-                          >
-                            <X className="w-3.5 h-3.5" />
+                            {copiadoId === u.id ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-700" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
                           </button>
                         </div>
+
+                        {/* Ações: Check Vazio (canto esquerdo) + Editar + Notificar + Excluir (canto direito) */}
+                        <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
+                          
+                          {/* Checkbox de Apartamento Vazio */}
+                          <label 
+                            className="flex items-center gap-1 cursor-pointer select-none group bg-slate-100/90 hover:bg-amber-100/70 px-1.5 py-1 rounded-lg border border-slate-200 transition-colors shrink-0"
+                            title="Marcar como apartamento vazio / sem moradores"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isVazio}
+                              onChange={() => toggleUnidadeSemMoradores(u.id)}
+                              className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer accent-amber-600"
+                            />
+                            <span className={`text-[9px] uppercase tracking-tight transition-colors ${
+                              isVazio 
+                                ? 'text-slate-950 font-black' 
+                                : 'text-slate-500 font-bold group-hover:text-slate-800'
+                            }`}>
+                              Vazio
+                            </span>
+                          </label>
+
+                          {/* Ações da Direita: Editar + Notificar + Excluir */}
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            <button
+                              onClick={() => handleStartEdit(u)}
+                              className="px-1.5 py-1 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
+                              title="Editar Unidade"
+                            >
+                              <Edit3 className="w-3 h-3 text-slate-600" />
+                              <span>Editar</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setSelectedUnidadeParaNotificar(u);
+                                setIsNotifyModalOpen(true);
+                              }}
+                              className="px-1.5 py-1 rounded-lg text-amber-800 hover:text-amber-950 hover:bg-amber-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
+                              title="Notificar Moradia Privadamente"
+                            >
+                              <Bell className="w-3 h-3 text-amber-700" />
+                              <span>Notificar</span>
+                            </button>
+
+                            <button
+                              onClick={() => excluirUnidade(u.id)}
+                              className="px-1.5 py-1 rounded-lg text-rose-700 hover:text-rose-900 hover:bg-rose-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
+                              title="Excluir Unidade"
+                            >
+                              <Trash2 className="w-3 h-3 text-rose-600" />
+                              <span>Excluir</span>
+                            </button>
+                          </div>
+
+                        </div>
+
                       </div>
                     );
-                  }
-
-                  const formatUnitTitle = (num: string) => {
-                    if (num.toLowerCase().startsWith('apt') || num.toLowerCase().startsWith('cobertura')) {
-                      return num;
-                    }
-                    return `Apto ${num}`;
-                  };
-
-                  const isVazio = Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
-                  const badgeText = isVazio 
-                    ? 'Sem Moradores' 
-                    : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente');
-                  const badgeStyle = isVazio
-                    ? 'bg-slate-200 text-slate-800 border-slate-300'
-                    : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300');
-
-                  return (
-                    <div
-                      key={u.id}
-                      className={`bg-white border ${
-                        isVazio ? 'border-slate-300 bg-slate-50/60' : 'border-slate-200 hover:border-amber-400'
-                      } rounded-2xl p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-2.5 overflow-hidden`}
-                    >
-                      {/* Topo do Card de Unidade */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-black text-sm sm:text-base text-slate-950 leading-tight truncate">
-                            {formatUnitTitle(u.numero)}
-                          </h4>
-                          <span className="text-[10px] sm:text-[11px] font-bold text-slate-600 flex items-center gap-1 mt-0.5 truncate">
-                            <Car className="w-3 h-3 text-amber-800 shrink-0" />
-                            Vaga: {u.vagaGaragem || 'Sem vaga'}
-                          </span>
-                        </div>
-
-                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${badgeStyle}`}>
-                          {badgeText}
-                        </span>
-                      </div>
-
-                      {/* Senha e Credencial */}
-                      <div className="p-2 rounded-xl bg-slate-100/90 border border-slate-200 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1 text-slate-700 min-w-0 truncate">
-                          <KeyRound className="w-3.5 h-3.5 text-amber-800 shrink-0" />
-                          <span className="text-[10px] font-extrabold uppercase shrink-0">Senha:</span>
-                          <strong className="text-slate-950 font-mono font-black ml-1 truncate">{senhaDisplay}</strong>
-                        </div>
-
-                        <button
-                          onClick={() => handleCopySenha(u)}
-                          className="p-1 rounded-lg hover:bg-slate-200 text-slate-700 transition-colors shrink-0"
-                          title="Copiar dados de acesso"
-                        >
-                          {copiadoId === u.id ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-700" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Ações: Check Vazio (canto esquerdo) + Editar + Notificar + Excluir (canto direito) */}
-                      <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
-                        
-                        {/* Checkbox de Apartamento Vazio */}
-                        <label 
-                          className="flex items-center gap-1 cursor-pointer select-none group bg-slate-100/90 hover:bg-amber-100/70 px-1.5 py-1 rounded-lg border border-slate-200 transition-colors shrink-0"
-                          title="Marcar como apartamento vazio / sem moradores"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isVazio}
-                            onChange={() => toggleUnidadeSemMoradores(u.id)}
-                            className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer accent-amber-600"
-                          />
-                          <span className={`text-[9px] uppercase tracking-tight transition-colors ${
-                            isVazio 
-                              ? 'text-slate-950 font-black' 
-                              : 'text-slate-500 font-bold group-hover:text-slate-800'
-                          }`}>
-                            Vazio
-                          </span>
-                        </label>
-
-                        {/* Ações da Direita: Editar + Notificar + Excluir */}
-                        <div className="flex items-center gap-0.5 shrink-0">
-                          <button
-                            onClick={() => handleStartEdit(u)}
-                            className="px-1.5 py-1 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
-                            title="Editar Unidade"
-                          >
-                            <Edit3 className="w-3 h-3 text-slate-600" />
-                            <span>Editar</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setSelectedUnidadeParaNotificar(u);
-                              setIsNotifyModalOpen(true);
-                            }}
-                            className="px-1.5 py-1 rounded-lg text-amber-800 hover:text-amber-950 hover:bg-amber-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
-                            title="Notificar Moradia Privadamente"
-                          >
-                            <Bell className="w-3 h-3 text-amber-700" />
-                            <span>Notificar</span>
-                          </button>
-
-                          <button
-                            onClick={() => excluirUnidade(u.id)}
-                            className="px-1.5 py-1 rounded-lg text-rose-700 hover:text-rose-900 hover:bg-rose-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
-                            title="Excluir Unidade"
-                          >
-                            <Trash2 className="w-3 h-3 text-rose-600" />
-                            <span>Excluir</span>
-                          </button>
-                        </div>
-
-                      </div>
-
-                    </div>
-                  );
-                })}
-              </div>
+                  })}
+                </div>
+              )}
             </div>
 
           </div>

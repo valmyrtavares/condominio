@@ -91,6 +91,107 @@ import {
 } from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
+/**
+ * Função utilitária para gerar unidades a partir da quantidade total de unidades,
+ * número de andares e padrão de apartamentos do 1º andar.
+ */
+export function gerarUnidadesPorPadraoEAndar(
+  totalUnidades: number,
+  totalAndares?: number,
+  padraoPrimeiroAndar?: string,
+  condoId: string = 'condo',
+  totalBlocos: number = 1
+): Unidade[] {
+  const unidades: Unidade[] = [];
+  const blocos = totalBlocos > 0 ? totalBlocos : 1;
+
+  if (totalAndares && totalAndares > 0) {
+    const rawItems = (padraoPrimeiroAndar || '')
+      .split(/[\s,;]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const patternItems = rawItems.length > 0 ? rawItems : ['01', '02', '03', '04'];
+
+    let unitCounter = 0;
+    let floorIndex = 1;
+
+    while (unitCounter < totalUnidades) {
+      for (let pos = 0; pos < patternItems.length; pos++) {
+        if (unitCounter >= totalUnidades) break;
+
+        const itemBase = patternItems[pos];
+        let numeroApto = '';
+
+        if (/^\d+$/.test(itemBase)) {
+          if (itemBase.length >= 3 && itemBase.startsWith('1')) {
+            const sufixo = itemBase.slice(1);
+            numeroApto = `${floorIndex}${sufixo}`;
+          } else if (itemBase.length === 2 && itemBase.startsWith('1')) {
+            const sufixo = itemBase.slice(1);
+            numeroApto = `${floorIndex}${sufixo}`;
+          } else if (itemBase.length === 2 && itemBase.startsWith('0')) {
+            const sufixo = itemBase.slice(1);
+            if (floorIndex === 1) {
+              numeroApto = itemBase;
+            } else {
+              numeroApto = `${floorIndex - 1}${sufixo}`;
+            }
+          } else {
+            if (floorIndex === 1) {
+              numeroApto = itemBase;
+            } else {
+              numeroApto = `${floorIndex - 1}${itemBase}`;
+            }
+          }
+        } else {
+          numeroApto = `${floorIndex}${itemBase}`;
+        }
+
+        unitCounter++;
+        const blocoLetra = String.fromCharCode(65 + ((unitCounter - 1) % blocos));
+
+        unidades.push({
+          id: `unit-${condoId}-${floorIndex}-${numeroApto}-${unitCounter}`,
+          numero: numeroApto,
+          andar: floorIndex,
+          bloco: blocos > 1 ? `Bloco ${blocoLetra}` : 'Bloco A',
+          tipo: 'Apartamento',
+          vagaGaragem: '',
+          senhaAcesso: numeroApto,
+          senhaPadraoAlterada: false,
+          statusCadastro: 'Pendente',
+          semMoradores: false,
+          moradores: []
+        });
+      }
+
+      floorIndex++;
+    }
+
+    return unidades;
+  }
+
+  // Se não foi selecionado número de andares:
+  for (let i = 1; i <= totalUnidades; i++) {
+    const blocoLetra = String.fromCharCode(65 + ((i - 1) % blocos));
+    unidades.push({
+      id: `unit-${condoId}-clean-${i}`,
+      numero: '',
+      bloco: blocos > 1 ? `Bloco ${blocoLetra}` : 'Bloco A',
+      tipo: 'Apartamento',
+      vagaGaragem: '',
+      senhaAcesso: '',
+      senhaPadraoAlterada: false,
+      statusCadastro: 'Pendente',
+      semMoradores: false,
+      moradores: []
+    });
+  }
+
+  return unidades;
+}
+
 
 
 
@@ -209,6 +310,7 @@ interface CondoContextType {
   editarUnidade: (id: string, numero: string, vagaGaragem: string, senhaAcesso: string) => void;
   excluirUnidade: (id: string) => void;
   toggleUnidadeSemMoradores: (id: string) => void;
+  gerarUnidadesAutomaticas: (quantidade?: number) => void;
 
   // Notificações Privadas por Unidade
   notificacoesPrivadas: NotificacaoPrivada[];
@@ -1133,29 +1235,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Persiste imediatamente no Cloud Firestore
     salvarCondominioNoFirestore(novoCondo).catch(console.error);
 
-    // Se o modelo for "limpo", gera as unidades automáticas vazias para aquele condomínio
+    // Se o modelo for "limpo", gera as unidades automáticas para aquele condomínio
     if (novo.modeloInicial === 'limpo') {
-      const novasUnidadesLimpo: Unidade[] = [];
-      const totalUnits = novo.totalUnidades || 16;
-      const blocos = novo.totalBlocos || 1;
-
-      for (let i = 1; i <= totalUnits; i++) {
-        const andar = Math.floor((i - 1) / 4) + 1;
-        const num = (i - 1) % 4 + 1;
-        const numeroApto = `${andar}0${num}`;
-        const blocoLetra = String.fromCharCode(65 + ((i - 1) % blocos));
-
-        novasUnidadesLimpo.push({
-          id: `unit-${id}-${numeroApto}-${blocoLetra}`,
-          numero: numeroApto,
-          bloco: `Bloco ${blocoLetra}`,
-          tipo: 'Apartamento',
-          statusCadastro: 'Pendente',
-          senhaAcesso: '1234',
-          senhaPadraoAlterada: false,
-          moradores: []
-        });
-      }
+      const totalUnits = novo.totalUnidades || 75;
+      const novasUnidadesLimpo = gerarUnidadesPorPadraoEAndar(
+        totalUnits,
+        novo.totalAndares,
+        novo.padraoPrimeiroAndar,
+        id,
+        novo.totalBlocos || 1
+      );
       try {
         localStorage.setItem(`condo_unidades_list_${id}`, JSON.stringify(novasUnidadesLimpo));
       } catch {}
@@ -1271,6 +1360,59 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       statusCadastro: u.statusCadastro || (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente')
     }));
   });
+
+  // Sincroniza a lista de unidades quando o condomínio ativo muda (ex: Mona Lisa com 75 unidades)
+  useEffect(() => {
+    if (!currentCondoId) return;
+    const keyTenant = `condo_unidades_list_${currentCondoId}`;
+    const savedTenant = localStorage.getItem(keyTenant);
+    let list: Unidade[] = [];
+    if (savedTenant) {
+      try {
+        list = JSON.parse(savedTenant);
+      } catch {}
+    } else {
+      const savedGlobal = localStorage.getItem('condo_unidades_list');
+      if (savedGlobal && currentCondoId === CURRENT_CONDO_ID) {
+        try {
+          list = JSON.parse(savedGlobal);
+        } catch {}
+      }
+    }
+
+    const expectedTotal = currentCondo?.totalUnidades || 75;
+
+    if (list.length === 0) {
+      list = gerarUnidadesPorPadraoEAndar(
+        expectedTotal,
+        currentCondo?.totalAndares,
+        currentCondo?.padraoPrimeiroAndar,
+        currentCondoId,
+        currentCondo?.totalBlocos || 1
+      );
+    } else if (list.length < expectedTotal) {
+      const needed = expectedTotal - list.length;
+      const blocos = currentCondo?.totalBlocos || 1;
+      for (let i = 1; i <= needed; i++) {
+        const idx = list.length + i;
+        const blocoLetra = String.fromCharCode(65 + ((idx - 1) % blocos));
+        list.push({
+          id: `unit-${currentCondoId}-pad-${idx}`,
+          numero: '',
+          bloco: blocos > 1 ? `Bloco ${blocoLetra}` : 'Bloco A',
+          tipo: 'Apartamento',
+          vagaGaragem: '',
+          senhaAcesso: '',
+          senhaPadraoAlterada: false,
+          statusCadastro: 'Pendente',
+          semMoradores: false,
+          moradores: []
+        });
+      }
+    }
+
+    setUnidades(list);
+  }, [currentCondoId, currentCondo?.totalUnidades, currentCondo?.totalAndares, currentCondo?.padraoPrimeiroAndar]);
 
   // Admin Auth State
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
@@ -2064,7 +2206,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setUnidades(prev => {
       const atualizadas = [nova, ...prev.filter(u => u.numero.toLowerCase() !== numLimpo.toLowerCase())];
-      localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      try {
+        localStorage.setItem(`condo_unidades_list_${currentCondoId}`, JSON.stringify(atualizadas));
+        localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      } catch {}
       return atualizadas;
     });
   };
@@ -2082,7 +2227,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
         return u;
       });
-      localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      try {
+        localStorage.setItem(`condo_unidades_list_${currentCondoId}`, JSON.stringify(atualizadas));
+        localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      } catch {}
       return atualizadas;
     });
   };
@@ -2090,7 +2238,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const excluirUnidade = (id: string) => {
     setUnidades(prev => {
       const atualizadas = prev.filter(u => u.id !== id);
-      localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      try {
+        localStorage.setItem(`condo_unidades_list_${currentCondoId}`, JSON.stringify(atualizadas));
+        localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      } catch {}
       return atualizadas;
     });
   };
@@ -2110,9 +2261,51 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
         return u;
       });
-      localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      try {
+        localStorage.setItem(`condo_unidades_list_${currentCondoId}`, JSON.stringify(atualizadas));
+        localStorage.setItem('condo_unidades_list', JSON.stringify(atualizadas));
+      } catch {}
       return atualizadas;
     });
+  };
+
+  const gerarUnidadesAutomaticas = (quantidade?: number) => {
+    const total = quantidade || currentCondo?.totalUnidades || 75;
+    let novas: Unidade[] = [];
+
+    if (currentCondo?.totalAndares && currentCondo?.padraoPrimeiroAndar) {
+      novas = gerarUnidadesPorPadraoEAndar(
+        total,
+        currentCondo.totalAndares,
+        currentCondo.padraoPrimeiroAndar,
+        currentCondo.id,
+        currentCondo.totalBlocos || 1
+      );
+    } else {
+      const blocos = currentCondo?.totalBlocos || 1;
+      for (let i = 1; i <= total; i++) {
+        const numStr = i < 10 ? `00${i}` : (i < 100 ? `0${i}` : `${i}`);
+        const blocoLetra = String.fromCharCode(65 + ((i - 1) % blocos));
+        novas.push({
+          id: `und-auto-${numStr}-${i}-${Date.now()}`,
+          numero: numStr,
+          bloco: blocos > 1 ? `Bloco ${blocoLetra}` : 'Bloco A',
+          tipo: 'Apartamento',
+          vagaGaragem: '',
+          senhaAcesso: numStr,
+          senhaPadraoAlterada: false,
+          statusCadastro: 'Pendente',
+          semMoradores: false,
+          moradores: []
+        });
+      }
+    }
+
+    setUnidades(novas);
+    try {
+      localStorage.setItem(`condo_unidades_list_${currentCondo?.id}`, JSON.stringify(novas));
+      localStorage.setItem('condo_unidades_list', JSON.stringify(novas));
+    } catch {}
   };
 
   // Notificações Privadas
@@ -3243,6 +3436,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       editarUnidade,
       excluirUnidade,
       toggleUnidadeSemMoradores,
+      gerarUnidadesAutomaticas,
       notificacoesPrivadas,
       enviarNotificacaoPrivada,
       marcarNotificacaoComoLida,

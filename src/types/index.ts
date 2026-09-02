@@ -18,6 +18,7 @@ export interface User {
 export interface Unidade {
   id: string;
   numero: string;
+  andar?: number;
   bloco: string;
   tipo?: 'Apartamento' | 'Cobertura' | 'Casa';
   vagaGaragem?: string;
@@ -720,6 +721,8 @@ export interface CondominioProfile {
   estado?: string;
   totalUnidades: number;
   totalBlocos?: number;
+  totalAndares?: number;
+  padraoPrimeiroAndar?: string;
   fotoFachada?: string;
   senhaAdminGeral: string;       // Senha mestre do síndico
   emailAdmin?: string;
