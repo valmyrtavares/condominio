@@ -23,6 +23,7 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { otimizarImagemDataUrl } from '../utils/imageOptimizer';
 
 // Configuração fornecida pelo usuário
 export const firebaseConfig = {
@@ -457,16 +458,28 @@ export const executarSeedCompletoFirestore = async (dadosSeed: {
 };
 
 /**
- * Upload de imagem Base64 para o Firebase Storage
+ * Upload de imagem Base64 para o Firebase Storage com compressão automática
  */
 export const uploadFotoFirebaseStorage = async (
   caminhoStorage: string, 
   dataUrlBase64: string
 ): Promise<string | null> => {
   try {
+    // Comprime e redimensiona para max 1024px e ~150KB antes do upload
+    let payloadEnvio = dataUrlBase64;
+    try {
+      payloadEnvio = await otimizarImagemDataUrl(dataUrlBase64, {
+        maxLargura: 1024,
+        maxAltura: 1024,
+        qualidade: 0.82
+      });
+    } catch {
+      // Fallback
+    }
+
     const storageRef = ref(storage, caminhoStorage);
-    // Envia string em formato data_url
-    await uploadString(storageRef, dataUrlBase64, 'data_url');
+    // Envia string em formato data_url otimizada
+    await uploadString(storageRef, payloadEnvio, 'data_url');
     const downloadUrl = await getDownloadURL(storageRef);
     return downloadUrl;
   } catch (error) {

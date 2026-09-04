@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useCondo } from '../../context/CondoContext';
 import { Unidade, User } from '../../types';
+import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 import { 
   Building2, 
   Upload, 
@@ -104,17 +105,20 @@ export const EditResidentCellModal: React.FC<EditResidentCellModalProps> = ({
     }));
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setFotoPreview(event.target.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const fotoOtimizada = await otimizarImagemArquivo(file, {
+        maxLargura: 1024,
+        maxAltura: 1024,
+        qualidade: 0.82
+      });
+      setFotoPreview(fotoOtimizada);
+    } catch (err: any) {
+      console.warn('Erro ao otimizar imagem no modal:', err);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

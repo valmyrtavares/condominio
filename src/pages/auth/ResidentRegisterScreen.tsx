@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useCondo } from '../../context/CondoContext';
 import { ChangePasswordModal } from '../../components/auth/ChangePasswordModal';
+import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 import { 
   Building2, 
   ArrowLeft, 
@@ -73,17 +74,21 @@ export const ResidentRegisterScreen: React.FC = () => {
     }));
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setFotoPreview(event.target.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Comprime e redimensiona automaticamente para max 1024px e JPEG leve
+      const fotoOtimizada = await otimizarImagemArquivo(file, {
+        maxLargura: 1024,
+        maxAltura: 1024,
+        qualidade: 0.82
+      });
+      setFotoPreview(fotoOtimizada);
+    } catch (err: any) {
+      console.warn('Erro ao otimizar imagem:', err);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
