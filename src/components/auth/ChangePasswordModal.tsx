@@ -44,8 +44,8 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       return;
     }
 
-    if (novaSenha.length < 3) {
-      setErro('A senha deve conter no mínimo 3 caracteres.');
+    if (novaSenha.length < 6) {
+      setErro('A senha deve conter no mínimo 6 caracteres.');
       return;
     }
 

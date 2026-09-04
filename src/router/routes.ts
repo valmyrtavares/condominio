@@ -58,17 +58,29 @@ export const getScreenFromPath = (pathname: string): { screen: string; route?: R
     }
   }
 
-  // Suporte a rotas dinâmicas de tenant /c/:slug e /c/:slug/admin
-  const tenantAdminMatch = cleanPath.match(/^\/c\/([a-z0-9-]+)\/admin$/);
-  if (tenantAdminMatch) {
-    return { screen: 'admin', tenantSlug: tenantAdminMatch[1] };
+  // Suporte a rotas dinâmicas de tenant /c/:slug e /c/:slug/:subrota
+  const tenantMatch = cleanPath.match(/^\/c\/([a-z0-9-]+)(?:\/(.*))?$/);
+  if (tenantMatch) {
+    const tenantSlug = tenantMatch[1];
+    const rawSubPath = tenantMatch[2] ? `/${tenantMatch[2]}` : '/';
+    const subPath = rawSubPath.replace(/\/+$/, '') || '/';
+
+    for (const route of ROUTES) {
+      if (route.path === subPath || (route.aliases && route.aliases.includes(subPath))) {
+        return { screen: route.id, route, tenantSlug };
+      }
+    }
+
+    const directId = subPath.replace(/^\//, '');
+    const matchingRoute = ROUTES.find(r => r.id === directId);
+    if (matchingRoute) {
+      return { screen: matchingRoute.id, route: matchingRoute, tenantSlug };
+    }
+
+    return { screen: 'home', route: ROUTES[0], tenantSlug };
   }
 
-  const tenantHomeMatch = cleanPath.match(/^\/c\/([a-z0-9-]+)$/);
-  if (tenantHomeMatch) {
-    return { screen: 'home', tenantSlug: tenantHomeMatch[1] };
-  }
-
+  // Rotas normais (sem prefixo de tenant)
   for (const route of ROUTES) {
     if (route.path === cleanPath || (route.aliases && route.aliases.includes(cleanPath))) {
       return { screen: route.id, route };
@@ -85,14 +97,21 @@ export const getScreenFromPath = (pathname: string): { screen: string; route?: R
   return { screen: 'home', route: ROUTES[0] };
 };
 
-
 /**
- * Converte o ID de uma tela no caminho canônico de URL
+ * Converte o ID de uma tela no caminho canônico de URL (com ou sem tenantSlug)
  */
-export const getPathFromScreen = (screenId: string): string => {
+export const getPathFromScreen = (screenId: string, tenantSlug?: string): string => {
+  if (screenId === 'master') return '/master';
   const route = ROUTES.find(r => r.id === screenId);
-  if (route) return route.path;
-  return `/${screenId}`;
+  const routePath = route ? route.path : `/${screenId}`;
+  
+  if (tenantSlug) {
+    if (routePath === '/') {
+      return `/c/${tenantSlug}`;
+    }
+    return `/c/${tenantSlug}${routePath}`;
+  }
+  return routePath;
 };
 
 /**

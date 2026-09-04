@@ -45,11 +45,23 @@ export const storage = getStorage(app);
 // =========================================================================
 
 /**
- * Sanitiza objetos para o Firestore (remove propriedades undefined que o Firebase rejeita)
+ * Sanitiza objetos para o Firestore (remove propriedades undefined e limpa arrays aninhados)
  */
 export const sanitizarParaFirestore = (obj: any): any => {
   if (obj === null || obj === undefined) return null;
-  return JSON.parse(JSON.stringify(obj, (k, v) => (v === undefined ? null : v)));
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) {
+    return obj
+      .filter(item => item !== undefined)
+      .map(item => sanitizarParaFirestore(item));
+  }
+  const limpo: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      limpo[key] = sanitizarParaFirestore(value);
+    }
+  }
+  return limpo;
 };
 
 /**
@@ -228,15 +240,80 @@ export const ouvirSubcolecaoFirestore = (
 };
 
 /**
- * Salva ou atualiza uma única unidade na subcoleção do condomínio
+ * Higieniza estritamente um objeto de morador para o Firestore (garante ausência de arrays aninhados ou Base64)
+ */
+export const higienizarMoradorParaFirestore = (m: any) => {
+  return {
+    id: String(m.id || m.uid || `usr-${Date.now()}`),
+    uid: String(m.uid || m.id || ''),
+    nome: String(m.nome || ''),
+    email: String(m.email || ''),
+    role: String(m.role || 'morador'),
+    unidade: String(m.unidade || ''),
+    bloco: String(m.bloco || 'Bloco A'),
+    profissao: String(m.profissao || ''),
+    foto: typeof m.foto === 'string' && !m.foto.startsWith('data:') ? m.foto : '',
+    condominioId: String(m.condominioId || '')
+  };
+};
+
+/**
+ * Higieniza estritamente um objeto de unidade para o Firestore
+ */
+export const higienizarUnidadeParaFirestore = (u: any, condoId: string) => {
+  const moradoresLimpos = Array.isArray(u.moradores)
+    ? u.moradores.map(higienizarMoradorParaFirestore)
+    : [];
+
+  return {
+    id: String(u.id),
+    numero: String(u.numero || ''),
+    bloco: String(u.bloco || 'Bloco A'),
+    andar: typeof u.andar === 'number' ? u.andar : 1,
+    tipo: String(u.tipo || 'Apartamento'),
+    vagaGaragem: String(u.vagaGaragem || ''),
+    senhaAcesso: String(u.senhaAcesso || u.numero || ''),
+    senhaPadraoAlterada: Boolean(u.senhaPadraoAlterada),
+    statusCadastro: String(u.statusCadastro || (moradoresLimpos.length > 0 ? 'Cadastrado' : 'Pendente')),
+    semMoradores: Boolean(u.semMoradores),
+    emailResponsavel: String(u.emailResponsavel || moradoresLimpos[0]?.email || ''),
+    nomeCelula: String(u.nomeCelula || moradoresLimpos.map((m: any) => m.nome).join(', ') || ''),
+    fotoCelula: typeof u.fotoCelula === 'string' && !u.fotoCelula.startsWith('data:') ? u.fotoCelula : '',
+    condoId: String(condoId),
+    moradores: moradoresLimpos
+  };
+};
+
+/**
+ * Salva ou atualiza uma única unidade na subcoleção do condomínio com upload automático de fotos para o Storage
  */
 export const salvarUnidadeNoFirestore = async (condoId: string, unidade: any) => {
   try {
     if (!condoId || !unidade || !unidade.id) return { success: false };
-    const limpo = sanitizarParaFirestore(unidade);
+
+    // Se tiver foto em Base64, faz o upload para o Firebase Storage antes de salvar no Firestore
+    let fotoUrlFinal = unidade.fotoCelula;
+    if (typeof fotoUrlFinal === 'string' && fotoUrlFinal.startsWith('data:')) {
+      try {
+        const caminhoFoto = `condominios/${condoId}/unidades/${unidade.id}/foto_${Date.now()}.jpg`;
+        const storageUrl = await uploadFotoFirebaseStorage(caminhoFoto, fotoUrlFinal);
+        if (storageUrl) {
+          fotoUrlFinal = storageUrl;
+        }
+      } catch (errFoto) {
+        console.warn('Falha no upload da foto da unidade para o Storage:', errFoto);
+      }
+    }
+
+    const unidadeComFotoFinal = {
+      ...unidade,
+      fotoCelula: typeof fotoUrlFinal === 'string' && !fotoUrlFinal.startsWith('data:') ? fotoUrlFinal : ''
+    };
+
+    const limpo = higienizarUnidadeParaFirestore(unidadeComFotoFinal, condoId);
     const docRef = doc(db, 'condominios', condoId, 'unidades', unidade.id);
-    await setDoc(docRef, { ...limpo, condoId }, { merge: true });
-    return { success: true };
+    await setDoc(docRef, limpo, { merge: true });
+    return { success: true, fotoUrl: limpo.fotoCelula };
   } catch (error: any) {
     console.error('🔥 Erro ao salvar unidade no Firestore:', error);
     return { success: false, error: error.message };
@@ -395,5 +472,148 @@ export const uploadFotoFirebaseStorage = async (
   } catch (error) {
     console.warn('Fallback: usando imagem original ou local devido a erro no Storage:', error);
     return null;
+  }
+};
+
+export interface CadastroMoradorAuthParams {
+  condoId: string;
+  unidadeId: string;
+  unidadeNumero: string;
+  bloco?: string;
+  moradorPrincipal: {
+    nome: string;
+    email: string;
+    profissao?: string;
+    fotoUrl?: string;
+  };
+  dependentes?: {
+    nome: string;
+    email?: string;
+    profissao?: string;
+  }[];
+  senha?: string;
+}
+
+/**
+ * Cria ou vincula o morador no Firebase Auth, cria perfil em 'users' e atualiza a unidade no Firestore.
+ */
+export const cadastrarMoradorAuth = async (params: CadastroMoradorAuthParams) => {
+  const { condoId, unidadeId, unidadeNumero, bloco = 'Bloco A', moradorPrincipal, dependentes = [], senha } = params;
+  
+  try {
+    let authUid = `usr-${unidadeNumero.replace(/\s+/g, '-')}-1-${Date.now()}`;
+    const emailLimpo = moradorPrincipal.email.trim();
+    const senhaFinal = senha && senha.trim().length >= 6 ? senha.trim() : `${unidadeNumero}123456`.slice(0, 8);
+
+    // 1. Tenta criar usuário real no Firebase Auth
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, emailLimpo, senhaFinal);
+      authUid = userCredential.user.uid;
+    } catch (authErr: any) {
+      if (authErr.code === 'auth/email-already-in-use') {
+        try {
+          const loginRes = await signInWithEmailAndPassword(auth, emailLimpo, senhaFinal);
+          authUid = loginRes.user.uid;
+        } catch {
+          // Se não conseguir logar com essa senha, mantém UID gerado
+          console.warn('E-mail já registrado no Firebase Auth, atualizando dados no Firestore.');
+        }
+      } else {
+        console.warn('Aviso Firebase Auth (continuando gravação no Firestore):', authErr.message);
+      }
+    }
+
+    let urlFotoFinal = moradorPrincipal.fotoUrl || '';
+    if (urlFotoFinal && urlFotoFinal.startsWith('data:')) {
+      try {
+        const caminhoFoto = `condominios/${condoId}/unidades/${unidadeId}/foto_${Date.now()}.jpg`;
+        const storageUrl = await uploadFotoFirebaseStorage(caminhoFoto, urlFotoFinal);
+        if (storageUrl) {
+          urlFotoFinal = storageUrl;
+        }
+      } catch (errFoto) {
+        console.warn('Aviso: falha no upload para o Storage, prosseguindo com cadastro:', errFoto);
+      }
+    }
+
+    // 2. Monta o morador principal como plain object limpo
+    const principalUserObj = {
+      id: String(authUid),
+      uid: String(authUid),
+      nome: String(moradorPrincipal.nome.trim()),
+      email: String(emailLimpo),
+      profissao: String(moradorPrincipal.profissao?.trim() || ''),
+      foto: urlFotoFinal.startsWith('data:') ? '' : urlFotoFinal,
+      role: 'morador' as const,
+      unidade: String(unidadeNumero),
+      bloco: String(bloco),
+      condominioId: String(condoId)
+    };
+
+    // 3. Monta dependentes/familiares como plain objects limpos
+    const dependentesObjs = dependentes
+      .filter(d => d.nome && d.nome.trim().length > 0)
+      .map((d, idx) => ({
+        id: `usr-${unidadeNumero.replace(/\s+/g, '-')}-${idx + 2}-${Date.now()}`,
+        nome: String(d.nome.trim()),
+        email: String(d.email?.trim() || ''),
+        profissao: String(d.profissao?.trim() || ''),
+        role: 'morador' as const,
+        unidade: String(unidadeNumero),
+        bloco: String(bloco),
+        condominioId: String(condoId)
+      }));
+
+    const todosMoradores = [principalUserObj, ...dependentesObjs];
+    const nomesFormatados = todosMoradores.map(m => m.nome).join(', ');
+
+    // 4. Grava perfil do usuário na coleção 'users/{uid}'
+    try {
+      const userDocRef = doc(db, 'users', authUid);
+      await setDoc(userDocRef, sanitizarParaFirestore({
+        ...principalUserObj,
+        foto: urlFotoFinal,
+        atualizadoEm: new Date().toISOString()
+      }), { merge: true });
+    } catch (err) {
+      console.warn('Erro ao salvar em users/{uid}:', err);
+    }
+
+    // 5. Atualiza a unidade na subcoleção condominios/{condoId}/unidades/{unidadeId}
+    const unidadePayload = {
+      id: String(unidadeId),
+      numero: String(unidadeNumero),
+      bloco: String(bloco),
+      tipo: 'Apartamento',
+      condoId: String(condoId),
+      statusCadastro: 'Cadastrado',
+      semMoradores: false,
+      moradores: todosMoradores,
+      titularUid: String(authUid),
+      emailResponsavel: String(emailLimpo),
+      nomeCelula: String(nomesFormatados),
+      fotoCelula: urlFotoFinal.startsWith('data:') ? '' : urlFotoFinal,
+      senhaAcesso: String(senhaFinal),
+      senhaPadraoAlterada: Boolean(senha && senha.trim().length >= 6),
+      atualizadoEm: new Date().toISOString()
+    };
+
+    const docRef = doc(db, 'condominios', condoId, 'unidades', unidadeId);
+    await setDoc(docRef, sanitizarParaFirestore(unidadePayload), { merge: true });
+
+    console.log(`✅ Morador ${moradorPrincipal.nome} cadastrado com sucesso na unidade ${unidadeNumero} (${condoId}/${unidadeId})`);
+
+    return {
+      success: true,
+      authUid,
+      usuarioPrincipal: principalUserObj,
+      unidadeAtualizada: unidadePayload
+    };
+  } catch (error: any) {
+    console.error('🔥 Erro no cadastrarMoradorAuth:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro ao realizar cadastro do morador'
+    };
   }
 };

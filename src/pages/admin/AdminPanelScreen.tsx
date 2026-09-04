@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useCondo } from '../../context/CondoContext';
+import { useCondo, sortUnidades } from '../../context/CondoContext';
 import { 
   Unidade, 
   AdminUser, 
@@ -42,6 +42,7 @@ import {
   Check, 
   X, 
   KeyRound, 
+  RotateCcw,
   LogOut,
   Table,
   LayoutGrid,
@@ -154,6 +155,7 @@ export const AdminPanelScreen: React.FC = () => {
     unidades, 
     adicionarUnidade, 
     editarUnidade, 
+    resetarSenhaUnidade,
     excluirUnidade, 
     toggleUnidadeSemMoradores,
     gerarUnidadesAutomaticas,
@@ -453,8 +455,6 @@ export const AdminPanelScreen: React.FC = () => {
   // Form Unidades
   const [novoNumero, setNovoNumero] = useState('');
   const [novaVaga, setNovaVaga] = useState('');
-  const [novaSenha, setNovaSenha] = useState('');
-  const [showNovaSenha, setShowNovaSenha] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
   const [viewModeUnidades, setViewModeUnidades] = useState<'table' | 'cards'>('table');
@@ -463,8 +463,6 @@ export const AdminPanelScreen: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNumero, setEditNumero] = useState('');
   const [editVaga, setEditVaga] = useState('');
-  const [editSenha, setEditSenha] = useState('');
-  const [showEditSenha, setShowEditSenha] = useState(false);
 
   // Form Admin & Colaboradores / Funcionários
   const [tipoCadastroColab, setTipoCadastroColab] = useState<'gestao' | 'operacional'>('gestao');
@@ -498,26 +496,34 @@ export const AdminPanelScreen: React.FC = () => {
 
     adicionarUnidade(
       novoNumero.trim(),
-      novaVaga.trim() || `Vaga ${novoNumero.trim()}`,
-      novaSenha.trim() || novoNumero.trim()
+      novaVaga.trim() || `Vaga ${novoNumero.trim()}`
     );
 
     setNovoNumero('');
     setNovaVaga('');
-    setNovaSenha('');
   };
 
   const handleStartEdit = (u: Unidade) => {
     setEditingId(u.id);
     setEditNumero(u.numero);
     setEditVaga(u.vagaGaragem || '');
-    setEditSenha(u.senhaAcesso || u.numero);
   };
 
   const handleSaveEdit = (id: string) => {
-    if (!editNumero.trim()) return;
-    editarUnidade(id, editNumero, editVaga, editSenha || editNumero);
+    editarUnidade(id, editVaga, editNumero);
     setEditingId(null);
+  };
+
+  const handleResetSenha = (u: Unidade) => {
+    const confirmou = window.confirm(
+      `Deseja realmente resetar a senha do ${u.numero ? `Apto ${u.numero}` : 'apartamento'} para a senha padrão?\n\nA nova senha será: "${u.numero}" (o próprio número do apartamento).\n\nNenhum dado cadastrado pelo morador será perdido.`
+    );
+    if (!confirmou) return;
+
+    const res = resetarSenhaUnidade(u.id);
+    if (res.success) {
+      alert(res.message);
+    }
   };
 
   const handleCopySenha = (u: Unidade) => {
@@ -614,10 +620,10 @@ export const AdminPanelScreen: React.FC = () => {
     }));
   };
 
-  const filteredUnidades = unidades.filter(u => 
+  const filteredUnidades = sortUnidades(unidades.filter(u => 
     u.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (u.vagaGaragem && u.vagaGaragem.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  ));
 
   const unidadesCadastradas = unidades.filter(u => u.moradores && u.moradores.length > 0).length;
   const unidadesPendentes = unidades.length - unidadesCadastradas;
@@ -797,28 +803,22 @@ export const AdminPanelScreen: React.FC = () => {
                     />
                   </div>
 
-                  {/* Senha Padrão (Opcional - default é o próprio número da unidade) */}
+                  {/* Senha Padrão Automática */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                      Senha de Acesso (Opcional):
+                      Senha de Acesso Inicial:
                     </label>
-                    <div className="relative">
-                      <input
-                        type={showNovaSenha ? 'text' : 'password'}
-                        placeholder={novoNumero ? `Padrão: ${novoNumero}` : 'Padrão: número do apto'}
-                        value={novaSenha}
-                        onChange={(e) => setNovaSenha(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pr-9 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNovaSenha(!showNovaSenha)}
-                        className="p-1 text-slate-500 hover:text-slate-800 absolute right-2.5 top-1.5 rounded-lg"
-                        tabIndex={-1}
-                        title={showNovaSenha ? "Ocultar senha" : "Ver senha"}
-                      >
-                        {showNovaSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                    <div className="w-full bg-slate-100/90 border border-slate-300 rounded-xl px-3.5 py-2 text-xs flex items-center justify-between text-slate-900 shadow-2xs">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <KeyRound className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+                        <span className="text-[11px] text-slate-600 font-bold">Padrão:</span>
+                        <span className="font-mono font-black text-slate-950">
+                          {novoNumero.trim() || 'Número do Apto'}
+                        </span>
+                      </div>
+                      <span className="text-[9px] bg-amber-200 text-amber-950 font-black px-1.5 py-0.5 rounded uppercase">
+                        Automático
+                      </span>
                     </div>
                   </div>
 
@@ -931,13 +931,13 @@ export const AdminPanelScreen: React.FC = () => {
                     <table className="w-full text-left text-xs border-collapse min-w-[920px]">
                       <thead>
                         <tr className="bg-slate-950 text-slate-100 uppercase text-[10px] font-black tracking-wider sticky top-0 z-10 shadow-xs">
-                          <th className="py-3 px-3.5 min-w-[150px]">Nome da Unidade</th>
+                          <th className="py-3 px-3.5 min-w-[140px]">Nome da Unidade</th>
                           <th className="py-3 px-3.5 min-w-[100px]">Andar</th>
-                          <th className="py-3 px-3.5 min-w-[160px]">Vaga da Garagem</th>
-                          <th className="py-3 px-3.5 min-w-[130px]">Senha Padrão</th>
+                          <th className="py-3 px-3.5 min-w-[170px]">Vaga da Garagem</th>
+                          <th className="py-3 px-3.5 min-w-[200px]">Senha de Acesso & Reset</th>
                           <th className="py-3 px-2.5 text-center min-w-[90px]">Vazio</th>
                           <th className="py-3 px-3.5 text-center min-w-[110px]">Status</th>
-                          <th className="py-3 px-3.5 text-right min-w-[280px]">Ações & Salvar</th>
+                          <th className="py-3 px-3.5 text-right min-w-[220px]">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
@@ -972,7 +972,7 @@ export const AdminPanelScreen: React.FC = () => {
                                       value={editNumero}
                                       onChange={(e) => setEditNumero(e.target.value)}
                                       placeholder="Ex: 101 ou Apto 12"
-                                      className="w-32 bg-white border border-amber-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 shadow-2xs focus:ring-2 focus:ring-amber-500"
+                                      className="w-28 bg-white border border-amber-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 shadow-2xs focus:ring-2 focus:ring-amber-500"
                                     />
                                   ) : (
                                     u.numero ? (
@@ -983,7 +983,7 @@ export const AdminPanelScreen: React.FC = () => {
                                       </span>
                                     ) : (
                                       <span className="text-slate-400 italic text-xs font-normal bg-slate-100 border border-dashed border-slate-300 px-2 py-1 rounded-md inline-block">
-                                        Clique em editar...
+                                        Sem número
                                       </span>
                                     )
                                   )}
@@ -996,7 +996,7 @@ export const AdminPanelScreen: React.FC = () => {
                                   </span>
                                 </td>
 
-                                {/* 3. Vaga da Garagem */}
+                                {/* 3. Vaga da Garagem (Editável) */}
                                 <td className="py-2.5 px-3.5">
                                   {isEditing ? (
                                     <input
@@ -1005,6 +1005,7 @@ export const AdminPanelScreen: React.FC = () => {
                                       onChange={(e) => setEditVaga(e.target.value)}
                                       placeholder="Ex: Vaga 12 / G-11"
                                       className="w-36 bg-white border border-amber-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 shadow-2xs focus:ring-2 focus:ring-amber-500"
+                                      autoFocus
                                     />
                                   ) : (
                                     u.vagaGaragem ? (
@@ -1020,31 +1021,14 @@ export const AdminPanelScreen: React.FC = () => {
                                   )}
                                 </td>
 
-                                {/* 4. Senha Padrão */}
+                                {/* 4. Senha Padrão & Botão de Reset (Não editável por digitação) */}
                                 <td className="py-2.5 px-3.5">
-                                  {isEditing ? (
-                                    <div className="relative w-32">
-                                      <input
-                                        type={showEditSenha ? 'text' : 'password'}
-                                        value={editSenha}
-                                        onChange={(e) => setEditSenha(e.target.value)}
-                                        placeholder="Senha"
-                                        className="w-full bg-white border border-amber-500 rounded-lg px-2 py-1 pr-7 text-xs font-mono font-bold text-slate-950 shadow-2xs focus:ring-2 focus:ring-amber-500"
-                                      />
-                                      <button
-                                        type="button"
-                                        onClick={() => setShowEditSenha(!showEditSenha)}
-                                        className="p-1 text-slate-500 hover:text-slate-800 absolute right-1 top-0.5"
-                                        tabIndex={-1}
-                                      >
-                                        {showEditSenha ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <div className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-2 py-1 rounded-lg">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <div className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-2 py-1 rounded-lg shadow-2xs">
                                       <KeyRound className="w-3 h-3 text-amber-800 shrink-0" />
                                       <span className="font-mono font-black text-slate-950 text-xs">{senhaDisplay}</span>
                                       <button
+                                        type="button"
                                         onClick={() => handleCopySenha(u)}
                                         className="p-0.5 hover:bg-slate-200 rounded text-slate-600 transition-colors ml-0.5"
                                         title="Copiar dados de acesso"
@@ -1056,7 +1040,18 @@ export const AdminPanelScreen: React.FC = () => {
                                         )}
                                       </button>
                                     </div>
-                                  )}
+
+                                    {/* Botão de Reset de Senha exclusivo para Síndico */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleResetSenha(u)}
+                                      className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                                      title={`Resetar senha do ${u.numero} para a padrão (${u.numero})`}
+                                    >
+                                      <RotateCcw className="w-3 h-3 text-amber-800" />
+                                      <span>Reset Senha</span>
+                                    </button>
+                                  </div>
                                 </td>
 
                                 {/* 5. Coluna Vazio */}
@@ -1081,12 +1076,13 @@ export const AdminPanelScreen: React.FC = () => {
                                   </span>
                                 </td>
 
-                                {/* 7. Ações & Botão Salvar Por Unidade */}
+                                {/* 7. Ações & Salvar */}
                                 <td className="py-2.5 px-3.5 text-right">
                                   <div className="flex items-center justify-end gap-1.5">
                                     {isEditing ? (
                                       <>
                                         <button
+                                          type="button"
                                           onClick={() => handleSaveEdit(u.id)}
                                           className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
                                           title="Salvar alterações desta unidade"
@@ -1094,6 +1090,7 @@ export const AdminPanelScreen: React.FC = () => {
                                           <Check className="w-3.5 h-3.5 stroke-[3]" /> Salvar
                                         </button>
                                         <button
+                                          type="button"
                                           onClick={() => setEditingId(null)}
                                           className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer"
                                           title="Cancelar edição"
@@ -1104,24 +1101,17 @@ export const AdminPanelScreen: React.FC = () => {
                                     ) : (
                                       <>
                                         <button
+                                          type="button"
                                           onClick={() => handleStartEdit(u)}
-                                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
-                                          title="Salvar/Editar Unidade"
-                                        >
-                                          <Check className="w-3 h-3 stroke-[3]" />
-                                          <span>Salvar</span>
-                                        </button>
-
-                                        <button
-                                          onClick={() => handleStartEdit(u)}
-                                          className="px-2 py-1 rounded-lg text-slate-800 bg-slate-100 hover:bg-amber-100 border border-slate-300 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
-                                          title="Editar Unidade"
+                                          className="px-2.5 py-1 rounded-lg text-slate-800 bg-slate-100 hover:bg-amber-100 border border-slate-300 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer shadow-2xs"
+                                          title="Editar Vaga / Unidade"
                                         >
                                           <Edit3 className="w-3.5 h-3.5 text-slate-700" />
                                           <span className="hidden sm:inline">Editar</span>
                                         </button>
 
                                         <button
+                                          type="button"
                                           onClick={() => {
                                             setSelectedUnidadeParaNotificar(u);
                                             setIsNotifyModalOpen(true);
@@ -1134,6 +1124,7 @@ export const AdminPanelScreen: React.FC = () => {
                                         </button>
 
                                         <button
+                                          type="button"
                                           onClick={() => excluirUnidade(u.id)}
                                           className="px-2 py-1 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
                                           title="Excluir Unidade"
@@ -1184,35 +1175,20 @@ export const AdminPanelScreen: React.FC = () => {
                               onChange={(e) => setEditVaga(e.target.value)}
                               placeholder="Vaga de Garagem"
                               className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
+                              autoFocus
                             />
-                            <div className="relative">
-                              <input
-                                type={showEditSenha ? 'text' : 'password'}
-                                value={editSenha}
-                                onChange={(e) => setEditSenha(e.target.value)}
-                                placeholder="Senha de Acesso"
-                                className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 pr-8 text-xs font-bold text-slate-950"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowEditSenha(!showEditSenha)}
-                                className="p-1 text-slate-500 hover:text-slate-800 absolute right-1.5 top-0.5 rounded-lg"
-                                tabIndex={-1}
-                                title={showEditSenha ? "Ocultar senha" : "Ver senha"}
-                              >
-                                {showEditSenha ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                              </button>
-                            </div>
                           </div>
 
                           <div className="flex items-center gap-1.5 pt-1">
                             <button
+                              type="button"
                               onClick={() => handleSaveEdit(u.id)}
                               className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1"
                             >
                               <Check className="w-3.5 h-3.5" /> Salvar
                             </button>
                             <button
+                              type="button"
                               onClick={() => setEditingId(null)}
                               className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold"
                             >
@@ -1262,25 +1238,38 @@ export const AdminPanelScreen: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* Senha e Credencial */}
-                        <div className="p-2 rounded-xl bg-slate-100/90 border border-slate-200 flex items-center justify-between text-xs">
+                        {/* Senha e Botões */}
+                        <div className="p-2 rounded-xl bg-slate-100/90 border border-slate-200 flex items-center justify-between text-xs gap-1">
                           <div className="flex items-center gap-1 text-slate-700 min-w-0 truncate">
                             <KeyRound className="w-3.5 h-3.5 text-amber-800 shrink-0" />
                             <span className="text-[10px] font-extrabold uppercase shrink-0">Senha:</span>
                             <strong className="text-slate-950 font-mono font-black ml-1 truncate">{senhaDisplay}</strong>
                           </div>
 
-                          <button
-                            onClick={() => handleCopySenha(u)}
-                            className="p-1 rounded-lg hover:bg-slate-200 text-slate-700 transition-colors shrink-0"
-                            title="Copiar dados de acesso"
-                          >
-                            {copiadoId === u.id ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-700" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                          </button>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleCopySenha(u)}
+                              className="p-1 rounded-lg hover:bg-slate-200 text-slate-700 transition-colors shrink-0"
+                              title="Copiar dados de acesso"
+                            >
+                              {copiadoId === u.id ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-700" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleResetSenha(u)}
+                              className="px-1.5 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-md text-[9px] font-black flex items-center gap-0.5 transition-all"
+                              title="Resetar para a senha padrão"
+                            >
+                              <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
+                              <span>Reset</span>
+                            </button>
+                          </div>
                         </div>
 
                         {/* Ações: Check Vazio (canto esquerdo) + Editar + Notificar + Excluir (canto direito) */}
@@ -1309,6 +1298,7 @@ export const AdminPanelScreen: React.FC = () => {
                           {/* Ações da Direita: Editar + Notificar + Excluir */}
                           <div className="flex items-center gap-0.5 shrink-0">
                             <button
+                              type="button"
                               onClick={() => handleStartEdit(u)}
                               className="px-1.5 py-1 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
                               title="Editar Unidade"
@@ -1318,6 +1308,7 @@ export const AdminPanelScreen: React.FC = () => {
                             </button>
 
                             <button
+                              type="button"
                               onClick={() => {
                                 setSelectedUnidadeParaNotificar(u);
                                 setIsNotifyModalOpen(true);
@@ -1330,6 +1321,7 @@ export const AdminPanelScreen: React.FC = () => {
                             </button>
 
                             <button
+                              type="button"
                               onClick={() => excluirUnidade(u.id)}
                               className="px-1.5 py-1 rounded-lg text-rose-700 hover:text-rose-900 hover:bg-rose-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
                               title="Excluir Unidade"

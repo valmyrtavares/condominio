@@ -37,7 +37,7 @@ export const EditResidentCellModal: React.FC<EditResidentCellModalProps> = ({
   unidade,
   onClose
 }) => {
-  const { atualizarMoradoresUnidade } = useCondo();
+  const { atualizarMoradoresUnidade, currentCondoId } = useCondo();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [fotoPreview, setFotoPreview] = useState<string>('');
@@ -117,7 +117,7 @@ export const EditResidentCellModal: React.FC<EditResidentCellModalProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
 
@@ -137,12 +137,13 @@ export const EditResidentCellModal: React.FC<EditResidentCellModalProps> = ({
         role: m.role,
         unidade: unidade.numero,
         bloco: unidade.bloco || 'Bloco A',
-        condominioId: 'condo-1'
+        foto: fotoPreview || undefined,
+        condominioId: currentCondoId
       }));
 
     const nomesFormatados = updatedMoradores.map(m => m.nome).join(', ');
 
-    atualizarMoradoresUnidade(
+    await atualizarMoradoresUnidade(
       unidade.id,
       updatedMoradores,
       fotoPreview || '',

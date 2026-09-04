@@ -13,7 +13,8 @@ import {
   User,
   Briefcase,
   Mail,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 
 interface MoradorInput {
@@ -39,10 +40,17 @@ export const ResidentRegisterScreen: React.FC = () => {
   ]);
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
+  const [isSalvando, setIsSalvando] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
-  const unidadeNumero = pendingRegistrationUnit?.numero || '001';
+  const unidadeNumero = pendingRegistrationUnit?.numero || '';
   const blocoNome = pendingRegistrationUnit?.bloco || 'Bloco A';
+
+  React.useEffect(() => {
+    if (!pendingRegistrationUnit) {
+      setCurrentScreen('resident-login');
+    }
+  }, [pendingRegistrationUnit, setCurrentScreen]);
 
   const handleAddMorador = () => {
     setMoradores(prev => [
@@ -99,11 +107,13 @@ export const ResidentRegisterScreen: React.FC = () => {
     setIsChangePasswordModalOpen(true);
   };
 
-  const handleSaveWithNewPassword = (novaSenha: string) => {
+  const handleSaveWithNewPassword = async (novaSenha: string) => {
     setIsChangePasswordModalOpen(false);
-    setSucesso(true);
-    setTimeout(() => {
-      concluirCadastroMorador(
+    setIsSalvando(true);
+    setErro('');
+    
+    try {
+      const res = await concluirCadastroMorador(
         unidadeNumero,
         moradores.map(m => ({ 
           nome: m.nome.trim(), 
@@ -113,14 +123,26 @@ export const ResidentRegisterScreen: React.FC = () => {
         fotoPreview || undefined,
         novaSenha
       );
-    }, 400);
+
+      if (res.success) {
+        setSucesso(true);
+      } else {
+        setErro(res.error || 'Erro ao persistir cadastro no banco.');
+      }
+    } catch (err: any) {
+      setErro(err.message || 'Erro inesperado ao salvar.');
+    } finally {
+      setIsSalvando(false);
+    }
   };
 
-  const handleSaveKeepDefaultPassword = () => {
+  const handleSaveKeepDefaultPassword = async () => {
     setIsChangePasswordModalOpen(false);
-    setSucesso(true);
-    setTimeout(() => {
-      concluirCadastroMorador(
+    setIsSalvando(true);
+    setErro('');
+    
+    try {
+      const res = await concluirCadastroMorador(
         unidadeNumero,
         moradores.map(m => ({ 
           nome: m.nome.trim(), 
@@ -129,7 +151,17 @@ export const ResidentRegisterScreen: React.FC = () => {
         })),
         fotoPreview || undefined
       );
-    }, 400);
+
+      if (res.success) {
+        setSucesso(true);
+      } else {
+        setErro(res.error || 'Erro ao persistir cadastro no banco.');
+      }
+    } catch (err: any) {
+      setErro(err.message || 'Erro inesperado ao salvar.');
+    } finally {
+      setIsSalvando(false);
+    }
   };
 
   const handleSkip = () => {
@@ -323,17 +355,28 @@ export const ResidentRegisterScreen: React.FC = () => {
           <div className="space-y-2.5 pt-2">
             <button
               type="submit"
-              disabled={sucesso}
-              className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+              disabled={sucesso || isSalvando}
+              className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Sparkles className="w-4 h-4" /> Salvar e Concluir Cadastro
+              {isSalvando ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Salvando no Firebase...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Salvar e Concluir Cadastro</span>
+                </>
+              )}
             </button>
 
             {/* Big "Cadastrar depois" Button */}
             <button
               type="button"
               onClick={handleSkip}
-              className="w-full py-3.5 bg-white/50 hover:bg-white/80 border-2 border-white/90 text-slate-900 rounded-2xl text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+              disabled={isSalvando}
+              className="w-full py-3.5 bg-white/50 hover:bg-white/80 border-2 border-white/90 text-slate-900 rounded-2xl text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               Cadastrar depois
             </button>

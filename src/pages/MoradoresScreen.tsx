@@ -12,10 +12,32 @@ export const MoradoresScreen: React.FC = () => {
     notificacoesPrivadas,
     marcarTodasNotificacoesUnidadeComoLidas 
   } = useCondo();
-  const [selectedUnidadeId, setSelectedUnidadeId] = useState<string>(unidades[1]?.id || unidades[0]?.id);
+
+  const normalizeUnit = (str?: string) => str ? str.toLowerCase().replace(/^(apt|apto|unidade|apartamento|cobertura|casa)\s*/i, '').trim() : '';
+
+  const [selectedUnidadeId, setSelectedUnidadeId] = useState<string>(() => {
+    if (currentUser?.unidade) {
+      const match = unidades.find(u => normalizeUnit(u.numero) === normalizeUnit(currentUser.unidade));
+      if (match) return match.id;
+    }
+    return unidades[0]?.id || '';
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+
+  // Sincroniza a unidade selecionada com o morador logado quando as unidades carregam
+  React.useEffect(() => {
+    if (currentUser?.unidade && unidades.length > 0) {
+      const match = unidades.find(u => normalizeUnit(u.numero) === normalizeUnit(currentUser.unidade));
+      if (match) {
+        setSelectedUnidadeId(match.id);
+      }
+    } else if (!selectedUnidadeId && unidades.length > 0) {
+      setSelectedUnidadeId(unidades[0]?.id);
+    }
+  }, [currentUser?.unidade]);
 
   const selectedUnidade = unidades.find(u => u.id === selectedUnidadeId) || unidades[0];
 
@@ -24,7 +46,6 @@ export const MoradoresScreen: React.FC = () => {
     u.moradores.some(m => m.nome.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const normalizeUnit = (str?: string) => str ? str.toLowerCase().replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim() : '';
   const isMyUnit = Boolean(
     currentUser?.unidade &&
     selectedUnidade?.numero &&
@@ -70,18 +91,19 @@ export const MoradoresScreen: React.FC = () => {
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {filteredUnidades.map((u) => {
             const isSelected = u.id === selectedUnidadeId;
-            const title = u.numero.toLowerCase().startsWith('apt') || u.numero.toLowerCase().startsWith('cobertura')
-              ? u.numero
-              : `Apt ${u.numero}`;
+            const rawNum = u.numero && u.numero.trim() ? u.numero.trim() : (u.id.match(/\d+$/)?.[0] || '');
+            const title = rawNum.toLowerCase().startsWith('apt') || rawNum.toLowerCase().startsWith('cobertura')
+              ? rawNum
+              : (rawNum ? `Apt ${rawNum}` : `Apt ${u.id}`);
 
             const isThisTabMine = Boolean(
               currentUser?.unidade &&
-              normalizeUnit(currentUser.unidade) === normalizeUnit(u.numero)
+              normalizeUnit(currentUser.unidade) === normalizeUnit(rawNum)
             );
             const canSeeTabNotif = Boolean(isThisTabMine || isSindicoOrAdmin);
 
             const hasUnread = canSeeTabNotif && notificacoesPrivadas.some(
-              n => !n.lida && normalizeUnit(n.unidadeNumero) === normalizeUnit(u.numero)
+              n => !n.lida && normalizeUnit(n.unidadeNumero) === normalizeUnit(rawNum)
             );
 
             return (
@@ -112,9 +134,13 @@ export const MoradoresScreen: React.FC = () => {
           selectedUnidade.fotoCelula
         );
 
-        const unitLabel = selectedUnidade.numero.toLowerCase().startsWith('apt') || selectedUnidade.numero.toLowerCase().startsWith('cobertura')
-          ? selectedUnidade.numero
-          : `Apt ${selectedUnidade.numero}`;
+        const selNum = selectedUnidade.numero && selectedUnidade.numero.trim() 
+          ? selectedUnidade.numero.trim() 
+          : (selectedUnidade.id.match(/\d+$/)?.[0] || '');
+
+        const unitLabel = selNum.toLowerCase().startsWith('apt') || selNum.toLowerCase().startsWith('cobertura')
+          ? selNum
+          : (selNum ? `Apt ${selNum}` : `Apt`);
 
         const canSeeNotifications = Boolean(isMyUnit || isSindicoOrAdmin);
 
