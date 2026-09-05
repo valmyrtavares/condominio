@@ -56,7 +56,7 @@ export const EditResidentCellModal: React.FC<EditResidentCellModalProps> = ({
             nome: m.nome || '',
             email: m.email || '',
             profissao: m.profissao || '',
-            role: m.role || 'morador'
+            role: (m.role === 'sindico' || m.role === 'subsindico') ? m.role : 'morador'
           }))
         );
       } else {

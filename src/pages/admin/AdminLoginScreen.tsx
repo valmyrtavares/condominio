@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import { useCondo } from '../../context/CondoContext';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 import { AdminFirstAccessModal } from '../../components/admin/AdminFirstAccessModal';
+import { ColaboradorFirstAccessModal } from '../../components/admin/ColaboradorFirstAccessModal';
 import { ShieldCheck, Lock, User, ArrowLeft, AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export const AdminLoginScreen: React.FC = () => {
-  const { loginAdmin, setCurrentScreen, targetRedirectScreen, setTargetRedirectScreen, currentCondo } = useCondo();
+  const { loginAdmin, setCurrentScreen, targetRedirectScreen, setTargetRedirectScreen, currentCondo, currentUser } = useCondo();
   const [usuario, setUsuario] = useState('');
   const [senha, setSenha] = useState('');
   const [showSenha, setShowSenha] = useState(false);
   const [erro, setErro] = useState('');
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [isFirstAccessModalOpen, setIsFirstAccessModalOpen] = useState(false);
+  const [isColabFirstAccessModalOpen, setIsColabFirstAccessModalOpen] = useState(false);
 
   const [isCarregando, setIsCarregando] = useState(false);
 
@@ -24,7 +26,11 @@ export const AdminLoginScreen: React.FC = () => {
       const res = await loginAdmin(usuario, senha);
       if (res.success) {
         if (res.needsActivation) {
-          setIsFirstAccessModalOpen(true);
+          if (currentUser?.role === 'colaborador') {
+            setIsColabFirstAccessModalOpen(true);
+          } else {
+            setIsFirstAccessModalOpen(true);
+          }
         } else {
           const dest = targetRedirectScreen || 'admin';
           setTargetRedirectScreen(null);
@@ -180,6 +186,23 @@ export const AdminLoginScreen: React.FC = () => {
           setCurrentScreen(dest);
         }}
       />
+
+      {/* Modal de Primeiro Acesso do Colaborador para Definição de Senha Pessoal */}
+      {currentUser && (
+        <ColaboradorFirstAccessModal
+          isOpen={isColabFirstAccessModalOpen}
+          onClose={() => setIsColabFirstAccessModalOpen(false)}
+          funcionarioId={currentUser.id}
+          funcionarioNome={currentUser.nome}
+          funcionarioEmail={currentUser.email}
+          onSuccess={() => {
+            setIsColabFirstAccessModalOpen(false);
+            const dest = targetRedirectScreen || 'admin';
+            setTargetRedirectScreen(null);
+            setCurrentScreen(dest);
+          }}
+        />
+      )}
     </div>
   );
 };

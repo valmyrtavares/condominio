@@ -1,4 +1,31 @@
-export type UserRole = 'morador' | 'sindico' | 'subsindico';
+export type UserRole = 'morador' | 'sindico' | 'subsindico' | 'colaborador';
+
+export type AdminModuloKey = 
+  | 'portaria'
+  | 'mudancas'
+  | 'dependencias'
+  | 'reparos'
+  | 'reclamacoes'
+  | 'eventos'
+  | 'servicos'
+  | 'unidades'
+  | 'equipe'
+  | 'financeiro'
+  | 'regras'
+  | 'imoveis'
+  | 'fornecedores'
+  | 'enjoei'
+  | 'assembleias'
+  | 'diario-sindico';
+
+export interface AdminModuloInfo {
+  key: AdminModuloKey;
+  titulo: string;
+  descricao: string;
+  iconeNome: string;
+  corBadge: string;
+  categoria: 'operacional' | 'gestao' | 'social';
+}
 
 export interface User {
   id: string;
@@ -12,6 +39,7 @@ export interface User {
   hobby?: string;
   aniversario?: string;
   vagaGaragem?: string;
+  permissoesModulos?: AdminModuloKey[];
   condominioId: string;
 }
 
@@ -92,7 +120,10 @@ export interface Funcionario {
   telefone?: string;
   usuario?: string;
   senha?: string;
-  tipoAcesso?: 'total' | 'morador_destaque';
+  senhaPadraoAlterada?: boolean;
+  tipoAcesso?: 'total' | 'personalizado' | 'morador_destaque';
+  permissoesModulos?: AdminModuloKey[];
+  ultimoAcesso?: string;
   criadoEm?: string;
   condominioId: string;
 }

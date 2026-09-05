@@ -2395,6 +2395,12 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
     categoria: 'Portaria',
     horario: '19:00 - 07:00',
     disponibilidade: 'Segunda, Quarta, Sexta e Domingos alternados',
+    email: 'ademar@condominio.com',
+    usuario: 'ademar@condominio.com',
+    senha: 'ademar@condominio.com',
+    senhaPadraoAlterada: false,
+    tipoAcesso: 'personalizado',
+    permissoesModulos: ['portaria', 'mudancas'],
     avaliacoesCount: 28,
     mediaNota: 4.9,
     condominioId: CURRENT_CONDO_ID
@@ -2407,6 +2413,12 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
     categoria: 'Limpeza',
     horario: '08:00 - 17:00',
     disponibilidade: 'Segunda a Sexta e Sábado até 12:00',
+    email: 'anastacia@condominio.com',
+    usuario: 'anastacia@condominio.com',
+    senha: 'anastacia@condominio.com',
+    senhaPadraoAlterada: false,
+    tipoAcesso: 'personalizado',
+    permissoesModulos: ['reparos', 'dependencias'],
     avaliacoesCount: 42,
     mediaNota: 5.0,
     condominioId: CURRENT_CONDO_ID
@@ -2419,6 +2431,12 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
     categoria: 'Portaria',
     horario: '07:00 - 19:00',
     disponibilidade: 'Terça, Quinta, Sábado e Domingos alternados',
+    email: 'jose.porteiro@condominio.com',
+    usuario: 'jose.porteiro@condominio.com',
+    senha: 'jose.porteiro@condominio.com',
+    senhaPadraoAlterada: false,
+    tipoAcesso: 'personalizado',
+    permissoesModulos: ['portaria', 'mudancas'],
     avaliacoesCount: 31,
     mediaNota: 4.8,
     condominioId: CURRENT_CONDO_ID
@@ -2431,6 +2449,12 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
     categoria: 'Segurança',
     horario: '22:00 - 06:00',
     disponibilidade: 'Diariamente (Zeladoria e Segurança)',
+    email: 'jose.vigia@condominio.com',
+    usuario: 'jose.vigia@condominio.com',
+    senha: 'jose.vigia@condominio.com',
+    senhaPadraoAlterada: false,
+    tipoAcesso: 'personalizado',
+    permissoesModulos: ['portaria', 'reparos'],
     avaliacoesCount: 19,
     mediaNota: 4.7,
     condominioId: CURRENT_CONDO_ID
@@ -2443,6 +2467,12 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
     categoria: 'Gestão',
     horario: '09:00 - 18:00',
     disponibilidade: 'Reuniões mensais e emergências',
+    email: 'adriana@condominio.com',
+    usuario: 'adriana@condominio.com',
+    senha: 'adriana@condominio.com',
+    senhaPadraoAlterada: true,
+    tipoAcesso: 'total',
+    permissoesModulos: ['portaria', 'mudancas', 'dependencias', 'reparos', 'reclamacoes', 'eventos', 'servicos', 'unidades', 'equipe', 'financeiro', 'regras', 'imoveis', 'fornecedores', 'enjoei', 'assembleias', 'diario-sindico'],
     avaliacoesCount: 55,
     mediaNota: 4.9,
     condominioId: CURRENT_CONDO_ID
@@ -2455,6 +2485,12 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
     categoria: 'Gestão',
     horario: '09:00 - 18:00',
     disponibilidade: 'Segunda a Sexta',
+    email: 'cassia@condominio.com',
+    usuario: 'cassia@condominio.com',
+    senha: 'cassia@condominio.com',
+    senhaPadraoAlterada: true,
+    tipoAcesso: 'total',
+    permissoesModulos: ['portaria', 'mudancas', 'dependencias', 'reparos', 'reclamacoes', 'eventos', 'servicos', 'unidades', 'equipe', 'financeiro', 'regras', 'imoveis', 'fornecedores', 'enjoei', 'assembleias', 'diario-sindico'],
     condominioId: CURRENT_CONDO_ID
   },
   {
@@ -2465,6 +2501,12 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
     categoria: 'Gestão',
     horario: 'Reuniões e Pareceres',
     disponibilidade: 'Sob demanda',
+    email: 'fabio@condominio.com',
+    usuario: 'fabio@condominio.com',
+    senha: 'fabio@condominio.com',
+    senhaPadraoAlterada: false,
+    tipoAcesso: 'personalizado',
+    permissoesModulos: ['financeiro', 'assembleias', 'regras'],
     condominioId: CURRENT_CONDO_ID
   },
   {
@@ -2475,6 +2517,12 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
     categoria: 'Gestão',
     horario: 'Reuniões e Auditorias',
     disponibilidade: 'Sob demanda',
+    email: 'marco@condominio.com',
+    usuario: 'marco@condominio.com',
+    senha: 'marco@condominio.com',
+    senhaPadraoAlterada: false,
+    tipoAcesso: 'personalizado',
+    permissoesModulos: ['financeiro', 'assembleias', 'reparos'],
     condominioId: CURRENT_CONDO_ID
   }
 ];

@@ -52,7 +52,8 @@ import {
   StatusEncomenda,
   CondominioProfile,
   StatusCondominio,
-  ModeloInicialCondominio
+  ModeloInicialCondominio,
+  AdminModuloKey
 } from '../types';
 import { 
   MOCK_USERS, 
@@ -330,6 +331,7 @@ interface CondoContextType {
   editarFuncionario: (id: string, dados: Partial<Funcionario>) => void;
   excluirFuncionario: (id: string) => void;
   atualizarStatusFuncionario: (id: string, status: StatusFuncionario) => void;
+  alterarSenhaColaborador: (funcionarioId: string, novaSenha: string) => boolean;
   avaliacoesFuncionarios: AvaliacaoFuncionario[];
   avaliarFuncionario: (funcionarioId: string, nota: number) => void;
   espinhaDorsalItems: EspinhaDorsalItem[];
@@ -2173,6 +2175,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const adicionarFuncionario = (novo: Omit<Funcionario, 'id' | 'condominioId'>) => {
+    const emailLimpo = novo.email?.trim().toLowerCase();
+    const loginFinal = novo.usuario?.trim().toLowerCase() || emailLimpo;
+    const senhaFinal = novo.senha?.trim() || emailLimpo || '123456';
+
     const funcionarioCompleto: Funcionario = {
       id: `func-${Date.now()}`,
       nome: novo.nome.trim(),
@@ -2182,26 +2188,28 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       horario: novo.horario?.trim() || '08:00 - 17:00',
       disponibilidade: novo.disponibilidade?.trim() || 'Segunda a Sexta',
       status: novo.status || 'Ativo',
-      email: novo.email?.trim(),
+      email: emailLimpo,
       telefone: novo.telefone?.trim(),
-      usuario: novo.usuario?.trim(),
-      senha: novo.senha?.trim(),
-      tipoAcesso: novo.tipoAcesso,
+      usuario: loginFinal,
+      senha: senhaFinal,
+      senhaPadraoAlterada: Boolean(novo.senhaPadraoAlterada),
+      tipoAcesso: novo.tipoAcesso || 'personalizado',
+      permissoesModulos: novo.permissoesModulos && novo.permissoesModulos.length > 0 ? novo.permissoesModulos : ['portaria'],
       criadoEm: `${new Date().toLocaleDateString('pt-BR')}`,
       condominioId: CURRENT_CONDO_ID
     };
 
     setFuncionarios(prev => [funcionarioCompleto, ...prev]);
 
-    if (novo.usuario && novo.senha) {
+    if (loginFinal && senhaFinal) {
       adicionarAdminUser({
         nome: novo.nome.trim(),
-        usuario: novo.usuario.trim(),
-        email: novo.email?.trim() || `${novo.usuario.trim()}@condominio.com`,
+        usuario: loginFinal,
+        email: emailLimpo || `${loginFinal}@condominio.com`,
         cargo: novo.funcao.trim(),
-        tipoAcesso: novo.tipoAcesso || 'total',
+        tipoAcesso: novo.tipoAcesso === 'total' ? 'total' : 'morador_destaque',
         foto: novo.foto,
-        senha: novo.senha.trim(),
+        senha: senhaFinal,
         ativo: novo.status !== 'Desligado',
         telefone: novo.telefone?.trim()
       });
@@ -2218,6 +2226,24 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       return f;
     }));
+  };
+
+  const alterarSenhaColaborador = (funcionarioId: string, novaSenha: string): boolean => {
+    const s = novaSenha.trim();
+    if (!s || s.length < 3) return false;
+
+    setFuncionarios(prev => prev.map(f => {
+      if (f.id === funcionarioId) {
+        return {
+          ...f,
+          senha: s,
+          senhaPadraoAlterada: true
+        };
+      }
+      return f;
+    }));
+
+    return true;
   };
 
   const excluirFuncionario = (id: string) => {
@@ -2755,7 +2781,45 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
-    // 4. Sub-administradores da lista adminUsers
+    // 4. Verificação de Colaboradores / Quadro de Funcionários com Login Individual
+    const matchedFuncionario = funcionarios.find(f => 
+      f.status !== 'Desligado' && 
+      ((f.email && f.email.trim().toLowerCase() === u) || (f.usuario && f.usuario.trim().toLowerCase() === u)) &&
+      (f.senha?.trim() === s || (!f.senha && f.email?.trim().toLowerCase() === s) || (s === '123456' && !f.senhaPadraoAlterada))
+    );
+
+    if (matchedFuncionario) {
+      setIsAdminLoggedIn(true);
+      localStorage.setItem('condo_admin_auth', 'true');
+      
+      const userPermissoes: AdminModuloKey[] = matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length > 0
+        ? matchedFuncionario.permissoesModulos
+        : (matchedFuncionario.categoria === 'Portaria' ? ['portaria', 'mudancas'] : ['portaria']);
+
+      const colabUserObj: User = {
+        id: matchedFuncionario.id,
+        nome: matchedFuncionario.nome,
+        email: matchedFuncionario.email || matchedFuncionario.usuario || u,
+        role: 'colaborador',
+        unidade: '',
+        bloco: '',
+        foto: matchedFuncionario.foto,
+        profissao: matchedFuncionario.funcao,
+        permissoesModulos: userPermissoes,
+        condominioId: currentCondo.id
+      };
+      setCurrentUser(colabUserObj);
+
+      // Atualiza último acesso
+      setFuncionarios(prev => prev.map(f => f.id === matchedFuncionario.id ? { ...f, ultimoAcesso: new Date().toISOString() } : f));
+
+      return { 
+        success: true, 
+        needsActivation: !matchedFuncionario.senhaPadraoAlterada && (matchedFuncionario.senha === matchedFuncionario.email || matchedFuncionario.senha === '123456')
+      };
+    }
+
+    // 5. Sub-administradores da lista adminUsers
     const matchedAdmin = adminUsers.find(
       adm => adm.usuario.toLowerCase() === u && adm.senha === s && adm.ativo
     );
@@ -4005,6 +4069,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       editarFuncionario,
       excluirFuncionario,
       atualizarStatusFuncionario,
+      alterarSenhaColaborador,
       avaliacoesFuncionarios,
       avaliarFuncionario,
       espinhaDorsalItems,

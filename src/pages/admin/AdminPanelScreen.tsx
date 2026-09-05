@@ -132,10 +132,9 @@ import { CreateEditDesapegoModal } from '../../components/enjoei/CreateEditDesap
 import { CreateEditDependenciaModal } from '../../components/admin/CreateEditDependenciaModal';
 import { CreateAutorizacaoModal } from '../../components/portaria/CreateAutorizacaoModal';
 import { CreateEncomendaModal } from '../../components/portaria/CreateEncomendaModal';
-
-
-
-
+import { AdminPermissionsSelector } from '../../components/admin/AdminPermissionsSelector';
+import { ColaboradorFirstAccessModal } from '../../components/admin/ColaboradorFirstAccessModal';
+import { AdminModuloKey } from '../../types';
 
 const AVATARES_SUGERIDOS = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
@@ -162,6 +161,7 @@ export const AdminPanelScreen: React.FC = () => {
     currentCondo,
     logoutAdmin, 
     setCurrentScreen,
+    currentUser,
     adminUsers,
     adminRoles,
     adicionarAdminUser,
@@ -472,17 +472,30 @@ export const AdminPanelScreen: React.FC = () => {
   const [novoAdminRoleSelected, setNovoAdminRoleSelected] = useState(adminRoles[0]?.nome || 'Síndico Geral');
   const [novoAdminSenha, setNovoAdminSenha] = useState('');
   const [showNovoAdminSenha, setShowNovoAdminSenha] = useState(false);
-  const [novoAdminFoto, setNovoAdminFoto] = useState(AVATARES_SUGERIDOS[0]);
+  const [novoAdminFoto, setNovoAdminFoto] = useState('');
   const [novoColabCargo, setNovoColabCargo] = useState('');
   const [novoColabCategoria, setNovoColabCategoria] = useState<CategoriaFuncionario>('Portaria');
   const [novoColabHorario, setNovoColabHorario] = useState('08:00 - 17:00');
   const [novoColabDisponibilidade, setNovoColabDisponibilidade] = useState('Segunda a Sexta');
   const [novoColabStatus, setNovoColabStatus] = useState<StatusFuncionario>('Ativo');
+  const [novoColabEmail, setNovoColabEmail] = useState('');
+  const [novoColabSenha, setNovoColabSenha] = useState('');
+  const [showNovoColabSenha, setShowNovoColabSenha] = useState(false);
+  const [novoColabPermissoes, setNovoColabPermissoes] = useState<AdminModuloKey[]>(['portaria', 'mudancas']);
+  const [isColabTrocarSenhaModalOpen, setIsColabTrocarSenhaModalOpen] = useState(false);
   const [filtroCategoriaColab, setFiltroCategoriaColab] = useState<string>('Todos');
   const [selectedFuncionarioToEdit, setSelectedFuncionarioToEdit] = useState<Funcionario | null>(null);
   const [isEditFuncionarioModalOpen, setIsEditFuncionarioModalOpen] = useState(false);
   const [adminSuccessMsg, setAdminSuccessMsg] = useState('');
   const [visibleAdminPasswords, setVisibleAdminPasswords] = useState<{ [key: string]: boolean }>({});
+
+  const isColaborador = currentUser?.role === 'colaborador';
+  const hasModuloPermission = (key: AdminModuloKey): boolean => {
+    if (!currentUser) return true;
+    if (currentUser.role === 'sindico' || currentUser.role === 'subsindico') return true;
+    if (!currentUser.permissoesModulos) return true;
+    return currentUser.permissoesModulos.includes(key);
+  };
 
   // Modal / Seção de Criação de Novas Categorias de Gestão
   const [isModalNovaCategoriaOpen, setIsModalNovaCategoriaOpen] = useState(false);
@@ -551,7 +564,10 @@ export const AdminPanelScreen: React.FC = () => {
     if (!novoAdminNome.trim()) return;
 
     if (tipoCadastroColab === 'gestao') {
-      if (!novoAdminUsuario.trim() || !novoAdminSenha.trim()) return;
+      const emailLimpo = novoAdminEmail.trim().toLowerCase();
+      const loginFinal = novoAdminUsuario.trim().toLowerCase() || emailLimpo;
+      const senhaFinal = novoAdminSenha.trim() || emailLimpo || '123456';
+      if (!loginFinal || !senhaFinal) return;
 
       const roleObj = adminRoles.find(r => r.nome === novoAdminRoleSelected);
       const tipoAcesso = roleObj ? roleObj.tipoAcesso : 'morador_destaque';
@@ -564,15 +580,18 @@ export const AdminPanelScreen: React.FC = () => {
         horario: tipoAcesso === 'total' ? 'Administração & Plantão' : 'Reuniões e Pareceres',
         disponibilidade: tipoAcesso === 'total' ? 'Horário Comercial / Emergências' : 'Sob demanda',
         status: novoColabStatus,
-        email: novoAdminEmail.trim() || `${novoAdminUsuario.trim().toLowerCase()}@condominio.com`,
-        usuario: novoAdminUsuario.trim().toLowerCase(),
-        senha: novoAdminSenha.trim(),
+        email: emailLimpo || `${loginFinal}@condominio.com`,
+        usuario: loginFinal,
+        senha: senhaFinal,
+        permissoesModulos: novoColabPermissoes.length > 0 ? novoColabPermissoes : ['portaria', 'mudancas', 'dependencias', 'reparos', 'reclamacoes', 'eventos', 'servicos', 'unidades', 'equipe', 'financeiro', 'regras', 'imoveis', 'fornecedores', 'enjoei', 'assembleias', 'diario-sindico'],
         tipoAcesso: tipoAcesso
       });
 
       setAdminSuccessMsg(`Perfil de ${novoAdminRoleSelected} (${novoAdminNome}) cadastrado com sucesso!`);
     } else {
       if (!novoColabCargo.trim()) return;
+      const emailLimpo = novoColabEmail.trim().toLowerCase() || novoAdminEmail.trim().toLowerCase();
+      const senhaFinal = novoColabSenha.trim() || emailLimpo || '123456';
 
       adicionarFuncionario({
         nome: novoAdminNome.trim(),
@@ -582,7 +601,11 @@ export const AdminPanelScreen: React.FC = () => {
         horario: novoColabHorario.trim() || '08:00 - 17:00',
         disponibilidade: novoColabDisponibilidade.trim() || 'Segunda a Sexta',
         status: novoColabStatus,
-        email: novoAdminEmail.trim() || undefined
+        email: emailLimpo || undefined,
+        usuario: emailLimpo || undefined,
+        senha: senhaFinal,
+        permissoesModulos: novoColabPermissoes.length > 0 ? novoColabPermissoes : ['portaria'],
+        tipoAcesso: novoColabPermissoes.length >= 16 ? 'total' : 'personalizado'
       });
 
       setAdminSuccessMsg(`Funcionário "${novoAdminNome}" (${novoColabCargo}) cadastrado com sucesso!`);
@@ -592,6 +615,8 @@ export const AdminPanelScreen: React.FC = () => {
     setNovoAdminUsuario('');
     setNovoAdminEmail('');
     setNovoAdminSenha('');
+    setNovoColabEmail('');
+    setNovoColabSenha('');
     setNovoColabCargo('');
     setNovoAdminFoto(AVATARES_SUGERIDOS[Math.floor(Math.random() * AVATARES_SUGERIDOS.length)]);
     setTimeout(() => setAdminSuccessMsg(''), 4000);
