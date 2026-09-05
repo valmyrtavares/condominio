@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useCondo } from '../../context/CondoContext';
 import { Funcionario, StatusFuncionario, CategoriaFuncionario, AdminModuloKey } from '../../types';
 import { AdminPermissionsSelector } from './AdminPermissionsSelector';
@@ -39,6 +40,19 @@ const AVATARES_SUGERIDOS = [
   '/cassia_sub_sindica.png'
 ];
 
+/** Formata número de WhatsApp / Telefone brasileiro: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX (máx 11 dígitos) */
+const formatWhatsApp = (value: string): string => {
+  if (!value) return '';
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+};
+
 export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
   isOpen,
   onClose,
@@ -71,7 +85,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
       setStatus(funcionario.status || 'Ativo');
       setFoto(funcionario.foto || AVATARES_SUGERIDOS[0]);
       setEmail(funcionario.email || funcionario.usuario || '');
-      setTelefone(funcionario.telefone || '');
+      setTelefone(funcionario.telefone ? formatWhatsApp(funcionario.telefone) : '');
       setUsuario(funcionario.usuario || funcionario.email || '');
       setSenha(funcionario.senha || funcionario.email || '');
       
@@ -112,6 +126,10 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
     }
   };
 
+  const handleTelefoneChange = (val: string) => {
+    setTelefone(formatWhatsApp(val));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nome.trim() || !funcao.trim()) return;
@@ -143,12 +161,13 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
     }, 400);
   };
 
-  return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+  const modalContent = (
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="fixed inset-0" onClick={onClose} />
 
-      <div className="relative w-full max-w-xl max-h-[92vh] sm:max-h-[90vh] bg-white border-2 border-amber-400 rounded-3xl shadow-2xl flex flex-col overflow-hidden z-10 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-xl max-h-[calc(100dvh-5rem)] bg-white border-2 border-amber-400 rounded-3xl shadow-2xl flex flex-col overflow-hidden z-10 animate-in zoom-in-95 duration-200 my-auto">
         
+        {/* Header Fixo */}
         <div className="shrink-0 p-4 sm:p-5 bg-gradient-to-r from-amber-100 via-amber-50 to-white flex items-center justify-between border-b border-amber-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 border border-amber-400/50 flex items-center justify-center shadow-md font-black shrink-0">
@@ -174,7 +193,8 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        {/* Corpo com Rolagem Interna */}
+        <form id="edit-funcionario-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           
           {sucesso && (
             <div className="p-3 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs font-bold flex items-center gap-2 animate-in zoom-in-95">
@@ -407,32 +427,37 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
               <input
                 type="tel"
                 value={telefone}
-                onChange={(e) => setTelefone(e.target.value)}
+                onChange={(e) => handleTelefoneChange(e.target.value)}
                 placeholder="(11) 98765-4321"
+                maxLength={15}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <Check className="w-4 h-4 stroke-[3]" /> Salvar Alterações
-            </button>
-          </div>
-
         </form>
+
+        {/* Rodapé Fixo com Ações */}
+        <div className="shrink-0 p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer active:scale-95"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="edit-funcionario-form"
+            className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <Check className="w-4 h-4 stroke-[3]" /> Salvar Alterações
+          </button>
+        </div>
 
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };

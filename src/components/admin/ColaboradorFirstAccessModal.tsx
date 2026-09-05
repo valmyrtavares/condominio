@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useCondo } from '../../context/CondoContext';
 import { 
   ShieldCheck, 
@@ -81,8 +82,8 @@ export const ColaboradorFirstAccessModal: React.FC<ColaboradorFirstAccessModalPr
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+  const modalContent = (
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="fixed inset-0" onClick={onClose} />
 
       <div className="relative w-full max-w-md bg-white border-2 border-amber-400 rounded-3xl shadow-2xl p-5 sm:p-6 space-y-4 z-10 animate-in zoom-in-95 duration-200">
@@ -209,4 +210,6 @@ export const ColaboradorFirstAccessModal: React.FC<ColaboradorFirstAccessModalPr
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };
