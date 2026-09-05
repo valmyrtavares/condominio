@@ -493,9 +493,28 @@ export const AdminPanelScreen: React.FC = () => {
   const hasModuloPermission = (key: AdminModuloKey): boolean => {
     if (!currentUser) return true;
     if (currentUser.role === 'sindico' || currentUser.role === 'subsindico') return true;
-    if (!currentUser.permissoesModulos) return true;
-    return currentUser.permissoesModulos.includes(key);
+    if (currentUser.role === 'colaborador') {
+      return !!(currentUser.permissoesModulos && currentUser.permissoesModulos.includes(key));
+    }
+    return true;
   };
+
+  const canAccessDiario = hasModuloPermission('diario-sindico');
+  const canAccessUnidades = hasModuloPermission('unidades');
+  const canAccessEquipe = hasModuloPermission('equipe');
+  const canAccessServicos = hasModuloPermission('servicos');
+  const canAccessEventos = hasModuloPermission('eventos');
+  const canAccessAssembleias = hasModuloPermission('assembleias');
+  const canAccessReclamacoes = hasModuloPermission('reclamacoes');
+  const canAccessReparos = hasModuloPermission('reparos');
+  const canAccessFinanceiro = hasModuloPermission('financeiro');
+  const canAccessRegras = hasModuloPermission('regras');
+  const canAccessImoveis = hasModuloPermission('imoveis');
+  const canAccessFornecedores = hasModuloPermission('fornecedores');
+  const canAccessEnjoei = hasModuloPermission('enjoei');
+  const canAccessDependencias = hasModuloPermission('dependencias');
+  const canAccessMudancas = hasModuloPermission('mudancas');
+  const canAccessPortaria = hasModuloPermission('portaria');
 
   // Modal / Seção de Criação de Novas Categorias de Gestão
   const [isModalNovaCategoriaOpen, setIsModalNovaCategoriaOpen] = useState(false);
@@ -702,39 +721,92 @@ export const AdminPanelScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Card Exclusivo do Diário do Síndico & Linha do Tempo (Acesso Somente para Administradores) */}
+      {/* Banner de Identificação do Colaborador Logado */}
+      {isColaborador && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-amber-500/15 border-2 border-amber-400/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-amber-500 text-slate-950 font-black flex items-center justify-center shadow-md shrink-0">
+              <UserCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-400">
+                  Perfil de Colaborador
+                </span>
+                <span className="text-xs font-black text-slate-950">
+                  {currentUser.nome} ({currentUser.profissao || 'Colaborador'})
+                </span>
+              </div>
+              <p className="text-xs text-slate-700 font-medium mt-0.5">
+                Você possui acesso autorizado a <strong>{(currentUser.permissoesModulos || []).length} de 16</strong> abas administrativas concedidas pela administração.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 self-start sm:self-center shrink-0">
+            <span className="text-[11px] font-extrabold text-amber-950 px-3 py-1 bg-amber-200/80 rounded-xl border border-amber-300 flex items-center gap-1">
+              <Lock className="w-3.5 h-3.5 text-amber-900" /> Demais abas desabilitadas
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Card Exclusivo do Diário do Síndico & Linha do Tempo */}
       <div 
-        onClick={() => setCurrentScreen('diario-sindico')}
-        className="bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-950 text-white rounded-3xl p-5 sm:p-6 border-2 border-indigo-500/40 shadow-xl cursor-pointer hover:border-indigo-400 hover:shadow-indigo-500/10 transition-all group select-none"
+        onClick={() => {
+          if (!canAccessDiario) return;
+          setCurrentScreen('diario-sindico');
+        }}
+        className={`rounded-3xl p-5 sm:p-6 border-2 shadow-xl transition-all group select-none ${
+          canAccessDiario
+            ? 'bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-950 text-white border-indigo-500/40 cursor-pointer hover:border-indigo-400 hover:shadow-indigo-500/10'
+            : 'bg-slate-100 border-slate-300 opacity-60 cursor-not-allowed text-slate-600'
+        }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 group-hover:scale-110 transition-transform shrink-0">
+            <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 ${
+              canAccessDiario 
+                ? 'bg-indigo-500/20 border-indigo-400/30 text-indigo-300 group-hover:scale-110 transition-transform'
+                : 'bg-slate-200 border-slate-300 text-slate-500'
+            }`}>
               <BookOpen className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-500/30 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-400/30">
-                  Exclusivo da Administração
-                </span>
-                <span className="text-[10px] font-extrabold text-slate-400">
+                {canAccessDiario ? (
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-500/30 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-400/30">
+                    Exclusivo da Administração
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-300 flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                  </span>
+                )}
+                <span className={`text-[10px] font-extrabold ${canAccessDiario ? 'text-slate-400' : 'text-slate-500'}`}>
                   {registrosAtividades.length} eventos registrados
                 </span>
               </div>
-              <h3 className="text-base sm:text-lg font-black text-white group-hover:text-indigo-200 transition-colors mt-0.5">
+              <h3 className={`text-base sm:text-lg font-black mt-0.5 ${canAccessDiario ? 'text-white group-hover:text-indigo-200' : 'text-slate-700'}`}>
                 Diário do Síndico • Linha do Tempo & Galeria de Atividades
               </h3>
-              <p className="text-xs text-slate-300 font-medium max-w-2xl mt-0.5">
+              <p className={`text-xs font-medium max-w-2xl mt-0.5 ${canAccessDiario ? 'text-slate-300' : 'text-slate-500'}`}>
                 Acompanhe em ordem cronológica tudo o que aconteceu no condomínio: ocorrências, aprovações de mudanças, novos moradores, manutenções e registros de portaria do dia a dia.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-            <span className="px-4 py-2.5 rounded-2xl bg-indigo-600 group-hover:bg-indigo-500 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-md group-hover:shadow-indigo-500/25">
-              <span>Abrir Diário Cronológico</span>
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </span>
+            {canAccessDiario ? (
+              <span className="px-4 py-2.5 rounded-2xl bg-indigo-600 group-hover:bg-indigo-500 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-md group-hover:shadow-indigo-500/25">
+                <span>Abrir Diário Cronológico</span>
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            ) : (
+              <span className="px-3 py-2 rounded-2xl bg-slate-200 text-slate-500 text-xs font-bold border border-slate-300 flex items-center gap-1">
+                <Lock className="w-3.5 h-3.5 text-slate-400" /> Bloqueado
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -742,26 +814,41 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 1: GESTÃO DE UNIDADES E SENHAS (CARD RETRÁTIL QUE ABRE E FECHA) */}
       {/* ========================================================================= */}
-      <div className="bg-emerald-50/70 border-2 border-emerald-300 rounded-3xl shadow-md overflow-hidden">
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+        canAccessUnidades ? 'bg-emerald-50/70 border-emerald-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+      }`}>
         
         {/* Accordion Header */}
         <button
           type="button"
-          onClick={() => setIsUnidadesOpen(!isUnidadesOpen)}
-          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-emerald-100/90 hover:bg-emerald-200/70 transition-colors text-left border-b border-emerald-200 cursor-pointer select-none active:scale-[0.999]"
+          disabled={!canAccessUnidades}
+          onClick={() => canAccessUnidades && setIsUnidadesOpen(!isUnidadesOpen)}
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+            canAccessUnidades 
+              ? 'bg-emerald-100/90 hover:bg-emerald-200/70 border-emerald-200 cursor-pointer active:scale-[0.999]' 
+              : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+          }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-950 shrink-0">
-              <Building className="w-5 h-5 text-emerald-900" />
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+              canAccessUnidades ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+            }`}>
+              {canAccessUnidades ? <Building className="w-5 h-5 text-emerald-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-black text-slate-950">
                   1. Gestão de Unidades e Senhas
                 </h3>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
-                  {unidades.length} Apts
-                </span>
+                {canAccessUnidades ? (
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
+                    {unidades.length} Apts
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-700 font-medium">
                 {unidadesCadastradas} com moradores configurados • {unidadesPendentes} pendentes
@@ -770,19 +857,27 @@ export const AdminPanelScreen: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-              {isUnidadesOpen ? 'Recolher seção' : 'Expandir seção'}
-            </span>
-            <div className="p-2 rounded-xl bg-white border border-emerald-300 text-slate-700 shadow-2xs">
-              <ChevronDown className={`w-4 h-4 text-emerald-900 transition-transform duration-500 ease-out ${isUnidadesOpen ? 'rotate-180' : 'rotate-0'}`} />
-            </div>
+            {canAccessUnidades ? (
+              <>
+                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                  {isUnidadesOpen ? 'Recolher seção' : 'Expandir seção'}
+                </span>
+                <div className="p-2 rounded-xl bg-white border border-emerald-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-emerald-900 transition-transform duration-500 ease-out ${isUnidadesOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
+              </>
+            ) : (
+              <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                <Lock className="w-4 h-4 text-slate-400" />
+              </div>
+            )}
           </div>
         </button>
 
         {/* Accordion Content com Animação Suave de Altura */}
         <div 
           className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            isUnidadesOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            canAccessUnidades && isUnidadesOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
           }`}
         >
           <div className="min-h-0 overflow-hidden bg-emerald-50/50 p-5 sm:p-6 space-y-6">
@@ -1373,26 +1468,41 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 2: CRIANDO SENHA DE ACESSOS & QUADRO DE FUNCIONÁRIOS E GESTÃO */}
       {/* ========================================================================= */}
-      <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl shadow-md overflow-hidden">
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+        canAccessEquipe ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+      }`}>
         
         {/* Accordion Header */}
         <button
           type="button"
-          onClick={() => setIsSenhasAdminOpen(!isSenhasAdminOpen)}
-          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-100/90 hover:bg-amber-200/70 transition-colors text-left border-b border-amber-200 cursor-pointer select-none active:scale-[0.999]"
+          disabled={!canAccessEquipe}
+          onClick={() => canAccessEquipe && setIsSenhasAdminOpen(!isSenhasAdminOpen)}
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+            canAccessEquipe 
+              ? 'bg-amber-100/90 hover:bg-amber-200/70 border-amber-200 cursor-pointer active:scale-[0.999]' 
+              : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+          }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-950 shrink-0">
-              <KeyRound className="w-5 h-5 text-amber-900" />
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+              canAccessEquipe ? 'bg-amber-500/20 border-amber-400/40 text-amber-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+            }`}>
+              {canAccessEquipe ? <KeyRound className="w-5 h-5 text-amber-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-black text-slate-950">
                   2. Senhas de Acessos & Equipe de Gestão
                 </h3>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
-                  {funcionarios.length} Membros & Colaboradores
-                </span>
+                {canAccessEquipe ? (
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
+                    {funcionarios.length} Membros & Colaboradores
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-700 font-medium">
                 Síndicos, Subsíndicos, Portaria, Faxineiros, Vigias, Zeladoria e Colaboradores em Geral.
@@ -1401,19 +1511,27 @@ export const AdminPanelScreen: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-              {isSenhasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
-            </span>
-            <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
-              <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isSenhasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-            </div>
+            {canAccessEquipe ? (
+              <>
+                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                  {isSenhasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                </span>
+                <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isSenhasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
+              </>
+            ) : (
+              <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                <Lock className="w-4 h-4 text-slate-400" />
+              </div>
+            )}
           </div>
         </button>
 
         {/* Accordion Content com Animação Suave de Altura */}
         <div 
           className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            isSenhasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            canAccessEquipe && isSenhasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
           }`}
         >
           <div className="min-h-0 overflow-hidden bg-amber-50/50 p-5 sm:p-6 space-y-6">
@@ -1978,29 +2096,46 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 3: SERVIÇOS DE MORADORES & MODERAÇÃO */}
       {/* ========================================================================= */}
-      <div className="bg-purple-50/70 border-2 border-purple-300 rounded-3xl shadow-md overflow-hidden">
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+        canAccessServicos ? 'bg-purple-50/70 border-purple-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+      }`}>
         
         {/* Accordion Header */}
         <button
           type="button"
-          onClick={() => setIsServicosAdminOpen(!isServicosAdminOpen)}
-          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-purple-100/90 hover:bg-purple-200/70 transition-colors text-left border-b border-purple-200 cursor-pointer select-none active:scale-[0.999]"
+          disabled={!canAccessServicos}
+          onClick={() => canAccessServicos && setIsServicosAdminOpen(!isServicosAdminOpen)}
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+            canAccessServicos 
+              ? 'bg-purple-100/90 hover:bg-purple-200/70 border-purple-200 cursor-pointer active:scale-[0.999]' 
+              : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+          }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-950 shrink-0">
-              <Briefcase className="w-5 h-5 text-purple-900" />
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+              canAccessServicos ? 'bg-purple-500/20 border-purple-400/40 text-purple-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+            }`}>
+              {canAccessServicos ? <Briefcase className="w-5 h-5 text-purple-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-black text-slate-950">
                   3. Moderação de Serviços de Moradores
                 </h3>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-purple-200 text-purple-950 border border-purple-300">
-                  {servicosMoradores.length} Anúncios
-                </span>
-                {servicosMoradores.filter(s => !s.ativo).length > 0 && (
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-600 text-white shadow-2xs">
-                    {servicosMoradores.filter(s => !s.ativo).length} Suspensos
+                {canAccessServicos ? (
+                  <>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-purple-200 text-purple-950 border border-purple-300">
+                      {servicosMoradores.length} Anúncios
+                    </span>
+                    {servicosMoradores.filter(s => !s.ativo).length > 0 && (
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-600 text-white shadow-2xs">
+                        {servicosMoradores.filter(s => !s.ativo).length} Suspensos
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
                   </span>
                 )}
               </div>
@@ -2011,19 +2146,27 @@ export const AdminPanelScreen: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-              {isServicosAdminOpen ? 'Recolher seção' : 'Expandir seção'}
-            </span>
-            <div className="p-2 rounded-xl bg-white border border-purple-300 text-slate-700 shadow-2xs">
-              <ChevronDown className={`w-4 h-4 text-purple-900 transition-transform duration-500 ease-out ${isServicosAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-            </div>
+            {canAccessServicos ? (
+              <>
+                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                  {isServicosAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                </span>
+                <div className="p-2 rounded-xl bg-white border border-purple-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-purple-900 transition-transform duration-500 ease-out ${isServicosAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
+              </>
+            ) : (
+              <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                <Lock className="w-4 h-4 text-slate-400" />
+              </div>
+            )}
           </div>
         </button>
 
         {/* Accordion Content com Animação Suave de Altura */}
         <div 
           className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            isServicosAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            canAccessServicos && isServicosAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
           }`}
         >
           <div className="min-h-0 overflow-hidden bg-purple-50/50 p-5 sm:p-6 space-y-5">
@@ -2172,26 +2315,41 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 4: MODERAÇÃO DE EVENTOS & MURAL DE CELEBRAÇÕES (AZUL PASTEL CLARINHO) */}
       {/* ========================================================================= */}
-      <div className="bg-sky-50/80 border-2 border-sky-300 rounded-3xl shadow-md overflow-hidden">
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+        canAccessEventos ? 'bg-sky-50/80 border-sky-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+      }`}>
         
         {/* Accordion Header */}
         <button
           type="button"
-          onClick={() => setIsEventosAdminOpen(prev => !prev)}
-          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left focus:outline-none bg-sky-100/90 hover:bg-sky-200/70 transition-colors cursor-pointer border-b border-sky-200 select-none active:scale-[0.999]"
+          disabled={!canAccessEventos}
+          onClick={() => canAccessEventos && setIsEventosAdminOpen(prev => !prev)}
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left focus:outline-none border-b transition-colors select-none ${
+            canAccessEventos 
+              ? 'bg-sky-100/90 hover:bg-sky-200/70 border-sky-200 cursor-pointer active:scale-[0.999]' 
+              : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+          }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-950 border border-sky-400/40 flex items-center justify-center shrink-0">
-              <PartyPopper className="w-5 h-5 text-sky-800" />
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+              canAccessEventos ? 'bg-sky-500/20 text-sky-950 border-sky-400/40' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+            }`}>
+              {canAccessEventos ? <PartyPopper className="w-5 h-5 text-sky-800" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="font-black text-sm sm:text-base text-slate-950">
                   4. Moderação de Eventos & Mural Comunitário
                 </h2>
-                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-sky-200 text-sky-950 border border-sky-300 shadow-2xs">
-                  {eventos.length} {eventos.length === 1 ? 'evento' : 'eventos'}
-                </span>
+                {canAccessEventos ? (
+                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-sky-200 text-sky-950 border border-sky-300 shadow-2xs">
+                    {eventos.length} {eventos.length === 1 ? 'evento' : 'eventos'}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-700 font-medium">
                 Receba, aprove, tire do ar e notifique moradores sobre celebrações públicas ou particulares.
@@ -2200,27 +2358,35 @@ export const AdminPanelScreen: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEventoToEditInAdmin(null);
-                setIsCreateEditEventoAdminOpen(true);
-              }}
-              className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-black uppercase flex items-center gap-1 shadow-xs cursor-pointer active:scale-95"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" /> Novo Evento
-            </button>
-            <div className="p-2 rounded-xl bg-white border border-sky-300 text-slate-700 shadow-2xs">
-              <ChevronDown className={`w-4 h-4 text-sky-900 transition-transform duration-500 ease-out ${isEventosAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-            </div>
+            {canAccessEventos ? (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEventoToEditInAdmin(null);
+                    setIsCreateEditEventoAdminOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-black uppercase flex items-center gap-1 shadow-xs cursor-pointer active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[3]" /> Novo Evento
+                </button>
+                <div className="p-2 rounded-xl bg-white border border-sky-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-sky-900 transition-transform duration-500 ease-out ${isEventosAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
+              </>
+            ) : (
+              <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                <Lock className="w-4 h-4 text-slate-400" />
+              </div>
+            )}
           </div>
         </button>
 
         {/* Accordion Content com Animação Suave de Altura */}
         <div 
           className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            isEventosAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            canAccessEventos && isEventosAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
           }`}
         >
           <div className="min-h-0 overflow-hidden bg-sky-50/70 p-4 sm:p-6 space-y-4">
@@ -2408,26 +2574,41 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 5: GESTÃO DE ASSEMBLEIAS & REUNIÕES INFORMAIS (ROSA PASTEL) */}
       {/* ========================================================================= */}
-      <div className="bg-rose-50/70 border-2 border-rose-300 rounded-3xl shadow-md overflow-hidden">
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+        canAccessAssembleias ? 'bg-rose-50/70 border-rose-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+      }`}>
         
         {/* Accordion Header */}
         <button
           type="button"
-          onClick={() => setIsAssembleiasAdminOpen(prev => !prev)}
-          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left focus:outline-none bg-rose-100/90 hover:bg-rose-200/70 transition-colors cursor-pointer border-b border-rose-200 select-none active:scale-[0.999]"
+          disabled={!canAccessAssembleias}
+          onClick={() => canAccessAssembleias && setIsAssembleiasAdminOpen(prev => !prev)}
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+            canAccessAssembleias
+              ? 'bg-rose-100/90 hover:bg-rose-200/70 border-rose-200 cursor-pointer active:scale-[0.999]'
+              : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+          }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-950 border border-rose-400/40 flex items-center justify-center shrink-0">
-              <Gavel className="w-5 h-5 text-rose-800" />
+            <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${
+              canAccessAssembleias ? 'bg-rose-500/20 border-rose-400/40 text-rose-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+            }`}>
+              {canAccessAssembleias ? <Gavel className="w-5 h-5 text-rose-800" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="font-black text-sm sm:text-base text-slate-950">
                   5. Gestão de Assembleias & Reuniões Informais
                 </h2>
-                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-950 border border-rose-300 shadow-2xs">
-                  {assembleias.length} {assembleias.length === 1 ? 'reunião' : 'reuniões'}
-                </span>
+                {canAccessAssembleias ? (
+                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-950 border border-rose-300 shadow-2xs">
+                    {assembleias.length} {assembleias.length === 1 ? 'reunião' : 'reuniões'}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-700 font-medium">
                 Agende assembleias gerais ou reuniões específicas, vincule reclamações/reparos e publique atas com soluções.
@@ -2436,27 +2617,35 @@ export const AdminPanelScreen: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setAssembleiaToEditInAdmin(null);
-                setIsCreateEditAssembleiaAdminOpen(true);
-              }}
-              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase flex items-center gap-1 shadow-xs cursor-pointer active:scale-95"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" /> Nova Reunião
-            </button>
-            <div className="p-2 rounded-xl bg-white border border-rose-300 text-slate-700 shadow-2xs">
-              <ChevronDown className={`w-4 h-4 text-rose-900 transition-transform duration-500 ease-out ${isAssembleiasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-            </div>
+            {canAccessAssembleias ? (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAssembleiaToEditInAdmin(null);
+                    setIsCreateEditAssembleiaAdminOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase flex items-center gap-1 shadow-xs cursor-pointer active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[3]" /> Nova Reunião
+                </button>
+                <div className="p-2 rounded-xl bg-white border border-rose-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-rose-900 transition-transform duration-500 ease-out ${isAssembleiasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
+              </>
+            ) : (
+              <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                <Lock className="w-4 h-4 text-slate-400" />
+              </div>
+            )}
           </div>
         </button>
 
         {/* Accordion Content com Animação Suave de Altura */}
         <div 
           className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            isAssembleiasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            canAccessAssembleias && isAssembleiasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
           }`}
         >
           <div className="min-h-0 overflow-hidden bg-rose-50/50 p-4 sm:p-6 space-y-5">
@@ -2832,29 +3021,46 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 6: MODERAÇÃO DE RECLAMAÇÕES & OCORRÊNCIAS DOS MORADORES (LARANJA PASTEL) */}
       {/* ========================================================================= */}
-      <div className="bg-orange-50/70 border-2 border-orange-300 rounded-3xl shadow-md overflow-hidden">
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+        canAccessReclamacoes ? 'bg-orange-50/70 border-orange-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+      }`}>
         
         {/* Accordion Header */}
         <button
           type="button"
-          onClick={() => setIsReclamacoesAdminOpen(!isReclamacoesAdminOpen)}
-          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-orange-100/90 hover:bg-orange-200/70 transition-colors text-left cursor-pointer border-b border-orange-200 select-none active:scale-[0.999]"
+          disabled={!canAccessReclamacoes}
+          onClick={() => canAccessReclamacoes && setIsReclamacoesAdminOpen(!isReclamacoesAdminOpen)}
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+            canAccessReclamacoes
+              ? 'bg-orange-100/90 hover:bg-orange-200/70 border-orange-200 cursor-pointer active:scale-[0.999]'
+              : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+          }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-950 border border-orange-400/40 flex items-center justify-center shrink-0">
-              <MessageSquare className="w-5 h-5 text-orange-800" />
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+              canAccessReclamacoes ? 'bg-orange-500/20 border-orange-400/40 text-orange-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+            }`}>
+              {canAccessReclamacoes ? <MessageSquare className="w-5 h-5 text-orange-800" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-black text-slate-950 tracking-tight">
                   6. Moderação de Reclamações & Ocorrências
                 </h3>
-                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-orange-200 text-orange-950 border border-orange-300 shadow-2xs">
-                  {reclamacoes.length} Ocorrência(s)
-                </span>
-                {reclamacoes.filter(r => r.status === 'Recebida' || r.status === 'Em análise').length > 0 && (
-                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300 animate-pulse">
-                    {reclamacoes.filter(r => r.status === 'Recebida' || r.status === 'Em análise').length} Pendente(s)
+                {canAccessReclamacoes ? (
+                  <>
+                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-orange-200 text-orange-950 border border-orange-300 shadow-2xs">
+                      {reclamacoes.length} Ocorrência(s)
+                    </span>
+                    {reclamacoes.filter(r => r.status === 'Recebida' || r.status === 'Em análise').length > 0 && (
+                      <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300 animate-pulse">
+                        {reclamacoes.filter(r => r.status === 'Recebida' || r.status === 'Em análise').length} Pendente(s)
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
                   </span>
                 )}
               </div>
@@ -2864,15 +3070,23 @@ export const AdminPanelScreen: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-2 rounded-xl bg-white border border-orange-300 text-slate-700 shadow-2xs">
-            <ChevronDown className={`w-4 h-4 text-orange-900 transition-transform duration-500 ease-out ${isReclamacoesAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+          <div className="flex items-center gap-2">
+            {canAccessReclamacoes ? (
+              <div className="p-2 rounded-xl bg-white border border-orange-300 text-slate-700 shadow-2xs">
+                <ChevronDown className={`w-4 h-4 text-orange-900 transition-transform duration-500 ease-out ${isReclamacoesAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+              </div>
+            ) : (
+              <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                <Lock className="w-4 h-4 text-slate-400" />
+              </div>
+            )}
           </div>
         </button>
 
         {/* Accordion Body com Animação Suave de Altura */}
         <div 
           className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            isReclamacoesAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            canAccessReclamacoes && isReclamacoesAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
           }`}
         >
           <div className="min-h-0 overflow-hidden bg-orange-50/50 p-4 sm:p-6 space-y-5">
@@ -3392,29 +3606,46 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 7: MODERAÇÃO & GESTÃO DE REPAROS & OBRAS (TEAL/VERDE-ÁGUA PASTEL) */}
       {/* ========================================================================= */}
-      <div className="bg-teal-50/70 border-2 border-teal-300 rounded-3xl shadow-md overflow-hidden">
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+        canAccessReparos ? 'bg-teal-50/70 border-teal-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+      }`}>
         
         {/* Accordion Header */}
         <button
           type="button"
-          onClick={() => setIsReparosAdminOpen(prev => !prev)}
-          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-teal-100/90 hover:bg-teal-200/70 transition-colors text-left cursor-pointer border-b border-teal-200 select-none active:scale-[0.999]"
+          disabled={!canAccessReparos}
+          onClick={() => canAccessReparos && setIsReparosAdminOpen(prev => !prev)}
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+            canAccessReparos
+              ? 'bg-teal-100/90 hover:bg-teal-200/70 border-teal-200 cursor-pointer active:scale-[0.999]'
+              : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+          }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-950 border border-teal-400/40 flex items-center justify-center shrink-0">
-              <Wrench className="w-5 h-5 text-teal-800" />
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+              canAccessReparos ? 'bg-teal-500/20 border-teal-400/40 text-teal-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+            }`}>
+              {canAccessReparos ? <Wrench className="w-5 h-5 text-teal-800" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-black text-base text-slate-950 tracking-tight">
                   7. Moderação & Gestão de Reparos & Manutenções
                 </h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-teal-200 text-teal-950 border border-teal-300 text-[10px] font-black uppercase shadow-2xs">
-                  {reparos.length} Cadastrado(s)
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300 text-[10px] font-black uppercase shadow-2xs">
-                  {reparos.filter(r => r.status !== 'Resolvido' && r.status !== 'Cancelado').length} Em Aberto
-                </span>
+                {canAccessReparos ? (
+                  <>
+                    <span className="px-2.5 py-0.5 rounded-full bg-teal-200 text-teal-950 border border-teal-300 text-[10px] font-black uppercase shadow-2xs">
+                      {reparos.length} Cadastrado(s)
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300 text-[10px] font-black uppercase shadow-2xs">
+                      {reparos.filter(r => r.status !== 'Resolvido' && r.status !== 'Cancelado').length} Em Aberto
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-700 font-medium mt-0.5">
                 Altere status de obras, aprove cotações, modere comentários e resolva reparos simples em 1 clique.
@@ -3422,15 +3653,23 @@ export const AdminPanelScreen: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-2 rounded-xl bg-white border border-teal-300 text-slate-700 shadow-2xs">
-            <ChevronDown className={`w-4 h-4 text-teal-900 transition-transform duration-500 ease-out ${isReparosAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+          <div className="flex items-center gap-2">
+            {canAccessReparos ? (
+              <div className="p-2 rounded-xl bg-white border border-teal-300 text-slate-700 shadow-2xs">
+                <ChevronDown className={`w-4 h-4 text-teal-900 transition-transform duration-500 ease-out ${isReparosAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+              </div>
+            ) : (
+              <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                <Lock className="w-4 h-4 text-slate-400" />
+              </div>
+            )}
           </div>
         </button>
 
         {/* Accordion Body com Animação Suave de Altura */}
         <div 
           className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            isReparosAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            canAccessReparos && isReparosAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
           }`}
         >
           <div className="min-h-0 overflow-hidden bg-teal-50/50 p-4 sm:p-6 space-y-5">
@@ -4276,33 +4515,50 @@ export const AdminPanelScreen: React.FC = () => {
         const isSaldoPositivo = (mesAtualContas.saldo || 0) >= 0;
 
         return (
-          <div className="bg-emerald-50/70 border-2 border-emerald-300 rounded-3xl shadow-md overflow-hidden">
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+            canAccessFinanceiro ? 'bg-emerald-50/70 border-emerald-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+          }`}>
             
             {/* Accordion Header */}
             <button
               type="button"
-              onClick={() => setIsFinanceiroAdminOpen(!isFinanceiroAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-emerald-100/90 hover:bg-emerald-200/70 transition-colors text-left border-b border-emerald-200 cursor-pointer select-none active:scale-[0.999]"
+              disabled={!canAccessFinanceiro}
+              onClick={() => canAccessFinanceiro && setIsFinanceiroAdminOpen(!isFinanceiroAdminOpen)}
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+                canAccessFinanceiro
+                  ? 'bg-emerald-100/90 hover:bg-emerald-200/70 border-emerald-200 cursor-pointer active:scale-[0.999]'
+                  : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+              }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-950 shrink-0 shadow-xs">
-                  <PieChart className="w-5 h-5 text-emerald-900" />
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-xs ${
+                  canAccessFinanceiro ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                }`}>
+                  {canAccessFinanceiro ? <PieChart className="w-5 h-5 text-emerald-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
                       8. Gestão & Prestação de Contas Financeiras (Mês a Mês)
                     </h3>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
-                      {selectedMesFinanceiro}
-                    </span>
-                    <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs ${
-                      isSaldoPositivo
-                        ? 'bg-emerald-600 text-white border-emerald-700'
-                        : 'bg-rose-600 text-white border-rose-700'
-                    }`}>
-                      Saldo: R$ {(mesAtualContas.saldo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
+                    {canAccessFinanceiro ? (
+                      <>
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
+                          {selectedMesFinanceiro}
+                        </span>
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                          isSaldoPositivo
+                            ? 'bg-emerald-600 text-white border-emerald-700'
+                            : 'bg-rose-600 text-white border-rose-700'
+                        }`}>
+                          Saldo: R$ {(mesAtualContas.saldo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-700 font-medium">
                     Cadastre saídas, comprovantes de nota fiscal, entradas, parcelamento e controle de saldo mensal.
@@ -4311,19 +4567,27 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-                  {isFinanceiroAdminOpen ? 'Recolher seção' : 'Expandir seção'}
-                </span>
-                <div className="p-2 rounded-xl bg-white border border-emerald-300 text-slate-700 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-emerald-900 transition-transform duration-500 ease-out ${isFinanceiroAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-                </div>
+                {canAccessFinanceiro ? (
+                  <>
+                    <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                      {isFinanceiroAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                    </span>
+                    <div className="p-2 rounded-xl bg-white border border-emerald-300 text-slate-700 shadow-2xs">
+                      <ChevronDown className={`w-4 h-4 text-emerald-900 transition-transform duration-500 ease-out ${isFinanceiroAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                    <Lock className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
               </div>
             </button>
 
             {/* Accordion Body */}
             <div 
               className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                isFinanceiroAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                canAccessFinanceiro && isFinanceiroAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
               <div className="min-h-0 overflow-hidden bg-emerald-50/50 p-4 sm:p-6 space-y-6">
@@ -5001,26 +5265,41 @@ export const AdminPanelScreen: React.FC = () => {
         });
 
         return (
-          <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl shadow-md overflow-hidden">
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+            canAccessRegras ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+          }`}>
             
             {/* Accordion Header */}
             <button
               type="button"
-              onClick={() => setIsRegrasAdminOpen(!isRegrasAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-100/90 hover:bg-amber-200/70 transition-colors text-left border-b border-amber-200 cursor-pointer select-none active:scale-[0.999]"
+              disabled={!canAccessRegras}
+              onClick={() => canAccessRegras && setIsRegrasAdminOpen(!isRegrasAdminOpen)}
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+                canAccessRegras
+                  ? 'bg-amber-100/90 hover:bg-amber-200/70 border-amber-200 cursor-pointer active:scale-[0.999]'
+                  : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+              }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-950 shrink-0">
-                  <BookOpen className="w-5 h-5 text-amber-900" />
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+                  canAccessRegras ? 'bg-amber-500/20 border-amber-400/40 text-amber-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                }`}>
+                  {canAccessRegras ? <BookOpen className="w-5 h-5 text-amber-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
                       9. Regulamento & Regras do Condomínio
                     </h3>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
-                      {regrasCondominio.length} Tópicos & Normas
-                    </span>
+                    {canAccessRegras ? (
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
+                        {regrasCondominio.length} Tópicos & Normas
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-700 font-medium">
                     Crie e edite as regras com formatação rica (negrito, listas numeradas, parágrafos) que geram cards aos moradores.
@@ -5029,19 +5308,27 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-                  {isRegrasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
-                </span>
-                <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isRegrasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-                </div>
+                {canAccessRegras ? (
+                  <>
+                    <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                      {isRegrasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                    </span>
+                    <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
+                      <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isRegrasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                    <Lock className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
               </div>
             </button>
 
             {/* Accordion Content */}
             <div 
               className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                isRegrasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                canAccessRegras && isRegrasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
               <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
@@ -5300,26 +5587,41 @@ export const AdminPanelScreen: React.FC = () => {
         };
 
         return (
-          <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl shadow-md overflow-hidden">
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+            canAccessImoveis ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+          }`}>
             
             {/* Accordion Header */}
             <button
               type="button"
-              onClick={() => setIsUnidadesDisponiveisSectionOpen(!isUnidadesDisponiveisSectionOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-amber-100/90 hover:bg-amber-200/70 transition-colors text-left border-b border-amber-200 cursor-pointer select-none active:scale-[0.999]"
+              disabled={!canAccessImoveis}
+              onClick={() => canAccessImoveis && setIsUnidadesDisponiveisSectionOpen(!isUnidadesDisponiveisSectionOpen)}
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+                canAccessImoveis
+                  ? 'bg-amber-100/90 hover:bg-amber-200/70 border-amber-200 cursor-pointer active:scale-[0.999]'
+                  : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+              }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-950 shrink-0">
-                  <Building2 className="w-5 h-5 text-amber-900" />
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+                  canAccessImoveis ? 'bg-amber-500/20 border-amber-400/40 text-amber-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                }`}>
+                  {canAccessImoveis ? <Building2 className="w-5 h-5 text-amber-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
                       10. Gestão de Unidades Disponíveis (Aluguel & Venda)
                     </h3>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
-                      {unidadesDisponiveis.length} Anúncios Ativos
-                    </span>
+                    {canAccessImoveis ? (
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
+                        {unidadesDisponiveis.length} Anúncios Ativos
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-700 font-medium">
                     Cadastre, edite e modere apartamentos para locação e venda disponíveis no condomínio.
@@ -5328,19 +5630,27 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-                  {isUnidadesDisponiveisSectionOpen ? 'Recolher seção' : 'Expandir seção'}
-                </span>
-                <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isUnidadesDisponiveisSectionOpen ? 'rotate-180' : 'rotate-0'}`} />
-                </div>
+                {canAccessImoveis ? (
+                  <>
+                    <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                      {isUnidadesDisponiveisSectionOpen ? 'Recolher seção' : 'Expandir seção'}
+                    </span>
+                    <div className="p-2 rounded-xl bg-white border border-amber-300 text-slate-700 shadow-2xs">
+                      <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isUnidadesDisponiveisSectionOpen ? 'rotate-180' : 'rotate-0'}`} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                    <Lock className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
               </div>
             </button>
 
             {/* Accordion Content */}
             <div 
               className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                isUnidadesDisponiveisSectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                canAccessImoveis && isUnidadesDisponiveisSectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
               <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
@@ -5612,26 +5922,41 @@ export const AdminPanelScreen: React.FC = () => {
         const totalOrcadasAdmin = servicosContratados.filter(s => s.status === 'Orçada').length;
 
         return (
-          <div className="bg-sky-50/70 border-2 border-sky-300 rounded-3xl shadow-md overflow-hidden">
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+            canAccessFornecedores ? 'bg-sky-50/70 border-sky-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+          }`}>
             
             {/* Accordion Header */}
             <button
               type="button"
-              onClick={() => setIsFornecedoresSectionOpen(!isFornecedoresSectionOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-sky-100/90 hover:bg-sky-200/70 transition-colors text-left border-b border-sky-200 cursor-pointer select-none active:scale-[0.999]"
+              disabled={!canAccessFornecedores}
+              onClick={() => canAccessFornecedores && setIsFornecedoresSectionOpen(!isFornecedoresSectionOpen)}
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+                canAccessFornecedores
+                  ? 'bg-sky-100/90 hover:bg-sky-200/70 border-sky-200 cursor-pointer active:scale-[0.999]'
+                  : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+              }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-950 shrink-0">
-                  <Briefcase className="w-5 h-5 text-sky-900" />
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+                  canAccessFornecedores ? 'bg-sky-500/20 border-sky-400/40 text-sky-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                }`}>
+                  {canAccessFornecedores ? <Briefcase className="w-5 h-5 text-sky-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
                       11. Gestão de Fornecedores & Serviços Contratados
                     </h3>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-sky-200 text-sky-950 border border-sky-300">
-                      {servicosContratados.length} empresas
-                    </span>
+                    {canAccessFornecedores ? (
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-sky-200 text-sky-950 border border-sky-300">
+                        {servicosContratados.length} empresas
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-700 font-medium">
                     Cadastre, edite e organize empresas contratadas e cotações por categoria (Elevadores, Paisagismo, Elétrica, Segurança, etc.)
@@ -5640,19 +5965,27 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-                  {isFornecedoresSectionOpen ? 'Recolher seção' : 'Expandir seção'}
-                </span>
-                <div className="p-2 rounded-xl bg-white border border-sky-300 text-slate-700 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-sky-900 transition-transform duration-500 ease-out ${isFornecedoresSectionOpen ? 'rotate-180' : 'rotate-0'}`} />
-                </div>
+                {canAccessFornecedores ? (
+                  <>
+                    <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                      {isFornecedoresSectionOpen ? 'Recolher seção' : 'Expandir seção'}
+                    </span>
+                    <div className="p-2 rounded-xl bg-white border border-sky-300 text-slate-700 shadow-2xs">
+                      <ChevronDown className={`w-4 h-4 text-sky-900 transition-transform duration-500 ease-out ${isFornecedoresSectionOpen ? 'rotate-180' : 'rotate-0'}`} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                    <Lock className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
               </div>
             </button>
 
             {/* Accordion Content */}
             <div 
               className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                isFornecedoresSectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                canAccessFornecedores && isFornecedoresSectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
               <div className="min-h-0 overflow-hidden bg-sky-50/50 p-4 sm:p-6 space-y-6">
@@ -5922,26 +6255,41 @@ export const AdminPanelScreen: React.FC = () => {
         const totalSuspensosAdmin = itensEnjoei.filter(i => i.status === 'suspenso').length;
 
         return (
-          <div className="bg-rose-50/70 border-2 border-rose-300 rounded-3xl shadow-md overflow-hidden">
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+            canAccessEnjoei ? 'bg-rose-50/70 border-rose-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+          }`}>
             
             {/* Accordion Header */}
             <button
               type="button"
-              onClick={() => setIsEnjoeiAdminOpen(!isEnjoeiAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-rose-100/90 hover:bg-rose-200/70 transition-colors text-left border-b border-rose-200 cursor-pointer select-none active:scale-[0.999]"
+              disabled={!canAccessEnjoei}
+              onClick={() => canAccessEnjoei && setIsEnjoeiAdminOpen(!isEnjoeiAdminOpen)}
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+                canAccessEnjoei
+                  ? 'bg-rose-100/90 hover:bg-rose-200/70 border-rose-200 cursor-pointer active:scale-[0.999]'
+                  : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+              }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center text-rose-950 shrink-0">
-                  <ShoppingBag className="w-5 h-5 text-rose-900" />
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+                  canAccessEnjoei ? 'bg-rose-500/20 border-rose-400/40 text-rose-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                }`}>
+                  {canAccessEnjoei ? <ShoppingBag className="w-5 h-5 text-rose-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
                       12. Gestão & Moderação do Enjoei do Condomínio
                     </h3>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-rose-200 text-rose-950 border border-rose-300">
-                      {itensEnjoei.length} anúncios
-                    </span>
+                    {canAccessEnjoei ? (
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-rose-200 text-rose-950 border border-rose-300">
+                        {itensEnjoei.length} anúncios
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-700 font-medium">
                     Modere desapegos, vendas, doações e trocas entre moradores. Suspenda anúncios irregulares com notificação automática.
@@ -5950,19 +6298,27 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-                  {isEnjoeiAdminOpen ? 'Recolher seção' : 'Expandir seção'}
-                </span>
-                <div className="p-2 rounded-xl bg-white border border-rose-300 text-slate-700 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-rose-900 transition-transform duration-500 ease-out ${isEnjoeiAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-                </div>
+                {canAccessEnjoei ? (
+                  <>
+                    <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                      {isEnjoeiAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                    </span>
+                    <div className="p-2 rounded-xl bg-white border border-rose-300 text-slate-700 shadow-2xs">
+                      <ChevronDown className={`w-4 h-4 text-rose-900 transition-transform duration-500 ease-out ${isEnjoeiAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                    <Lock className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
               </div>
             </button>
 
             {/* Accordion Content */}
             <div 
               className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                isEnjoeiAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                canAccessEnjoei && isEnjoeiAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
               <div className="min-h-0 overflow-hidden bg-rose-50/50 p-4 sm:p-6 space-y-6">
@@ -6266,26 +6622,41 @@ export const AdminPanelScreen: React.FC = () => {
         });
 
         return (
-          <div className="bg-emerald-50/70 border-2 border-emerald-300 rounded-3xl shadow-md overflow-hidden">
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+            canAccessDependencias ? 'bg-emerald-50/70 border-emerald-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+          }`}>
             
             {/* Accordion Header */}
             <button
               type="button"
-              onClick={() => setIsDependenciasAdminOpen(!isDependenciasAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-emerald-100/90 hover:bg-emerald-200/70 transition-colors text-left border-b border-emerald-200 cursor-pointer select-none active:scale-[0.999]"
+              disabled={!canAccessDependencias}
+              onClick={() => canAccessDependencias && setIsDependenciasAdminOpen(!isDependenciasAdminOpen)}
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+                canAccessDependencias
+                  ? 'bg-emerald-100/90 hover:bg-emerald-200/70 border-emerald-200 cursor-pointer active:scale-[0.999]'
+                  : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+              }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-950 shrink-0">
-                  <Building2 className="w-5 h-5 text-emerald-900" />
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+                  canAccessDependencias ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                }`}>
+                  {canAccessDependencias ? <Building2 className="w-5 h-5 text-emerald-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
                       13. Gestão de Dependências & Áreas Comuns
                     </h3>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
-                      {dependencias.length} espaços
-                    </span>
+                    {canAccessDependencias ? (
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
+                        {dependencias.length} espaços
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-700 font-medium">
                     Cadastre, edite fotos, regras de uso, horários, capacidade e taxas de agendamento de cada espaço do condomínio.
@@ -6294,19 +6665,27 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-                  {isDependenciasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
-                </span>
-                <div className="p-2 rounded-xl bg-white border border-emerald-300 text-slate-700 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-emerald-900 transition-transform duration-500 ease-out ${isDependenciasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-                </div>
+                {canAccessDependencias ? (
+                  <>
+                    <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                      {isDependenciasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                    </span>
+                    <div className="p-2 rounded-xl bg-white border border-emerald-300 text-slate-700 shadow-2xs">
+                      <ChevronDown className={`w-4 h-4 text-emerald-900 transition-transform duration-500 ease-out ${isDependenciasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                    <Lock className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
               </div>
             </button>
 
             {/* Accordion Content */}
             <div 
               className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                isDependenciasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                canAccessDependencias && isDependenciasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
               <div className="min-h-0 overflow-hidden bg-emerald-50/50 p-4 sm:p-6 space-y-6">
@@ -6576,29 +6955,46 @@ export const AdminPanelScreen: React.FC = () => {
         });
 
         return (
-          <div className="bg-orange-50/70 border-2 border-orange-300 rounded-3xl shadow-md overflow-hidden">
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+            canAccessMudancas ? 'bg-orange-50/70 border-orange-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+          }`}>
             
             {/* Accordion Header */}
             <button
               type="button"
-              onClick={() => setIsMudancasAdminOpen(!isMudancasAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-orange-100/90 hover:bg-orange-200/70 transition-colors text-left border-b border-orange-200 cursor-pointer select-none active:scale-[0.999]"
+              disabled={!canAccessMudancas}
+              onClick={() => canAccessMudancas && setIsMudancasAdminOpen(!isMudancasAdminOpen)}
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+                canAccessMudancas
+                  ? 'bg-orange-100/90 hover:bg-orange-200/70 border-orange-200 cursor-pointer active:scale-[0.999]'
+                  : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+              }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-400/40 flex items-center justify-center text-orange-950 shrink-0">
-                  <Truck className="w-5 h-5 text-orange-900" />
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+                  canAccessMudancas ? 'bg-orange-500/20 border-orange-400/40 text-orange-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                }`}>
+                  {canAccessMudancas ? <Truck className="w-5 h-5 text-orange-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
                       14. Gestão & Autorização de Mudanças
                     </h3>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-orange-200 text-orange-950 border border-orange-300">
-                      {mudancas.length} agendadas
-                    </span>
-                    {totalPendentes > 0 && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-500 text-slate-950 animate-pulse">
-                        ⚠️ {totalPendentes} pendentes
+                    {canAccessMudancas ? (
+                      <>
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-orange-200 text-orange-950 border border-orange-300">
+                          {mudancas.length} agendadas
+                        </span>
+                        {totalPendentes > 0 && (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-500 text-slate-950 animate-pulse">
+                            ⚠️ {totalPendentes} pendentes
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
                       </span>
                     )}
                   </div>
@@ -6609,19 +7005,27 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-                  {isMudancasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
-                </span>
-                <div className="p-2 rounded-xl bg-white border border-orange-300 text-slate-700 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-orange-900 transition-transform duration-500 ease-out ${isMudancasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-                </div>
+                {canAccessMudancas ? (
+                  <>
+                    <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                      {isMudancasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                    </span>
+                    <div className="p-2 rounded-xl bg-white border border-orange-300 text-slate-700 shadow-2xs">
+                      <ChevronDown className={`w-4 h-4 text-orange-900 transition-transform duration-500 ease-out ${isMudancasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                    <Lock className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
               </div>
             </button>
 
             {/* Accordion Content */}
             <div 
               className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                isMudancasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                canAccessMudancas && isMudancasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
               <div className="min-h-0 overflow-hidden bg-orange-50/50 p-4 sm:p-6 space-y-6">
@@ -6838,29 +7242,46 @@ export const AdminPanelScreen: React.FC = () => {
         });
 
         return (
-          <div className="bg-indigo-50/70 border-2 border-indigo-300 rounded-3xl shadow-md overflow-hidden">
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
+            canAccessPortaria ? 'bg-indigo-50/70 border-indigo-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+          }`}>
             
             {/* Accordion Header */}
             <button
               type="button"
-              onClick={() => setIsPortariaAdminOpen(!isPortariaAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 bg-indigo-100/90 hover:bg-indigo-200/70 transition-colors text-left border-b border-indigo-200 cursor-pointer select-none active:scale-[0.999]"
+              disabled={!canAccessPortaria}
+              onClick={() => canAccessPortaria && setIsPortariaAdminOpen(!isPortariaAdminOpen)}
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
+                canAccessPortaria
+                  ? 'bg-indigo-100/90 hover:bg-indigo-200/70 border-indigo-200 cursor-pointer active:scale-[0.999]'
+                  : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+              }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-indigo-950 shrink-0">
-                  <PackageCheck className="w-5 h-5 text-indigo-900" />
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+                  canAccessPortaria ? 'bg-indigo-500/20 border-indigo-400/40 text-indigo-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                }`}>
+                  {canAccessPortaria ? <PackageCheck className="w-5 h-5 text-indigo-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
                       15. Gestão da Portaria: Acessos, Visitas & Encomendas
                     </h3>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-950 border border-indigo-300">
-                      {autorizacoesAcesso.length} acessos • {encomendasEntregas.length} encomendas
-                    </span>
-                    {totalEncomendasPendentes > 0 && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 animate-pulse">
-                        📦 {totalEncomendasPendentes} a retirar
+                    {canAccessPortaria ? (
+                      <>
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-950 border border-indigo-300">
+                          {autorizacoesAcesso.length} acessos • {encomendasEntregas.length} encomendas
+                        </span>
+                        {totalEncomendasPendentes > 0 && (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 animate-pulse">
+                            📦 {totalEncomendasPendentes} a retirar
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
                       </span>
                     )}
                   </div>
@@ -6871,19 +7292,27 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-                  {isPortariaAdminOpen ? 'Recolher seção' : 'Expandir seção'}
-                </span>
-                <div className="p-2 rounded-xl bg-white border border-indigo-300 text-slate-700 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-indigo-900 transition-transform duration-500 ease-out ${isPortariaAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-                </div>
+                {canAccessPortaria ? (
+                  <>
+                    <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                      {isPortariaAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                    </span>
+                    <div className="p-2 rounded-xl bg-white border border-indigo-300 text-slate-700 shadow-2xs">
+                      <ChevronDown className={`w-4 h-4 text-indigo-900 transition-transform duration-500 ease-out ${isPortariaAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                    <Lock className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
               </div>
             </button>
 
             {/* Accordion Content */}
             <div 
               className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                isPortariaAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                canAccessPortaria && isPortariaAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
               <div className="min-h-0 overflow-hidden bg-indigo-50/50 p-4 sm:p-6 space-y-6">

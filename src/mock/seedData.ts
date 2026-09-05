@@ -2400,7 +2400,7 @@ export const MOCK_FUNCIONARIOS: Funcionario[] = [
     senha: 'ademar@condominio.com',
     senhaPadraoAlterada: false,
     tipoAcesso: 'personalizado',
-    permissoesModulos: ['portaria', 'mudancas'],
+    permissoesModulos: ['portaria'],
     avaliacoesCount: 28,
     mediaNota: 4.9,
     condominioId: CURRENT_CONDO_ID
