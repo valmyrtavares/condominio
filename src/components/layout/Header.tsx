@@ -11,12 +11,15 @@ import {
   X,
   ChevronRight,
   Shield,
-  Bell
+  Bell,
+  HardHat,
+  UserCheck
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const { 
     currentUser, 
+    currentCondo,
     toggleRole, 
     setIsDrawerOpen, 
     currentScreen, 
@@ -141,23 +144,32 @@ export const Header: React.FC = () => {
               </button>
             )}
 
-            {/* Resident Name - Opens Logout / Profile Modal */}
+            {/* User / Resident / Admin / Collaborator Name - Opens Logout / Profile Modal */}
             <div className="relative">
               <button
                 onClick={() => setIsProfileOpen(true)}
-                className={`flex items-center gap-2 text-sm font-medium tracking-tight transition-all active:scale-95 px-2.5 py-1.5 rounded-2xl ${
+                className={`flex items-center gap-2 text-sm font-semibold tracking-tight transition-all active:scale-95 px-3 py-1.5 rounded-2xl ${
                   isHome 
-                    ? 'text-white/90 hover:text-white bg-black/20 hover:bg-black/35 backdrop-blur-sm border border-white/20' 
-                    : 'text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200/80 border border-slate-200'
+                    ? 'text-white/90 hover:text-white bg-black/25 hover:bg-black/40 backdrop-blur-sm border border-white/20' 
+                    : 'text-slate-800 hover:text-slate-950 bg-slate-100 hover:bg-slate-200/80 border border-slate-300 shadow-2xs'
                 }`}
                 title="Gerenciar perfil e sessão"
               >
                 {currentUser.role === 'subsindico' ? (
-                  <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                  <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
+                ) : currentUser.role === 'sindico' ? (
+                  <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
+                ) : currentUser.role === 'colaborador' ? (
+                  <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                 ) : (
-                  <User className="w-4 h-4 text-white/80 shrink-0" />
+                  <User className="w-4 h-4 text-slate-600 shrink-0" />
                 )}
-                <span className="font-normal">{formattedName}</span>
+                <span className="font-semibold">{formattedName}</span>
+                {currentUser.role === 'colaborador' && (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-200 text-amber-950 border border-amber-300">
+                    {currentUser.profissao ? currentUser.profissao.split(' ')[0] : 'Colaborador'}
+                  </span>
+                )}
               </button>
 
               {/* Ponto Vermelho Indicador no Alto do Aplicativo (Conforme Imagem 2) */}
@@ -266,6 +278,10 @@ export const Header: React.FC = () => {
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-900 shadow-inner">
                   {currentUser.role === 'subsindico' ? (
                     <ShieldAlert className="w-6 h-6 text-amber-700" />
+                  ) : currentUser.role === 'sindico' ? (
+                    <ShieldCheck className="w-6 h-6 text-indigo-700" />
+                  ) : currentUser.role === 'colaborador' ? (
+                    <UserCheck className="w-6 h-6 text-emerald-700" />
                   ) : (
                     <User className="w-6 h-6 text-slate-800" />
                   )}
@@ -276,7 +292,14 @@ export const Header: React.FC = () => {
                   </h3>
                   <p className="text-xs text-slate-600 font-semibold mt-0.5 flex items-center gap-1.5">
                     <Building2 className="w-3.5 h-3.5 text-slate-500" />
-                    {currentUser.unidade ? `Apt ${currentUser.unidade} (${currentUser.bloco || 'Bloco A'})` : 'Não identificado'}
+                    {currentUser.role === 'colaborador'
+                      ? `${currentUser.profissao || 'Colaborador'} • ${currentCondo?.nome || 'Condomínio'}`
+                      : currentUser.role === 'sindico' || currentUser.role === 'subsindico'
+                      ? `Gestão / Sindicância • ${currentCondo?.nome || 'Condomínio'}`
+                      : currentUser.unidade 
+                      ? `Apt ${currentUser.unidade} (${currentUser.bloco || 'Bloco A'})` 
+                      : 'Não identificado'
+                    }
                   </p>
                 </div>
               </div>
@@ -293,11 +316,21 @@ export const Header: React.FC = () => {
             <div className="px-3.5 py-2 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-between text-xs">
               <span className="text-slate-600 font-bold">Perfil atual:</span>
               <span className={`px-2.5 py-0.5 rounded-full font-black text-[11px] uppercase tracking-wide ${
-                currentUser.role === 'subsindico'
+                currentUser.role === 'sindico'
+                  ? 'bg-indigo-600 text-white'
+                  : currentUser.role === 'subsindico'
                   ? 'bg-amber-500 text-slate-950'
+                  : currentUser.role === 'colaborador'
+                  ? 'bg-emerald-600 text-white'
                   : 'bg-indigo-100 text-indigo-900'
               }`}>
-                {currentUser.role === 'subsindico' ? 'Subsíndica / Admin' : 'Morador'}
+                {currentUser.role === 'sindico'
+                  ? 'Síndico Geral'
+                  : currentUser.role === 'subsindico'
+                  ? 'Subsíndica / Admin'
+                  : currentUser.role === 'colaborador'
+                  ? `Colaborador (${currentUser.profissao || 'Portaria'})`
+                  : 'Morador'}
               </span>
             </div>
 

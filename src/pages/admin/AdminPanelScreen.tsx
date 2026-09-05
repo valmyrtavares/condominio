@@ -491,12 +491,14 @@ export const AdminPanelScreen: React.FC = () => {
 
   const isColaborador = currentUser?.role === 'colaborador';
   const hasModuloPermission = (key: AdminModuloKey): boolean => {
-    if (!currentUser) return true;
+    if (!currentUser) return false;
     if (currentUser.role === 'sindico' || currentUser.role === 'subsindico') return true;
     if (currentUser.role === 'colaborador') {
-      return !!(currentUser.permissoesModulos && currentUser.permissoesModulos.includes(key));
+      const allowed = currentUser.permissoesModulos || [];
+      return allowed.includes(key);
     }
-    return true;
+    // Para visitantes ou moradores sem credencial administrativa, bloqueia tudo
+    return false;
   };
 
   const canAccessDiario = hasModuloPermission('diario-sindico');

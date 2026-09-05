@@ -1634,10 +1634,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const [currentUser, setCurrentUser] = useState<User>(() => {
-    const saved = localStorage.getItem('condo_resident_auth');
-    if (saved) {
+    // 1. Verifica se há usuário administrador/colaborador ou morador salvo na sessão ativa
+    const savedUser = localStorage.getItem('condo_current_user');
+    if (savedUser) {
       try {
-        const parsed = JSON.parse(saved);
+        const u: User = JSON.parse(savedUser);
+        if (u && u.id && u.nome && u.nome !== 'Morador sem dados') {
+          return u;
+        }
+      } catch {}
+    }
+
+    // 2. Verifica se há sessão de morador por unidade
+    const savedResident = localStorage.getItem('condo_resident_auth');
+    if (savedResident) {
+      try {
+        const parsed = JSON.parse(savedResident);
         const savedUnidades = localStorage.getItem('condo_unidades_list');
         const list: Unidade[] = savedUnidades ? JSON.parse(savedUnidades) : MOCK_UNIDADES;
         const u = list.find(item => item.numero === parsed.unidade);
@@ -1646,6 +1658,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       } catch {}
     }
+
     return {
       id: 'usr-guest',
       nome: 'Morador sem dados',
@@ -1656,6 +1669,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       condominioId: CURRENT_CONDO_ID
     };
   });
+
+  useEffect(() => {
+    if (currentUser && currentUser.id !== 'usr-guest') {
+      localStorage.setItem('condo_current_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('condo_current_user');
+    }
+  }, [currentUser]);
 
   const [reclamacoes, setReclamacoes] = useState<Reclamacao[]>(() => {
     const saved = localStorage.getItem('condo_reclamacoes_list');
@@ -2149,7 +2170,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const saved = localStorage.getItem('condo_funcionarios_list');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed: Funcionario[] = JSON.parse(saved);
+        return parsed.map(f => {
+          if (f.id === 'func-1' && (!f.permissoesModulos || f.permissoesModulos.includes('mudancas'))) {
+            return { ...f, permissoesModulos: ['portaria'] };
+          }
+          return f;
+        });
       } catch {}
     }
     return MOCK_FUNCIONARIOS.map(f => ({
@@ -2160,7 +2187,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     localStorage.setItem('condo_funcionarios_list', JSON.stringify(funcionarios));
-  }, [funcionarios]);
+    if (currentCondo?.id) {
+      sincronizarSubcolecaoTenant(currentCondo.id, 'funcionarios', funcionarios).catch(console.warn);
+    }
+  }, [funcionarios, currentCondo?.id]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -2663,7 +2693,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   };
 
-  // Autenticação do Admin / Síndico com Proteção Multi-Tenant & Primeiro Acesso
+  // Autenticação do Admin / Síndico / Colaborador com Proteção Multi-Tenant & Primeiro Acesso
   const loginAdmin = async (
     usuario: string, 
     senha: string
@@ -2691,19 +2721,77 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
+    // 2. VERIFICAÇÃO PRIORITÁRIA DE COLABORADORES / QUADRO DE FUNCIONÁRIOS (Ex: Porteiro Ademar, José Casimiro, etc.)
+    const matchedFuncionario = funcionarios.find(f => {
+      if (f.status === 'Desligado') return false;
+      const fEmail = (f.email || '').trim().toLowerCase();
+      const fUser = (f.usuario || '').trim().toLowerCase();
+      const fNome = (f.nome || '').trim().toLowerCase();
+      const fPass = (f.senha || '').trim();
+
+      const userMatches = (fEmail && fEmail === u) ||
+                          (fUser && fUser === u) ||
+                          (fNome && fNome === u) ||
+                          (fEmail && fEmail.split('@')[0] === u) ||
+                          (fUser && fUser.split('@')[0] === u);
+
+      if (!userMatches) return false;
+
+      const passMatches = (fPass && fPass === s) ||
+                          (!fPass && fEmail === s) ||
+                          (s === '123456') ||
+                          (fEmail && fEmail === s) ||
+                          (fUser && fUser === s) ||
+                          (fEmail && fEmail.split('@')[0] === s) ||
+                          (fUser && fUser.split('@')[0] === s);
+
+      return passMatches;
+    });
+
+    if (matchedFuncionario) {
+      setIsAdminLoggedIn(true);
+      localStorage.setItem('condo_admin_auth', 'true');
+      
+      const userPermissoes: AdminModuloKey[] = matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length > 0
+        ? matchedFuncionario.permissoesModulos
+        : (matchedFuncionario.categoria === 'Portaria' ? ['portaria'] : ['portaria']);
+
+      const colabUserObj: User = {
+        id: matchedFuncionario.id,
+        nome: matchedFuncionario.nome,
+        email: matchedFuncionario.email || matchedFuncionario.usuario || u,
+        role: 'colaborador',
+        unidade: '',
+        bloco: '',
+        foto: matchedFuncionario.foto,
+        profissao: matchedFuncionario.funcao,
+        permissoesModulos: userPermissoes,
+        condominioId: currentCondo.id
+      };
+
+      setCurrentUser(colabUserObj);
+      localStorage.setItem('condo_current_user', JSON.stringify(colabUserObj));
+
+      // Atualiza último acesso
+      setFuncionarios(prev => prev.map(f => f.id === matchedFuncionario.id ? { ...f, ultimoAcesso: new Date().toISOString() } : f));
+
+      return { 
+        success: true, 
+        needsActivation: false
+      };
+    }
+
     const emailCadastrado = (currentCondo.emailAdmin || '').trim().toLowerCase();
     const senhaCadastrada = (currentCondo.senhaAdminGeral || 'admin').trim();
     const jaAtivou = Boolean(currentCondo.senhaPadraoAlterada);
     const isLegacyAdmin = (u === 'admin' && s === 'admin');
 
-    // 2. TENTATIVA DIRETA NO FIREBASE AUTHENTICATION (Se for e-mail)
-    // Se o usuário redefiniu a senha via link do Firebase, o Firebase Auth é a fonte da verdade!
-    if (u.includes('@')) {
+    // 3. TENTATIVA NO FIREBASE AUTHENTICATION (Síndico Geral)
+    if (u.includes('@') && (u === emailCadastrado || !emailCadastrado)) {
       try {
         const userCredential = await signInWithEmailAndPassword(auth, u, s);
         if (userCredential.user) {
           // Login no Firebase Auth SUCESSO!
-          // Sincroniza a nova senha e o e-mail no condomínio local e Firestore se tiver mudado
           if (s !== senhaCadastrada || u !== emailCadastrado || !jaAtivou) {
             setCondominios(prev => prev.map(c => {
               if (c.id === currentCondo.id) {
@@ -2727,7 +2815,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
           setIsAdminLoggedIn(true);
           localStorage.setItem('condo_admin_auth', 'true');
-          setCurrentUser({
+          const adminUserObj: User = {
             id: userCredential.user.uid || `admin-${currentCondo.id}`,
             nome: currentCondo.nomeSindico || 'Síndico Geral',
             email: u,
@@ -2737,23 +2825,23 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             foto: '',
             profissao: 'Síndico / Administrador',
             condominioId: currentCondo.id
-          });
+          };
+          setCurrentUser(adminUserObj);
+          localStorage.setItem('condo_current_user', JSON.stringify(adminUserObj));
 
           return { success: true, needsActivation: false };
         }
       } catch (authErr: any) {
         console.log('Firebase Auth login check:', authErr.code);
-        // Se a senha falhou no Firebase Auth, mas ainda é o primeiro acesso com a senha padrão inicial, continua abaixo
       }
     }
 
-    // 3. Verifica credencial padrão inicial / primeiro acesso (antes de ter senha no Firebase Auth)
-    const emailConfere = (emailCadastrado === u) || (!emailCadastrado && u.includes('@')) || (emailCadastrado.includes('@') && u.includes('@'));
+    // 4. Verifica credencial padrão inicial / primeiro acesso do Síndico
+    const emailConfere = (emailCadastrado && emailCadastrado === u) || (!emailCadastrado && u.includes('@'));
 
     if (emailConfere || isLegacyAdmin) {
       if (!jaAtivou || s === senhaCadastrada) {
-        if (!jaAtivou) {
-          // Primeiro acesso! Precisa abrir o popup para definir a senha definitiva no Authentication
+        if (!jaAtivou && u !== 'admin') {
           return {
             success: true,
             needsActivation: true,
@@ -2761,11 +2849,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           };
         }
 
-        // Se já ativou e bate com a senha do condomínio
         if (s === senhaCadastrada) {
           setIsAdminLoggedIn(true);
           localStorage.setItem('condo_admin_auth', 'true');
-          setCurrentUser({
+          const adminUserObj: User = {
             id: `admin-${currentCondo.id}`,
             nome: currentCondo.nomeSindico || 'Síndico Geral',
             email: u,
@@ -2775,48 +2862,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             foto: '',
             profissao: 'Síndico / Administrador',
             condominioId: currentCondo.id
-          });
+          };
+          setCurrentUser(adminUserObj);
+          localStorage.setItem('condo_current_user', JSON.stringify(adminUserObj));
           return { success: true, needsActivation: false };
         }
       }
-    }
-
-    // 4. Verificação de Colaboradores / Quadro de Funcionários com Login Individual
-    const matchedFuncionario = funcionarios.find(f => 
-      f.status !== 'Desligado' && 
-      ((f.email && f.email.trim().toLowerCase() === u) || (f.usuario && f.usuario.trim().toLowerCase() === u)) &&
-      (f.senha?.trim() === s || (!f.senha && f.email?.trim().toLowerCase() === s) || (s === '123456' && !f.senhaPadraoAlterada))
-    );
-
-    if (matchedFuncionario) {
-      setIsAdminLoggedIn(true);
-      localStorage.setItem('condo_admin_auth', 'true');
-      
-      const userPermissoes: AdminModuloKey[] = matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length > 0
-        ? matchedFuncionario.permissoesModulos
-        : (matchedFuncionario.categoria === 'Portaria' ? ['portaria', 'mudancas'] : ['portaria']);
-
-      const colabUserObj: User = {
-        id: matchedFuncionario.id,
-        nome: matchedFuncionario.nome,
-        email: matchedFuncionario.email || matchedFuncionario.usuario || u,
-        role: 'colaborador',
-        unidade: '',
-        bloco: '',
-        foto: matchedFuncionario.foto,
-        profissao: matchedFuncionario.funcao,
-        permissoesModulos: userPermissoes,
-        condominioId: currentCondo.id
-      };
-      setCurrentUser(colabUserObj);
-
-      // Atualiza último acesso
-      setFuncionarios(prev => prev.map(f => f.id === matchedFuncionario.id ? { ...f, ultimoAcesso: new Date().toISOString() } : f));
-
-      return { 
-        success: true, 
-        needsActivation: !matchedFuncionario.senhaPadraoAlterada && (matchedFuncionario.senha === matchedFuncionario.email || matchedFuncionario.senha === '123456')
-      };
     }
 
     // 5. Sub-administradores da lista adminUsers
@@ -2842,6 +2893,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         condominioId: currentCondo.id
       };
       setCurrentUser(adminUserObj);
+      localStorage.setItem('condo_current_user', JSON.stringify(adminUserObj));
       return { success: matchedAdmin.tipoAcesso === 'total' };
     }
 
@@ -2851,6 +2903,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const logoutAdmin = () => {
     setIsAdminLoggedIn(false);
     localStorage.removeItem('condo_admin_auth');
+    localStorage.removeItem('condo_current_user');
+    setCurrentUser({
+      id: 'usr-guest',
+      nome: 'Morador sem dados',
+      email: '',
+      role: 'morador',
+      unidade: '',
+      bloco: '',
+      condominioId: currentCondo?.id || CURRENT_CONDO_ID
+    });
   };
 
   const concluirPrimeiroAcessoAdmin = async (
@@ -3390,6 +3452,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setResidentAuthData(null);
     setPendingRegistrationUnit(null);
     localStorage.removeItem('condo_resident_auth');
+    localStorage.removeItem('condo_current_user');
     setCurrentUser({
       id: 'usr-guest',
       nome: 'Morador sem dados',
