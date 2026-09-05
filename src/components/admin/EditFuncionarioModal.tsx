@@ -115,17 +115,24 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/75 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-start pt-16 sm:pt-10 pb-24 animate-in fade-in duration-200">
-      <div className="bg-white border-2 border-amber-400 rounded-3xl w-full max-w-xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+      {/* Backdrop overlay */}
+      <div 
+        className="fixed inset-0"
+        onClick={onClose}
+      />
+
+      {/* Modal Card */}
+      <div className="relative w-full max-w-xl max-h-[92vh] sm:max-h-[90vh] bg-white border-2 border-amber-400 rounded-3xl shadow-2xl flex flex-col overflow-hidden z-10 animate-in zoom-in-95 duration-200">
         
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-amber-100 pb-3">
+        {/* Header Fixo */}
+        <div className="shrink-0 p-4 sm:p-5 bg-gradient-to-r from-amber-100 via-amber-50 to-white flex items-center justify-between border-b border-amber-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-900 border border-amber-400/50 flex items-center justify-center shrink-0">
-              <Briefcase className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 border border-amber-400/50 flex items-center justify-center shadow-md font-black shrink-0">
+              <Briefcase className="w-5 h-5 text-slate-950" />
             </div>
             <div>
-              <h3 className="font-black text-base text-slate-950">
+              <h3 className="font-black text-base sm:text-lg text-slate-950 leading-tight">
                 Editar Colaborador / Funcionário
               </h3>
               <p className="text-xs text-slate-600 font-medium">
@@ -135,15 +142,17 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"
+            className="p-2 rounded-xl hover:bg-amber-200/60 text-slate-500 hover:text-slate-950 transition-colors cursor-pointer"
+            aria-label="Fechar"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Scrollable Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-4 pr-1">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           
           {sucesso && (
             <div className="p-3 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs font-bold flex items-center gap-2 animate-in zoom-in-95">
@@ -352,7 +361,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
             </div>
           )}
 
-          {/* Modal Footer */}
+          {/* Botões do Formulário no final do form */}
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
             <button
               type="button"

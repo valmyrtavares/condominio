@@ -59,8 +59,9 @@ export const SuspendServiceModal: React.FC<SuspendServiceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/75 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-start pt-16 sm:pt-10 pb-24 animate-in fade-in duration-200">
-      <div className="bg-white border-2 border-rose-400 rounded-3xl w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="fixed inset-0" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-white border-2 border-rose-400 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 z-10">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">

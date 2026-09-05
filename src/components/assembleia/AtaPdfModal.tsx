@@ -32,8 +32,9 @@ export const AtaPdfModal: React.FC<AtaPdfModalProps> = ({ assembleia, onClose })
   const hashDigital = `SHA256: 4f8a9b2c3d1e7f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a`;
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-slate-950/80 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-start pt-16 sm:pt-10 pb-28 animate-in fade-in duration-200">
-      <div className="bg-slate-100 border border-slate-300 text-slate-900 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col my-auto">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="fixed inset-0" onClick={onClose} />
+      <div className="relative bg-slate-100 border border-slate-300 text-slate-900 rounded-3xl w-full max-w-2xl max-h-[92vh] sm:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col z-10 animate-in zoom-in-95 duration-200">
         
         {/* Header Toolbar do Visualizador PDF */}
         <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">

@@ -159,17 +159,18 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/75 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-start pt-16 sm:pt-10 pb-28 animate-in fade-in duration-200">
-      <div className="bg-white border-2 border-amber-400 rounded-3xl w-full max-w-xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="fixed inset-0" onClick={onClose} />
+      <div className="relative w-full max-w-xl max-h-[92vh] sm:max-h-[90vh] bg-white border-2 border-amber-400 rounded-3xl shadow-2xl flex flex-col overflow-hidden z-10 animate-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-amber-100 pb-3">
+        <div className="shrink-0 p-4 sm:p-5 bg-gradient-to-r from-amber-100 via-amber-50 to-white flex items-center justify-between border-b border-amber-200">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-900 border border-amber-400/50 flex items-center justify-center shrink-0">
-              <PartyPopper className="w-5 h-5 text-amber-600" />
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center shadow-md shrink-0">
+              <PartyPopper className="w-5 h-5 text-slate-950" />
             </div>
             <div>
-              <h3 className="font-black text-base text-slate-950">
+              <h3 className="font-black text-base sm:text-lg text-slate-950 leading-tight">
                 {eventoToEdit ? 'Editar Anúncio de Evento' : 'Anunciar Novo Evento ou Celebração'}
               </h3>
               <p className="text-xs text-slate-600 font-medium">
@@ -179,15 +180,17 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"
+            className="p-2 rounded-xl hover:bg-amber-200/60 text-slate-500 hover:text-slate-950 transition-colors cursor-pointer"
+            aria-label="Fechar"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Formulário */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Scrollable Form */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           
           {/* Título */}
           <div className="space-y-1">
