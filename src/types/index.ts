@@ -728,6 +728,7 @@ export interface CondominioProfile {
   emailAdmin?: string;
   nomeSindico?: string;
   telefoneSindico?: string;
+  senhaPadraoAlterada?: boolean;
   status: StatusCondominio;
   criadoEm: string;
   modeloInicial: ModeloInicialCondominio;

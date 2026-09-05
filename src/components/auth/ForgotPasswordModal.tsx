@@ -11,7 +11,9 @@ import {
   AlertCircle, 
   ArrowLeft,
   Building2,
-  ShieldCheck
+  ShieldCheck,
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 
 interface ForgotPasswordModalProps {
@@ -19,13 +21,15 @@ interface ForgotPasswordModalProps {
   onClose: () => void;
   initialIdentifier?: string;
   onSuccess?: () => void;
+  isAdminMode?: boolean;
 }
 
 export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   isOpen,
   onClose,
   initialIdentifier = '',
-  onSuccess
+  onSuccess,
+  isAdminMode = false
 }) => {
   const { solicitarRecuperacaoSenha, redefinirSenhaComCodigo } = useCondo();
 
@@ -42,26 +46,42 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
   const [codigoSimulado, setCodigoSimulado] = useState('');
+  const [isFirebaseSent, setIsFirebaseSent] = useState(false);
+  const [isCarregando, setIsCarregando] = useState(false);
+
+  React.useEffect(() => {
+    if (initialIdentifier) {
+      setIdentificador(initialIdentifier);
+    }
+  }, [initialIdentifier]);
 
   if (!isOpen) return null;
 
-  const handleRequestCode = (e: React.FormEvent) => {
+  const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
+    setIsCarregando(true);
 
-    const res = solicitarRecuperacaoSenha(identificador);
-    if (!res.success) {
-      setErro(res.message || 'Não foi possível localizar este cadastro.');
-      return;
+    try {
+      const res = await solicitarRecuperacaoSenha(identificador, isAdminMode);
+      if (!res.success) {
+        setErro(res.message || 'Não foi possível localizar este cadastro.');
+        return;
+      }
+
+      setEmailMascarado(res.emailMascarado || '');
+      setCodigoSimulado(res.codigoSimulado || '123456');
+      setCodigo(res.codigoSimulado || '123456'); // pre-fill for convenient validation
+      setIsFirebaseSent(Boolean(res.isFirebaseSent));
+      setStep('verify');
+    } catch (err: any) {
+      setErro(err.message || 'Erro ao processar solicitação de recuperação.');
+    } finally {
+      setIsCarregando(false);
     }
-
-    setEmailMascarado(res.emailMascarado || '');
-    setCodigoSimulado(res.codigoSimulado || '123456');
-    setCodigo(res.codigoSimulado || '123456'); // pre-fill for seamless testing
-    setStep('verify');
   };
 
-  const handleResetPassword = (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
 
@@ -70,22 +90,34 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       return;
     }
 
+    if (isAdminMode && novaSenha.length < 6) {
+      setErro('A nova senha de administrador deve conter no mínimo 6 caracteres.');
+      return;
+    }
+
     if (novaSenha.length < 3) {
       setErro('A nova senha deve ter pelo menos 3 caracteres.');
       return;
     }
 
-    const res = redefinirSenhaComCodigo(identificador, codigo, novaSenha);
-    if (!res.success) {
-      setErro(res.message || 'Erro ao redefinir a senha.');
-      return;
-    }
+    setIsCarregando(true);
+    try {
+      const res = await redefinirSenhaComCodigo(identificador, codigo, novaSenha);
+      if (!res.success) {
+        setErro(res.message || 'Erro ao redefinir a senha.');
+        return;
+      }
 
-    setSucesso(res.message || 'Senha redefinida com sucesso!');
-    setTimeout(() => {
-      onClose();
-      if (onSuccess) onSuccess();
-    }, 1200);
+      setSucesso(res.message || 'Senha redefinida com sucesso!');
+      setTimeout(() => {
+        onClose();
+        if (onSuccess) onSuccess();
+      }, 1400);
+    } catch (err: any) {
+      setErro(err.message || 'Erro inesperado ao salvar a nova senha.');
+    } finally {
+      setIsCarregando(false);
+    }
   };
 
   return (
@@ -111,7 +143,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
               </h3>
               <p className="text-xs text-slate-600 font-medium mt-0.5">
                 {step === 'request' 
-                  ? 'Informe sua unidade ou e-mail para receber o código'
+                  ? (isAdminMode ? 'Informe seu e-mail pessoal para receber o código' : 'Informe sua unidade ou e-mail para receber o código')
                   : 'Digite o código e crie sua nova senha'}
               </p>
             </div>
@@ -146,31 +178,46 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
           <form onSubmit={handleRequestCode} className="space-y-4">
             <div className="space-y-1">
               <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
-                Número do Apto ou E-mail Cadastrado:
+                {isAdminMode ? 'E-mail Pessoal do Administrador:' : 'Número do Apto ou E-mail Cadastrado:'}
               </label>
               <div className="relative">
                 <input
-                  type="text"
-                  placeholder="Ex: 101 Bloco A, 001 ou seu@email.com"
+                  type={isAdminMode ? 'email' : 'text'}
+                  placeholder={isAdminMode ? 'seu-email@exemplo.com' : 'Ex: 101 Bloco A, 001 ou seu@email.com'}
                   value={identificador}
                   onChange={(e) => setIdentificador(e.target.value)}
                   className="w-full bg-slate-100/90 border border-slate-300/80 rounded-2xl px-4 py-3 pl-10 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
                   required
                   autoFocus
                 />
-                <Building2 className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
+                {isAdminMode ? (
+                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
+                ) : (
+                  <Building2 className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
+                )}
               </div>
             </div>
 
             <div className="p-3 bg-amber-500/15 border border-amber-400/30 rounded-2xl text-[11px] text-amber-950 font-medium">
-              💡 Um código de validação será enviado para o e-mail cadastrado na unidade para que você possa redefinir sua senha com segurança.
+              💡 {isAdminMode 
+                ? 'Um código de validação e o link oficial do Firebase serão enviados para o seu e-mail pessoal para redefinir sua senha com segurança.'
+                : 'Um código de validação será enviado para o e-mail cadastrado na unidade para que você possa redefinir sua senha com segurança.'}
             </div>
 
             <button
               type="submit"
-              className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+              disabled={isCarregando}
+              className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
             >
-              <Mail className="w-4 h-4" /> Enviar Código para meu E-mail
+              {isCarregando ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Verificando e Enviando...
+                </>
+              ) : (
+                <>
+                  <Mail className="w-4 h-4" /> Enviar Código para meu E-mail
+                </>
+              )}
             </button>
           </form>
         )}
@@ -178,13 +225,18 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
         {/* Step 2: Inserir Código e Nova Senha */}
         {step === 'verify' && (
           <form onSubmit={handleResetPassword} className="space-y-3.5">
-            <div className="p-3 bg-emerald-50 border border-emerald-300/80 rounded-2xl text-xs text-emerald-950 space-y-1">
+            <div className="p-3 bg-emerald-50 border border-emerald-300/80 rounded-2xl text-xs text-emerald-950 space-y-1.5">
               <p className="font-bold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
                 Código enviado para: <strong className="text-slate-900">{emailMascarado}</strong>
               </p>
+              {isFirebaseSent && (
+                <p className="text-[10px] text-emerald-800 font-semibold flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Link oficial enviado pelo Firebase Auth! Você também pode redefinir pelo código abaixo:
+                </p>
+              )}
               <p className="text-[10px] text-slate-600">
-                (Código de teste gerado: <span className="font-mono font-black text-amber-900">{codigoSimulado}</span>)
+                (Código de validação: <span className="font-mono font-black text-amber-900 text-xs">{codigoSimulado}</span>)
               </p>
             </div>
 
@@ -211,7 +263,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
               <div className="relative">
                 <input
                   type={showNovaSenha ? 'text' : 'password'}
-                  placeholder="Mínimo 3 caracteres"
+                  placeholder={isAdminMode ? "Mínimo 6 caracteres" : "Mínimo 3 caracteres"}
                   value={novaSenha}
                   onChange={(e) => setNovaSenha(e.target.value)}
                   className="w-full bg-slate-100/90 border border-slate-300/80 rounded-2xl px-4 py-2.5 pl-10 pr-10 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
@@ -258,17 +310,27 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
             <div className="flex items-center gap-2 pt-2">
               <button
                 type="button"
+                disabled={isCarregando}
                 onClick={() => setStep('request')}
-                className="px-3.5 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-2xl text-xs font-bold transition-all"
+                className="px-3.5 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-2xl text-xs font-bold transition-all cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
 
               <button
                 type="submit"
-                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-600/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+                disabled={isCarregando}
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
-                <ShieldCheck className="w-4 h-4" /> Salvar Nova Senha
+                {isCarregando ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" /> Salvar Nova Senha
+                  </>
+                )}
               </button>
             </div>
           </form>

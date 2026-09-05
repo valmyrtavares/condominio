@@ -1,27 +1,42 @@
 import React, { useState } from 'react';
 import { useCondo } from '../../context/CondoContext';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
-import { ShieldCheck, Lock, User, ArrowLeft, KeyRound, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { AdminFirstAccessModal } from '../../components/admin/AdminFirstAccessModal';
+import { ShieldCheck, Lock, User, ArrowLeft, AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export const AdminLoginScreen: React.FC = () => {
-  const { loginAdmin, setCurrentScreen, targetRedirectScreen, setTargetRedirectScreen } = useCondo();
+  const { loginAdmin, setCurrentScreen, targetRedirectScreen, setTargetRedirectScreen, currentCondo } = useCondo();
   const [usuario, setUsuario] = useState('');
   const [senha, setSenha] = useState('');
   const [showSenha, setShowSenha] = useState(false);
   const [erro, setErro] = useState('');
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [isFirstAccessModalOpen, setIsFirstAccessModalOpen] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isCarregando, setIsCarregando] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
+    setIsCarregando(true);
 
-    const sucesso = loginAdmin(usuario, senha);
-    if (sucesso) {
-      const dest = targetRedirectScreen || 'admin';
-      setTargetRedirectScreen(null);
-      setCurrentScreen(dest);
-    } else {
-      setErro('Usuário ou senha de administrador incorretos. (Dica: admin / admin)');
+    try {
+      const res = await loginAdmin(usuario, senha);
+      if (res.success) {
+        if (res.needsActivation) {
+          setIsFirstAccessModalOpen(true);
+        } else {
+          const dest = targetRedirectScreen || 'admin';
+          setTargetRedirectScreen(null);
+          setCurrentScreen(dest);
+        }
+      } else {
+        setErro(res.message || 'E-mail ou senha de administrador incorretos.');
+      }
+    } catch (err: any) {
+      setErro(err.message || 'Erro ao realizar login.');
+    } finally {
+      setIsCarregando(false);
     }
   };
 
@@ -49,7 +64,7 @@ export const AdminLoginScreen: React.FC = () => {
             Painel do Administrador
           </h2>
           <p className="text-xs text-slate-700 font-medium">
-            Acesso restrito ao síndico para cadastro de unidades e senhas de acesso.
+            Acesso restrito ao síndico para gestão do condomínio <strong>{currentCondo.nome}</strong>.
           </p>
         </div>
 
@@ -60,7 +75,6 @@ export const AdminLoginScreen: React.FC = () => {
             <span>Área restrita à gestão. Faça login como síndico para continuar.</span>
           </div>
         )}
-
 
         {/* Error Alert */}
         {erro && (
@@ -74,14 +88,14 @@ export const AdminLoginScreen: React.FC = () => {
         <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
           <div className="space-y-1">
             <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
-              Usuário Administrador
+              Entre com o seu email pessoal para gerenciar e recuperar senha
             </label>
             <div className="relative">
               <input
-                type="text"
-                placeholder="Ex: admin"
+                type="email"
+                placeholder="seu-email@exemplo.com"
                 value={usuario}
-                autoComplete="off"
+                autoComplete="email"
                 onChange={(e) => setUsuario(e.target.value)}
                 className="w-full bg-white/80 border border-white rounded-2xl px-4 py-3 pl-10 text-xs text-slate-950 placeholder-slate-500 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
                 required
@@ -108,7 +122,7 @@ export const AdminLoginScreen: React.FC = () => {
             <div className="relative">
               <input
                 type={showSenha ? 'text' : 'password'}
-                placeholder="Ex: admin"
+                placeholder="Senha inicial recebida"
                 value={senha}
                 autoComplete="new-password"
                 onChange={(e) => setSenha(e.target.value)}
@@ -128,16 +142,18 @@ export const AdminLoginScreen: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-3 bg-amber-500/15 border border-amber-400/30 rounded-2xl text-[11px] text-amber-950 font-bold flex items-center gap-2">
-            <KeyRound className="w-4 h-4 text-amber-800 shrink-0" />
-            <span>Credenciais padrão: <strong>admin</strong> / <strong>admin</strong></span>
-          </div>
-
           <button
             type="submit"
-            className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/30 transition-all active:scale-95"
+            disabled={isCarregando}
+            className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/30 transition-all active:scale-95 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
           >
-            Entrar no Painel
+            {isCarregando ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Verificando credenciais...
+              </>
+            ) : (
+              'Entrar no Painel'
+            )}
           </button>
         </form>
 
@@ -147,7 +163,22 @@ export const AdminLoginScreen: React.FC = () => {
       <ForgotPasswordModal
         isOpen={isForgotModalOpen}
         onClose={() => setIsForgotModalOpen(false)}
-        initialIdentifier={usuario || 'admin'}
+        initialIdentifier={usuario || ''}
+        isAdminMode={true}
+      />
+
+      {/* Modal de Primeiro Acesso com Criação no Firebase Authentication */}
+      <AdminFirstAccessModal
+        isOpen={isFirstAccessModalOpen}
+        onClose={() => setIsFirstAccessModalOpen(false)}
+        initialEmail={usuario}
+        condoNome={currentCondo.nome}
+        onSuccess={() => {
+          setIsFirstAccessModalOpen(false);
+          const dest = targetRedirectScreen || 'admin';
+          setTargetRedirectScreen(null);
+          setCurrentScreen(dest);
+        }}
       />
     </div>
   );

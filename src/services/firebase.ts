@@ -630,3 +630,83 @@ export const cadastrarMoradorAuth = async (params: CadastroMoradorAuthParams) =>
     };
   }
 };
+
+/**
+ * Cria ou atualiza a conta real do Síndico/Administrador no Firebase Auth e vincula ao condomínio
+ */
+export const ativarSindicoAuth = async (params: {
+  condoId: string;
+  email: string;
+  novaSenha: string;
+  nome: string;
+}) => {
+  const { condoId, email, novaSenha, nome } = params;
+  try {
+    const emailLimpo = email.trim().toLowerCase();
+    const senhaLimpa = novaSenha.trim();
+    let authUid = `adm-${condoId}-${Date.now()}`;
+
+    // 1. Cria ou loga no Firebase Auth
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, emailLimpo, senhaLimpa);
+      authUid = userCredential.user.uid;
+    } catch (authErr: any) {
+      if (authErr.code === 'auth/email-already-in-use') {
+        try {
+          const loginRes = await signInWithEmailAndPassword(auth, emailLimpo, senhaLimpa);
+          authUid = loginRes.user.uid;
+        } catch {
+          console.warn('E-mail de administrador já registrado no Firebase Auth.');
+        }
+      } else {
+        throw authErr;
+      }
+    }
+
+    // 2. Grava o perfil na coleção 'users/{uid}'
+    const sindicoUserObj = {
+      id: authUid,
+      uid: authUid,
+      nome: nome.trim() || 'Síndico',
+      email: emailLimpo,
+      role: 'sindico' as const,
+      unidade: '',
+      bloco: '',
+      condominioId: condoId,
+      atualizadoEm: new Date().toISOString()
+    };
+
+    try {
+      const userDocRef = doc(db, 'users', authUid);
+      await setDoc(userDocRef, sanitizarParaFirestore(sindicoUserObj), { merge: true });
+    } catch (err) {
+      console.warn('Aviso ao salvar users/{uid} do síndico:', err);
+    }
+
+    // 3. Atualiza o condomínio no Firestore
+    try {
+      const condoRef = doc(db, 'condominios', condoId);
+      await setDoc(condoRef, sanitizarParaFirestore({
+        emailAdmin: emailLimpo,
+        senhaAdminGeral: senhaLimpa,
+        nomeSindico: nome.trim() || 'Síndico',
+        senhaPadraoAlterada: true,
+        atualizadoEm: new Date().toISOString()
+      }), { merge: true });
+    } catch (err) {
+      console.warn('Aviso ao atualizar condomínio no Firestore:', err);
+    }
+
+    return {
+      success: true,
+      authUid,
+      usuario: sindicoUserObj
+    };
+  } catch (error: any) {
+    console.error('🔥 Erro ao ativar síndico no Firebase Auth:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro ao ativar senha do administrador'
+    };
+  }
+};

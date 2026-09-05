@@ -94,9 +94,10 @@ import {
   sincronizarSubcolecaoTenant,
   limparESubstituirSubcolecaoFirestore,
   cadastrarMoradorAuth,
-  enviarEmailRecuperacaoSenha
+  enviarEmailRecuperacaoSenha,
+  ativarSindicoAuth
 } from '../services/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 
 /**
  * Formata o número do apartamento baseado no item base do 1º andar e no número do andar atual.
@@ -382,7 +383,8 @@ interface CondoContextType {
 
   // Admin & Unidades Management
   isAdminLoggedIn: boolean;
-  loginAdmin: (usuario: string, senha: string) => boolean;
+  loginAdmin: (usuario: string, senha: string) => Promise<{ success: boolean; needsActivation?: boolean; message?: string }>;
+  concluirPrimeiroAcessoAdmin: (email: string, novaSenha: string, nome: string) => Promise<{ success: boolean; error?: string }>;
   logoutAdmin: () => void;
   adminUsers: AdminUser[];
   adminRoles: AdminRole[];
@@ -418,8 +420,8 @@ interface CondoContextType {
   pularCadastroMorador: (unidadeNumero: string) => void;
   atualizarMoradoresUnidade: (unidadeId: string, moradores: User[], fotoCelula?: string, nomeCelula?: string) => Promise<void> | void;
   atualizarSenhaUnidade: (unidadeNumero: string, novaSenha: string) => boolean;
-  solicitarRecuperacaoSenha: (unidadeOuEmail: string) => { success: boolean; emailMascarado?: string; codigoSimulado?: string; message?: string };
-  redefinirSenhaComCodigo: (unidadeOuEmail: string, codigo: string, novaSenha: string) => { success: boolean; message?: string };
+  solicitarRecuperacaoSenha: (unidadeOuEmail: string, isAdminHint?: boolean) => Promise<{ success: boolean; emailMascarado?: string; codigoSimulado?: string; message?: string; isFirebaseSent?: boolean }>;
+  redefinirSenhaComCodigo: (unidadeOuEmail: string, codigo: string, novaSenha: string) => Promise<{ success: boolean; message?: string }>;
   logoutResident: () => void;
   
   // Actions
@@ -2635,18 +2637,125 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   };
 
-  // Autenticação do Admin
-  const loginAdmin = (usuario: string, senha: string): boolean => {
+  // Autenticação do Admin / Síndico com Proteção Multi-Tenant & Primeiro Acesso
+  const loginAdmin = async (
+    usuario: string, 
+    senha: string
+  ): Promise<{ success: boolean; needsActivation?: boolean; message?: string }> => {
     const u = usuario.trim().toLowerCase();
     const s = senha.trim();
 
-    if ((u === 'admin' && s === 'admin') || (u === 'sindica' && s === 'sindica')) {
-      setIsAdminLoggedIn(true);
-      localStorage.setItem('condo_admin_auth', 'true');
-      setCurrentUser(MOCK_USERS[4]);
-      return true;
+    if (!u || !s) {
+      return { success: false, message: 'Informe o seu e-mail e a senha de acesso.' };
     }
 
+    // 1. Verificação Multi-Tenant (Anti-Mistura de Condomínios)
+    if (u.includes('@')) {
+      const outroCondo = condominios.find(c => 
+        c.id !== currentCondo.id && 
+        c.emailAdmin && 
+        c.emailAdmin.trim().toLowerCase() === u
+      );
+
+      if (outroCondo) {
+        return {
+          success: false,
+          message: `Este e-mail pertence ao condomínio "${outroCondo.nome}". Por favor, acesse o link correto do seu condomínio.`
+        };
+      }
+    }
+
+    const emailCadastrado = (currentCondo.emailAdmin || '').trim().toLowerCase();
+    const senhaCadastrada = (currentCondo.senhaAdminGeral || 'admin').trim();
+    const jaAtivou = Boolean(currentCondo.senhaPadraoAlterada);
+    const isLegacyAdmin = (u === 'admin' && s === 'admin');
+
+    // 2. TENTATIVA DIRETA NO FIREBASE AUTHENTICATION (Se for e-mail)
+    // Se o usuário redefiniu a senha via link do Firebase, o Firebase Auth é a fonte da verdade!
+    if (u.includes('@')) {
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, u, s);
+        if (userCredential.user) {
+          // Login no Firebase Auth SUCESSO!
+          // Sincroniza a nova senha e o e-mail no condomínio local e Firestore se tiver mudado
+          if (s !== senhaCadastrada || u !== emailCadastrado || !jaAtivou) {
+            setCondominios(prev => prev.map(c => {
+              if (c.id === currentCondo.id) {
+                return {
+                  ...c,
+                  emailAdmin: u,
+                  senhaAdminGeral: s,
+                  senhaPadraoAlterada: true
+                };
+              }
+              return c;
+            }));
+
+            salvarCondominioNoFirestore({
+              id: currentCondo.id,
+              emailAdmin: u,
+              senhaAdminGeral: s,
+              senhaPadraoAlterada: true
+            }).catch(console.warn);
+          }
+
+          setIsAdminLoggedIn(true);
+          localStorage.setItem('condo_admin_auth', 'true');
+          setCurrentUser({
+            id: userCredential.user.uid || `admin-${currentCondo.id}`,
+            nome: currentCondo.nomeSindico || 'Síndico Geral',
+            email: u,
+            role: 'sindico',
+            unidade: '',
+            bloco: '',
+            foto: '',
+            profissao: 'Síndico / Administrador',
+            condominioId: currentCondo.id
+          });
+
+          return { success: true, needsActivation: false };
+        }
+      } catch (authErr: any) {
+        console.log('Firebase Auth login check:', authErr.code);
+        // Se a senha falhou no Firebase Auth, mas ainda é o primeiro acesso com a senha padrão inicial, continua abaixo
+      }
+    }
+
+    // 3. Verifica credencial padrão inicial / primeiro acesso (antes de ter senha no Firebase Auth)
+    const emailConfere = (emailCadastrado === u) || (!emailCadastrado && u.includes('@')) || (emailCadastrado.includes('@') && u.includes('@'));
+
+    if (emailConfere || isLegacyAdmin) {
+      if (!jaAtivou || s === senhaCadastrada) {
+        if (!jaAtivou) {
+          // Primeiro acesso! Precisa abrir o popup para definir a senha definitiva no Authentication
+          return {
+            success: true,
+            needsActivation: true,
+            message: 'Primeiro acesso detectado. Por favor, confirme seu e-mail e defina sua senha definitiva.'
+          };
+        }
+
+        // Se já ativou e bate com a senha do condomínio
+        if (s === senhaCadastrada) {
+          setIsAdminLoggedIn(true);
+          localStorage.setItem('condo_admin_auth', 'true');
+          setCurrentUser({
+            id: `admin-${currentCondo.id}`,
+            nome: currentCondo.nomeSindico || 'Síndico Geral',
+            email: u,
+            role: 'sindico',
+            unidade: '',
+            bloco: '',
+            foto: '',
+            profissao: 'Síndico / Administrador',
+            condominioId: currentCondo.id
+          });
+          return { success: true, needsActivation: false };
+        }
+      }
+    }
+
+    // 4. Sub-administradores da lista adminUsers
     const matchedAdmin = adminUsers.find(
       adm => adm.usuario.toLowerCase() === u && adm.senha === s && adm.ativo
     );
@@ -2666,18 +2775,74 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         bloco: '',
         foto: matchedAdmin.foto,
         profissao: matchedAdmin.cargo,
-        condominioId: CURRENT_CONDO_ID
+        condominioId: currentCondo.id
       };
       setCurrentUser(adminUserObj);
-      return matchedAdmin.tipoAcesso === 'total';
+      return { success: matchedAdmin.tipoAcesso === 'total' };
     }
 
-    return false;
+    return { success: false, message: 'E-mail ou senha incorretos para este condomínio.' };
   };
 
   const logoutAdmin = () => {
     setIsAdminLoggedIn(false);
     localStorage.removeItem('condo_admin_auth');
+  };
+
+  const concluirPrimeiroAcessoAdmin = async (
+    email: string, 
+    novaSenha: string, 
+    nome: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const canonicalCondoId = currentCondo?.id || 'condo-edificio-aurora';
+      
+      // 1. Grava no Firebase Authentication e no Firestore users/{uid} + condominios/{condoId}
+      const authResult = await ativarSindicoAuth({
+        condoId: canonicalCondoId,
+        email,
+        novaSenha,
+        nome
+      });
+
+      if (!authResult.success) {
+        return { success: false, error: authResult.error || 'Erro ao registrar credenciais no Firebase Authentication.' };
+      }
+
+      // 2. Atualiza o perfil local do condomínio
+      setCondominios(prev => prev.map(c => {
+        if (c.id === canonicalCondoId) {
+          return {
+            ...c,
+            emailAdmin: email.trim().toLowerCase(),
+            nomeSindico: nome.trim() || c.nomeSindico,
+            senhaAdminGeral: novaSenha.trim(),
+            senhaPadraoAlterada: true
+          };
+        }
+        return c;
+      }));
+
+      // 3. Atualiza estado de login do Admin
+      setIsAdminLoggedIn(true);
+      localStorage.setItem('condo_admin_auth', 'true');
+      setCurrentUser({
+        id: authResult.authUid || `sindico-${canonicalCondoId}`,
+        nome: nome.trim() || currentCondo.nomeSindico || 'Síndico Geral',
+        email: email.trim().toLowerCase(),
+        role: 'sindico',
+        unidade: '',
+        bloco: '',
+        foto: '',
+        profissao: 'Síndico / Administrador',
+        condominioId: canonicalCondoId
+      });
+
+      return { success: true };
+    } catch (err: any) {
+      console.error('Erro em concluirPrimeiroAcessoAdmin:', err);
+      return { success: false, error: err.message || 'Erro inesperado ao concluir ativação.' };
+    }
   };
 
   // Autenticação e Cadastro do Morador
@@ -2854,29 +3019,102 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   };
 
-  const solicitarRecuperacaoSenha = (unidadeOuEmail: string): { 
+  const solicitarRecuperacaoSenha = async (
+    unidadeOuEmail: string,
+    isAdminHint?: boolean
+  ): Promise<{ 
     success: boolean; 
     emailMascarado?: string; 
     codigoSimulado?: string; 
-    message?: string 
-  } => {
+    message?: string;
+    isFirebaseSent?: boolean;
+  }> => {
     const termo = unidadeOuEmail.trim().toLowerCase();
     const numLimpo = normalizeUnitNumber(termo);
     if (!termo) {
       return { success: false, message: 'Informe sua unidade ou e-mail cadastrado.' };
     }
 
-    // Caso seja administrador
-    if (termo === 'admin' || termo === 'admin@condominio.com') {
+    // 1. Verificação Multi-Tenant: se o e-mail pertence explicitamente a outro condomínio
+    if (termo.includes('@')) {
+      const outroCondo = condominios.find(c => 
+        c.id !== currentCondo.id && 
+        c.emailAdmin && 
+        c.emailAdmin.trim().toLowerCase() === termo
+      );
+      if (outroCondo) {
+        return {
+          success: false,
+          message: `Este e-mail pertence à administração do condomínio "${outroCondo.nome}". Acesse o link correspondente daquele condomínio para recuperar sua senha.`
+        };
+      }
+    }
+
+    // 2. Verifica se é o Administrador / Síndico
+    const emailAdminAtual = (currentCondo.emailAdmin || '').trim().toLowerCase();
+    const isAdminUser = adminUsers.some(a => a.usuario?.toLowerCase() === termo || a.email?.toLowerCase() === termo);
+    const isExplicitAdmin = (termo === 'admin' || termo === 'admin@condominio.com' || termo === emailAdminAtual || isAdminUser);
+    
+    // Se o identificador é um e-mail válido e não bate com nenhuma unidade existente (ou foi disparado do login admin)
+    const matchesResidentUnit = unidades.some(u => 
+      normalizeUnitNumber(u.numero) === numLimpo ||
+      u.numero.toLowerCase() === termo ||
+      u.emailResponsavel?.toLowerCase() === termo ||
+      u.moradores.some(m => m.email?.toLowerCase() === termo)
+    );
+
+    const isIdentifiedAsAdmin = isExplicitAdmin || (termo.includes('@') && (isAdminHint || !matchesResidentUnit));
+
+    if (isIdentifiedAsAdmin) {
+      const emailFinal = termo.includes('@') 
+        ? termo 
+        : (currentCondo.emailAdmin || 'admin@condominio.com');
+
+      // Se o condomínio atual ainda não tinha esse e-mail pessoal salvo, vincula-o agora
+      if (emailFinal.includes('@') && emailFinal !== emailAdminAtual) {
+        setCondominios(prev => prev.map(c => {
+          if (c.id === currentCondo.id) {
+            return { ...c, emailAdmin: emailFinal };
+          }
+          return c;
+        }));
+        salvarCondominioNoFirestore({
+          id: currentCondo.id,
+          emailAdmin: emailFinal
+        }).catch(console.warn);
+      }
+
+      // Mascara o e-mail para exibição segura
+      const partes = emailFinal.split('@');
+      const nomeUser = partes[0] || 'admin';
+      const dominio = partes[1] || 'condominio.com';
+      const emailMascarado = nomeUser.length > 2
+        ? `${nomeUser.slice(0, 2)}***${nomeUser.slice(-1)}@${dominio}`
+        : `${nomeUser.slice(0, 1)}***@${dominio}`;
+
+      // Tenta enviar o e-mail oficial via Firebase Authentication
+      let isFirebaseSent = false;
+      try {
+        const fbRes = await enviarEmailRecuperacaoSenha(emailFinal);
+        if (fbRes.success) {
+          isFirebaseSent = true;
+        }
+      } catch {
+        // Fallback para o código na tela
+      }
+
       return {
         success: true,
-        emailMascarado: 'ad***n@condominio.com',
+        emailMascarado,
         codigoSimulado: '123456',
-        message: 'Código de recuperação enviado para o e-mail cadastrado.'
+        isFirebaseSent,
+        message: isFirebaseSent
+          ? `Link oficial de redefinição enviado para ${emailFinal} pelo Firebase! Você também pode redefinir agora com o código abaixo.`
+          : `Código de verificação gerado para o e-mail ${emailMascarado}.`
       };
     }
 
-    // Busca nas unidades
+    // 3. Busca nas unidades de moradores
     const unidadeEncontrada = unidades.find(u => 
       normalizeUnitNumber(u.numero) === numLimpo ||
       u.numero.toLowerCase() === termo ||
@@ -2887,7 +3125,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!unidadeEncontrada) {
       return { 
         success: false, 
-        message: 'Unidade ou e-mail não encontrado no condomínio. Verifique o número digitado.' 
+        message: 'Unidade ou e-mail não encontrado no condomínio. Verifique o dado informado.' 
       };
     }
 
@@ -2897,34 +3135,40 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!email) {
       return {
         success: false,
-        message: 'Esta unidade ainda não possui um e-mail cadastrado. Utilize a senha padrão (número da unidade) para acessar ou contate a administração.'
+        message: 'Esta unidade ainda não possui um e-mail cadastrado. Utilize o número da unidade como senha padrão para acessar ou fale com o síndico.'
       };
     }
 
-    // Mascara o e-mail para exibição segura (ex: ro***o@email.com)
+    // Mascara o e-mail do morador
     const partes = email.split('@');
-    const nomeUser = partes[0];
+    const nomeUser = partes[0] || 'morador';
     const dominio = partes[1] || 'email.com';
     const emailMascarado = nomeUser.length > 2
       ? `${nomeUser.slice(0, 2)}***${nomeUser.slice(-1)}@${dominio}`
       : `${nomeUser.slice(0, 1)}***@${dominio}`;
 
-    // Dispara o e-mail oficial do Firebase Authentication
-    enviarEmailRecuperacaoSenha(email).catch(console.warn);
+    let isFirebaseSent = false;
+    try {
+      const fbRes = await enviarEmailRecuperacaoSenha(email);
+      if (fbRes.success) isFirebaseSent = true;
+    } catch {}
 
     return {
       success: true,
       emailMascarado,
       codigoSimulado: '123456',
-      message: 'Instruções e código de recuperação enviados com sucesso!'
+      isFirebaseSent,
+      message: isFirebaseSent
+        ? `Link de redefinição enviado para ${email} pelo Firebase!`
+        : `Código de verificação enviado para ${emailMascarado}.`
     };
   };
 
-  const redefinirSenhaComCodigo = (
+  const redefinirSenhaComCodigo = async (
     unidadeOuEmail: string, 
     codigo: string, 
     novaSenha: string
-  ): { success: boolean; message?: string } => {
+  ): Promise<{ success: boolean; message?: string }> => {
     const termo = unidadeOuEmail.trim().toLowerCase();
     const numLimpo = normalizeUnitNumber(termo);
     const codigoLimpo = codigo.trim();
@@ -2938,11 +3182,59 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return { success: false, message: 'A nova senha deve ter pelo menos 3 caracteres.' };
     }
 
-    // Caso admin
-    if (termo === 'admin' || termo === 'admin@condominio.com') {
-      return { success: true, message: 'Senha do administrador redefinida com sucesso!' };
+    // Verifica se é redefinição do Admin / Síndico
+    const emailAdminAtual = (currentCondo.emailAdmin || '').trim().toLowerCase();
+    const isAdminUser = adminUsers.some(a => a.usuario?.toLowerCase() === termo || a.email?.toLowerCase() === termo);
+    const matchesResidentUnit = unidades.some(u => 
+      normalizeUnitNumber(u.numero) === numLimpo ||
+      u.numero.toLowerCase() === termo ||
+      u.emailResponsavel?.toLowerCase() === termo ||
+      u.moradores.some(m => m.email?.toLowerCase() === termo)
+    );
+
+    const isIdentifiedAsAdmin = (termo === 'admin' || termo === 'admin@condominio.com' || termo === emailAdminAtual || isAdminUser || (termo.includes('@') && !matchesResidentUnit));
+
+    if (isIdentifiedAsAdmin) {
+      const emailFinal = termo.includes('@') ? termo : (currentCondo.emailAdmin || 'admin@condominio.com');
+
+      // Atualiza o perfil do condomínio localmente
+      setCondominios(prev => prev.map(c => {
+        if (c.id === currentCondo.id) {
+          return {
+            ...c,
+            emailAdmin: emailFinal,
+            senhaAdminGeral: senhaLimpa,
+            senhaPadraoAlterada: true
+          };
+        }
+        return c;
+      }));
+
+      // Atualiza no Firestore
+      await salvarCondominioNoFirestore({
+        id: currentCondo.id,
+        emailAdmin: emailFinal,
+        senhaAdminGeral: senhaLimpa,
+        senhaPadraoAlterada: true
+      });
+
+      // Se for um e-mail válido, ativa/atualiza também no Firebase Auth
+      if (emailFinal.includes('@')) {
+        ativarSindicoAuth({
+          condoId: currentCondo.id,
+          email: emailFinal,
+          novaSenha: senhaLimpa,
+          nome: currentCondo.nomeSindico || 'Síndico'
+        }).catch(console.warn);
+      }
+
+      return { 
+        success: true, 
+        message: 'Senha do administrador redefinida com sucesso! Você já pode entrar com sua nova senha.' 
+      };
     }
 
+    // Caso seja Morador
     const unidadeEncontrada = unidades.find(u => 
       normalizeUnitNumber(u.numero) === numLimpo ||
       u.numero.toLowerCase() === termo ||
@@ -3739,6 +4031,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       isAdminLoggedIn,
       loginAdmin,
       logoutAdmin,
+      concluirPrimeiroAcessoAdmin,
       adminUsers,
       adminRoles,
       adicionarAdminUser,
