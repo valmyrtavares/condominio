@@ -3032,7 +3032,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const termo = unidadeOuEmail.trim().toLowerCase();
     const numLimpo = normalizeUnitNumber(termo);
     if (!termo) {
-      return { success: false, message: 'Informe sua unidade ou e-mail cadastrado.' };
+      return { 
+        success: false, 
+        message: isAdminHint 
+          ? 'Informe seu e-mail de administrador.' 
+          : 'Informe o e-mail cadastrado na sua unidade.' 
+      };
     }
 
     // 1. Verificação Multi-Tenant: se o e-mail pertence explicitamente a outro condomínio
@@ -3050,20 +3055,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
-    // 2. Verifica se é o Administrador / Síndico
+    // 2. Localiza se pertence a algum morador cadastrado por e-mail
+    const unidadeMorador = unidades.find(u => 
+      (u.emailResponsavel && u.emailResponsavel.trim().toLowerCase() === termo) ||
+      u.moradores.some(m => m.email && m.email.trim().toLowerCase() === termo)
+    );
+
+    // 3. Verifica se é o Administrador / Síndico
     const emailAdminAtual = (currentCondo.emailAdmin || '').trim().toLowerCase();
     const isAdminUser = adminUsers.some(a => a.usuario?.toLowerCase() === termo || a.email?.toLowerCase() === termo);
     const isExplicitAdmin = (termo === 'admin' || termo === 'admin@condominio.com' || termo === emailAdminAtual || isAdminUser);
-    
-    // Se o identificador é um e-mail válido e não bate com nenhuma unidade existente (ou foi disparado do login admin)
-    const matchesResidentUnit = unidades.some(u => 
-      normalizeUnitNumber(u.numero) === numLimpo ||
-      u.numero.toLowerCase() === termo ||
-      u.emailResponsavel?.toLowerCase() === termo ||
-      u.moradores.some(m => m.email?.toLowerCase() === termo)
-    );
-
-    const isIdentifiedAsAdmin = isExplicitAdmin || (termo.includes('@') && (isAdminHint || !matchesResidentUnit));
+    const isIdentifiedAsAdmin = isExplicitAdmin || (isAdminHint && termo.includes('@')) || (termo.includes('@') && !unidadeMorador && (termo === emailAdminAtual || isAdminUser));
 
     if (isIdentifiedAsAdmin) {
       const emailFinal = termo.includes('@') 
@@ -3114,30 +3116,24 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
     }
 
-    // 3. Busca nas unidades de moradores
-    const unidadeEncontrada = unidades.find(u => 
-      normalizeUnitNumber(u.numero) === numLimpo ||
-      u.numero.toLowerCase() === termo ||
-      u.emailResponsavel?.toLowerCase() === termo ||
-      u.moradores.some(m => m.email?.toLowerCase() === termo)
-    );
-
-    if (!unidadeEncontrada) {
+    // 4. Regra de Segurança para Moradores: EXIGE O E-MAIL CADASTRADO
+    if (!termo.includes('@')) {
       return { 
         success: false, 
-        message: 'Unidade ou e-mail não encontrado no condomínio. Verifique o dado informado.' 
+        message: 'Para sua segurança, a recuperação de senha exige o e-mail cadastrado na unidade. Caso não se recorde, contate o síndico para resetar seu acesso.' 
       };
     }
 
-    const email = unidadeEncontrada.emailResponsavel || 
-      unidadeEncontrada.moradores.find(m => m.email)?.email;
-
-    if (!email) {
-      return {
-        success: false,
-        message: 'Esta unidade ainda não possui um e-mail cadastrado. Utilize o número da unidade como senha padrão para acessar ou fale com o síndico.'
+    if (!unidadeMorador) {
+      return { 
+        success: false, 
+        message: 'Nenhum cadastro de morador encontrado com este e-mail neste condomínio. Verifique o endereço digitado ou fale com o síndico para resetar seu acesso.' 
       };
     }
+
+    const email = (unidadeMorador.emailResponsavel && unidadeMorador.emailResponsavel.trim().toLowerCase() === termo)
+      ? unidadeMorador.emailResponsavel
+      : (unidadeMorador.moradores.find(m => m.email?.trim().toLowerCase() === termo)?.email || termo);
 
     // Mascara o e-mail do morador
     const partes = email.split('@');
@@ -3170,7 +3166,6 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     novaSenha: string
   ): Promise<{ success: boolean; message?: string }> => {
     const termo = unidadeOuEmail.trim().toLowerCase();
-    const numLimpo = normalizeUnitNumber(termo);
     const codigoLimpo = codigo.trim();
     const senhaLimpa = novaSenha.trim();
 
@@ -3182,17 +3177,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return { success: false, message: 'A nova senha deve ter pelo menos 3 caracteres.' };
     }
 
+    // Localiza se é Morador por e-mail
+    const unidadeMorador = unidades.find(u => 
+      (u.emailResponsavel && u.emailResponsavel.trim().toLowerCase() === termo) ||
+      u.moradores.some(m => m.email && m.email.trim().toLowerCase() === termo)
+    );
+
     // Verifica se é redefinição do Admin / Síndico
     const emailAdminAtual = (currentCondo.emailAdmin || '').trim().toLowerCase();
     const isAdminUser = adminUsers.some(a => a.usuario?.toLowerCase() === termo || a.email?.toLowerCase() === termo);
-    const matchesResidentUnit = unidades.some(u => 
-      normalizeUnitNumber(u.numero) === numLimpo ||
-      u.numero.toLowerCase() === termo ||
-      u.emailResponsavel?.toLowerCase() === termo ||
-      u.moradores.some(m => m.email?.toLowerCase() === termo)
-    );
-
-    const isIdentifiedAsAdmin = (termo === 'admin' || termo === 'admin@condominio.com' || termo === emailAdminAtual || isAdminUser || (termo.includes('@') && !matchesResidentUnit));
+    const isIdentifiedAsAdmin = (termo === 'admin' || termo === 'admin@condominio.com' || termo === emailAdminAtual || isAdminUser || (termo.includes('@') && !unidadeMorador));
 
     if (isIdentifiedAsAdmin) {
       const emailFinal = termo.includes('@') ? termo : (currentCondo.emailAdmin || 'admin@condominio.com');
@@ -3235,22 +3229,18 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     // Caso seja Morador
-    const unidadeEncontrada = unidades.find(u => 
-      normalizeUnitNumber(u.numero) === numLimpo ||
-      u.numero.toLowerCase() === termo ||
-      u.emailResponsavel?.toLowerCase() === termo ||
-      u.moradores.some(m => m.email?.toLowerCase() === termo)
-    );
-
-    if (!unidadeEncontrada) {
-      return { success: false, message: 'Unidade não encontrada.' };
+    if (!unidadeMorador) {
+      return { 
+        success: false, 
+        message: 'Nenhuma unidade encontrada para este e-mail. Fale com o síndico para resetar seu acesso.' 
+      };
     }
 
-    atualizarSenhaUnidade(unidadeEncontrada.numero, senhaLimpa);
+    atualizarSenhaUnidade(unidadeMorador.numero, senhaLimpa);
 
     return { 
       success: true, 
-      message: 'Senha alterada com sucesso! Você já pode entrar com sua nova senha.' 
+      message: `Senha da Unidade ${unidadeMorador.numero} alterada com sucesso! Você já pode entrar com sua nova senha.` 
     };
   };
 

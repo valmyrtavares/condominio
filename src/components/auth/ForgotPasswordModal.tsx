@@ -34,7 +34,9 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   const { solicitarRecuperacaoSenha, redefinirSenhaComCodigo } = useCondo();
 
   const [step, setStep] = useState<'request' | 'verify'>('request');
-  const [identificador, setIdentificador] = useState(initialIdentifier);
+  const [identificador, setIdentificador] = useState(
+    initialIdentifier && initialIdentifier.includes('@') ? initialIdentifier : ''
+  );
   const [emailMascarado, setEmailMascarado] = useState('');
   const [codigo, setCodigo] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
@@ -50,7 +52,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   const [isCarregando, setIsCarregando] = useState(false);
 
   React.useEffect(() => {
-    if (initialIdentifier) {
+    if (initialIdentifier && initialIdentifier.includes('@')) {
       setIdentificador(initialIdentifier);
     }
   }, [initialIdentifier]);
@@ -143,7 +145,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
               </h3>
               <p className="text-xs text-slate-600 font-medium mt-0.5">
                 {step === 'request' 
-                  ? (isAdminMode ? 'Informe seu e-mail pessoal para receber o código' : 'Informe sua unidade ou e-mail para receber o código')
+                  ? (isAdminMode ? 'Informe seu e-mail pessoal para receber o código' : 'Informe o e-mail cadastrado na unidade')
                   : 'Digite o código e crie sua nova senha'}
               </p>
             </div>
@@ -178,30 +180,27 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
           <form onSubmit={handleRequestCode} className="space-y-4">
             <div className="space-y-1">
               <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
-                {isAdminMode ? 'E-mail Pessoal do Administrador:' : 'Número do Apto ou E-mail Cadastrado:'}
+                {isAdminMode ? 'E-mail Pessoal do Administrador:' : 'E-mail Cadastrado na Unidade:'}
               </label>
               <div className="relative">
                 <input
-                  type={isAdminMode ? 'email' : 'text'}
-                  placeholder={isAdminMode ? 'seu-email@exemplo.com' : 'Ex: 101 Bloco A, 001 ou seu@email.com'}
+                  type="email"
+                  placeholder="seu-email@exemplo.com"
                   value={identificador}
                   onChange={(e) => setIdentificador(e.target.value)}
+                  autoComplete="email"
                   className="w-full bg-slate-100/90 border border-slate-300/80 rounded-2xl px-4 py-3 pl-10 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
                   required
                   autoFocus
                 />
-                {isAdminMode ? (
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
-                ) : (
-                  <Building2 className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
-                )}
+                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
               </div>
             </div>
 
-            <div className="p-3 bg-amber-500/15 border border-amber-400/30 rounded-2xl text-[11px] text-amber-950 font-medium">
+            <div className="p-3 bg-amber-500/15 border border-amber-400/30 rounded-2xl text-[11px] text-amber-950 font-medium leading-relaxed">
               💡 {isAdminMode 
                 ? 'Um código de validação e o link oficial do Firebase serão enviados para o seu e-mail pessoal para redefinir sua senha com segurança.'
-                : 'Um código de validação será enviado para o e-mail cadastrado na unidade para que você possa redefinir sua senha com segurança.'}
+                : 'Por segurança, informe o e-mail cadastrado na sua unidade para receber o código e link de recuperação. Caso não se recorde do e-mail, solicite ao síndico o reset do seu acesso.'}
             </div>
 
             <button
