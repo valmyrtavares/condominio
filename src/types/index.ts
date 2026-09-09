@@ -40,7 +40,9 @@ export interface User {
   aniversario?: string;
   vagaGaragem?: string;
   permissoesModulos?: AdminModuloKey[];
+  permiteAcessoAreaMorador?: boolean;
   condominioId: string;
+  isDev?: boolean;
 }
 
 export interface Unidade {
@@ -123,6 +125,7 @@ export interface Funcionario {
   senhaPadraoAlterada?: boolean;
   tipoAcesso?: 'total' | 'personalizado' | 'morador_destaque';
   permissoesModulos?: AdminModuloKey[];
+  permiteAcessoAreaMorador?: boolean;
   ultimoAcesso?: string;
   criadoEm?: string;
   condominioId: string;
@@ -130,6 +133,7 @@ export interface Funcionario {
 
 export interface ServicoMorador {
   id: string;
+  moradorId?: string;
   titulo: string;
   subtitulo?: string;
   categoria: string;
@@ -137,6 +141,7 @@ export interface ServicoMorador {
   imagem?: string;
   moradorNome: string;
   moradorUnidade: string;
+  moradorFoto?: string;
   tipoBotao: 'whatsapp' | 'site';
   whatsapp?: string;
   linkSite?: string;

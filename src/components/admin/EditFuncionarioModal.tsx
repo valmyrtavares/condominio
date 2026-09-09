@@ -21,7 +21,8 @@ import {
   Eye,
   EyeOff,
   Mail,
-  Phone
+  Phone,
+  Building2
 } from 'lucide-react';
 
 interface EditFuncionarioModalProps {
@@ -72,6 +73,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
   const [usuario, setUsuario] = useState('');
   const [senha, setSenha] = useState('');
   const [permissoesModulos, setPermissoesModulos] = useState<AdminModuloKey[]>([]);
+  const [permiteAcessoAreaMorador, setPermiteAcessoAreaMorador] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [sucesso, setSucesso] = useState(false);
 
@@ -88,6 +90,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
       setTelefone(funcionario.telefone ? formatWhatsApp(funcionario.telefone) : '');
       setUsuario(funcionario.usuario || funcionario.email || '');
       setSenha(funcionario.senha || funcionario.email || '');
+      setPermiteAcessoAreaMorador(funcionario.permiteAcessoAreaMorador !== undefined ? funcionario.permiteAcessoAreaMorador : true);
       
       if (funcionario.permissoesModulos && funcionario.permissoesModulos.length > 0) {
         setPermissoesModulos(funcionario.permissoesModulos);
@@ -151,6 +154,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
       usuario: loginFinal || undefined,
       senha: senhaFinal,
       permissoesModulos: permissoesModulos.length > 0 ? permissoesModulos : ['portaria'],
+      permiteAcessoAreaMorador,
       tipoAcesso: permissoesModulos.length >= 16 ? 'total' : 'personalizado'
     });
 
@@ -361,6 +365,30 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
             selectedModulos={permissoesModulos}
             onChange={setPermissoesModulos}
           />
+
+          {/* Permissão de Acesso ao Ambiente de Moradores (Área do Cliente) */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-amber-900 shrink-0" />
+                <span className="text-[11px] font-black uppercase text-amber-950">
+                  Acesso ao Ambiente dos Moradores (Área do Cliente)
+                </span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={permiteAcessoAreaMorador}
+                  onChange={(e) => setPermiteAcessoAreaMorador(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+              </label>
+            </div>
+            <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+              Permite que este colaborador faça login no <strong>Ambiente dos Moradores</strong> usando suas credenciais corporativas ({email || usuario || 'email'}). O sistema o identificará como Colaborador ({funcionario.funcao || 'Staff'}), dando acesso aos módulos e telas sem precisar residir em um apartamento.
+            </p>
+          </div>
 
           <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-300/80 space-y-3">
             <div className="flex items-center justify-between">

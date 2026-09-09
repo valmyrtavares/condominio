@@ -29,7 +29,6 @@ export const ResidentRegisterScreen: React.FC = () => {
   const { 
     pendingRegistrationUnit, 
     concluirCadastroMorador, 
-    pularCadastroMorador, 
     setCurrentScreen 
   } = useCondo();
 
@@ -49,6 +48,17 @@ export const ResidentRegisterScreen: React.FC = () => {
 
   React.useEffect(() => {
     if (!pendingRegistrationUnit) {
+      setCurrentScreen('resident-login');
+      return;
+    }
+
+    const isAlreadyRegistered = Boolean(
+      pendingRegistrationUnit.statusCadastro === 'Cadastrado' &&
+      pendingRegistrationUnit.moradores &&
+      pendingRegistrationUnit.moradores.length > 0
+    );
+
+    if (isAlreadyRegistered) {
       setCurrentScreen('resident-login');
     }
   }, [pendingRegistrationUnit, setCurrentScreen]);
@@ -95,16 +105,27 @@ export const ResidentRegisterScreen: React.FC = () => {
     e.preventDefault();
     setErro('');
 
-    const primeiroNome = moradores[0]?.nome.trim();
-    const primeiroEmail = moradores[0]?.email.trim();
+    const primeiroNome = (moradores[0]?.nome || '').trim();
+    const primeiroEmail = (moradores[0]?.email || '').trim();
 
-    if (!primeiroNome) {
-      setErro('Por favor, informe o nome do morador principal.');
+    if (!primeiroNome && !primeiroEmail) {
+      setErro('Por favor, informe o nome completo e o e-mail do morador principal para continuar.');
       return;
     }
 
-    if (!primeiroEmail || !primeiroEmail.includes('@')) {
-      setErro('Por favor, informe um e-mail válido para recuperação e troca de senha.');
+    if (!primeiroNome) {
+      setErro('Por favor, informe o nome completo do morador principal.');
+      return;
+    }
+
+    if (!primeiroEmail) {
+      setErro('Por favor, informe o e-mail do morador principal (obrigatório para recuperação de senha).');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(primeiroEmail)) {
+      setErro('Por favor, informe um endereço de e-mail válido (exemplo: morador@email.com).');
       return;
     }
 
@@ -139,38 +160,6 @@ export const ResidentRegisterScreen: React.FC = () => {
     } finally {
       setIsSalvando(false);
     }
-  };
-
-  const handleSaveKeepDefaultPassword = async () => {
-    setIsChangePasswordModalOpen(false);
-    setIsSalvando(true);
-    setErro('');
-    
-    try {
-      const res = await concluirCadastroMorador(
-        unidadeNumero,
-        moradores.map(m => ({ 
-          nome: m.nome.trim(), 
-          email: m.email.trim(), 
-          profissao: m.profissao.trim() 
-        })),
-        fotoPreview || undefined
-      );
-
-      if (res.success) {
-        setSucesso(true);
-      } else {
-        setErro(res.error || 'Erro ao persistir cadastro no banco.');
-      }
-    } catch (err: any) {
-      setErro(err.message || 'Erro inesperado ao salvar.');
-    } finally {
-      setIsSalvando(false);
-    }
-  };
-
-  const handleSkip = () => {
-    pularCadastroMorador(unidadeNumero);
   };
 
   return (
@@ -357,7 +346,7 @@ export const ResidentRegisterScreen: React.FC = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="space-y-2.5 pt-2">
+          <div className="pt-2">
             <button
               type="submit"
               disabled={sucesso || isSalvando}
@@ -375,16 +364,6 @@ export const ResidentRegisterScreen: React.FC = () => {
                 </>
               )}
             </button>
-
-            {/* Big "Cadastrar depois" Button */}
-            <button
-              type="button"
-              onClick={handleSkip}
-              disabled={isSalvando}
-              className="w-full py-3.5 bg-white/50 hover:bg-white/80 border-2 border-white/90 text-slate-900 rounded-2xl text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              Cadastrar depois
-            </button>
           </div>
 
         </form>
@@ -397,7 +376,6 @@ export const ResidentRegisterScreen: React.FC = () => {
         unidadeNumero={unidadeNumero}
         email={moradores[0]?.email || ''}
         onSaveNewPassword={handleSaveWithNewPassword}
-        onSkip={handleSaveKeepDefaultPassword}
       />
     </div>
   );

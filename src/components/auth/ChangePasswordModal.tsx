@@ -17,15 +17,13 @@ interface ChangePasswordModalProps {
   unidadeNumero: string;
   email: string;
   onSaveNewPassword: (senha: string) => void;
-  onSkip: () => void;
 }
 
 export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   isOpen,
   unidadeNumero,
   email,
-  onSaveNewPassword,
-  onSkip
+  onSaveNewPassword
 }) => {
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
@@ -156,20 +154,12 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           </div>
 
           {/* Buttons */}
-          <div className="space-y-2 pt-2">
+          <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
             >
               <ShieldCheck className="w-4 h-4" /> Salvar Nova Senha e Entrar
-            </button>
-
-            <button
-              type="button"
-              onClick={onSkip}
-              className="w-full py-2.5 text-slate-700 hover:text-slate-950 text-xs font-extrabold transition-all hover:underline text-center"
-            >
-              Fazer isso depois (Manter senha padrão)
             </button>
           </div>
 

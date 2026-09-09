@@ -98,10 +98,10 @@ export const AdminLoginScreen: React.FC = () => {
             </label>
             <div className="relative">
               <input
-                type="email"
-                placeholder="seu-email@exemplo.com"
+                type="text"
+                placeholder="seu-email@exemplo.com ou dev"
                 value={usuario}
-                autoComplete="email"
+                autoComplete="username"
                 onChange={(e) => setUsuario(e.target.value)}
                 className="w-full bg-white/80 border border-white rounded-2xl px-4 py-3 pl-10 text-xs text-slate-950 placeholder-slate-500 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
                 required

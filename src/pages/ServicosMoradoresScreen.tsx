@@ -278,14 +278,17 @@ export const ServicosMoradoresScreen: React.FC = () => {
                         <p className="text-[11px] font-semibold text-rose-900/90 pl-5">
                           <strong>Motivo da Sindicância:</strong> {servico.motivoSuspensao || 'Ajustes necessários no cadastro.'}
                         </p>
-                        <div className="pl-5 pt-1">
+                        <div className="pl-5 pt-1 space-y-1">
                           <button
                             onClick={(e) => handleOpenEditar(servico, e)}
                             className="inline-flex items-center gap-1 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-black uppercase shadow-xs"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
-                            Editar Anúncio e Reativar
+                            Editar Anúncio
                           </button>
+                          <p className="text-[10px] text-rose-800 font-bold italic">
+                            * Após editar, o anúncio permanecerá suspenso até a liberação do síndico no painel administrativo.
+                          </p>
                         </div>
                       </div>
                     )}

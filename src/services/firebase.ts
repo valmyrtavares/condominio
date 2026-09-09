@@ -322,6 +322,111 @@ export const salvarUnidadeNoFirestore = async (condoId: string, unidade: any) =>
 };
 
 /**
+ * Salva ou atualiza um serviço de morador no Firestore com upload automático de fotos para o Storage
+ */
+export const salvarServicoMoradorNoFirestore = async (condoId: string, servico: any) => {
+  try {
+    if (!condoId || !servico || !servico.id) return { success: false, error: 'Dados inválidos' };
+
+    let fotoUrlFinal = servico.imagem;
+    if (typeof fotoUrlFinal === 'string' && fotoUrlFinal.startsWith('data:')) {
+      try {
+        const caminhoFoto = `condominios/${condoId}/servicos_moradores/${servico.id}/foto_${Date.now()}.jpg`;
+        const storageUrl = await uploadFotoFirebaseStorage(caminhoFoto, fotoUrlFinal);
+        if (storageUrl) {
+          fotoUrlFinal = storageUrl;
+        }
+      } catch (errFoto) {
+        console.warn('Falha no upload da foto do serviço para o Storage:', errFoto);
+      }
+    }
+
+    const servicoFinal = {
+      ...servico,
+      imagem: typeof fotoUrlFinal === 'string' && !fotoUrlFinal.startsWith('data:') ? fotoUrlFinal : (servico.imagem || ''),
+      ativo: Boolean(servico.ativo),
+      motivoSuspensao: servico.motivoSuspensao || '',
+      atualizadoEm: new Date().toISOString()
+    };
+
+    const limpo = sanitizarParaFirestore(servicoFinal);
+    const docRef = doc(db, 'condominios', condoId, 'servicos_moradores', servico.id);
+    await setDoc(docRef, limpo, { merge: false });
+    return { success: true, fotoUrl: servicoFinal.imagem };
+  } catch (error: any) {
+    console.error('🔥 Erro ao salvar serviço no Firestore:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Exclui um serviço de morador do Firestore
+ */
+export const excluirServicoMoradorNoFirestore = async (condoId: string, id: string) => {
+  return excluirDocumentoSubcolecaoFirestore(condoId, 'servicos_moradores', id);
+};
+
+/**
+ * Salva ou atualiza uma notificação privada no Firestore
+ */
+export const salvarNotificacaoPrivadaNoFirestore = async (condoId: string, notif: any) => {
+  try {
+    if (!condoId || !notif || !notif.id) return { success: false };
+    const limpo = sanitizarParaFirestore(notif);
+    const docRef = doc(db, 'condominios', condoId, 'notificacoes_privadas', notif.id);
+    await setDoc(docRef, limpo, { merge: true });
+    return { success: true };
+  } catch (error: any) {
+    console.error('🔥 Erro ao salvar notificação privada no Firestore:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Salva ou atualiza um funcionário/colaborador no Firestore com suporte a upload de foto para o Storage
+ */
+export const salvarFuncionarioNoFirestore = async (condoId: string, funcionario: any) => {
+  try {
+    if (!condoId || !funcionario || !funcionario.id) return { success: false, error: 'Dados inválidos' };
+
+    let fotoUrlFinal = funcionario.foto;
+    if (typeof fotoUrlFinal === 'string' && fotoUrlFinal.startsWith('data:')) {
+      try {
+        const caminhoFoto = `condominios/${condoId}/funcionarios/${funcionario.id}/foto_${Date.now()}.jpg`;
+        const storageUrl = await uploadFotoFirebaseStorage(caminhoFoto, fotoUrlFinal);
+        if (storageUrl) {
+          fotoUrlFinal = storageUrl;
+        }
+      } catch (errFoto) {
+        console.warn('Falha no upload da foto do funcionário para o Storage:', errFoto);
+      }
+    }
+
+    const funcionarioFinal = {
+      ...funcionario,
+      foto: typeof fotoUrlFinal === 'string' && !fotoUrlFinal.startsWith('data:') ? fotoUrlFinal : (funcionario.foto || ''),
+      atualizadoEm: new Date().toISOString()
+    };
+
+    const limpo = sanitizarParaFirestore(funcionarioFinal);
+    const docRef = doc(db, 'condominios', condoId, 'funcionarios', funcionario.id);
+    await setDoc(docRef, limpo, { merge: true });
+    return { success: true, fotoUrl: funcionarioFinal.foto };
+  } catch (error: any) {
+    console.error('🔥 Erro ao salvar funcionário no Firestore:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Exclui um funcionário do Firestore
+ */
+export const excluirFuncionarioNoFirestore = async (condoId: string, id: string) => {
+  return excluirDocumentoSubcolecaoFirestore(condoId, 'funcionarios', id);
+};
+
+
+/**
  * Exclui um documento de uma subcoleção do condomínio
  */
 export const excluirDocumentoSubcolecaoFirestore = async (condoId: string, nomeSubcolecao: string, docId: string) => {
@@ -337,8 +442,8 @@ export const excluirDocumentoSubcolecaoFirestore = async (condoId: string, nomeS
 };
 
 /**
- * Limpa uma subcoleção existente (remove todos os documentos antigos)
- * e grava os novos itens na nuvem Firestore
+ * Limpa uma subcoleção existente (remove documentos órfãos antigos)
+ * e grava os novos itens na nuvem Firestore de forma atômica (sem estado intermediário vazio)
  */
 export const limparESubstituirSubcolecaoFirestore = async (
   condoId: string, 
@@ -350,25 +455,48 @@ export const limparESubstituirSubcolecaoFirestore = async (
     const colRef = collection(db, 'condominios', condoId, nomeSubcolecao);
     const snapshot = await getDocs(colRef);
     
-    // 1. Exclui em lote todos os documentos antigos que existiam na subcoleção
-    const batchDelete = writeBatch(db);
-    snapshot.forEach((docSnap) => {
-      batchDelete.delete(docSnap.ref);
+    // IDs dos novos documentos a serem persistidos
+    const novosItensComId = novosItens.map((item, idx) => {
+      const docId = item.id || `unit-${condoId}-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 4)}`;
+      return { ...item, id: docId };
     });
-    await batchDelete.commit();
+    const novosIdsSet = new Set(novosItensComId.map(i => i.id));
 
-    // 2. Insere os novos documentos limpos
-    const batchInsert = writeBatch(db);
-    for (const item of novosItens) {
-      const docId = item.id || `unit-${condoId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-      const docRef = doc(db, 'condominios', condoId, nomeSubcolecao, docId);
-      const limpo = sanitizarParaFirestore(item);
-      batchInsert.set(docRef, { ...limpo, condoId });
+    let batch = writeBatch(db);
+    let opCount = 0;
+
+    // 1. Deleta documentos antigos que não pertencem ao novo conjunto
+    for (const docSnap of snapshot.docs) {
+      if (!novosIdsSet.has(docSnap.id)) {
+        batch.delete(docSnap.ref);
+        opCount++;
+        if (opCount >= 400) {
+          await batch.commit();
+          batch = writeBatch(db);
+          opCount = 0;
+        }
+      }
     }
-    await batchInsert.commit();
+
+    // 2. Grava/atualiza todos os novos itens
+    for (const item of novosItensComId) {
+      const docRef = doc(db, 'condominios', condoId, nomeSubcolecao, item.id);
+      const limpo = sanitizarParaFirestore(item);
+      batch.set(docRef, { ...limpo, condoId }, { merge: false });
+      opCount++;
+      if (opCount >= 400) {
+        await batch.commit();
+        batch = writeBatch(db);
+        opCount = 0;
+      }
+    }
+
+    if (opCount > 0) {
+      await batch.commit();
+    }
     
-    console.log(`✅ Subcoleção ${nomeSubcolecao} limpa e recriada com sucesso no Firestore (${novosItens.length} itens).`);
-    return { success: true, count: novosItens.length };
+    console.log(`✅ Subcoleção ${nomeSubcolecao} sincronizada de forma atômica no Firestore (${novosItensComId.length} itens).`);
+    return { success: true, count: novosItensComId.length };
   } catch (error: any) {
     console.error(`🔥 Erro ao limpar e substituir subcoleção ${nomeSubcolecao} no condomínio ${condoId}:`, error);
     return { success: false, error: error.message };

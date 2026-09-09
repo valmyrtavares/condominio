@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useCondo, sortUnidades } from '../../context/CondoContext';
+import { useCondo, sortUnidades, deduplicateAndSortUnidades } from '../../context/CondoContext';
 import { 
   Unidade, 
   AdminUser, 
@@ -482,6 +482,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [novoColabSenha, setNovoColabSenha] = useState('');
   const [showNovoColabSenha, setShowNovoColabSenha] = useState(false);
   const [novoColabPermissoes, setNovoColabPermissoes] = useState<AdminModuloKey[]>(['portaria', 'mudancas']);
+  const [novoColabAcessoMorador, setNovoColabAcessoMorador] = useState(true);
   const [isColabTrocarSenhaModalOpen, setIsColabTrocarSenhaModalOpen] = useState(false);
   const [filtroCategoriaColab, setFiltroCategoriaColab] = useState<string>('Todos');
   const [selectedFuncionarioToEdit, setSelectedFuncionarioToEdit] = useState<Funcionario | null>(null);
@@ -489,9 +490,11 @@ export const AdminPanelScreen: React.FC = () => {
   const [adminSuccessMsg, setAdminSuccessMsg] = useState('');
   const [visibleAdminPasswords, setVisibleAdminPasswords] = useState<{ [key: string]: boolean }>({});
 
-  const isColaborador = currentUser?.role === 'colaborador';
+  const isDev = Boolean(currentUser?.isDev || currentUser?.email === 'dev@dev.com');
+  const isColaborador = currentUser?.role === 'colaborador' && !isDev;
   const hasModuloPermission = (key: AdminModuloKey): boolean => {
     if (!currentUser) return false;
+    if (isDev) return true;
     if (currentUser.role === 'sindico' || currentUser.role === 'subsindico') return true;
     if (currentUser.role === 'colaborador') {
       const allowed = currentUser.permissoesModulos || [];
@@ -605,6 +608,7 @@ export const AdminPanelScreen: React.FC = () => {
         usuario: loginFinal,
         senha: senhaFinal,
         permissoesModulos: novoColabPermissoes.length > 0 ? novoColabPermissoes : ['portaria', 'mudancas', 'dependencias', 'reparos', 'reclamacoes', 'eventos', 'servicos', 'unidades', 'equipe', 'financeiro', 'regras', 'imoveis', 'fornecedores', 'enjoei', 'assembleias', 'diario-sindico'],
+        permiteAcessoAreaMorador: true,
         tipoAcesso: tipoAcesso
       });
 
@@ -626,6 +630,7 @@ export const AdminPanelScreen: React.FC = () => {
         usuario: emailLimpo || undefined,
         senha: senhaFinal,
         permissoesModulos: novoColabPermissoes.length > 0 ? novoColabPermissoes : ['portaria'],
+        permiteAcessoAreaMorador: novoColabAcessoMorador,
         tipoAcesso: novoColabPermissoes.length >= 16 ? 'total' : 'personalizado'
       });
 
@@ -666,7 +671,7 @@ export const AdminPanelScreen: React.FC = () => {
     }));
   };
 
-  const filteredUnidades = sortUnidades(unidades.filter(u => 
+  const filteredUnidades = deduplicateAndSortUnidades(unidades.filter(u => 
     u.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (u.vagaGaragem && u.vagaGaragem.toLowerCase().includes(searchTerm.toLowerCase()))
   ));
@@ -722,6 +727,36 @@ export const AdminPanelScreen: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {/* Banner de Identificação do Desenvolvedor Master */}
+      {isDev && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-slate-900 text-white border-2 border-indigo-500/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-indigo-500 text-white font-black flex items-center justify-center shadow-md shrink-0">
+              <Sparkles className="w-6 h-6 text-amber-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-indigo-500/40 text-amber-300 border border-indigo-400/50">
+                  Modo Desenvolvedor Master (Dev)
+                </span>
+                <span className="text-xs font-black text-white">
+                  {currentUser.nome} • dev@dev.com
+                </span>
+              </div>
+              <p className="text-xs text-indigo-200 font-medium mt-0.5">
+                Acesso irrestrito ativo: todos os <strong>16 cards e abas administrativas</strong> estão 100% liberados para auditoria, suporte e recuperação de acessos.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 self-start sm:self-center shrink-0">
+            <span className="text-[11px] font-black text-emerald-300 px-3 py-1 bg-emerald-950/70 rounded-xl border border-emerald-500/50 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Super Privilégios Master
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Banner de Identificação do Colaborador Logado */}
       {isColaborador && (
@@ -1844,6 +1879,27 @@ export const AdminPanelScreen: React.FC = () => {
                         ))}
                       </div>
                     </div>
+
+                    {/* Permissão de Acesso ao Ambiente dos Moradores (Área do Cliente) */}
+                    {tipoCadastroColab === 'operacional' && (
+                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 border border-amber-300/70">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-3.5 h-3.5 text-amber-900 shrink-0" />
+                          <span className="text-[10px] font-extrabold uppercase text-amber-950">
+                            Liberar Acesso ao Ambiente de Morador (Área do Cliente)
+                          </span>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={novoColabAcessoMorador}
+                            onChange={(e) => setNovoColabAcessoMorador(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                        </label>
+                      </div>
+                    )}
 
                     {/* E-mail e Botão de Salvar */}
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-1 items-end">

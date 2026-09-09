@@ -57,6 +57,7 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
   const [whatsapp, setWhatsapp] = useState('');
   const [linkSite, setLinkSite] = useState('');
   const [sucessoMsg, setSucessoMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (servicoParaEditar) {
@@ -78,6 +79,7 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
       setWhatsapp('');
       setLinkSite('');
     }
+    setIsSubmitting(false);
   }, [servicoParaEditar, isOpen]);
 
   if (!isOpen) return null;
@@ -95,51 +97,60 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!titulo.trim() || !descricao.trim()) return;
+    if (!titulo.trim() || !descricao.trim() || isSubmitting) return;
 
+    setIsSubmitting(true);
     const contatoPrincipal = tipoBotao === 'whatsapp' ? whatsapp : (linkSite || 'Ver site');
 
-    if (servicoParaEditar) {
-      editarServicoMorador(servicoParaEditar.id, {
-        titulo: titulo.trim(),
-        subtitulo: subtitulo.trim() || undefined,
-        categoria,
-        descricao: descricao.trim(),
-        imagem,
-        tipoBotao,
-        whatsapp: tipoBotao === 'whatsapp' ? whatsapp.trim() : undefined,
-        linkSite: tipoBotao === 'site' ? linkSite.trim() : undefined,
-        contato: contatoPrincipal,
-        // Ao editar um anúncio suspenso, reseta para reavaliação da sindicância
-        ativo: true,
-        motivoSuspensao: undefined
-      });
-      setSucessoMsg('Anúncio atualizado com sucesso!');
-    } else {
-      adicionarServicoMorador({
-        titulo: titulo.trim(),
-        subtitulo: subtitulo.trim() || undefined,
-        categoria,
-        descricao: descricao.trim(),
-        imagem,
-        moradorNome: currentUser.nome && !currentUser.nome.toLowerCase().includes('morador sem dados') ? currentUser.nome : 'Morador',
-        moradorUnidade: currentUser.unidade || '001',
-        tipoBotao,
-        whatsapp: tipoBotao === 'whatsapp' ? whatsapp.trim() : undefined,
-        linkSite: tipoBotao === 'site' ? linkSite.trim() : undefined,
-        contato: contatoPrincipal,
-        ativo: true,
-        condominioId: currentUser.condominioId || 'condo-jardim-paulista'
-      });
-      setSucessoMsg('Anúncio publicado no mural de serviços!');
-    }
+    try {
+      if (servicoParaEditar) {
+        await editarServicoMorador(servicoParaEditar.id, {
+          titulo: titulo.trim(),
+          subtitulo: subtitulo.trim() || undefined,
+          categoria,
+          descricao: descricao.trim(),
+          imagem,
+          tipoBotao,
+          whatsapp: tipoBotao === 'whatsapp' ? whatsapp.trim() : undefined,
+          linkSite: tipoBotao === 'site' ? linkSite.trim() : undefined,
+          contato: contatoPrincipal
+        });
+        setSucessoMsg(servicoParaEditar.ativo === false 
+          ? 'Alterações salvas! O anúncio permanece suspenso até a liberação do síndico.' 
+          : 'Anúncio atualizado com sucesso no Firestore!'
+        );
+      } else {
+        await adicionarServicoMorador({
+          moradorId: currentUser.id || (currentUser as any).uid || `usr-${Date.now()}`,
+          titulo: titulo.trim(),
+          subtitulo: subtitulo.trim() || undefined,
+          categoria,
+          descricao: descricao.trim(),
+          imagem,
+          moradorNome: currentUser.nome && !currentUser.nome.toLowerCase().includes('morador sem dados') ? currentUser.nome : 'Morador',
+          moradorUnidade: currentUser.unidade || '001',
+          moradorFoto: currentUser.foto || '',
+          tipoBotao,
+          whatsapp: tipoBotao === 'whatsapp' ? whatsapp.trim() : undefined,
+          linkSite: tipoBotao === 'site' ? linkSite.trim() : undefined,
+          contato: contatoPrincipal,
+          ativo: true,
+          condominioId: currentUser.condominioId || 'condo-jardim-paulista'
+        });
+        setSucessoMsg('Anúncio publicado e salvo na nuvem!');
+      }
 
-    setTimeout(() => {
-      setSucessoMsg('');
-      onClose();
-    }, 1500);
+      setTimeout(() => {
+        setSucessoMsg('');
+        setIsSubmitting(false);
+        onClose();
+      }, 1200);
+    } catch (err) {
+      console.error('Erro ao salvar serviço:', err);
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -173,6 +184,18 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto space-y-4 pr-1">
           
+          {servicoParaEditar && !servicoParaEditar.ativo && (
+            <div className="p-3.5 rounded-2xl bg-amber-100/90 border border-amber-400 text-amber-950 text-xs space-y-1 animate-in fade-in duration-200">
+              <strong className="font-black flex items-center gap-1.5 text-amber-950">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                Anúncio Suspenso pela Administração
+              </strong>
+              <p className="text-[11px] font-medium leading-relaxed text-amber-900">
+                Você pode atualizar as informações e foto do seu anúncio, porém a <strong>liberação/reativação só poderá ser autorizada pelo síndico</strong> no painel de administração.
+              </p>
+            </div>
+          )}
+
           {sucessoMsg && (
             <div className="p-3 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs font-bold flex items-center gap-2 animate-in zoom-in-95">
               <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
@@ -387,9 +410,16 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
           <button
             type="submit"
             form="form-servico-morador"
-            className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md active:scale-95"
+            disabled={isSubmitting}
+            className="px-5 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md active:scale-95 flex items-center gap-1.5"
           >
-            {servicoParaEditar ? 'Salvar Alterações' : 'Publicar Anúncio'}
+            {isSubmitting ? (
+              <span>Salvando no Firestore...</span>
+            ) : servicoParaEditar ? (
+              'Salvar Alterações'
+            ) : (
+              'Publicar Anúncio'
+            )}
           </button>
         </div>
 
