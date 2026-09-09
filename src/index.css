@@ -121,3 +121,29 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(180, 160, 140, 0.5);
 }
+
+/* Modal Overlay & Content Safe Position Classes (Libera todos os Popups de trás do Header e do Footer) */
+.modal-overlay-safe {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: calc(85px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(95px + env(safe-area-inset-bottom, 0px));
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+.modal-content-safe {
+  max-height: calc(100vh - 190px) !important;
+  overflow-y: auto !important;
+  margin-top: auto;
+  margin-bottom: auto;
+}

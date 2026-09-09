@@ -49,8 +49,8 @@ export const CondominioOcorrenciasModal: React.FC<CondominioOcorrenciasModalProp
   const pendentesReparos = condoReparos.filter(r => r.status !== 'Resolvido' && r.status !== 'Executado' && r.status !== 'Confirmado').length;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden text-white">
+    <div className="modal-overlay-safe bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="modal-content-safe relative w-full max-w-4xl flex flex-col bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden text-white">
         
         {/* Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">

@@ -22,8 +22,8 @@ export const ReceiptPdfModal: React.FC<ReceiptPdfModalProps> = ({ item, tipo, on
   const autenticacaoBancaria = `AUT.BANC.BRADESCO.${item.id.toUpperCase()}.${Date.now().toString().slice(-8)}`;
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center pt-20 pb-24 sm:py-6 px-3 sm:px-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
-      <div className="bg-slate-100 border border-slate-300 text-slate-900 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[calc(100vh-170px)] sm:max-h-[85vh] my-auto">
+    <div className="modal-overlay-safe bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="modal-content-safe bg-slate-100 border border-slate-300 text-slate-900 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col my-auto">
         
         {/* Header Toolbar do Visualizador PDF */}
         <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">

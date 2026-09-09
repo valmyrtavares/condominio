@@ -38,8 +38,8 @@ export const SuspenderCondominioModal: React.FC<SuspenderCondominioModalProps> =
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden text-white">
+    <div className="modal-overlay-safe bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="modal-content-safe relative w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden text-white">
         
         {/* Header */}
         <div className={`p-6 border-b border-slate-800 flex items-center justify-between gap-4 ${

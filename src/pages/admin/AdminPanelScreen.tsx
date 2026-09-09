@@ -497,6 +497,9 @@ export const AdminPanelScreen: React.FC = () => {
     if (isDev) return true;
     if (currentUser.role === 'sindico' || currentUser.role === 'subsindico') return true;
     if (currentUser.role === 'colaborador') {
+      if ((currentUser as any).tipoAcesso === 'total' || (currentUser.permissoesModulos && currentUser.permissoesModulos.length >= 16)) {
+        return true;
+      }
       const allowed = currentUser.permissoesModulos || [];
       return allowed.includes(key);
     }
@@ -7792,16 +7795,12 @@ export const AdminPanelScreen: React.FC = () => {
         );
       })()}
 
-
-
-
-
       {/* ========================================================================= */}
       {/* MODAL: CRIAR NOVA CATEGORIA / CARGO DINÂMICO */}
       {/* ========================================================================= */}
       {isModalNovaCategoriaOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white border-2 border-amber-400 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+        <div className="modal-overlay-safe bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="modal-content-safe bg-white border-2 border-amber-400 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -7810,26 +7809,24 @@ export const AdminPanelScreen: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-black text-base text-slate-950">
-                    Criar Nova Categoria / Cargo
+                    Nova Categoria / Cargo
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Adicione qualquer novo cargo para aparecer no select sem precisar alterar código.
-                  </p>
+                  <p className="text-xs text-slate-500 font-medium">Cadastre um novo cargo de colaborador</p>
                 </div>
               </div>
-
               <button
+                type="button"
                 onClick={() => setIsModalNovaCategoriaOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleAddNovaCategoria} className="space-y-4">
               <div className="space-y-1">
                 <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                  Nome do Cargo / Categoria *
+                  Nome da Categoria / Cargo *
                 </label>
                 <input
                   type="text"

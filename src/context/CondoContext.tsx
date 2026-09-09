@@ -569,6 +569,13 @@ const DEFAULT_ADMIN_USERS: AdminUser[] = [
 
 
 
+const ALL_MODULOS: AdminModuloKey[] = [
+  'portaria', 'mudancas', 'dependencias', 'reparos', 
+  'reclamacoes', 'eventos', 'servicos', 'unidades', 
+  'equipe', 'financeiro', 'regras', 'imoveis', 
+  'fornecedores', 'enjoei', 'assembleias', 'diario-sindico'
+];
+
 export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Serviços de Moradores integrados exclusivamente ao Cloud Firestore e Firebase Storage
   const [servicosMoradores, setServicosMoradores] = useState<ServicoMorador[]>([]);
@@ -1591,7 +1598,39 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const unsubscribeFuncionarios = ouvirSubcolecaoFirestore(condoTenantId, 'funcionarios', (dadosFirestore) => {
       if (Array.isArray(dadosFirestore) && dadosFirestore.length > 0) {
-        setFuncionarios(dadosFirestore as Funcionario[]);
+        const funcs = dadosFirestore as Funcionario[];
+        setFuncionarios(funcs);
+
+        // Sincroniza em tempo real as permissões do colaborador ativo caso sua conta seja atualizada no Firestore
+        setCurrentUser(prev => {
+          if (prev && prev.role === 'colaborador') {
+            const match = funcs.find(f => 
+              f.id === prev.id || 
+              (f.email && f.email.toLowerCase() === prev.email?.toLowerCase()) || 
+              (f.usuario && f.usuario.toLowerCase() === prev.email?.toLowerCase())
+            );
+
+            if (match) {
+              const isTotal = (match as any).tipoAcesso === 'total' || 
+                              match.categoria === 'Gestão' || 
+                              (match.permissoesModulos && match.permissoesModulos.length >= 16);
+              const userPerms = isTotal 
+                ? ALL_MODULOS 
+                : (match.permissoesModulos && match.permissoesModulos.length > 0 
+                    ? match.permissoesModulos 
+                    : (match.categoria === 'Portaria' ? ['portaria'] : ['portaria']));
+
+              return {
+                ...prev,
+                permissoesModulos: userPerms,
+                tipoAcesso: isTotal ? 'total' : 'personalizado',
+                profissao: match.funcao || prev.profissao,
+                bloco: match.categoria || prev.bloco
+              } as User;
+            }
+          }
+          return prev;
+        });
       } else if (Array.isArray(dadosFirestore) && dadosFirestore.length === 0) {
         // Se a coleção estiver vazia na nuvem, efetua o seed inicial dos 9 colaboradores padrão
         const seedLimpo = MOCK_FUNCIONARIOS.map(f => ({ ...f, status: f.status || 'Ativo' }));
@@ -1681,6 +1720,95 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     });
 
+    const unReparos = ouvirSubcolecaoFirestore(condoTenantId, 'reparos', (dados) => {
+      if (Array.isArray(dados)) {
+        try {
+          localStorage.removeItem('condo_reparos_list');
+        } catch {}
+
+        const moradoresCadastrados = unidades.flatMap(u => u.moradores || []);
+        const uidsCadastrados = new Set(moradoresCadastrados.map(m => String(m.id || (m as any).uid || '').toLowerCase()));
+        
+        const unidadesComMoradores = new Set(
+          unidades
+            .filter(u => u.moradores && u.moradores.length > 0)
+            .map(u => String(u.numero).toLowerCase())
+        );
+
+        const reparosValidos: Reparo[] = [];
+
+        dados.forEach((repRaw: any) => {
+          const idStr = String(repRaw.id || '');
+          const unStr = String(repRaw.solicitanteUnidade || '').toLowerCase();
+          const nomeStr = String(repRaw.solicitanteNome || '').toLowerCase();
+
+          const numMatch = unStr.match(/\d+/);
+          const aptNumero = numMatch ? numMatch[0] : '';
+
+          const isAdminOuZeladoria = unStr.includes('administração') || unStr.includes('portaria') || unStr.includes('zeladoria') || nomeStr.includes('zeladoria') || nomeStr.includes('mariana') || nomeStr.includes('admin') || nomeStr.includes('síndic');
+
+          const temUnidadeComMoradores = aptNumero ? unidadesComMoradores.has(aptNumero) : false;
+
+          // Se a unidade não possui moradores cadastrados (ex: Apt 102 sem morador) e não for administração/zeladoria, expurga do Firestore
+          if (!isAdminOuZeladoria && aptNumero && !temUnidadeComMoradores) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', idStr).catch(() => {});
+          } else {
+            reparosValidos.push(repRaw as Reparo);
+          }
+        });
+
+        if (reparosValidos.length > 0) {
+          setReparos(reparosValidos);
+        } else if (dados.length === 0) {
+          const cleanMocks = MOCK_REPAROS.filter(m => {
+            const numMatch = (m.solicitanteUnidade || '').match(/\d+/);
+            const aptNum = numMatch ? numMatch[0] : '';
+            return !aptNum || unidadesComMoradores.has(aptNum) || m.solicitanteUnidade === 'Administração';
+          });
+          setReparos(cleanMocks);
+          sincronizarSubcolecaoTenant(condoTenantId, 'reparos', cleanMocks).catch(console.error);
+        } else {
+          setReparos(reparosValidos);
+        }
+      }
+    });
+
+    const unReclamacoes = ouvirSubcolecaoFirestore(condoTenantId, 'reclamacoes', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setReclamacoes(dados as Reclamacao[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        setReclamacoes(MOCK_RECLAMACOES);
+        sincronizarSubcolecaoTenant(condoTenantId, 'reclamacoes', MOCK_RECLAMACOES).catch(console.error);
+      }
+    });
+
+    const unEventos = ouvirSubcolecaoFirestore(condoTenantId, 'eventos', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setEventos(dados as EventoCondominio[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        setEventos(MOCK_EVENTOS);
+        sincronizarSubcolecaoTenant(condoTenantId, 'eventos', MOCK_EVENTOS).catch(console.error);
+      }
+    });
+
+    const unDependencias = ouvirSubcolecaoFirestore(condoTenantId, 'dependencias', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setDependencias(dados as Dependencia[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        setDependencias(MOCK_DEPENDENCIAS);
+        sincronizarSubcolecaoTenant(condoTenantId, 'dependencias', MOCK_DEPENDENCIAS).catch(console.error);
+      }
+    });
+
+    const unAssembleias = ouvirSubcolecaoFirestore(condoTenantId, 'assembleias', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setAssembleias(dados as Assembleia[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        setAssembleias(MOCK_ASSEMBLEIAS);
+        sincronizarSubcolecaoTenant(condoTenantId, 'assembleias', MOCK_ASSEMBLEIAS).catch(console.error);
+      }
+    });
+
     return () => {
       unRegras();
       unImoveis();
@@ -1690,6 +1818,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unMudancas();
       unAcessos();
       unEncomendas();
+      unReparos();
+      unReclamacoes();
+      unEventos();
+      unDependencias();
+      unAssembleias();
     };
   }, [condoTenantId]);
 
@@ -1781,72 +1914,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [currentUser]);
 
-  const [reclamacoes, setReclamacoes] = useState<Reclamacao[]>(() => {
-    const saved = localStorage.getItem('condo_reclamacoes_list');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return MOCK_RECLAMACOES;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('condo_reclamacoes_list', JSON.stringify(reclamacoes));
-  }, [reclamacoes]);
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'condo_reclamacoes_list' && e.newValue) {
-        try {
-          setReclamacoes(JSON.parse(e.newValue));
-        } catch {}
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-  const [reparos, setReparos] = useState<Reparo[]>(() => {
-    const saved = localStorage.getItem('condo_reparos_list');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return MOCK_REPAROS;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('condo_reparos_list', JSON.stringify(reparos));
-  }, [reparos]);
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'condo_reparos_list' && e.newValue) {
-        try {
-          setReparos(JSON.parse(e.newValue));
-        } catch {}
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  const [reclamacoes, setReclamacoes] = useState<Reclamacao[]>(MOCK_RECLAMACOES);
+  const [reparos, setReparos] = useState<Reparo[]>(MOCK_REPAROS);
   const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>(MOCK_BENFEITORIAS);
   const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>(MOCK_VAGAS_GARAGEM);
-  // Dependências & Áreas Comuns com persistência
-  const [dependencias, setDependencias] = useState<Dependencia[]>(() => {
-    const saved = localStorage.getItem('condo_dependencias_list');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return MOCK_DEPENDENCIAS;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('condo_dependencias_list', JSON.stringify(dependencias));
-  }, [dependencias]);
+  const [dependencias, setDependencias] = useState<Dependencia[]>(MOCK_DEPENDENCIAS);
 
   const adicionarDependencia = (nova: Omit<Dependencia, 'id' | 'condominioId'>) => {
     const cleanNome = nova.nome.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'dep';
@@ -1857,15 +1929,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       condominioId: CURRENT_CONDO_ID
     };
     setDependencias(prev => [novaDep, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'dependencias', novaDep).catch(console.error);
   };
 
   const editarDependencia = (id: string, dados: Partial<Dependencia>) => {
     setDependencias(prev => prev.map(d => {
       if (d.id === id) {
-        return {
-          ...d,
-          ...dados
-        };
+        const at = { ...d, ...dados };
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'dependencias', at).catch(console.error);
+        return at;
       }
       return d;
     }));
@@ -1873,39 +1945,18 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const excluirDependencia = (id: string) => {
     setDependencias(prev => prev.filter(d => d.id !== id));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'dependencias', id).catch(console.error);
   };
 
   const [reservas, setReservas] = useState<ReservaDependencia[]>(MOCK_RESERVAS);
-  // Assembleias e Reuniões Informais com persistência
-  const [assembleias, setAssembleias] = useState<Assembleia[]>(() => {
-    const saved = localStorage.getItem('condo_assembleias_list');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return MOCK_ASSEMBLEIAS.map(a => ({
+  
+  const [assembleias, setAssembleias] = useState<Assembleia[]>(() => 
+    MOCK_ASSEMBLEIAS.map(a => ({
       ...a,
       tipoEncontro: a.tipoEncontro || 'Assembleia Geral',
       participantesTipo: a.participantesTipo || 'todos'
-    }));
-  });
-
-  useEffect(() => {
-    localStorage.setItem('condo_assembleias_list', JSON.stringify(assembleias));
-  }, [assembleias]);
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'condo_assembleias_list' && e.newValue) {
-        try {
-          setAssembleias(JSON.parse(e.newValue));
-        } catch {}
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    }))
+  );
 
   const adicionarAssembleia = (nova: Omit<Assembleia, 'id' | 'condominioId'>) => {
     const novaAss: Assembleia = {
@@ -1917,14 +1968,23 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...nova
     };
     setAssembleias(prev => [novaAss, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'assembleias', novaAss).catch(console.error);
   };
 
   const editarAssembleia = (id: string, dados: Partial<Assembleia>) => {
-    setAssembleias(prev => prev.map(a => a.id === id ? { ...a, ...dados } : a));
+    setAssembleias(prev => prev.map(a => {
+      if (a.id === id) {
+        const at = { ...a, ...dados };
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'assembleias', at).catch(console.error);
+        return at;
+      }
+      return a;
+    }));
   };
 
   const excluirAssembleia = (id: string) => {
     setAssembleias(prev => prev.filter(a => a.id !== id));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'assembleias', id).catch(console.error);
   };
 
   const publicarAtaAssembleia = (
@@ -1935,33 +1995,32 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   ) => {
     setAssembleias(prev => prev.map(a => {
       if (a.id === id) {
-        return {
+        const at = {
           ...a,
           status,
           ata,
           pautas: pautasAtualizadas || a.pautas
         };
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'assembleias', at).catch(console.error);
+        return at;
       }
       return a;
     }));
   };
 
-  // Eventos & Celebrações com persistência e moderação
-  const [eventos, setEventos] = useState<EventoCondominio[]>(() => {
-    const saved = localStorage.getItem('condo_eventos_list');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return MOCK_EVENTOS.map(e => ({
+  const [eventos, setEventos] = useState<EventoCondominio[]>(() =>
+    MOCK_EVENTOS.map(e => ({
       ...e,
       ativo: e.ativo !== undefined ? e.ativo : true
-    }));
-  });
+    }))
+  );
 
   useEffect(() => {
-    localStorage.setItem('condo_eventos_list', JSON.stringify(eventos));
+    try {
+      localStorage.setItem('condo_eventos_list', JSON.stringify(eventos));
+    } catch (e) {
+      console.warn('Could not save condo_eventos_list to localStorage:', e);
+    }
   }, [eventos]);
 
   useEffect(() => {
@@ -2031,7 +2090,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   useEffect(() => {
-    localStorage.setItem('condo_meses_prestacao', JSON.stringify(mesesPrestacao));
+    try {
+      localStorage.setItem('condo_meses_prestacao', JSON.stringify(mesesPrestacao));
+    } catch (e) {
+      console.warn('Could not save condo_meses_prestacao to localStorage:', e);
+    }
   }, [mesesPrestacao]);
 
   const [categoriasDespesa, setCategoriasDespesa] = useState<string[]>(() => {
@@ -2056,7 +2119,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   useEffect(() => {
-    localStorage.setItem('condo_categorias_despesa', JSON.stringify(categoriasDespesa));
+    try {
+      localStorage.setItem('condo_categorias_despesa', JSON.stringify(categoriasDespesa));
+    } catch (e) {
+      console.warn('Could not save condo_categorias_despesa to localStorage:', e);
+    }
   }, [categoriasDespesa]);
 
   const [categoriasReceita, setCategoriasReceita] = useState<string[]>(() => {
@@ -2078,7 +2145,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   useEffect(() => {
-    localStorage.setItem('condo_categorias_receita', JSON.stringify(categoriasReceita));
+    try {
+      localStorage.setItem('condo_categorias_receita', JSON.stringify(categoriasReceita));
+    } catch (e) {
+      console.warn('Could not save condo_categorias_receita to localStorage:', e);
+    }
   }, [categoriasReceita]);
 
   const prestacaoContas = mesesPrestacao['Abril / 2026'] || Object.values(mesesPrestacao)[0] || MOCK_PRESTACAO_CONTAS;
@@ -2913,9 +2984,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setIsAdminLoggedIn(true);
       localStorage.setItem('condo_admin_auth', 'true');
       
-      const userPermissoes: AdminModuloKey[] = matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length > 0
-        ? matchedFuncionario.permissoesModulos
-        : (matchedFuncionario.categoria === 'Portaria' ? ['portaria'] : ['portaria']);
+      const isTotalAccess = (matchedFuncionario as any).tipoAcesso === 'total' || 
+                            matchedFuncionario.categoria === 'Gestão' || 
+                            (matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length >= 16);
+
+      const userPermissoes: AdminModuloKey[] = isTotalAccess 
+        ? ALL_MODULOS 
+        : (matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length > 0
+            ? matchedFuncionario.permissoesModulos
+            : (matchedFuncionario.categoria === 'Portaria' ? ['portaria'] : ['portaria']));
 
       const colabUserObj: User = {
         id: matchedFuncionario.id,
@@ -2928,8 +3005,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         profissao: matchedFuncionario.funcao,
         permissoesModulos: userPermissoes,
         permiteAcessoAreaMorador: matchedFuncionario.permiteAcessoAreaMorador !== false,
-        condominioId: currentCondo.id
-      };
+        condominioId: currentCondo.id,
+        tipoAcesso: isTotalAccess ? 'total' : 'personalizado'
+      } as User;
 
       setCurrentUser(colabUserObj);
       localStorage.setItem('condo_current_user', JSON.stringify(colabUserObj));
@@ -3228,9 +3306,18 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         };
       }
 
-      const userPermissoes: AdminModuloKey[] = matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length > 0
-        ? matchedFuncionario.permissoesModulos
-        : (matchedFuncionario.categoria === 'Portaria' ? ['portaria'] : ['portaria']);
+      setIsAdminLoggedIn(true);
+      localStorage.setItem('condo_admin_auth', 'true');
+
+      const isTotalAccess = (matchedFuncionario as any).tipoAcesso === 'total' || 
+                            matchedFuncionario.categoria === 'Gestão' || 
+                            (matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length >= 16);
+
+      const userPermissoes: AdminModuloKey[] = isTotalAccess 
+        ? ALL_MODULOS 
+        : (matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length > 0
+            ? matchedFuncionario.permissoesModulos
+            : (matchedFuncionario.categoria === 'Portaria' ? ['portaria'] : ['portaria']));
 
       const colabUserObj: User = {
         id: matchedFuncionario.id,
@@ -3243,8 +3330,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         profissao: matchedFuncionario.funcao,
         permissoesModulos: userPermissoes,
         permiteAcessoAreaMorador: true,
-        condominioId: currentCondo.id
-      };
+        condominioId: currentCondo.id,
+        tipoAcesso: isTotalAccess ? 'total' : 'personalizado'
+      } as User;
 
       const authData = {
         unidade: 'Staff',
@@ -4097,6 +4185,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const excluirReparo = (reparoId: string) => {
     setReparos(prev => prev.filter(r => r.id !== reparoId));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', reparoId).catch(console.error);
   };
 
   const resolverReparoSimples = (reparoId: string, observacao?: string) => {
@@ -4118,13 +4207,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           timeline: [...(rep.timeline || []), novaStep]
         };
 
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', reparoAtualizado).catch(console.error);
+
         if (rep.reclamacaoId) {
           setReclamacoes(recs => recs.map(rec => {
             if (rec.id === rep.reclamacaoId) {
-              return {
+              const recAt = {
                 ...rec,
                 status: 'Resolvida' as StatusReclamacao
               };
+              salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', recAt).catch(console.error);
+              return recAt;
             }
             return rec;
           }));
@@ -4156,14 +4249,18 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           timeline: [...rep.timeline, novaStep]
         };
 
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', reparoAtualizado).catch(console.error);
+
         // If completed/executed, update linked complaint if any
         if ((novoStatus === 'Resolvido' || novoStatus === 'Executado' || novoStatus === 'Confirmado') && rep.reclamacaoId) {
           setReclamacoes(recs => recs.map(rec => {
             if (rec.id === rep.reclamacaoId) {
-              return {
+              const recAt = {
                 ...rec,
                 status: 'Resolvida' as StatusReclamacao
               };
+              salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', recAt).catch(console.error);
+              return recAt;
             }
             return rec;
           }));
@@ -4201,6 +4298,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
     setReclamacoes(prev => [novaRec, ...prev]);
     setSelectedReclamacaoId(novaRec.id);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', novaRec).catch(console.error);
   };
 
   const adicionarReparo = (
@@ -4246,6 +4344,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setReparos(prev => [novoReparo, ...prev]);
     setSelectedReparoId(novoReparo.id);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', novoReparo).catch(console.error);
   };
 
   const adicionarBenfeitoria = (

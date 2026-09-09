@@ -22,8 +22,8 @@ export const TransformToRepairModal: React.FC<TransformToRepairModalProps> = ({ 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white border border-slate-200 text-slate-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
+    <div className="modal-overlay-safe bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="modal-content-safe bg-white border border-slate-200 text-slate-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
         
         {/* Modal Header */}
         <div className="p-4 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between">

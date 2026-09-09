@@ -161,7 +161,7 @@ export const EditResidentCellModal: React.FC<EditResidentCellModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+    <div className="modal-overlay-safe">
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
@@ -169,7 +169,7 @@ export const EditResidentCellModal: React.FC<EditResidentCellModalProps> = ({
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-lg bg-white/95 border-2 border-white rounded-3xl p-5 sm:p-7 shadow-2xl backdrop-blur-xl z-10 space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+      <div className="modal-content-safe relative w-full max-w-lg bg-white/95 border-2 border-white rounded-3xl p-5 sm:p-7 shadow-2xl backdrop-blur-xl z-10 space-y-5 animate-in zoom-in-95 duration-200 flex flex-col">
         
         {/* Header */}
         <div className="flex items-start justify-between shrink-0">

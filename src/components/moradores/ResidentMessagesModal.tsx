@@ -58,8 +58,8 @@ export const ResidentMessagesModal: React.FC<ResidentMessagesModalProps> = ({
     : `Apt ${unidade.numero}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white border-2 border-amber-400 rounded-3xl w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col justify-between overflow-hidden">
+    <div className="modal-overlay-safe bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="modal-content-safe bg-white border-2 border-amber-400 rounded-3xl w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 flex flex-col justify-between">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-amber-100 pb-3">

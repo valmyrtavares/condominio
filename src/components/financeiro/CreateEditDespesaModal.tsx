@@ -144,8 +144,8 @@ export const CreateEditDespesaModal: React.FC<CreateEditDespesaModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
-      <div className="bg-white border border-rose-200 text-slate-900 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl my-auto max-h-[calc(100vh-100px)] flex flex-col">
+    <div className="modal-overlay-safe bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="modal-content-safe bg-white border border-rose-200 text-slate-900 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col">
         
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-rose-100 bg-rose-50/80 flex items-center justify-between shrink-0">

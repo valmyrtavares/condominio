@@ -49,8 +49,8 @@ export const NotificarCondominioModal: React.FC<NotificarCondominioModalProps> =
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden text-white">
+    <div className="modal-overlay-safe bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="modal-content-safe relative w-full max-w-lg bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden text-white">
         
         {/* Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between gap-4 bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900">

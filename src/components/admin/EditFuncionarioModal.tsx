@@ -166,10 +166,10 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="modal-overlay-safe bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="fixed inset-0" onClick={onClose} />
 
-      <div className="relative w-full max-w-xl max-h-[calc(100dvh-5rem)] bg-white border-2 border-amber-400 rounded-3xl shadow-2xl flex flex-col overflow-hidden z-10 animate-in zoom-in-95 duration-200 my-auto">
+      <div className="modal-content-safe relative w-full max-w-xl bg-white border-2 border-amber-400 rounded-3xl shadow-2xl flex flex-col z-10 animate-in zoom-in-95 duration-200">
         
         {/* Header Fixo */}
         <div className="shrink-0 p-4 sm:p-5 bg-gradient-to-r from-amber-100 via-amber-50 to-white flex items-center justify-between border-b border-amber-200">

@@ -22,8 +22,8 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({ despesa,
   };
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center pt-20 pb-24 sm:py-6 px-3 sm:px-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
-      <div className="bg-white border border-slate-200 text-slate-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl my-auto max-h-[calc(100vh-170px)] sm:max-h-[85vh] flex flex-col">
+    <div className="modal-overlay-safe bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="modal-content-safe bg-white border border-slate-200 text-slate-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
         
         {/* Header */}
         <div className="p-4 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between">

@@ -451,9 +451,16 @@ export const ReparosScreen: React.FC = () => {
                 }`}
               >
                 {/* Header section (Always visible) */}
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => toggleExpand(rep.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleExpand(rep.id);
+                    }
+                  }}
                   className="w-full p-4 flex items-center justify-between gap-3 text-left focus:outline-none cursor-pointer select-none"
                 >
                   <div className="min-w-0 flex-1 space-y-1">
@@ -538,7 +545,7 @@ export const ReparosScreen: React.FC = () => {
                       <ChevronDown className={`w-4 h-4 transition-transform duration-300 ease-out ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
                     </div>
                   </div>
-                </button>
+                </div>
 
                 {/* Expandable Section com Animação Suave Grid */}
                 <div 
