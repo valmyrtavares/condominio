@@ -101,7 +101,8 @@ import {
   excluirServicoMoradorNoFirestore,
   salvarNotificacaoPrivadaNoFirestore,
   salvarFuncionarioNoFirestore,
-  excluirFuncionarioNoFirestore
+  excluirFuncionarioNoFirestore,
+  salvarDocumentoSubcolecaoFirestore
 } from '../services/firebase';
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -658,22 +659,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Regras e Regulamento do Condomínio State
-  const [regrasCondominio, setRegrasCondominio] = useState<RegraTopico[]>(() => {
-    const saved = localStorage.getItem('condo_regras_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch {}
-    }
-    return MOCK_REGRAS_CONDOMINIO;
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('condo_regras_list', JSON.stringify(regrasCondominio));
-    } catch {}
-  }, [regrasCondominio]);
+  const [regrasCondominio, setRegrasCondominio] = useState<RegraTopico[]>(MOCK_REGRAS_CONDOMINIO);
 
   const adicionarRegraCondominio = (novaRegra: Omit<RegraTopico, 'id'>) => {
     const id = `regra-${Date.now()}`;
@@ -685,43 +671,41 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ordem: novaRegra.ordem ?? (regrasCondominio.length + 1)
     };
     setRegrasCondominio(prev => [...prev, nova]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'regras', nova).catch(console.error);
   };
 
   const editarRegraCondominio = (id: string, dados: Partial<RegraTopico>) => {
+    let itemAtualizado: RegraTopico | null = null;
     setRegrasCondominio(prev => prev.map(r => {
       if (r.id === id) {
-        return {
+        itemAtualizado = {
           ...r,
           ...dados,
           atualizadoEm: new Date().toISOString().split('T')[0]
         };
+        return itemAtualizado;
       }
       return r;
     }));
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'regras', itemAtualizado).catch(console.error);
+    }
   };
 
   const excluirRegraCondominio = (id: string) => {
     setRegrasCondominio(prev => prev.filter(r => r.id !== id));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'regras', id).catch(console.error);
   };
 
   const reordenarRegrasCondominio = (novasRegras: RegraTopico[]) => {
     setRegrasCondominio(novasRegras);
+    novasRegras.forEach(item => {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'regras', item).catch(console.error);
+    });
   };
 
   // Unidades Disponíveis (Aluguel e Venda) State & CRUD
-  const [unidadesDisponiveis, setUnidadesDisponiveis] = useState<UnidadeDisponivel[]>(() => {
-    const saved = localStorage.getItem('condo_unidades_disponiveis_list');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return MOCK_UNIDADES_DISPONIVEIS;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('condo_unidades_disponiveis_list', JSON.stringify(unidadesDisponiveis));
-  }, [unidadesDisponiveis]);
+  const [unidadesDisponiveis, setUnidadesDisponiveis] = useState<UnidadeDisponivel[]>(MOCK_UNIDADES_DISPONIVEIS);
 
   const adicionarUnidadeDisponivel = (nova: Omit<UnidadeDisponivel, 'id' | 'condominioId' | 'dataAnuncio'> & { dataAnuncio?: string }) => {
     const hoje = new Date().toLocaleDateString('pt-BR');
@@ -731,41 +715,36 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...nova,
       id,
       dataAnuncio: nova.dataAnuncio || hoje,
-      condominioId: CURRENT_CONDO_ID
+      condominioId: condoTenantId
     };
     setUnidadesDisponiveis(prev => [novaUnidade, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'imoveis_disponiveis', novaUnidade).catch(console.error);
   };
 
   const editarUnidadeDisponivel = (id: string, dados: Partial<UnidadeDisponivel>) => {
+    let itemAtualizado: UnidadeDisponivel | null = null;
     setUnidadesDisponiveis(prev => prev.map(u => {
       if (u.id === id) {
-        return {
+        itemAtualizado = {
           ...u,
           ...dados
         };
+        return itemAtualizado;
       }
       return u;
     }));
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'imoveis_disponiveis', itemAtualizado).catch(console.error);
+    }
   };
 
   const excluirUnidadeDisponivel = (id: string) => {
     setUnidadesDisponiveis(prev => prev.filter(u => u.id !== id));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'imoveis_disponiveis', id).catch(console.error);
   };
 
   // Serviços Contratados & Fornecedores State & CRUD
-  const [servicosContratados, setServicosContratados] = useState<ServicoContratado[]>(() => {
-    const saved = localStorage.getItem('condo_servicos_contratados_list');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return MOCK_SERVICOS_CONTRATADOS;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('condo_servicos_contratados_list', JSON.stringify(servicosContratados));
-  }, [servicosContratados]);
+  const [servicosContratados, setServicosContratados] = useState<ServicoContratado[]>(MOCK_SERVICOS_CONTRATADOS);
 
   const adicionarServicoContratado = (novo: Omit<ServicoContratado, 'id' | 'condominioId'>) => {
     const cleanNome = novo.empresaNome.toLowerCase().replace(/[^a-z0-9]/g, '') || 'empresa';
@@ -773,44 +752,36 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const novoServico: ServicoContratado = {
       ...novo,
       id,
-      condominioId: CURRENT_CONDO_ID
+      condominioId: condoTenantId
     };
     setServicosContratados(prev => [novoServico, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'servicos_contratados', novoServico).catch(console.error);
   };
 
   const editarServicoContratado = (id: string, dados: Partial<ServicoContratado>) => {
+    let itemAtualizado: ServicoContratado | null = null;
     setServicosContratados(prev => prev.map(s => {
       if (s.id === id) {
-        return {
+        itemAtualizado = {
           ...s,
           ...dados
         };
+        return itemAtualizado;
       }
       return s;
     }));
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'servicos_contratados', itemAtualizado).catch(console.error);
+    }
   };
 
   const excluirServicoContratado = (id: string) => {
     setServicosContratados(prev => prev.filter(s => s.id !== id));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'servicos_contratados', id).catch(console.error);
   };
 
   // Enjoei do Condomínio (Desapego, Venda, Doação, Retirada e Troca) State & CRUD
-  const [itensEnjoei, setItensEnjoei] = useState<ItemEnjoei[]>(() => {
-    const saved = localStorage.getItem('condo_enjoei_items_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch {}
-    }
-    return MOCK_ITENS_ENJOEI;
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('condo_enjoei_items_list', JSON.stringify(itensEnjoei));
-    } catch {}
-  }, [itensEnjoei]);
+  const [itensEnjoei, setItensEnjoei] = useState<ItemEnjoei[]>(MOCK_ITENS_ENJOEI);
 
   const adicionarItemEnjoei = (novo: Omit<ItemEnjoei, 'id' | 'dataPublicacao' | 'status' | 'condominioId'> & { dataPublicacao?: string }) => {
     const hoje = new Date().toLocaleDateString('pt-BR');
@@ -820,47 +791,64 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id,
       dataPublicacao: novo.dataPublicacao || hoje,
       status: 'disponivel',
-      condominioId: CURRENT_CONDO_ID
+      condominioId: condoTenantId
     };
     setItensEnjoei(prev => [novoItem, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'enjoei', novoItem).catch(console.error);
   };
 
   const editarItemEnjoei = (id: string, dados: Partial<ItemEnjoei>) => {
+    let itemAtualizado: ItemEnjoei | null = null;
     setItensEnjoei(prev => prev.map(item => {
       if (item.id === id) {
-        return {
+        itemAtualizado = {
           ...item,
           ...dados
         };
+        return itemAtualizado;
       }
       return item;
     }));
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'enjoei', itemAtualizado).catch(console.error);
+    }
   };
 
   const atualizarStatusItemEnjoei = (id: string, status: StatusItemEnjoei) => {
+    let itemAtualizado: ItemEnjoei | null = null;
     setItensEnjoei(prev => prev.map(item => {
       if (item.id === id) {
-        return {
+        itemAtualizado = {
           ...item,
           status
         };
+        return itemAtualizado;
       }
       return item;
     }));
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'enjoei', itemAtualizado).catch(console.error);
+    }
   };
 
   const suspenderItemEnjoei = (id: string, motivo: string) => {
     const target = itensEnjoei.find(i => i.id === id);
+    let itemAtualizado: ItemEnjoei | null = null;
     setItensEnjoei(prev => prev.map(item => {
       if (item.id === id) {
-        return {
+        itemAtualizado = {
           ...item,
           status: 'suspenso',
           motivoSuspensao: motivo.trim() || 'Desacordo com as diretrizes de desapego do condomínio.'
         };
+        return itemAtualizado;
       }
       return item;
     }));
+
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'enjoei', itemAtualizado).catch(console.error);
+    }
 
     if (target) {
       const cleanUnit = target.moradorUnidade.replace(/[^0-9]/g, '');
@@ -875,95 +863,60 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const reativarItemEnjoei = (id: string) => {
+    let itemAtualizado: ItemEnjoei | null = null;
     setItensEnjoei(prev => prev.map(item => {
       if (item.id === id) {
-        return {
+        itemAtualizado = {
           ...item,
           status: 'disponivel',
           motivoSuspensao: undefined
         };
+        return itemAtualizado;
       }
       return item;
     }));
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'enjoei', itemAtualizado).catch(console.error);
+    }
   };
 
   const excluirItemEnjoei = (id: string) => {
     setItensEnjoei(prev => prev.filter(item => item.id !== id));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'enjoei', id).catch(console.error);
   };
 
   // ==========================================
   // DIÁRIO DO SÍNDICO & FEED CRONOLÓGICO DE ATIVIDADES
   // ==========================================
-  const [registrosAtividades, setRegistrosAtividades] = useState<RegistroAtividade[]>(() => {
-    const saved = localStorage.getItem('condo_registros_atividades_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch {}
-    }
-    return MOCK_REGISTROS_ATIVIDADES;
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('condo_registros_atividades_list', JSON.stringify(registrosAtividades));
-    } catch {}
-  }, [registrosAtividades]);
+  const [registrosAtividades, setRegistrosAtividades] = useState<RegistroAtividade[]>(MOCK_REGISTROS_ATIVIDADES);
 
   const adicionarRegistroAtividade = (reg: Omit<RegistroAtividade, 'id' | 'condominioId'>) => {
     const id = `act-${Date.now()}`;
     const novoReg: RegistroAtividade = {
       ...reg,
       id,
-      condominioId: CURRENT_CONDO_ID
+      condominioId: condoTenantId
     };
     setRegistrosAtividades(prev => [novoReg, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'atividades_diario', novoReg).catch(console.error);
   };
 
   const excluirRegistroAtividade = (id: string) => {
     setRegistrosAtividades(prev => prev.filter(r => r.id !== id));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'atividades_diario', id).catch(console.error);
   };
 
   // ==========================================
   // GESTÃO & AGENDAMENTO DE MUDANÇAS
   // ==========================================
-  const [regrasMudanca, setRegrasMudanca] = useState<RegrasMudancaConfig>(() => {
-    const saved = localStorage.getItem('condo_regras_mudanca');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return MOCK_REGRAS_MUDANCA;
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('condo_regras_mudanca', JSON.stringify(regrasMudanca));
-    } catch {}
-  }, [regrasMudanca]);
+  const [regrasMudanca, setRegrasMudanca] = useState<RegrasMudancaConfig>(MOCK_REGRAS_MUDANCA);
 
   const salvarRegrasMudanca = (novasRegras: RegrasMudancaConfig) => {
     setRegrasMudanca(novasRegras);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'mudancas', { id: 'config_regras', ...novasRegras }).catch(console.error);
   };
 
-  const [mudancas, setMudancas] = useState<MudancaAgendamento[]>(() => {
-    const saved = localStorage.getItem('condo_mudancas_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch {}
-    }
-    return MOCK_MUDANCAS;
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('condo_mudancas_list', JSON.stringify(mudancas));
-    } catch {}
-  }, [mudancas]);
+  const [mudancas, setMudancas] = useState<MudancaAgendamento[]>(MOCK_MUDANCAS);
 
   const adicionarMudanca = (nova: Omit<MudancaAgendamento, 'id' | 'condominioId' | 'criadoEm'>) => {
     const id = `mud-${Date.now()}`;
@@ -973,9 +926,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...nova,
       id,
       criadoEm: dataHoraStr,
-      condominioId: CURRENT_CONDO_ID
+      condominioId: condoTenantId
     };
     setMudancas(prev => [novaMudanca, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'mudancas', novaMudanca).catch(console.error);
 
     // Registra automaticamente no Diário do Síndico
     adicionarRegistroAtividade({
@@ -995,16 +949,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const atualizarStatusMudanca = (id: string, novoStatus: StatusMudanca, motivoRecusa?: string) => {
     const target = mudancas.find(m => m.id === id);
+    let itemAtualizado: MudancaAgendamento | null = null;
     setMudancas(prev => prev.map(m => {
       if (m.id === id) {
-        return {
+        itemAtualizado = {
           ...m,
           status: novoStatus,
           motivoRecusa: motivoRecusa !== undefined ? motivoRecusa : m.motivoRecusa
         };
+        return itemAtualizado;
       }
       return m;
     }));
+
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'mudancas', itemAtualizado).catch(console.error);
+    }
 
     if (target) {
       const cleanUnit = target.unidade.replace(/[^0-9]/g, '');
@@ -1027,32 +987,28 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const editarMudanca = (id: string, dados: Partial<MudancaAgendamento>) => {
-    setMudancas(prev => prev.map(m => (m.id === id ? { ...m, ...dados } : m)));
+    let itemAtualizado: MudancaAgendamento | null = null;
+    setMudancas(prev => prev.map(m => {
+      if (m.id === id) {
+        itemAtualizado = { ...m, ...dados };
+        return itemAtualizado;
+      }
+      return m;
+    }));
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'mudancas', itemAtualizado).catch(console.error);
+    }
   };
 
   const excluirMudanca = (id: string) => {
     setMudancas(prev => prev.filter(m => m.id !== id));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'mudancas', id).catch(console.error);
   };
 
   // ==========================================
   // PORTARIA: AUTORIZAÇÃO DE ACESSOS E VISITAS
   // ==========================================
-  const [autorizacoesAcesso, setAutorizacoesAcesso] = useState<AutorizacaoAcesso[]>(() => {
-    const saved = localStorage.getItem('condo_autorizacoes_acesso_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch {}
-    }
-    return MOCK_AUTORIZACOES_ACESSO;
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('condo_autorizacoes_acesso_list', JSON.stringify(autorizacoesAcesso));
-    } catch {}
-  }, [autorizacoesAcesso]);
+  const [autorizacoesAcesso, setAutorizacoesAcesso] = useState<AutorizacaoAcesso[]>(MOCK_AUTORIZACOES_ACESSO);
 
   const adicionarAutorizacaoAcesso = (nova: Omit<AutorizacaoAcesso, 'id' | 'condominioId' | 'criadoEm' | 'status'> & { status?: StatusAutorizacaoAcesso }) => {
     const id = `acesso-${Date.now()}`;
@@ -1063,9 +1019,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id,
       status: nova.status || 'Aguardando Chegada',
       criadoEm: dataHoraStr,
-      condominioId: CURRENT_CONDO_ID
+      condominioId: condoTenantId
     };
     setAutorizacoesAcesso(prev => [novaAuth, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'autorizacoes_acesso', novaAuth).catch(console.error);
 
     // Registra no Diário do Síndico
     adicionarRegistroAtividade({
@@ -1086,44 +1043,36 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const atualizarStatusAcesso = (id: string, novoStatus: StatusAutorizacaoAcesso, porteiroNome?: string) => {
     const agora = new Date();
     const horaAtual = `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
+    let itemAtualizado: AutorizacaoAcesso | null = null;
 
     setAutorizacoesAcesso(prev => prev.map(a => {
       if (a.id === id) {
-        return {
+        itemAtualizado = {
           ...a,
           status: novoStatus,
           porteiroResponsavel: porteiroNome || a.porteiroResponsavel || 'Portaria',
           horarioEntradaReal: novoStatus === 'Entrada Liberada / Presente' ? (a.horarioEntradaReal || horaAtual) : a.horarioEntradaReal,
           horarioSaidaReal: novoStatus === 'Finalizado / Saiu' ? horaAtual : a.horarioSaidaReal
         };
+        return itemAtualizado;
       }
       return a;
     }));
+
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'autorizacoes_acesso', itemAtualizado).catch(console.error);
+    }
   };
 
   const excluirAutorizacaoAcesso = (id: string) => {
     setAutorizacoesAcesso(prev => prev.filter(a => a.id !== id));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'autorizacoes_acesso', id).catch(console.error);
   };
 
   // ==========================================
   // PORTARIA: ENCOMENDAS & ENTREGAS
   // ==========================================
-  const [encomendasEntregas, setEncomendasEntregas] = useState<EncomendaEntrega[]>(() => {
-    const saved = localStorage.getItem('condo_encomendas_entregas_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch {}
-    }
-    return MOCK_ENCOMENDAS_ENTREGAS;
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('condo_encomendas_entregas_list', JSON.stringify(encomendasEntregas));
-    } catch {}
-  }, [encomendasEntregas]);
+  const [encomendasEntregas, setEncomendasEntregas] = useState<EncomendaEntrega[]>(MOCK_ENCOMENDAS_ENTREGAS);
 
   const adicionarEncomenda = (nova: Omit<EncomendaEntrega, 'id' | 'condominioId' | 'status' | 'dataRecebimento' | 'horaRecebimento'> & { dataRecebimento?: string; horaRecebimento?: string; status?: StatusEncomenda }) => {
     const id = `enc-${Date.now()}`;
@@ -1137,9 +1086,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       dataRecebimento: dataStr,
       horaRecebimento: horaStr,
       status: nova.status || 'Aguardando Retirada',
-      condominioId: CURRENT_CONDO_ID
+      condominioId: condoTenantId
     };
     setEncomendasEntregas(prev => [novaEnc, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', novaEnc).catch(console.error);
 
     // Envia Notificação Privada automática para a unidade
     const cleanUnit = nova.unidade.replace(/[^0-9]/g, '');
@@ -1156,23 +1106,30 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const agora = new Date();
     const dataStr = agora.toLocaleDateString('pt-BR');
     const horaStr = `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
+    let itemAtualizado: EncomendaEntrega | null = null;
 
     setEncomendasEntregas(prev => prev.map(enc => {
       if (enc.id === id) {
-        return {
+        itemAtualizado = {
           ...enc,
           status: 'Entregue ao Morador',
           dataRetirada: dataStr,
           horaRetirada: horaStr,
           retiradoPorNome: retiradoPorNome || enc.destinatarioNome
         };
+        return itemAtualizado;
       }
       return enc;
     }));
+
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', itemAtualizado).catch(console.error);
+    }
   };
 
   const excluirEncomenda = (id: string) => {
     setEncomendasEntregas(prev => prev.filter(enc => enc.id !== id));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', id).catch(console.error);
   };
 
   // ==========================================
@@ -1645,6 +1602,94 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return () => {
       unsubscribeFuncionarios();
+    };
+  }, [condoTenantId]);
+
+  // Listeners em tempo real no Cloud Firestore para todas as coleções de domínio do condomínio
+  useEffect(() => {
+    if (!condoTenantId) return;
+
+    const unRegras = ouvirSubcolecaoFirestore(condoTenantId, 'regras', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setRegrasCondominio(dados as RegraTopico[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        setRegrasCondominio(MOCK_REGRAS_CONDOMINIO);
+        sincronizarSubcolecaoTenant(condoTenantId, 'regras', MOCK_REGRAS_CONDOMINIO).catch(console.error);
+      }
+    });
+
+    const unImoveis = ouvirSubcolecaoFirestore(condoTenantId, 'imoveis_disponiveis', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setUnidadesDisponiveis(dados as UnidadeDisponivel[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        setUnidadesDisponiveis(MOCK_UNIDADES_DISPONIVEIS);
+        sincronizarSubcolecaoTenant(condoTenantId, 'imoveis_disponiveis', MOCK_UNIDADES_DISPONIVEIS).catch(console.error);
+      }
+    });
+
+    const unContratados = ouvirSubcolecaoFirestore(condoTenantId, 'servicos_contratados', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setServicosContratados(dados as ServicoContratado[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        setServicosContratados(MOCK_SERVICOS_CONTRATADOS);
+        sincronizarSubcolecaoTenant(condoTenantId, 'servicos_contratados', MOCK_SERVICOS_CONTRATADOS).catch(console.error);
+      }
+    });
+
+    const unEnjoei = ouvirSubcolecaoFirestore(condoTenantId, 'enjoei', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setItensEnjoei(dados as ItemEnjoei[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        setItensEnjoei(MOCK_ITENS_ENJOEI);
+        sincronizarSubcolecaoTenant(condoTenantId, 'enjoei', MOCK_ITENS_ENJOEI).catch(console.error);
+      }
+    });
+
+    const unDiario = ouvirSubcolecaoFirestore(condoTenantId, 'atividades_diario', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setRegistrosAtividades(dados as RegistroAtividade[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        setRegistrosAtividades(MOCK_REGISTROS_ATIVIDADES);
+        sincronizarSubcolecaoTenant(condoTenantId, 'atividades_diario', MOCK_REGISTROS_ATIVIDADES).catch(console.error);
+      }
+    });
+
+    const unMudancas = ouvirSubcolecaoFirestore(condoTenantId, 'mudancas', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setMudancas(dados as MudancaAgendamento[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        setMudancas(MOCK_MUDANCAS);
+        sincronizarSubcolecaoTenant(condoTenantId, 'mudancas', MOCK_MUDANCAS).catch(console.error);
+      }
+    });
+
+    const unAcessos = ouvirSubcolecaoFirestore(condoTenantId, 'autorizacoes_acesso', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setAutorizacoesAcesso(dados as AutorizacaoAcesso[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        setAutorizacoesAcesso(MOCK_AUTORIZACOES_ACESSO);
+        sincronizarSubcolecaoTenant(condoTenantId, 'autorizacoes_acesso', MOCK_AUTORIZACOES_ACESSO).catch(console.error);
+      }
+    });
+
+    const unEncomendas = ouvirSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setEncomendasEntregas(dados as EncomendaEntrega[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        setEncomendasEntregas(MOCK_ENCOMENDAS_ENTREGAS);
+        sincronizarSubcolecaoTenant(condoTenantId, 'encomendas_entregas', MOCK_ENCOMENDAS_ENTREGAS).catch(console.error);
+      }
+    });
+
+    return () => {
+      unRegras();
+      unImoveis();
+      unContratados();
+      unEnjoei();
+      unDiario();
+      unMudancas();
+      unAcessos();
+      unEncomendas();
     };
   }, [condoTenantId]);
 

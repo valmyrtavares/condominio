@@ -432,11 +432,74 @@ export const excluirFuncionarioNoFirestore = async (condoId: string, id: string)
 export const excluirDocumentoSubcolecaoFirestore = async (condoId: string, nomeSubcolecao: string, docId: string) => {
   try {
     if (!condoId || !docId) return { success: false };
-    const docRef = doc(db, 'condominios', condoId, nomeSubcolecao, docId);
+    const docRef = doc(db, 'condominios', condoId, nomeSubcolecao, String(docId));
     await deleteDoc(docRef);
     return { success: true };
   } catch (error: any) {
     console.error(`🔥 Erro ao excluir documento ${docId} em ${nomeSubcolecao}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Salva ou atualiza um documento genérico em uma subcoleção do condomínio no Firestore,
+ * fazendo upload automático de quaisquer propriedades de imagem/foto em Base64 para o Firebase Storage
+ */
+export const salvarDocumentoSubcolecaoFirestore = async (
+  condoId: string, 
+  nomeSubcolecao: string, 
+  item: any
+) => {
+  try {
+    if (!condoId || !nomeSubcolecao || !item || !item.id) return { success: false, error: 'Dados inválidos' };
+
+    let itemProcessado = { ...item };
+
+    for (const [key, value] of Object.entries(itemProcessado)) {
+      if (typeof value === 'string' && value.startsWith('data:')) {
+        try {
+          const caminho = `condominios/${condoId}/${nomeSubcolecao}/${item.id}/${key}_${Date.now()}.jpg`;
+          const storageUrl = await uploadFotoFirebaseStorage(caminho, value);
+          if (storageUrl) {
+            itemProcessado[key] = storageUrl;
+          }
+        } catch (errUpload) {
+          console.warn(`Falha no upload da imagem do campo ${key} para o Storage:`, errUpload);
+        }
+      } else if (Array.isArray(value)) {
+        const fotosProcessadas: string[] = [];
+        let alterouArray = false;
+        for (let i = 0; i < value.length; i++) {
+          const val = value[i];
+          if (typeof val === 'string' && val.startsWith('data:')) {
+            try {
+              const caminho = `condominios/${condoId}/${nomeSubcolecao}/${item.id}/${key}_${i}_${Date.now()}.jpg`;
+              const storageUrl = await uploadFotoFirebaseStorage(caminho, val);
+              if (storageUrl) {
+                fotosProcessadas.push(storageUrl);
+                alterouArray = true;
+              } else {
+                fotosProcessadas.push(val);
+              }
+            } catch {
+              fotosProcessadas.push(val);
+            }
+          } else if (typeof val === 'string') {
+            fotosProcessadas.push(val);
+          }
+        }
+        if (alterouArray) {
+          itemProcessado[key] = fotosProcessadas;
+        }
+      }
+    }
+
+    const limpo = sanitizarParaFirestore(itemProcessado);
+    const docRef = doc(db, 'condominios', condoId, nomeSubcolecao, String(item.id));
+    await setDoc(docRef, limpo, { merge: true });
+    return { success: true, item: itemProcessado };
+  } catch (error: any) {
+    console.error(`🔥 Erro ao salvar documento na subcoleção ${nomeSubcolecao}:`, error);
     return { success: false, error: error.message };
   }
 };
