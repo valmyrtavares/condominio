@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useCondo, sortUnidades, deduplicateAndSortUnidades } from '../../context/CondoContext';
+import { useCondo, sortUnidades, deduplicateAndSortUnidades, isMockReclamacao } from '../../context/CondoContext';
 import { 
   Unidade, 
   AdminUser, 
@@ -3145,11 +3145,11 @@ export const AdminPanelScreen: React.FC = () => {
                 {canAccessReclamacoes ? (
                   <>
                     <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-orange-200 text-orange-950 border border-orange-300 shadow-2xs">
-                      {reclamacoes.length} Ocorrência(s)
+                      {reclamacoes.filter(r => !isMockReclamacao(r)).length} Ocorrência(s)
                     </span>
-                    {reclamacoes.filter(r => r.status === 'Recebida' || r.status === 'Em análise').length > 0 && (
+                    {reclamacoes.filter(r => !isMockReclamacao(r) && (r.status === 'Recebida' || r.status === 'Em análise')).length > 0 && (
                       <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300 animate-pulse">
-                        {reclamacoes.filter(r => r.status === 'Recebida' || r.status === 'Em análise').length} Pendente(s)
+                        {reclamacoes.filter(r => !isMockReclamacao(r) && (r.status === 'Recebida' || r.status === 'Em análise')).length} Pendente(s)
                       </span>
                     )}
                   </>
@@ -3243,6 +3243,7 @@ export const AdminPanelScreen: React.FC = () => {
             {/* Header da Lista de Reclamações com Botões de Ação Global */}
             {(() => {
               const filteredReclamacoes = reclamacoes.filter(rec => {
+                if (isMockReclamacao(rec)) return false;
                 const matchesSearch = !searchReclamacao || 
                   rec.titulo.toLowerCase().includes(searchReclamacao.toLowerCase()) ||
                   rec.descricao.toLowerCase().includes(searchReclamacao.toLowerCase()) ||

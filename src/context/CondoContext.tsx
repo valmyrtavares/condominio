@@ -55,33 +55,7 @@ import {
   ModeloInicialCondominio,
   AdminModuloKey
 } from '../types';
-import { 
-  MOCK_USERS, 
-  MOCK_UNIDADES, 
-  MOCK_RECLAMACOES, 
-  MOCK_REPAROS, 
-  MOCK_BENFEITORIAS,
-  MOCK_VAGAS_GARAGEM,
-  MOCK_SERVICOS_CONTRATADOS,
-  MOCK_DEPENDENCIAS,
-  MOCK_RESERVAS,
-  MOCK_ASSEMBLEIAS,
-  MOCK_EVENTOS,
-  MOCK_UNIDADES_DISPONIVEIS,
-  MOCK_PRESTACAO_CONTAS, 
-  MOCK_MESES_PRESTACAO,
-  MOCK_FUNCIONARIOS,
-  MOCK_REGRAS_CONDOMINIO,
-  MOCK_ITENS_ENJOEI,
-  MOCK_REGISTROS_ATIVIDADES,
-  MOCK_MUDANCAS,
-  MOCK_REGRAS_MUDANCA,
-  MOCK_AUTORIZACOES_ACESSO,
-  MOCK_ENCOMENDAS_ENTREGAS,
-  MOCK_CONDOMINIOS,
-  ESPINHA_DORSAL_ITEMS,
-  CURRENT_CONDO_ID
-} from '../mock/seedData';
+import { ESPINHA_DORSAL_ITEMS } from '../constants/modulosApp';
 import { getScreenFromPath, getPathFromScreen, getRouteConfig } from '../router/routes';
 import { 
   auth, 
@@ -114,6 +88,78 @@ const LEGACY_MOCK_REPARO_IDS = new Set([
   'rep-elevador-botoeira',
   'rep-pintura-garagem'
 ]);
+
+const LEGACY_MOCK_RECLAMACAO_IDS = new Set([
+  'rec-barulho-gourmet',
+  'rec-seguranca-portao',
+  'rec-ameaca-garagem',
+  'rec-assedio-elevador',
+  'rec-limpeza-corredor',
+  'rec-pets-parquinho'
+]);
+
+const LEGACY_MOCK_ENCOMENDA_IDS = new Set([
+  'enc-001', 'enc-002', 'enc-003', 'enc-004'
+]);
+
+const LEGACY_MOCK_ACESSO_IDS = new Set([
+  'acesso-001', 'acesso-002', 'acesso-003'
+]);
+
+const LEGACY_MOCK_ENJOEI_IDS = new Set([
+  'enj-piano-yamaha', 'enj-panela-eletrica', 'enj-sofa-retratil',
+  'enj-bike-infantil', 'enj-furadeira-bosch', 'enj-jaqueta-couro', 'enj-monitor-gamer'
+]);
+
+const LEGACY_MOCK_EVENTO_IDS = new Set([
+  'evt-aniversario-beatriz', 'evt-dia-das-maes', 'evt-festa-junina',
+  'evt-churrasco-domingo', 'evt-dia-das-criancas'
+]);
+
+const LEGACY_MOCK_ASSEMBLEIA_IDS = new Set([
+  'ass-age-setembro-2026', 'ass-age-agosto-2026', 'ass-ago-marco-2026'
+]);
+
+const LEGACY_MOCK_MUDANCA_IDS = new Set([
+  'mud-001', 'mud-002', 'mud-003'
+]);
+
+const LEGACY_MOCK_ATIVIDADE_IDS = new Set([
+  'act-001', 'act-002', 'act-003', 'act-004', 'act-005', 'act-006', 'act-007', 'act-008'
+]);
+
+const LEGACY_MOCK_BENFEITORIA_IDS = new Set([
+  'benf-esteira-academia', 'benf-brinquedoteca', 'benf-energia-solar',
+  'benf-led-sensores', 'benf-coworking-mezanino'
+]);
+
+const LEGACY_MOCK_SERVICO_IDS = new Set([
+  'sc-elev-1', 'sc-elev-2', 'sc-elev-3', 'sc-paisag-1', 'sc-paisag-2',
+  'sc-elet-1', 'sc-elet-2', 'sc-seg-1', 'sc-seg-2', 'sc-cftv-1', 'sc-cftv-2',
+  'sc-pisc-1', 'sc-pisc-2', 'sc-pint-1', 'sc-pint-2', 'sc-prag-1', 'sc-prag-2',
+  'sc-port-1', 'sc-port-2'
+]);
+
+const LEGACY_MOCK_IMOVEL_IDS = new Set([
+  'disp-apto-204-a', 'disp-apto-502-b', 'disp-apto-104-a', 'disp-apto-303-a', 'disp-apto-701-b'
+]);
+
+const LEGACY_MOCK_VAGA_IDS = new Set([
+  'vaga-g11', 'vaga-g12', 'vaga-g13', 'vaga-g14', 'vaga-g21', 'vaga-g22',
+  'vaga-g31', 'vaga-g32', 'vaga-g41', 'vaga-g42', 'vaga-g51', 'vaga-g52'
+]);
+
+const LEGACY_MOCK_DEPENDENCIA_IDS = new Set([
+  'dep-salao-festas', 'dep-piscina', 'dep-academia', 'dep-brinquedoteca', 'dep-jardim', 'dep-fachada'
+]);
+
+export const isMockReclamacao = (rec: { id?: string; autorNome?: string; autorUnidade?: string } | null | undefined): boolean => {
+  if (!rec || !rec.id) return false;
+  if (LEGACY_MOCK_RECLAMACAO_IDS.has(rec.id)) return true;
+  const autor = (rec.autorNome || '').toLowerCase();
+  if (autor.includes('sandra almeida') || autor.includes('eduardo prado') || autor.includes('beatriz souza')) return true;
+  return false;
+};
 
 /**
  * Formata o número do apartamento baseado no item base do 1º andar e no número do andar atual.
@@ -675,7 +721,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Regras e Regulamento do Condomínio State
-  const [regrasCondominio, setRegrasCondominio] = useState<RegraTopico[]>(MOCK_REGRAS_CONDOMINIO);
+  const [regrasCondominio, setRegrasCondominio] = useState<RegraTopico[]>([]);
 
   const adicionarRegraCondominio = (novaRegra: Omit<RegraTopico, 'id'>) => {
     const id = `regra-${Date.now()}`;
@@ -721,7 +767,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Unidades Disponíveis (Aluguel e Venda) State & CRUD
-  const [unidadesDisponiveis, setUnidadesDisponiveis] = useState<UnidadeDisponivel[]>(MOCK_UNIDADES_DISPONIVEIS);
+  const [unidadesDisponiveis, setUnidadesDisponiveis] = useState<UnidadeDisponivel[]>([]);
 
   const adicionarUnidadeDisponivel = (nova: Omit<UnidadeDisponivel, 'id' | 'condominioId' | 'dataAnuncio'> & { dataAnuncio?: string }) => {
     const hoje = new Date().toLocaleDateString('pt-BR');
@@ -760,7 +806,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Serviços Contratados & Fornecedores State & CRUD
-  const [servicosContratados, setServicosContratados] = useState<ServicoContratado[]>(MOCK_SERVICOS_CONTRATADOS);
+  const [servicosContratados, setServicosContratados] = useState<ServicoContratado[]>([]);
 
   const adicionarServicoContratado = (novo: Omit<ServicoContratado, 'id' | 'condominioId'>) => {
     const cleanNome = novo.empresaNome.toLowerCase().replace(/[^a-z0-9]/g, '') || 'empresa';
@@ -797,7 +843,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Enjoei do Condomínio (Desapego, Venda, Doação, Retirada e Troca) State & CRUD
-  const [itensEnjoei, setItensEnjoei] = useState<ItemEnjoei[]>(MOCK_ITENS_ENJOEI);
+  const [itensEnjoei, setItensEnjoei] = useState<ItemEnjoei[]>([]);
 
   const adicionarItemEnjoei = (novo: Omit<ItemEnjoei, 'id' | 'dataPublicacao' | 'status' | 'condominioId'> & { dataPublicacao?: string }) => {
     const hoje = new Date().toLocaleDateString('pt-BR');
@@ -904,7 +950,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // ==========================================
   // DIÁRIO DO SÍNDICO & FEED CRONOLÓGICO DE ATIVIDADES
   // ==========================================
-  const [registrosAtividades, setRegistrosAtividades] = useState<RegistroAtividade[]>(MOCK_REGISTROS_ATIVIDADES);
+  const [registrosAtividades, setRegistrosAtividades] = useState<RegistroAtividade[]>([]);
 
   const adicionarRegistroAtividade = (reg: Omit<RegistroAtividade, 'id' | 'condominioId'>) => {
     const id = `act-${Date.now()}`;
@@ -925,14 +971,25 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // ==========================================
   // GESTÃO & AGENDAMENTO DE MUDANÇAS
   // ==========================================
-  const [regrasMudanca, setRegrasMudanca] = useState<RegrasMudancaConfig>(MOCK_REGRAS_MUDANCA);
+  const [regrasMudanca, setRegrasMudanca] = useState<RegrasMudancaConfig>(() => ({
+    horarioSegundaSexta: '08:00 às 18:00',
+    horarioSabado: '08:00 às 14:00',
+    domingosFeriadosPermitido: false,
+    antecedenciaMinimaDias: 2,
+    taxaMudanca: 0,
+    regrasGerais: [
+      'Mudanças devem ser previamente comunicadas e agendadas com a administração.',
+      'Uso exclusivo do elevador de serviço devidamente protegido.',
+      'O condômino é responsável por qualquer dano causado às áreas comuns durante o transporte.'
+    ]
+  }));
 
   const salvarRegrasMudanca = (novasRegras: RegrasMudancaConfig) => {
     setRegrasMudanca(novasRegras);
     salvarDocumentoSubcolecaoFirestore(condoTenantId, 'mudancas', { id: 'config_regras', ...novasRegras }).catch(console.error);
   };
 
-  const [mudancas, setMudancas] = useState<MudancaAgendamento[]>(MOCK_MUDANCAS);
+  const [mudancas, setMudancas] = useState<MudancaAgendamento[]>([]);
 
   const adicionarMudanca = (nova: Omit<MudancaAgendamento, 'id' | 'condominioId' | 'criadoEm'>) => {
     const id = `mud-${Date.now()}`;
@@ -1024,7 +1081,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // ==========================================
   // PORTARIA: AUTORIZAÇÃO DE ACESSOS E VISITAS
   // ==========================================
-  const [autorizacoesAcesso, setAutorizacoesAcesso] = useState<AutorizacaoAcesso[]>(MOCK_AUTORIZACOES_ACESSO);
+  const [autorizacoesAcesso, setAutorizacoesAcesso] = useState<AutorizacaoAcesso[]>([]);
 
   const adicionarAutorizacaoAcesso = (nova: Omit<AutorizacaoAcesso, 'id' | 'condominioId' | 'criadoEm' | 'status'> & { status?: StatusAutorizacaoAcesso }) => {
     const id = `acesso-${Date.now()}`;
@@ -1088,7 +1145,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // ==========================================
   // PORTARIA: ENCOMENDAS & ENTREGAS
   // ==========================================
-  const [encomendasEntregas, setEncomendasEntregas] = useState<EncomendaEntrega[]>(MOCK_ENCOMENDAS_ENTREGAS);
+  const [encomendasEntregas, setEncomendasEntregas] = useState<EncomendaEntrega[]>([]);
 
   const adicionarEncomenda = (nova: Omit<EncomendaEntrega, 'id' | 'condominioId' | 'status' | 'dataRecebimento' | 'horaRecebimento'> & { dataRecebimento?: string; horaRecebimento?: string; status?: StatusEncomenda }) => {
     const id = `enc-${Date.now()}`;
@@ -1159,7 +1216,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch {}
     }
-    return MOCK_CONDOMINIOS;
+    return [];
   });
 
   useEffect(() => {
@@ -1426,19 +1483,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setAdminUsers(prev => prev.filter(a => a.id !== id));
   };
 
-  // Unidades com persistência em LocalStorage
+  // Unidades com sincronização direta via Firestore
   const [unidades, setUnidades] = useState<Unidade[]>(() => {
-    const saved = localStorage.getItem('condo_unidades_list');
+    const saved = localStorage.getItem(`condo_unidades_list_${currentCondoId}`);
     if (saved) {
       try {
         return deduplicateAndSortUnidades(JSON.parse(saved));
       } catch {}
     }
-    return deduplicateAndSortUnidades(MOCK_UNIDADES.map(u => ({
-      ...u,
-      senhaAcesso: u.senhaAcesso || u.numero,
-      statusCadastro: u.statusCadastro || (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente')
-    })));
+    return [];
   });
 
   const condoTenantId = currentCondo?.id || currentCondoId || 'condo-edificio-aurora';
@@ -1531,13 +1584,6 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         list = JSON.parse(savedTenant);
       } catch {}
-    } else {
-      const savedGlobal = localStorage.getItem('condo_unidades_list');
-      if (savedGlobal && condoTenantId === CURRENT_CONDO_ID) {
-        try {
-          list = JSON.parse(savedGlobal);
-        } catch {}
-      }
     }
 
     list = curarUnidadesSemNumero(
@@ -1663,10 +1709,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return prev;
         });
       } else if (Array.isArray(dadosFirestore) && dadosFirestore.length === 0) {
-        // Se a coleção estiver vazia na nuvem, efetua o seed inicial dos 9 colaboradores padrão
-        const seedLimpo = MOCK_FUNCIONARIOS.map(f => ({ ...f, status: f.status || 'Ativo' }));
-        setFuncionarios(seedLimpo);
-        sincronizarSubcolecaoTenant(condoTenantId, 'funcionarios', seedLimpo).catch(console.error);
+        setFuncionarios([]);
       }
     });
 
@@ -1679,109 +1722,84 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     if (!condoTenantId) return;
 
-    const isExampleCondo = condoTenantId === CURRENT_CONDO_ID || currentCondo?.modeloInicial === 'exemplo';
-
     const unRegras = ouvirSubcolecaoFirestore(condoTenantId, 'regras', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setRegrasCondominio(dados as RegraTopico[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        if (isExampleCondo) {
-          setRegrasCondominio(MOCK_REGRAS_CONDOMINIO);
-          sincronizarSubcolecaoTenant(condoTenantId, 'regras', MOCK_REGRAS_CONDOMINIO).catch(console.error);
-        } else {
-          setRegrasCondominio([]);
-        }
-      }
+      setRegrasCondominio(Array.isArray(dados) ? (dados as RegraTopico[]) : []);
     });
 
     const unImoveis = ouvirSubcolecaoFirestore(condoTenantId, 'imoveis_disponiveis', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setUnidadesDisponiveis(dados as UnidadeDisponivel[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        if (isExampleCondo) {
-          setUnidadesDisponiveis(MOCK_UNIDADES_DISPONIVEIS);
-          sincronizarSubcolecaoTenant(condoTenantId, 'imoveis_disponiveis', MOCK_UNIDADES_DISPONIVEIS).catch(console.error);
-        } else {
-          setUnidadesDisponiveis([]);
-        }
+      if (Array.isArray(dados)) {
+        dados.forEach(item => {
+          if (item && item.id && LEGACY_MOCK_IMOVEL_IDS.has(item.id)) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'imoveis_disponiveis', item.id).catch(console.error);
+          }
+        });
+        setUnidadesDisponiveis((dados as UnidadeDisponivel[]).filter(d => d && d.id && !LEGACY_MOCK_IMOVEL_IDS.has(d.id)));
       }
     });
 
     const unContratados = ouvirSubcolecaoFirestore(condoTenantId, 'servicos_contratados', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setServicosContratados(dados as ServicoContratado[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        if (isExampleCondo) {
-          setServicosContratados(MOCK_SERVICOS_CONTRATADOS);
-          sincronizarSubcolecaoTenant(condoTenantId, 'servicos_contratados', MOCK_SERVICOS_CONTRATADOS).catch(console.error);
-        } else {
-          setServicosContratados([]);
-        }
+      if (Array.isArray(dados)) {
+        dados.forEach(item => {
+          if (item && item.id && LEGACY_MOCK_SERVICO_IDS.has(item.id)) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'servicos_contratados', item.id).catch(console.error);
+          }
+        });
+        setServicosContratados((dados as ServicoContratado[]).filter(d => d && d.id && !LEGACY_MOCK_SERVICO_IDS.has(d.id)));
       }
     });
 
     const unEnjoei = ouvirSubcolecaoFirestore(condoTenantId, 'enjoei', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setItensEnjoei(dados as ItemEnjoei[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        if (isExampleCondo) {
-          setItensEnjoei(MOCK_ITENS_ENJOEI);
-          sincronizarSubcolecaoTenant(condoTenantId, 'enjoei', MOCK_ITENS_ENJOEI).catch(console.error);
-        } else {
-          setItensEnjoei([]);
-        }
+      if (Array.isArray(dados)) {
+        dados.forEach(item => {
+          if (item && item.id && (LEGACY_MOCK_ENJOEI_IDS.has(item.id) || (item.moradorNome && (item.moradorNome.toLowerCase().includes('eduardo prado') || item.moradorNome.toLowerCase().includes('sandra almeida'))))) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'enjoei', item.id).catch(console.error);
+          }
+        });
+        setItensEnjoei((dados as ItemEnjoei[]).filter(d => d && d.id && !LEGACY_MOCK_ENJOEI_IDS.has(d.id) && !(d.moradorNome && (d.moradorNome.toLowerCase().includes('eduardo prado') || d.moradorNome.toLowerCase().includes('sandra almeida')))));
       }
     });
 
     const unDiario = ouvirSubcolecaoFirestore(condoTenantId, 'atividades_diario', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setRegistrosAtividades(dados as RegistroAtividade[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        if (isExampleCondo) {
-          setRegistrosAtividades(MOCK_REGISTROS_ATIVIDADES);
-          sincronizarSubcolecaoTenant(condoTenantId, 'atividades_diario', MOCK_REGISTROS_ATIVIDADES).catch(console.error);
-        } else {
-          setRegistrosAtividades([]);
-        }
+      if (Array.isArray(dados)) {
+        dados.forEach(item => {
+          if (item && item.id && LEGACY_MOCK_ATIVIDADE_IDS.has(item.id)) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'atividades_diario', item.id).catch(console.error);
+          }
+        });
+        setRegistrosAtividades((dados as RegistroAtividade[]).filter(d => d && d.id && !LEGACY_MOCK_ATIVIDADE_IDS.has(d.id)));
       }
     });
 
     const unMudancas = ouvirSubcolecaoFirestore(condoTenantId, 'mudancas', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setMudancas(dados as MudancaAgendamento[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        if (isExampleCondo) {
-          setMudancas(MOCK_MUDANCAS);
-          sincronizarSubcolecaoTenant(condoTenantId, 'mudancas', MOCK_MUDANCAS).catch(console.error);
-        } else {
-          setMudancas([]);
-        }
+      if (Array.isArray(dados)) {
+        dados.forEach(item => {
+          if (item && item.id && LEGACY_MOCK_MUDANCA_IDS.has(item.id)) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'mudancas', item.id).catch(console.error);
+          }
+        });
+        setMudancas((dados as MudancaAgendamento[]).filter(d => d && d.id && !LEGACY_MOCK_MUDANCA_IDS.has(d.id)));
       }
     });
 
     const unAcessos = ouvirSubcolecaoFirestore(condoTenantId, 'autorizacoes_acesso', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setAutorizacoesAcesso(dados as AutorizacaoAcesso[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        if (isExampleCondo) {
-          setAutorizacoesAcesso(MOCK_AUTORIZACOES_ACESSO);
-          sincronizarSubcolecaoTenant(condoTenantId, 'autorizacoes_acesso', MOCK_AUTORIZACOES_ACESSO).catch(console.error);
-        } else {
-          setAutorizacoesAcesso([]);
-        }
+      if (Array.isArray(dados)) {
+        dados.forEach(item => {
+          if (item && item.id && (LEGACY_MOCK_ACESSO_IDS.has(item.id) || (item.moradorNome && (item.moradorNome.toLowerCase().includes('sandra almeida') || item.moradorNome.toLowerCase().includes('eduardo prado'))))) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'autorizacoes_acesso', item.id).catch(console.error);
+          }
+        });
+        setAutorizacoesAcesso((dados as AutorizacaoAcesso[]).filter(d => d && d.id && !LEGACY_MOCK_ACESSO_IDS.has(d.id)));
       }
     });
 
     const unEncomendas = ouvirSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setEncomendasEntregas(dados as EncomendaEntrega[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        if (isExampleCondo) {
-          setEncomendasEntregas(MOCK_ENCOMENDAS_ENTREGAS);
-          sincronizarSubcolecaoTenant(condoTenantId, 'encomendas_entregas', MOCK_ENCOMENDAS_ENTREGAS).catch(console.error);
-        } else {
-          setEncomendasEntregas([]);
-        }
+      if (Array.isArray(dados)) {
+        dados.forEach(item => {
+          if (item && item.id && (LEGACY_MOCK_ENCOMENDA_IDS.has(item.id) || (item.destinatarioNome && (item.destinatarioNome.toLowerCase().includes('sandra almeida') || item.destinatarioNome.toLowerCase().includes('eduardo prado'))))) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', item.id).catch(console.error);
+          }
+        });
+        setEncomendasEntregas((dados as EncomendaEntrega[]).filter(d => d && d.id && !LEGACY_MOCK_ENCOMENDA_IDS.has(d.id) && !(d.destinatarioNome && (d.destinatarioNome.toLowerCase().includes('sandra almeida') || d.destinatarioNome.toLowerCase().includes('eduardo prado')))));
       }
     });
 
@@ -1789,12 +1807,28 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (Array.isArray(dados)) {
         // Exclui ativamente do Firestore qualquer documento correspondente aos mocks fictícios legados
         dados.forEach(item => {
-          if (item && item.id && LEGACY_MOCK_REPARO_IDS.has(item.id)) {
+          if (item && item.id && (LEGACY_MOCK_REPARO_IDS.has(item.id) || (item.solicitanteNome && (item.solicitanteNome.toLowerCase().includes('sandra almeida') || item.solicitanteNome.toLowerCase().includes('eduardo prado') || item.solicitanteNome.toLowerCase().includes('beatriz souza'))))) {
             excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', item.id).catch(console.error);
           }
         });
 
-        const dadosReais = (dados as Reparo[]).filter(d => d && d.id && !LEGACY_MOCK_REPARO_IDS.has(d.id));
+        const dadosReais = (dados as Reparo[]).filter(d => d && d.id && !LEGACY_MOCK_REPARO_IDS.has(d.id) && !(d.solicitanteNome && (d.solicitanteNome.toLowerCase().includes('sandra almeida') || d.solicitanteNome.toLowerCase().includes('eduardo prado') || d.solicitanteNome.toLowerCase().includes('beatriz souza'))));
+
+        // Salvaguarda: se houver reparo criado pelo usuário no localStorage que ainda não esteja no Firestore, sobe para a nuvem
+        try {
+          const salvo = localStorage.getItem(`condo_reparos_list_${condoTenantId}`);
+          if (salvo) {
+            const parsed = JSON.parse(salvo);
+            if (Array.isArray(parsed)) {
+              const idsNaCloud = new Set(dadosReais.map(d => d.id));
+              parsed.forEach(itemLocal => {
+                if (itemLocal && itemLocal.id && !idsNaCloud.has(itemLocal.id) && !LEGACY_MOCK_REPARO_IDS.has(itemLocal.id)) {
+                  salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', itemLocal).catch(console.error);
+                }
+              });
+            }
+          }
+        } catch {}
 
         setReparos(dadosReais);
         try {
@@ -1806,8 +1840,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const unReclamacoes = ouvirSubcolecaoFirestore(condoTenantId, 'reclamacoes', (dados) => {
       if (Array.isArray(dados)) {
-        const dadosReais = (dados as Reclamacao[]).filter(d => d && d.id);
+        // Exclui ativamente do Firestore qualquer reclamação originária de mock ou com usuários de mock (Sandra Almeida, Eduardo Prado, Beatriz Souza)
+        dados.forEach(item => {
+          if (item && item.id && isMockReclamacao(item as Reclamacao)) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', item.id).catch(console.error);
+          }
+        });
 
+        const dadosReais = (dados as Reclamacao[]).filter(d => d && d.id && !isMockReclamacao(d));
         setReclamacoes(dadosReais);
         try {
           localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(dadosReais));
@@ -1817,73 +1857,62 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     const unEventos = ouvirSubcolecaoFirestore(condoTenantId, 'eventos', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setEventos(dados as EventoCondominio[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        setEventos(MOCK_EVENTOS);
-        sincronizarSubcolecaoTenant(condoTenantId, 'eventos', MOCK_EVENTOS).catch(console.error);
+      if (Array.isArray(dados)) {
+        dados.forEach(item => {
+          if (item && item.id && LEGACY_MOCK_EVENTO_IDS.has(item.id)) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'eventos', item.id).catch(console.error);
+          }
+        });
+        setEventos((dados as EventoCondominio[]).filter(d => d && d.id && !LEGACY_MOCK_EVENTO_IDS.has(d.id)));
       }
     });
 
     const unDependencias = ouvirSubcolecaoFirestore(condoTenantId, 'dependencias', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setDependencias(dados as Dependencia[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        setDependencias(MOCK_DEPENDENCIAS);
-        sincronizarSubcolecaoTenant(condoTenantId, 'dependencias', MOCK_DEPENDENCIAS).catch(console.error);
+      if (Array.isArray(dados)) {
+        dados.forEach(item => {
+          if (item && item.id && LEGACY_MOCK_DEPENDENCIA_IDS.has(item.id)) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'dependencias', item.id).catch(console.error);
+          }
+        });
+        setDependencias((dados as Dependencia[]).filter(d => d && d.id && !LEGACY_MOCK_DEPENDENCIA_IDS.has(d.id)));
       }
     });
 
     const unAssembleias = ouvirSubcolecaoFirestore(condoTenantId, 'assembleias', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setAssembleias(dados as Assembleia[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        if (isExampleCondo) {
-          setAssembleias(MOCK_ASSEMBLEIAS);
-          sincronizarSubcolecaoTenant(condoTenantId, 'assembleias', MOCK_ASSEMBLEIAS).catch(console.error);
-        } else {
-          setAssembleias([]);
-        }
+      if (Array.isArray(dados)) {
+        dados.forEach(item => {
+          if (item && item.id && LEGACY_MOCK_ASSEMBLEIA_IDS.has(item.id)) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'assembleias', item.id).catch(console.error);
+          }
+        });
+        setAssembleias((dados as Assembleia[]).filter(d => d && d.id && !LEGACY_MOCK_ASSEMBLEIA_IDS.has(d.id)));
       }
     });
 
     const unBenfeitorias = ouvirSubcolecaoFirestore(condoTenantId, 'benfeitorias', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setBenfeitorias(dados as Benfeitoria[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        if (isExampleCondo) {
-          setBenfeitorias(MOCK_BENFEITORIAS);
-          sincronizarSubcolecaoTenant(condoTenantId, 'benfeitorias', MOCK_BENFEITORIAS).catch(console.error);
-        } else {
-          setBenfeitorias([]);
-        }
+      if (Array.isArray(dados)) {
+        dados.forEach(item => {
+          if (item && item.id && LEGACY_MOCK_BENFEITORIA_IDS.has(item.id)) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', item.id).catch(console.error);
+          }
+        });
+        setBenfeitorias((dados as Benfeitoria[]).filter(d => d && d.id && !LEGACY_MOCK_BENFEITORIA_IDS.has(d.id)));
       }
     });
 
     const unVagas = ouvirSubcolecaoFirestore(condoTenantId, 'vagas_garagem', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setVagasGaragem(dados as VagaGaragem[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        if (isExampleCondo) {
-          setVagasGaragem(MOCK_VAGAS_GARAGEM);
-          sincronizarSubcolecaoTenant(condoTenantId, 'vagas_garagem', MOCK_VAGAS_GARAGEM).catch(console.error);
-        } else {
-          setVagasGaragem([]);
-        }
+      if (Array.isArray(dados)) {
+        dados.forEach(item => {
+          if (item && item.id && (LEGACY_MOCK_VAGA_IDS.has(item.id) || (item.moradorNome && (item.moradorNome.toLowerCase().includes('eduardo prado') || item.moradorNome.toLowerCase().includes('sandra almeida'))))) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'vagas_garagem', item.id).catch(console.error);
+          }
+        });
+        setVagasGaragem((dados as VagaGaragem[]).filter(d => d && d.id && !LEGACY_MOCK_VAGA_IDS.has(d.id) && !(d.moradorNome && (d.moradorNome.toLowerCase().includes('eduardo prado') || d.moradorNome.toLowerCase().includes('sandra almeida')))));
       }
     });
 
     const unReservas = ouvirSubcolecaoFirestore(condoTenantId, 'reservas', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setReservas(dados as ReservaDependencia[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        if (isExampleCondo) {
-          setReservas(MOCK_RESERVAS);
-          sincronizarSubcolecaoTenant(condoTenantId, 'reservas', MOCK_RESERVAS).catch(console.error);
-        } else {
-          setReservas([]);
-        }
-      }
+      setReservas(Array.isArray(dados) ? (dados as ReservaDependencia[]) : []);
     });
 
     return () => {
@@ -1966,8 +1995,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (savedResident) {
       try {
         const parsed = JSON.parse(savedResident);
-        const savedUnidades = localStorage.getItem('condo_unidades_list');
-        const list: Unidade[] = savedUnidades ? JSON.parse(savedUnidades) : MOCK_UNIDADES;
+        const savedUnidades = localStorage.getItem(`condo_unidades_list_${condoTenantId}`) || localStorage.getItem('condo_unidades_list');
+        const list: Unidade[] = savedUnidades ? JSON.parse(savedUnidades) : [];
         const u = list.find(item => item.numero === parsed.unidade);
         if (u && u.moradores && u.moradores.length > 0) {
           return u.moradores[0];
@@ -1982,7 +2011,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       role: 'morador',
       unidade: '',
       bloco: '',
-      condominioId: CURRENT_CONDO_ID
+      condominioId: condoTenantId
     };
   });
 
@@ -1999,10 +2028,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const salvo = localStorage.getItem(`condo_reclamacoes_list_${condoTenantId}`);
       if (salvo) {
         const parsed = JSON.parse(salvo);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter(item => item && item.id && !isMockReclamacao(item));
+        }
       }
     } catch {}
-    return condoTenantId === CURRENT_CONDO_ID ? MOCK_RECLAMACOES : [];
+    return [];
   });
 
   const [reparos, setReparos] = useState<Reparo[]>(() => {
@@ -2034,9 +2065,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {}
   }, [reparos, condoTenantId]);
 
-  const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>(MOCK_BENFEITORIAS);
-  const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>(MOCK_VAGAS_GARAGEM);
-  const [dependencias, setDependencias] = useState<Dependencia[]>(MOCK_DEPENDENCIAS);
+  const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>([]);
+  const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>([]);
+  const [dependencias, setDependencias] = useState<Dependencia[]>([]);
 
   const adicionarDependencia = (nova: Omit<Dependencia, 'id' | 'condominioId'>) => {
     const cleanNome = nova.nome.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'dep';
@@ -2044,7 +2075,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const novaDep: Dependencia = {
       ...nova,
       id,
-      condominioId: CURRENT_CONDO_ID
+      condominioId: condoTenantId
     };
     setDependencias(prev => [novaDep, ...prev]);
     salvarDocumentoSubcolecaoFirestore(condoTenantId, 'dependencias', novaDep).catch(console.error);
@@ -2066,20 +2097,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     excluirDocumentoSubcolecaoFirestore(condoTenantId, 'dependencias', id).catch(console.error);
   };
 
-  const [reservas, setReservas] = useState<ReservaDependencia[]>(MOCK_RESERVAS);
+  const [reservas, setReservas] = useState<ReservaDependencia[]>([]);
   
-  const [assembleias, setAssembleias] = useState<Assembleia[]>(() => 
-    MOCK_ASSEMBLEIAS.map(a => ({
-      ...a,
-      tipoEncontro: a.tipoEncontro || 'Assembleia Geral',
-      participantesTipo: a.participantesTipo || 'todos'
-    }))
-  );
+  const [assembleias, setAssembleias] = useState<Assembleia[]>([]);
 
   const adicionarAssembleia = (nova: Omit<Assembleia, 'id' | 'condominioId'>) => {
     const novaAss: Assembleia = {
       id: `ass-${Date.now()}`,
-      condominioId: CURRENT_CONDO_ID,
+      condominioId: condoTenantId,
       criadoEm: new Date().toLocaleDateString('pt-BR'),
       tipoEncontro: nova.tipoEncontro || 'Assembleia Geral',
       participantesTipo: nova.participantesTipo || (nova.tipoEncontro === 'Reunião Informal' ? 'especificos' : 'todos'),
@@ -2126,37 +2151,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   };
 
-  const [eventos, setEventos] = useState<EventoCondominio[]>(() =>
-    MOCK_EVENTOS.map(e => ({
-      ...e,
-      ativo: e.ativo !== undefined ? e.ativo : true
-    }))
-  );
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('condo_eventos_list', JSON.stringify(eventos));
-    } catch (e) {
-      console.warn('Could not save condo_eventos_list to localStorage:', e);
-    }
-  }, [eventos]);
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'condo_eventos_list' && e.newValue) {
-        try {
-          setEventos(JSON.parse(e.newValue));
-        } catch {}
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  const [eventos, setEventos] = useState<EventoCondominio[]>([]);
 
   const adicionarEvento = (novo: Omit<EventoCondominio, 'id' | 'condominioId'>) => {
     const novoEvento: EventoCondominio = {
       id: `evt-${Date.now()}`,
-      condominioId: CURRENT_CONDO_ID,
+      condominioId: condoTenantId,
       ativo: true,
       criadoEm: new Date().toLocaleDateString('pt-BR'),
       organizadorId: currentUser.id,
@@ -2164,14 +2164,26 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...novo
     };
     setEventos(prev => [novoEvento, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'eventos', novoEvento).catch(console.error);
   };
 
   const editarEvento = (id: string, dados: Partial<EventoCondominio>) => {
-    setEventos(prev => prev.map(e => e.id === id ? { ...e, ...dados } : e));
+    let atualizado: EventoCondominio | null = null;
+    setEventos(prev => prev.map(e => {
+      if (e.id === id) {
+        atualizado = { ...e, ...dados };
+        return atualizado;
+      }
+      return e;
+    }));
+    if (atualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'eventos', atualizado).catch(console.error);
+    }
   };
 
   const excluirEvento = (id: string) => {
     setEventos(prev => prev.filter(e => e.id !== id));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'eventos', id).catch(console.error);
   };
 
   const suspenderEvento = (id: string, motivo: string) => {
@@ -2198,22 +2210,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Prestação de Contas Mês a Mês & Categorias com persistência
   const [mesesPrestacao, setMesesPrestacao] = useState<Record<string, PrestacaoContas>>(() => {
-    const saved = localStorage.getItem('condo_meses_prestacao');
+    const saved = localStorage.getItem(`condo_meses_prestacao_${condoTenantId}`);
     if (saved) {
       try {
         return JSON.parse(saved);
       } catch {}
     }
-    return MOCK_MESES_PRESTACAO;
+    return {};
   });
 
   useEffect(() => {
+    if (!condoTenantId) return;
     try {
-      localStorage.setItem('condo_meses_prestacao', JSON.stringify(mesesPrestacao));
-    } catch (e) {
-      console.warn('Could not save condo_meses_prestacao to localStorage:', e);
-    }
-  }, [mesesPrestacao]);
+      localStorage.setItem(`condo_meses_prestacao_${condoTenantId}`, JSON.stringify(mesesPrestacao));
+      localStorage.removeItem('condo_meses_prestacao');
+    } catch {}
+  }, [mesesPrestacao, condoTenantId]);
 
   const [categoriasDespesa, setCategoriasDespesa] = useState<string[]>(() => {
     const saved = localStorage.getItem('condo_categorias_despesa');
@@ -2270,7 +2282,18 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [categoriasReceita]);
 
-  const prestacaoContas = mesesPrestacao['Abril / 2026'] || Object.values(mesesPrestacao)[0] || MOCK_PRESTACAO_CONTAS;
+  const fallbackPrestacaoContas: PrestacaoContas = {
+    id: 'pc-padrao',
+    mesAno: 'Mês Atual',
+    saldo: 0,
+    receitasTotal: 0,
+    despesasTotal: 0,
+    despesas: [],
+    receitas: [],
+    condominioId: condoTenantId
+  };
+
+  const prestacaoContas = Object.values(mesesPrestacao)[0] || fallbackPrestacaoContas;
 
   const adicionarMesPrestacao = (mesAno: string) => {
     const trimmed = mesAno.trim();
@@ -2287,7 +2310,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           saldo: 0,
           despesas: [],
           receitas: [],
-          condominioId: CURRENT_CONDO_ID
+          condominioId: condoTenantId
         }
       };
     });
@@ -2303,7 +2326,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         saldo: 0,
         despesas: [],
         receitas: [],
-        condominioId: CURRENT_CONDO_ID
+        condominioId: condoTenantId
       };
 
       const novaDespesa: DespesaItem = {
@@ -2379,7 +2402,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         saldo: 0,
         despesas: [],
         receitas: [],
-        condominioId: CURRENT_CONDO_ID
+        condominioId: condoTenantId
       };
 
       const novaReceita: ReceitaItem = {
@@ -3276,7 +3299,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       role: 'morador',
       unidade: '',
       bloco: '',
-      condominioId: currentCondo?.id || CURRENT_CONDO_ID
+      condominioId: condoTenantId
     });
   };
 
@@ -3919,7 +3942,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       role: 'morador',
       unidade: unidadeNumero,
       bloco: bloco,
-      condominioId: CURRENT_CONDO_ID
+      condominioId: condoTenantId
     };
 
     // Apenas sessão em memória, SEM persistência em localStorage para que sempre recomece
@@ -3949,31 +3972,31 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       role: 'morador',
       unidade: '',
       bloco: '',
-      condominioId: CURRENT_CONDO_ID
+      condominioId: condoTenantId
     });
   };
 
   const toggleRole = () => {
     if (currentUser.role === 'morador') {
       const adminUser: User = {
-        id: 'usr-admin-master',
-        nome: 'Dra. Mariana Costa',
-        email: 'mariana.costa@condominio.com',
+        id: `usr-admin-${condoTenantId}`,
+        nome: currentCondo.nomeSindico || 'Síndico da Administração',
+        email: currentCondo.emailAdmin || 'admin@condominio.com',
         role: 'sindico',
         unidade: 'Administração',
-        bloco: 'Bloco A',
-        condominioId: CURRENT_CONDO_ID
+        bloco: 'Administração',
+        condominioId: condoTenantId
       };
       setCurrentUser(adminUser);
     } else {
-      const normalUser: User = MOCK_USERS[0] || {
-        id: 'usr-carlos-11',
-        nome: 'Carlos Silva',
-        email: 'carlos.11@email.com',
+      const normalUser: User = {
+        id: `usr-morador-demo-${condoTenantId}`,
+        nome: 'Morador Residente',
+        email: 'morador@condominio.com',
         role: 'morador',
         unidade: '11',
         bloco: 'Bloco A',
-        condominioId: CURRENT_CONDO_ID
+        condominioId: condoTenantId
       };
       setCurrentUser(normalUser);
     }

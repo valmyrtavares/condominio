@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useCondo } from '../context/CondoContext';
+import { useCondo, isMockReclamacao } from '../context/CondoContext';
 import { 
   AlertTriangle, 
   ThumbsUp, 
@@ -139,6 +139,7 @@ export const ReclamacoesScreen: React.FC = () => {
 
   // Filtering Logic
   const filteredReclamacoes = reclamacoes.filter(r => {
+    if (isMockReclamacao(r)) return false;
     const matchesCategory = filterCategory === 'Todas' || r.categoria === filterCategory;
     const matchesDate = !filterDate || r.data === formattedFilterDate;
     const matchesResident = !filterResident || 

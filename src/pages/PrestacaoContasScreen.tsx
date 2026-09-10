@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCondo } from '../context/CondoContext';
-import { DespesaItem, ReceitaItem } from '../types';
+import { DespesaItem, ReceitaItem, PrestacaoContas } from '../types';
 import { 
   PieChart, 
   TrendingUp, 
@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { ExpenseDetailModal } from '../components/financeiro/ExpenseDetailModal';
 import { ReceiptPdfModal } from '../components/financeiro/ReceiptPdfModal';
-import { MOCK_MESES_PRESTACAO } from '../mock/seedData';
 
 export const PrestacaoContasScreen: React.FC = () => {
   const { 
@@ -32,10 +31,10 @@ export const PrestacaoContasScreen: React.FC = () => {
   
   const availableMonths = Object.keys(mesesPrestacao).length > 0 
     ? Object.keys(mesesPrestacao) 
-    : Object.keys(MOCK_MESES_PRESTACAO);
+    : ['Mês Atual'];
 
   // Month selector state
-  const [selectedMonth, setSelectedMonth] = useState<string>(availableMonths[0] || 'Abril / 2026');
+  const [selectedMonth, setSelectedMonth] = useState<string>(availableMonths[0] || 'Mês Atual');
   
   // Independent expansion state for each section
   const [isReceitasOpen, setIsReceitasOpen] = useState<boolean>(false);
@@ -50,7 +49,18 @@ export const PrestacaoContasScreen: React.FC = () => {
   const [pdfModalItem, setPdfModalItem] = useState<{ item: DespesaItem | ReceitaItem; tipo: 'despesa' | 'receita' } | null>(null);
 
   // Current month's financial data
-  const currentContas = mesesPrestacao[selectedMonth] || defaultPrestacaoContas || MOCK_MESES_PRESTACAO[selectedMonth];
+  const fallbackContas: PrestacaoContas = {
+    id: 'pc-padrao',
+    mesAno: selectedMonth || 'Mês Atual',
+    saldo: 0,
+    receitasTotal: 0,
+    despesasTotal: 0,
+    receitas: [],
+    despesas: [],
+    condominioId: ''
+  };
+
+  const currentContas = mesesPrestacao[selectedMonth] || defaultPrestacaoContas || fallbackContas;
 
   const despesasCategories = ['Todas', ...categoriasDespesa];
   const receitasCategories = ['Todas', ...categoriasReceita];
