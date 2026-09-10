@@ -1186,8 +1186,30 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [currentCondoId]);
 
   const currentCondo: CondominioProfile = condominios.find(
-    c => c.id === currentCondoId || c.slug === currentCondoId || c.id.toLowerCase().includes(currentCondoId.toLowerCase()) || c.slug.toLowerCase().includes(currentCondoId.toLowerCase())
-  ) || condominios[0] || MOCK_CONDOMINIOS[0];
+    c => c.id === currentCondoId || c.slug === currentCondoId || c.id.toLowerCase() === `condo-${currentCondoId.toLowerCase()}` || c.slug.toLowerCase() === currentCondoId.toLowerCase()
+  ) || {
+    id: currentCondoId.startsWith('condo-') ? currentCondoId : `condo-${currentCondoId}`,
+    slug: currentCondoId.replace(/^condo-/, ''),
+    nome: currentCondoId.replace(/^condo-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    endereco: 'Endereço não informado',
+    cidade: 'São Paulo',
+    estado: 'SP',
+    totalUnidades: 75,
+    totalBlocos: 1,
+    fotoFachada: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=85',
+    senhaAdminGeral: 'admin',
+    emailAdmin: '',
+    nomeSindico: 'Administração',
+    telefoneSindico: '',
+    status: 'ativo',
+    criadoEm: '2026-01-01',
+    modeloInicial: 'limpo',
+    dataImplementacao: '2026-01-01',
+    diaVencimento: 10,
+    statusEmDia: true,
+    valorMensalidade: 0,
+    statusMensalidade: 'pago'
+  };
 
   // SuperAdmin Master Auth com suporte a Firebase Auth & LocalStorage
   const [isMasterLoggedIn, setIsMasterLoggedIn] = useState<boolean>(() => {
