@@ -377,6 +377,7 @@ export interface ReservaDependencia {
   periodo: 'Manhã (09h-14h)' | 'Tarde/Noite (16h-23h)' | 'Dia Inteiro';
   status: 'Confirmada' | 'Pendente de Pagamento' | 'Cancelada';
   valorTaxa?: number;
+  condominioId?: string;
 }
 
 export interface Dependencia {

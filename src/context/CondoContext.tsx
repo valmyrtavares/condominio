@@ -1679,12 +1679,18 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     if (!condoTenantId) return;
 
+    const isExampleCondo = condoTenantId === CURRENT_CONDO_ID || currentCondo?.modeloInicial === 'exemplo';
+
     const unRegras = ouvirSubcolecaoFirestore(condoTenantId, 'regras', (dados) => {
       if (Array.isArray(dados) && dados.length > 0) {
         setRegrasCondominio(dados as RegraTopico[]);
       } else if (Array.isArray(dados) && dados.length === 0) {
-        setRegrasCondominio(MOCK_REGRAS_CONDOMINIO);
-        sincronizarSubcolecaoTenant(condoTenantId, 'regras', MOCK_REGRAS_CONDOMINIO).catch(console.error);
+        if (isExampleCondo) {
+          setRegrasCondominio(MOCK_REGRAS_CONDOMINIO);
+          sincronizarSubcolecaoTenant(condoTenantId, 'regras', MOCK_REGRAS_CONDOMINIO).catch(console.error);
+        } else {
+          setRegrasCondominio([]);
+        }
       }
     });
 
@@ -1692,8 +1698,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (Array.isArray(dados) && dados.length > 0) {
         setUnidadesDisponiveis(dados as UnidadeDisponivel[]);
       } else if (Array.isArray(dados) && dados.length === 0) {
-        setUnidadesDisponiveis(MOCK_UNIDADES_DISPONIVEIS);
-        sincronizarSubcolecaoTenant(condoTenantId, 'imoveis_disponiveis', MOCK_UNIDADES_DISPONIVEIS).catch(console.error);
+        if (isExampleCondo) {
+          setUnidadesDisponiveis(MOCK_UNIDADES_DISPONIVEIS);
+          sincronizarSubcolecaoTenant(condoTenantId, 'imoveis_disponiveis', MOCK_UNIDADES_DISPONIVEIS).catch(console.error);
+        } else {
+          setUnidadesDisponiveis([]);
+        }
       }
     });
 
@@ -1701,8 +1711,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (Array.isArray(dados) && dados.length > 0) {
         setServicosContratados(dados as ServicoContratado[]);
       } else if (Array.isArray(dados) && dados.length === 0) {
-        setServicosContratados(MOCK_SERVICOS_CONTRATADOS);
-        sincronizarSubcolecaoTenant(condoTenantId, 'servicos_contratados', MOCK_SERVICOS_CONTRATADOS).catch(console.error);
+        if (isExampleCondo) {
+          setServicosContratados(MOCK_SERVICOS_CONTRATADOS);
+          sincronizarSubcolecaoTenant(condoTenantId, 'servicos_contratados', MOCK_SERVICOS_CONTRATADOS).catch(console.error);
+        } else {
+          setServicosContratados([]);
+        }
       }
     });
 
@@ -1710,8 +1724,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (Array.isArray(dados) && dados.length > 0) {
         setItensEnjoei(dados as ItemEnjoei[]);
       } else if (Array.isArray(dados) && dados.length === 0) {
-        setItensEnjoei(MOCK_ITENS_ENJOEI);
-        sincronizarSubcolecaoTenant(condoTenantId, 'enjoei', MOCK_ITENS_ENJOEI).catch(console.error);
+        if (isExampleCondo) {
+          setItensEnjoei(MOCK_ITENS_ENJOEI);
+          sincronizarSubcolecaoTenant(condoTenantId, 'enjoei', MOCK_ITENS_ENJOEI).catch(console.error);
+        } else {
+          setItensEnjoei([]);
+        }
       }
     });
 
@@ -1719,8 +1737,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (Array.isArray(dados) && dados.length > 0) {
         setRegistrosAtividades(dados as RegistroAtividade[]);
       } else if (Array.isArray(dados) && dados.length === 0) {
-        setRegistrosAtividades(MOCK_REGISTROS_ATIVIDADES);
-        sincronizarSubcolecaoTenant(condoTenantId, 'atividades_diario', MOCK_REGISTROS_ATIVIDADES).catch(console.error);
+        if (isExampleCondo) {
+          setRegistrosAtividades(MOCK_REGISTROS_ATIVIDADES);
+          sincronizarSubcolecaoTenant(condoTenantId, 'atividades_diario', MOCK_REGISTROS_ATIVIDADES).catch(console.error);
+        } else {
+          setRegistrosAtividades([]);
+        }
       }
     });
 
@@ -1728,8 +1750,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (Array.isArray(dados) && dados.length > 0) {
         setMudancas(dados as MudancaAgendamento[]);
       } else if (Array.isArray(dados) && dados.length === 0) {
-        setMudancas(MOCK_MUDANCAS);
-        sincronizarSubcolecaoTenant(condoTenantId, 'mudancas', MOCK_MUDANCAS).catch(console.error);
+        if (isExampleCondo) {
+          setMudancas(MOCK_MUDANCAS);
+          sincronizarSubcolecaoTenant(condoTenantId, 'mudancas', MOCK_MUDANCAS).catch(console.error);
+        } else {
+          setMudancas([]);
+        }
       }
     });
 
@@ -1737,8 +1763,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (Array.isArray(dados) && dados.length > 0) {
         setAutorizacoesAcesso(dados as AutorizacaoAcesso[]);
       } else if (Array.isArray(dados) && dados.length === 0) {
-        setAutorizacoesAcesso(MOCK_AUTORIZACOES_ACESSO);
-        sincronizarSubcolecaoTenant(condoTenantId, 'autorizacoes_acesso', MOCK_AUTORIZACOES_ACESSO).catch(console.error);
+        if (isExampleCondo) {
+          setAutorizacoesAcesso(MOCK_AUTORIZACOES_ACESSO);
+          sincronizarSubcolecaoTenant(condoTenantId, 'autorizacoes_acesso', MOCK_AUTORIZACOES_ACESSO).catch(console.error);
+        } else {
+          setAutorizacoesAcesso([]);
+        }
       }
     });
 
@@ -1746,8 +1776,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (Array.isArray(dados) && dados.length > 0) {
         setEncomendasEntregas(dados as EncomendaEntrega[]);
       } else if (Array.isArray(dados) && dados.length === 0) {
-        setEncomendasEntregas(MOCK_ENCOMENDAS_ENTREGAS);
-        sincronizarSubcolecaoTenant(condoTenantId, 'encomendas_entregas', MOCK_ENCOMENDAS_ENTREGAS).catch(console.error);
+        if (isExampleCondo) {
+          setEncomendasEntregas(MOCK_ENCOMENDAS_ENTREGAS);
+          sincronizarSubcolecaoTenant(condoTenantId, 'encomendas_entregas', MOCK_ENCOMENDAS_ENTREGAS).catch(console.error);
+        } else {
+          setEncomendasEntregas([]);
+        }
       }
     });
 
@@ -1762,102 +1796,23 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         const dadosReais = (dados as Reparo[]).filter(d => d && d.id && !LEGACY_MOCK_REPARO_IDS.has(d.id));
 
-        setReparos(prev => {
-          const map = new Map<string, Reparo>();
-          
-          // 1. Carrega dados recebidos da nuvem
-          dadosReais.forEach(item => {
-            if (item && item.id) {
-              map.set(item.id, item);
-            }
-          });
-
-          // 2. Mescla itens da memória local preservando comentários e apoiadores locais recentes
-          (prev || []).forEach(item => {
-            if (item && item.id && !LEGACY_MOCK_REPARO_IDS.has(item.id)) {
-              if (!map.has(item.id)) {
-                map.set(item.id, item);
-              } else {
-                const nuvemItem = map.get(item.id)!;
-                const localComents = Array.isArray(item.comentarios) ? item.comentarios : [];
-                const nuvemComents = Array.isArray(nuvemItem.comentarios) ? nuvemItem.comentarios : [];
-                const idsNuvem = new Set(nuvemComents.map(c => c.id));
-                const extrasLocal = localComents.filter(c => !idsNuvem.has(c.id));
-
-                const localApoiadores = Array.isArray(item.apoiadores) ? item.apoiadores : [];
-                const nuvemApoiadores = Array.isArray(nuvemItem.apoiadores) ? nuvemItem.apoiadores : [];
-                const apoiadoresUnificados = Array.from(new Set([...nuvemApoiadores, ...localApoiadores]));
-
-                map.set(item.id, {
-                  ...nuvemItem,
-                  comentarios: extrasLocal.length > 0 ? [...nuvemComents, ...extrasLocal] : nuvemComents,
-                  apoiadores: apoiadoresUnificados,
-                  apoiosCount: Math.max(nuvemItem.apoiosCount || 0, apoiadoresUnificados.length)
-                });
-              }
-            }
-          });
-
-          const merged = Array.from(map.values());
-
-          try {
-            localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(merged));
-            localStorage.setItem('condo_reparos_list', JSON.stringify(merged));
-          } catch {}
-
-          return merged;
-        });
+        setReparos(dadosReais);
+        try {
+          localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(dadosReais));
+          localStorage.removeItem('condo_reparos_list');
+        } catch {}
       }
     });
 
     const unReclamacoes = ouvirSubcolecaoFirestore(condoTenantId, 'reclamacoes', (dados) => {
       if (Array.isArray(dados)) {
-        setReclamacoes(prev => {
-          const map = new Map<string, Reclamacao>();
-          
-          // 1. Carrega dados da nuvem
-          (dados as Reclamacao[]).forEach(item => {
-            if (item && item.id) {
-              map.set(item.id, item);
-            }
-          });
+        const dadosReais = (dados as Reclamacao[]).filter(d => d && d.id);
 
-          // 2. Mescla itens da memória local preservando comentários e apoiadores locais recentes
-          (prev || []).forEach(item => {
-            if (item && item.id) {
-              if (!map.has(item.id)) {
-                map.set(item.id, item);
-              } else {
-                const nuvemItem = map.get(item.id)!;
-                const localComents = Array.isArray(item.comentarios) ? item.comentarios : [];
-                const nuvemComents = Array.isArray(nuvemItem.comentarios) ? nuvemItem.comentarios : [];
-                const idsNuvem = new Set(nuvemComents.map(c => c.id));
-                const extrasLocal = localComents.filter(c => !idsNuvem.has(c.id));
-
-                const localApoiadores = Array.isArray(item.apoiadores) ? item.apoiadores : [];
-                const nuvemApoiadores = Array.isArray(nuvemItem.apoiadores) ? nuvemItem.apoiadores : [];
-                const apoiadoresUnificados = Array.from(new Set([...nuvemApoiadores, ...localApoiadores]));
-
-                map.set(item.id, {
-                  ...nuvemItem,
-                  comentarios: extrasLocal.length > 0 ? [...nuvemComents, ...extrasLocal] : nuvemComents,
-                  apoiadores: apoiadoresUnificados,
-                  apoiosCount: Math.max(nuvemItem.apoiosCount || 0, apoiadoresUnificados.length)
-                });
-              }
-            }
-          });
-
-          const merged = Array.from(map.values());
-          const finalLista = merged.length > 0 ? merged : MOCK_RECLAMACOES;
-
-          try {
-            localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(finalLista));
-            localStorage.setItem('condo_reclamacoes_list', JSON.stringify(finalLista));
-          } catch {}
-
-          return finalLista;
-        });
+        setReclamacoes(dadosReais);
+        try {
+          localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(dadosReais));
+          localStorage.removeItem('condo_reclamacoes_list');
+        } catch {}
       }
     });
 
@@ -1883,8 +1838,51 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (Array.isArray(dados) && dados.length > 0) {
         setAssembleias(dados as Assembleia[]);
       } else if (Array.isArray(dados) && dados.length === 0) {
-        setAssembleias(MOCK_ASSEMBLEIAS);
-        sincronizarSubcolecaoTenant(condoTenantId, 'assembleias', MOCK_ASSEMBLEIAS).catch(console.error);
+        if (isExampleCondo) {
+          setAssembleias(MOCK_ASSEMBLEIAS);
+          sincronizarSubcolecaoTenant(condoTenantId, 'assembleias', MOCK_ASSEMBLEIAS).catch(console.error);
+        } else {
+          setAssembleias([]);
+        }
+      }
+    });
+
+    const unBenfeitorias = ouvirSubcolecaoFirestore(condoTenantId, 'benfeitorias', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setBenfeitorias(dados as Benfeitoria[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        if (isExampleCondo) {
+          setBenfeitorias(MOCK_BENFEITORIAS);
+          sincronizarSubcolecaoTenant(condoTenantId, 'benfeitorias', MOCK_BENFEITORIAS).catch(console.error);
+        } else {
+          setBenfeitorias([]);
+        }
+      }
+    });
+
+    const unVagas = ouvirSubcolecaoFirestore(condoTenantId, 'vagas_garagem', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setVagasGaragem(dados as VagaGaragem[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        if (isExampleCondo) {
+          setVagasGaragem(MOCK_VAGAS_GARAGEM);
+          sincronizarSubcolecaoTenant(condoTenantId, 'vagas_garagem', MOCK_VAGAS_GARAGEM).catch(console.error);
+        } else {
+          setVagasGaragem([]);
+        }
+      }
+    });
+
+    const unReservas = ouvirSubcolecaoFirestore(condoTenantId, 'reservas', (dados) => {
+      if (Array.isArray(dados) && dados.length > 0) {
+        setReservas(dados as ReservaDependencia[]);
+      } else if (Array.isArray(dados) && dados.length === 0) {
+        if (isExampleCondo) {
+          setReservas(MOCK_RESERVAS);
+          sincronizarSubcolecaoTenant(condoTenantId, 'reservas', MOCK_RESERVAS).catch(console.error);
+        } else {
+          setReservas([]);
+        }
       }
     });
 
@@ -1902,6 +1900,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unEventos();
       unDependencias();
       unAssembleias();
+      unBenfeitorias();
+      unVagas();
+      unReservas();
     };
   }, [condoTenantId]);
 
@@ -1995,23 +1996,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [reclamacoes, setReclamacoes] = useState<Reclamacao[]>(() => {
     try {
-      const salvo = localStorage.getItem(`condo_reclamacoes_list_${condoTenantId}`) || localStorage.getItem('condo_reclamacoes_list');
+      const salvo = localStorage.getItem(`condo_reclamacoes_list_${condoTenantId}`);
       if (salvo) {
         const parsed = JSON.parse(salvo);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return MOCK_RECLAMACOES;
+    return condoTenantId === CURRENT_CONDO_ID ? MOCK_RECLAMACOES : [];
   });
 
   const [reparos, setReparos] = useState<Reparo[]>(() => {
     try {
-      const salvo = localStorage.getItem(`condo_reparos_list_${condoTenantId}`) || localStorage.getItem('condo_reparos_list');
+      const salvo = localStorage.getItem(`condo_reparos_list_${condoTenantId}`);
       if (salvo) {
         const parsed = JSON.parse(salvo);
         if (Array.isArray(parsed)) {
-          const filtrados = parsed.filter(item => item && item.id && !LEGACY_MOCK_REPARO_IDS.has(item.id));
-          return filtrados;
+          return parsed.filter(item => item && item.id && !LEGACY_MOCK_REPARO_IDS.has(item.id));
         }
       }
     } catch {}
@@ -2022,7 +2022,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!condoTenantId) return;
     try {
       localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(reclamacoes));
-      localStorage.setItem('condo_reclamacoes_list', JSON.stringify(reclamacoes));
+      localStorage.removeItem('condo_reclamacoes_list');
     } catch {}
   }, [reclamacoes, condoTenantId]);
 
@@ -2030,7 +2030,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!condoTenantId) return;
     try {
       localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(reparos));
-      localStorage.setItem('condo_reparos_list', JSON.stringify(reparos));
+      localStorage.removeItem('condo_reparos_list');
     } catch {}
   }, [reparos, condoTenantId]);
 
@@ -4293,7 +4293,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       try {
         localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(atualizados));
-        localStorage.setItem('condo_reparos_list', JSON.stringify(atualizados));
+        localStorage.removeItem('condo_reparos_list');
       } catch {}
 
       return atualizados;
@@ -4343,7 +4343,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       try {
         localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(atualizados));
-        localStorage.setItem('condo_reparos_list', JSON.stringify(atualizados));
+        localStorage.removeItem('condo_reparos_list');
       } catch {}
 
       return atualizados;
@@ -4568,7 +4568,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const lista = [novoReparo, ...(prev || [])];
       try {
         localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(lista));
-        localStorage.setItem('condo_reparos_list', JSON.stringify(lista));
+        localStorage.removeItem('condo_reparos_list');
       } catch {}
       return lista;
     });
@@ -4601,11 +4601,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       economiaMensal,
       fotos: fotos.length > 0 ? fotos : ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'],
       responsavel: `${currentUser.nome} (${currentUser.role === 'subsindico' ? 'Subsíndica' : 'Síndico'})`,
-      condominioId: CURRENT_CONDO_ID,
+      condominioId: condoTenantId,
       regrasUso
     };
 
     setBenfeitorias(prev => [novaBenfeitoria, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', novaBenfeitoria).catch(console.error);
   };
 
   const atualizarStatusVaga = (
@@ -4615,13 +4616,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   ) => {
     setVagasGaragem(prev => prev.map(v => {
       if (v.id === vagaId) {
-        return {
+        const atualizada = {
           ...v,
           status: novoStatus,
           veiculo: dadosAdicionais?.veiculo !== undefined ? dadosAdicionais.veiculo : v.veiculo,
           valorAluguelMensal: dadosAdicionais?.valorAluguelMensal !== undefined ? dadosAdicionais.valorAluguelMensal : v.valorAluguelMensal,
-          observacoes: dadosAdicionais?.observacoes !== undefined ? dadosAdicionais.observacoes : v.observacoes
+          observacoes: dadosAdicionais?.observacoes !== undefined ? dadosAdicionais.observacoes : v.observacoes,
+          condominioId: condoTenantId
         };
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'vagas_garagem', atualizada).catch(console.error);
+        return atualizada;
       }
       return v;
     }));
@@ -4642,14 +4646,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       dataReserva,
       periodo,
       status: 'Confirmada',
-      valorTaxa: dep?.taxaReserva
+      valorTaxa: dep?.taxaReserva,
+      condominioId: condoTenantId
     };
 
     setReservas(prev => [novaReserva, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reservas', novaReserva).catch(console.error);
   };
 
   const cancelarReserva = (reservaId: string) => {
     setReservas(prev => prev.filter(r => r.id !== reservaId));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reservas', reservaId).catch(console.error);
   };
 
   const atualizarStatusReclamacao = (id: string, novoStatus: StatusReclamacao) => {
