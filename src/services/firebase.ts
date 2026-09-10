@@ -467,7 +467,7 @@ export const salvarDocumentoSubcolecaoFirestore = async (
           console.warn(`Falha no upload da imagem do campo ${key} para o Storage:`, errUpload);
         }
       } else if (Array.isArray(value)) {
-        const fotosProcessadas: string[] = [];
+        const fotosProcessadas: any[] = [];
         let alterouArray = false;
         for (let i = 0; i < value.length; i++) {
           const val = value[i];
@@ -484,7 +484,7 @@ export const salvarDocumentoSubcolecaoFirestore = async (
             } catch {
               fotosProcessadas.push(val);
             }
-          } else if (typeof val === 'string') {
+          } else {
             fotosProcessadas.push(val);
           }
         }

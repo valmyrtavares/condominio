@@ -126,7 +126,7 @@ export const UnidadesDisponiveisScreen: React.FC = () => {
         <div className="relative">
           <input
             type="text"
-            placeholder="Buscar por número do apto, bloco ou proprietário (ex: 204, 502, Roberto)..."
+            placeholder="Buscar por número do apto, bloco ou proprietário (ex: 11, Carlos)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-white/70 border border-white/80 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs"

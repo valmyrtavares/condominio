@@ -106,6 +106,15 @@ import {
 } from '../services/firebase';
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 
+const LEGACY_MOCK_REPARO_IDS = new Set([
+  'rep-motor-portao',
+  'rep-infiltracao-subsolo',
+  'rep-lampadas-hall',
+  'rep-porta-academia',
+  'rep-elevador-botoeira',
+  'rep-pintura-garagem'
+]);
+
 /**
  * Formata o número do apartamento baseado no item base do 1º andar e no número do andar atual.
  * Exemplo A: "11" -> Andar 1 = "11", Andar 2 = "21", Andar 3 = "31"...
@@ -1722,63 +1731,111 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const unReparos = ouvirSubcolecaoFirestore(condoTenantId, 'reparos', (dados) => {
       if (Array.isArray(dados)) {
-        try {
-          localStorage.removeItem('condo_reparos_list');
-        } catch {}
-
-        const moradoresCadastrados = unidades.flatMap(u => u.moradores || []);
-        const uidsCadastrados = new Set(moradoresCadastrados.map(m => String(m.id || (m as any).uid || '').toLowerCase()));
-        
-        const unidadesComMoradores = new Set(
-          unidades
-            .filter(u => u.moradores && u.moradores.length > 0)
-            .map(u => String(u.numero).toLowerCase())
-        );
-
-        const reparosValidos: Reparo[] = [];
-
-        dados.forEach((repRaw: any) => {
-          const idStr = String(repRaw.id || '');
-          const unStr = String(repRaw.solicitanteUnidade || '').toLowerCase();
-          const nomeStr = String(repRaw.solicitanteNome || '').toLowerCase();
-
-          const numMatch = unStr.match(/\d+/);
-          const aptNumero = numMatch ? numMatch[0] : '';
-
-          const isAdminOuZeladoria = unStr.includes('administração') || unStr.includes('portaria') || unStr.includes('zeladoria') || nomeStr.includes('zeladoria') || nomeStr.includes('mariana') || nomeStr.includes('admin') || nomeStr.includes('síndic');
-
-          const temUnidadeComMoradores = aptNumero ? unidadesComMoradores.has(aptNumero) : false;
-
-          // Se a unidade não possui moradores cadastrados (ex: Apt 102 sem morador) e não for administração/zeladoria, expurga do Firestore
-          if (!isAdminOuZeladoria && aptNumero && !temUnidadeComMoradores) {
-            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', idStr).catch(() => {});
-          } else {
-            reparosValidos.push(repRaw as Reparo);
+        // Exclui ativamente do Firestore qualquer documento correspondente aos mocks fictícios legados
+        dados.forEach(item => {
+          if (item && item.id && LEGACY_MOCK_REPARO_IDS.has(item.id)) {
+            excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', item.id).catch(console.error);
           }
         });
 
-        if (reparosValidos.length > 0) {
-          setReparos(reparosValidos);
-        } else if (dados.length === 0) {
-          const cleanMocks = MOCK_REPAROS.filter(m => {
-            const numMatch = (m.solicitanteUnidade || '').match(/\d+/);
-            const aptNum = numMatch ? numMatch[0] : '';
-            return !aptNum || unidadesComMoradores.has(aptNum) || m.solicitanteUnidade === 'Administração';
+        const dadosReais = (dados as Reparo[]).filter(d => d && d.id && !LEGACY_MOCK_REPARO_IDS.has(d.id));
+
+        setReparos(prev => {
+          const map = new Map<string, Reparo>();
+          
+          // 1. Carrega dados recebidos da nuvem
+          dadosReais.forEach(item => {
+            if (item && item.id) {
+              map.set(item.id, item);
+            }
           });
-          setReparos(cleanMocks);
-          sincronizarSubcolecaoTenant(condoTenantId, 'reparos', cleanMocks).catch(console.error);
-        } else {
-          setReparos(reparosValidos);
-        }
+
+          // 2. Mescla itens da memória local preservando comentários e apoiadores locais recentes
+          (prev || []).forEach(item => {
+            if (item && item.id && !LEGACY_MOCK_REPARO_IDS.has(item.id)) {
+              if (!map.has(item.id)) {
+                map.set(item.id, item);
+              } else {
+                const nuvemItem = map.get(item.id)!;
+                const localComents = Array.isArray(item.comentarios) ? item.comentarios : [];
+                const nuvemComents = Array.isArray(nuvemItem.comentarios) ? nuvemItem.comentarios : [];
+                const idsNuvem = new Set(nuvemComents.map(c => c.id));
+                const extrasLocal = localComents.filter(c => !idsNuvem.has(c.id));
+
+                const localApoiadores = Array.isArray(item.apoiadores) ? item.apoiadores : [];
+                const nuvemApoiadores = Array.isArray(nuvemItem.apoiadores) ? nuvemItem.apoiadores : [];
+                const apoiadoresUnificados = Array.from(new Set([...nuvemApoiadores, ...localApoiadores]));
+
+                map.set(item.id, {
+                  ...nuvemItem,
+                  comentarios: extrasLocal.length > 0 ? [...nuvemComents, ...extrasLocal] : nuvemComents,
+                  apoiadores: apoiadoresUnificados,
+                  apoiosCount: Math.max(nuvemItem.apoiosCount || 0, apoiadoresUnificados.length)
+                });
+              }
+            }
+          });
+
+          const merged = Array.from(map.values());
+
+          try {
+            localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(merged));
+            localStorage.setItem('condo_reparos_list', JSON.stringify(merged));
+          } catch {}
+
+          return merged;
+        });
       }
     });
 
     const unReclamacoes = ouvirSubcolecaoFirestore(condoTenantId, 'reclamacoes', (dados) => {
-      if (Array.isArray(dados) && dados.length > 0) {
-        setReclamacoes(dados as Reclamacao[]);
-      } else if (Array.isArray(dados) && dados.length === 0) {
-        setReclamacoes(MOCK_RECLAMACOES);
-        sincronizarSubcolecaoTenant(condoTenantId, 'reclamacoes', MOCK_RECLAMACOES).catch(console.error);
+      if (Array.isArray(dados)) {
+        setReclamacoes(prev => {
+          const map = new Map<string, Reclamacao>();
+          
+          // 1. Carrega dados da nuvem
+          (dados as Reclamacao[]).forEach(item => {
+            if (item && item.id) {
+              map.set(item.id, item);
+            }
+          });
+
+          // 2. Mescla itens da memória local preservando comentários e apoiadores locais recentes
+          (prev || []).forEach(item => {
+            if (item && item.id) {
+              if (!map.has(item.id)) {
+                map.set(item.id, item);
+              } else {
+                const nuvemItem = map.get(item.id)!;
+                const localComents = Array.isArray(item.comentarios) ? item.comentarios : [];
+                const nuvemComents = Array.isArray(nuvemItem.comentarios) ? nuvemItem.comentarios : [];
+                const idsNuvem = new Set(nuvemComents.map(c => c.id));
+                const extrasLocal = localComents.filter(c => !idsNuvem.has(c.id));
+
+                const localApoiadores = Array.isArray(item.apoiadores) ? item.apoiadores : [];
+                const nuvemApoiadores = Array.isArray(nuvemItem.apoiadores) ? nuvemItem.apoiadores : [];
+                const apoiadoresUnificados = Array.from(new Set([...nuvemApoiadores, ...localApoiadores]));
+
+                map.set(item.id, {
+                  ...nuvemItem,
+                  comentarios: extrasLocal.length > 0 ? [...nuvemComents, ...extrasLocal] : nuvemComents,
+                  apoiadores: apoiadoresUnificados,
+                  apoiosCount: Math.max(nuvemItem.apoiosCount || 0, apoiadoresUnificados.length)
+                });
+              }
+            }
+          });
+
+          const merged = Array.from(map.values());
+          const finalLista = merged.length > 0 ? merged : MOCK_RECLAMACOES;
+
+          try {
+            localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(finalLista));
+            localStorage.setItem('condo_reclamacoes_list', JSON.stringify(finalLista));
+          } catch {}
+
+          return finalLista;
+        });
       }
     });
 
@@ -1914,8 +1971,47 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [currentUser]);
 
-  const [reclamacoes, setReclamacoes] = useState<Reclamacao[]>(MOCK_RECLAMACOES);
-  const [reparos, setReparos] = useState<Reparo[]>(MOCK_REPAROS);
+  const [reclamacoes, setReclamacoes] = useState<Reclamacao[]>(() => {
+    try {
+      const salvo = localStorage.getItem(`condo_reclamacoes_list_${condoTenantId}`) || localStorage.getItem('condo_reclamacoes_list');
+      if (salvo) {
+        const parsed = JSON.parse(salvo);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return MOCK_RECLAMACOES;
+  });
+
+  const [reparos, setReparos] = useState<Reparo[]>(() => {
+    try {
+      const salvo = localStorage.getItem(`condo_reparos_list_${condoTenantId}`) || localStorage.getItem('condo_reparos_list');
+      if (salvo) {
+        const parsed = JSON.parse(salvo);
+        if (Array.isArray(parsed)) {
+          const filtrados = parsed.filter(item => item && item.id && !LEGACY_MOCK_REPARO_IDS.has(item.id));
+          return filtrados;
+        }
+      }
+    } catch {}
+    return [];
+  });
+
+  useEffect(() => {
+    if (!condoTenantId) return;
+    try {
+      localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(reclamacoes));
+      localStorage.setItem('condo_reclamacoes_list', JSON.stringify(reclamacoes));
+    } catch {}
+  }, [reclamacoes, condoTenantId]);
+
+  useEffect(() => {
+    if (!condoTenantId) return;
+    try {
+      localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(reparos));
+      localStorage.setItem('condo_reparos_list', JSON.stringify(reparos));
+    } catch {}
+  }, [reparos, condoTenantId]);
+
   const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>(MOCK_BENFEITORIAS);
   const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>(MOCK_VAGAS_GARAGEM);
   const [dependencias, setDependencias] = useState<Dependencia[]>(MOCK_DEPENDENCIAS);
@@ -2546,7 +2642,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [targetRedirectScreen, setTargetRedirectScreen] = useState<string | null>(null);
   const [selectedReclamacaoId, setSelectedReclamacaoId] = useState<string | null>('rec-barulho-gourmet');
-  const [selectedReparoId, setSelectedReparoId] = useState<string | null>('rep-motor-portao');
+  const [selectedReparoId, setSelectedReparoId] = useState<string | null>(null);
 
   // Atualiza tela e sincroniza URL no navegador mantendo o condomínio ativo (/c/:slug/...)
   const setCurrentScreen = (screen: string, options?: { replace?: boolean }) => {
@@ -3837,33 +3933,62 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const toggleRole = () => {
     if (currentUser.role === 'morador') {
-      const adminUser = MOCK_USERS.find(u => u.id === 'usr-admin-401') || MOCK_USERS[4];
+      const adminUser: User = {
+        id: 'usr-admin-master',
+        nome: 'Dra. Mariana Costa',
+        email: 'mariana.costa@condominio.com',
+        role: 'sindico',
+        unidade: 'Administração',
+        bloco: 'Bloco A',
+        condominioId: CURRENT_CONDO_ID
+      };
       setCurrentUser(adminUser);
     } else {
-      const normalUser = MOCK_USERS.find(u => u.id === 'usr-morador-102') || MOCK_USERS[0];
+      const normalUser: User = MOCK_USERS[0] || {
+        id: 'usr-carlos-11',
+        nome: 'Carlos Silva',
+        email: 'carlos.11@email.com',
+        role: 'morador',
+        unidade: '11',
+        bloco: 'Bloco A',
+        condominioId: CURRENT_CONDO_ID
+      };
       setCurrentUser(normalUser);
     }
   };
 
   const apoiarReclamacao = (id: string) => {
     const userIdentifier = currentUser?.id || currentUser?.unidade || 'morador-anon';
-    setReclamacoes(prev => prev.map(rec => {
-      if (rec.id === id) {
-        const apoiadores = rec.apoiadores || [];
-        const jaApoiou = apoiadores.includes(userIdentifier) || (rec.apoiadoPeloUsuario && apoiadores.length === 0);
-        const novosApoiadores = jaApoiou
-          ? apoiadores.filter(u => u !== userIdentifier)
-          : [...apoiadores, userIdentifier];
+    setReclamacoes(prev => {
+      const atualizadas = prev.map(rec => {
+        if (rec.id === id) {
+          const apoiadores = Array.isArray(rec.apoiadores) ? rec.apoiadores : [];
+          const jaApoiou = apoiadores.includes(userIdentifier);
+          const novosApoiadores = jaApoiou
+            ? apoiadores.filter(u => u !== userIdentifier)
+            : [...apoiadores, userIdentifier];
 
-        return {
-          ...rec,
-          apoiosCount: jaApoiou ? Math.max(0, rec.apoiosCount - 1) : rec.apoiosCount + 1,
-          apoiadoPeloUsuario: !jaApoiou,
-          apoiadores: novosApoiadores
-        };
-      }
-      return rec;
-    }));
+          const atualizada: Reclamacao = {
+            ...rec,
+            apoiosCount: novosApoiadores.length,
+            apoiadoPeloUsuario: !jaApoiou,
+            apoiadores: novosApoiadores,
+            condominioId: condoTenantId
+          };
+
+          salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', atualizada).catch(console.error);
+          return atualizada;
+        }
+        return rec;
+      });
+
+      try {
+        localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(atualizadas));
+        localStorage.setItem('condo_reclamacoes_list', JSON.stringify(atualizadas));
+      } catch {}
+
+      return atualizadas;
+    });
   };
 
   const adicionarComentario = (reclamacaoId: string, texto: string) => {
@@ -3880,26 +4005,40 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     const novoComentario = {
-      id: `com-${Date.now()}`,
+      id: `com-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       autorId: currentUser.id || 'usr-anon',
       autorNome: currentUser.nome || 'Morador',
       autorRole: currentUser.role,
       autorUnidade: unidadeFormatada,
-      autorFoto: currentUser.foto,
+      autorFoto: currentUser.foto || '',
       texto: texto.trim(),
       data: `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
       oficial: currentUser.role === 'sindico' || currentUser.role === 'subsindico'
     };
 
-    setReclamacoes(prev => prev.map(rec => {
-      if (rec.id === reclamacaoId) {
-        return {
-          ...rec,
-          comentarios: [...rec.comentarios, novoComentario]
-        };
-      }
-      return rec;
-    }));
+    setReclamacoes(prev => {
+      const atualizadas = prev.map(rec => {
+        if (rec.id === reclamacaoId) {
+          const comentariosAtuais = Array.isArray(rec.comentarios) ? rec.comentarios : [];
+          const atualizada: Reclamacao = {
+            ...rec,
+            comentarios: [...comentariosAtuais, novoComentario],
+            condominioId: condoTenantId
+          };
+
+          salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', atualizada).catch(console.error);
+          return atualizada;
+        }
+        return rec;
+      });
+
+      try {
+        localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(atualizadas));
+        localStorage.setItem('condo_reclamacoes_list', JSON.stringify(atualizadas));
+      } catch {}
+
+      return atualizadas;
+    });
   };
 
   const transformarEmReparo = (reclamacaoId: string, titulo: string, descricao: string): string => {
@@ -3918,8 +4057,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       solicitanteUnidade: reclamacao?.autorUnidade || `Apt ${currentUser.unidade}`,
       dataSolicitacao: dataHoje,
       responsavel: `${currentUser.nome} (${currentUser.role === 'subsindico' ? 'Subsíndica' : 'Síndico'})`,
-      status: 'Aguardando Conserto',
-      condominioId: currentUser.condominioId,
+      status: 'Solicitado',
+      condominioId: condoTenantId,
       orcamentos: [
         {
           id: `orc-a-${Date.now()}`,
@@ -3968,7 +4107,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           titulo: 'Transformado em Ação de Reparo',
           descricao: `Ação de reparo criada pela administração (${currentUser.nome}).`,
           autorRole: currentUser.role,
-          statusAlvo: 'Aguardando Conserto'
+          statusAlvo: 'Solicitado'
         }
       ],
       fotosAntes: ['https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&w=600&q=80'],
@@ -3980,16 +4119,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setReparos(prev => [novoReparo, ...prev]);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', novoReparo).catch(console.error);
 
     // Update complaint status and link repair
     setReclamacoes(prev => prev.map(rec => {
       if (rec.id === reclamacaoId) {
-        return {
+        const atualizada: Reclamacao = {
           ...rec,
           status: 'Em andamento' as StatusReclamacao,
           reparoId: novoReparoId,
           comentarios: [
-            ...rec.comentarios,
+            ...(rec.comentarios || []),
             {
               id: `com-admin-${Date.now()}`,
               autorId: currentUser.id,
@@ -4003,6 +4143,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
           ]
         };
+
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', atualizada).catch(console.error);
+        return atualizada;
       }
       return rec;
     }));
@@ -4028,14 +4171,18 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           statusAlvo: 'Orçamento Contratado' as StatusReparo
         };
 
-        return {
+        const atualizado = {
           ...rep,
           orcamentos: novosOrcamentos,
           empresaEscolhida: selecionado?.empresa,
           valorFinal: selecionado?.valor,
+          prazoExecucaoDias: selecionado?.prazoDias,
           status: 'Orçamento Contratado' as StatusReparo,
           timeline: [...(rep.timeline || []), novaTimelineStep]
         };
+
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', atualizado).catch(console.error);
+        return atualizado;
       }
       return rep;
     }));
@@ -4063,12 +4210,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         const novoStatus = (rep.status === 'Solicitado' || rep.status === 'Buscando Orçamento') ? ('Análise de Orçamento' as StatusReparo) : rep.status;
 
-        return {
+        const atualizado = {
           ...rep,
           orcamentos: novosOrcs,
           status: novoStatus,
           timeline: [...(rep.timeline || []), novaStep]
         };
+
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', atualizado).catch(console.error);
+        return atualizado;
       }
       return rep;
     }));
@@ -4080,12 +4230,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const filtrados = (rep.orcamentos || []).filter(o => o.id !== orcamentoId);
         const foiSelecionado = (rep.orcamentos || []).find(o => o.id === orcamentoId)?.selecionado;
 
-        return {
+        const atualizado = {
           ...rep,
           orcamentos: filtrados,
           empresaEscolhida: foiSelecionado ? undefined : rep.empresaEscolhida,
           valorFinal: foiSelecionado ? undefined : rep.valorFinal
         };
+
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', atualizado).catch(console.error);
+        return atualizado;
       }
       return rep;
     }));
@@ -4093,23 +4246,36 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const apoiarReparo = (id: string) => {
     const userIdentifier = currentUser?.id || currentUser?.unidade || 'morador-anon';
-    setReparos(prev => prev.map(rep => {
-      if (rep.id === id) {
-        const apoiadores = rep.apoiadores || [];
-        const jaApoiou = apoiadores.includes(userIdentifier) || (rep.apoiadoPeloUsuario && apoiadores.length === 0);
-        const novosApoiadores = jaApoiou
-          ? apoiadores.filter(u => u !== userIdentifier)
-          : [...apoiadores, userIdentifier];
+    setReparos(prev => {
+      const atualizados = prev.map(rep => {
+        if (rep.id === id) {
+          const apoiadores = Array.isArray(rep.apoiadores) ? rep.apoiadores : [];
+          const jaApoiou = apoiadores.includes(userIdentifier);
+          const novosApoiadores = jaApoiou
+            ? apoiadores.filter(u => u !== userIdentifier)
+            : [...apoiadores, userIdentifier];
 
-        return {
-          ...rep,
-          apoiosCount: jaApoiou ? Math.max(0, (rep.apoiosCount || 0) - 1) : (rep.apoiosCount || 0) + 1,
-          apoiadoPeloUsuario: !jaApoiou,
-          apoiadores: novosApoiadores
-        };
-      }
-      return rep;
-    }));
+          const atualizado: Reparo = {
+            ...rep,
+            apoiosCount: novosApoiadores.length,
+            apoiadoPeloUsuario: !jaApoiou,
+            apoiadores: novosApoiadores,
+            condominioId: condoTenantId
+          };
+
+          salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', atualizado).catch(console.error);
+          return atualizado;
+        }
+        return rep;
+      });
+
+      try {
+        localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(atualizados));
+        localStorage.setItem('condo_reparos_list', JSON.stringify(atualizados));
+      } catch {}
+
+      return atualizados;
+    });
   };
 
   const adicionarComentarioReparo = (reparoId: string, texto: string) => {
@@ -4126,32 +4292,46 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     const novoComentario = {
-      id: `com-rep-${Date.now()}`,
+      id: `com-rep-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       autorId: currentUser.id || 'usr-anon',
       autorNome: currentUser.nome || 'Morador',
       autorRole: currentUser.role,
       autorUnidade: unidadeFormatada,
-      autorFoto: currentUser.foto,
+      autorFoto: currentUser.foto || '',
       texto: texto.trim(),
       data: `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
       oficial: currentUser.role === 'sindico' || currentUser.role === 'subsindico'
     };
 
-    setReparos(prev => prev.map(rep => {
-      if (rep.id === reparoId) {
-        return {
-          ...rep,
-          comentarios: [...(rep.comentarios || []), novoComentario]
-        };
-      }
-      return rep;
-    }));
+    setReparos(prev => {
+      const atualizados = prev.map(rep => {
+        if (rep.id === reparoId) {
+          const comentariosAtuais = Array.isArray(rep.comentarios) ? rep.comentarios : [];
+          const atualizado: Reparo = {
+            ...rep,
+            comentarios: [...comentariosAtuais, novoComentario],
+            condominioId: condoTenantId
+          };
+
+          salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', atualizado).catch(console.error);
+          return atualizado;
+        }
+        return rep;
+      });
+
+      try {
+        localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(atualizados));
+        localStorage.setItem('condo_reparos_list', JSON.stringify(atualizados));
+      } catch {}
+
+      return atualizados;
+    });
   };
 
   const toggleOcultarComentarioReparo = (reparoId: string, comentarioId: string, motivo?: string) => {
     setReparos(prev => prev.map(rep => {
       if (rep.id === reparoId) {
-        return {
+        const atualizado = {
           ...rep,
           comentarios: (rep.comentarios || []).map(c => {
             if (c.id === comentarioId) {
@@ -4166,6 +4346,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             return c;
           })
         };
+
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', atualizado).catch(console.error);
+        return atualizado;
       }
       return rep;
     }));
@@ -4174,10 +4357,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const excluirComentarioReparo = (reparoId: string, comentarioId: string) => {
     setReparos(prev => prev.map(rep => {
       if (rep.id === reparoId) {
-        return {
+        const atualizado = {
           ...rep,
           comentarios: (rep.comentarios || []).filter(c => c.id !== comentarioId)
         };
+
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', atualizado).catch(console.error);
+        return atualizado;
       }
       return rep;
     }));
@@ -4246,10 +4432,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const reparoAtualizado = {
           ...rep,
           status: novoStatus,
-          timeline: [...rep.timeline, novaStep]
+          timeline: [...(rep.timeline || []), novaStep]
         };
 
-        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', reparoAtualizado).catch(console.error);
+        const targetCondoId = rep.condominioId || condoTenantId;
+        salvarDocumentoSubcolecaoFirestore(targetCondoId, 'reparos', reparoAtualizado).catch(console.error);
 
         // If completed/executed, update linked complaint if any
         if ((novoStatus === 'Resolvido' || novoStatus === 'Executado' || novoStatus === 'Confirmado') && rep.reclamacaoId) {
@@ -4259,7 +4446,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 ...rec,
                 status: 'Resolvida' as StatusReclamacao
               };
-              salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', recAt).catch(console.error);
+              salvarDocumentoSubcolecaoFirestore(targetCondoId, 'reclamacoes', recAt).catch(console.error);
               return recAt;
             }
             return rec;
@@ -4284,19 +4471,28 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       titulo,
       descricao,
       categoria,
-      autorId: currentUser.id,
-      autorNome: currentUser.nome,
+      autorId: currentUser.id || 'usr-anon',
+      autorNome: currentUser.nome || 'Morador',
       autorUnidade: currentUser.role === 'morador' ? `Apt ${currentUser.unidade}` : 'Administração',
       data: new Date().toLocaleDateString('pt-BR'),
       status: 'Recebida',
       apoiosCount: 0,
       apoiadoPeloUsuario: false,
       comentarios: [],
-      condominioId: CURRENT_CONDO_ID,
+      condominioId: condoTenantId,
       anexoUrl,
       anexoTipo
     };
-    setReclamacoes(prev => [novaRec, ...prev]);
+
+    setReclamacoes(prev => {
+      const lista = [novaRec, ...(prev || [])];
+      try {
+        localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(lista));
+        localStorage.setItem('condo_reclamacoes_list', JSON.stringify(lista));
+      } catch {}
+      return lista;
+    });
+
     setSelectedReclamacaoId(novaRec.id);
     salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', novaRec).catch(console.error);
   };
@@ -4310,18 +4506,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     anexoTipo?: 'imagem' | 'video'
   ) => {
     const dataHoje = new Date().toLocaleDateString('pt-BR');
+    const solicitanteUnidadeStr = currentUser.role === 'morador'
+      ? (currentUser.unidade ? (currentUser.unidade.toLowerCase().startsWith('apt') || currentUser.unidade.toLowerCase().startsWith('cobertura') ? currentUser.unidade : `Apt ${currentUser.unidade}`) : 'Morador')
+      : 'Administração';
+
     const novoReparo: Reparo = {
       id: `rep-${Date.now()}`,
       titulo,
       descricao,
       porte,
       categoria,
-      solicitanteNome: currentUser.nome,
-      solicitanteUnidade: currentUser.role === 'morador' ? `Apt ${currentUser.unidade}${currentUser.bloco ? ` - ${currentUser.bloco}` : ''}` : 'Administração',
+      solicitanteNome: currentUser.nome || 'Morador',
+      solicitanteUnidade: solicitanteUnidadeStr,
       dataSolicitacao: dataHoje,
       responsavel: 'A definir (Administração)',
       status: 'Solicitado',
-      condominioId: CURRENT_CONDO_ID,
+      condominioId: condoTenantId,
       orcamentos: [],
       apoiosCount: 0,
       apoiadoPeloUsuario: false,
@@ -4334,7 +4534,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           id: `tl-sol-${Date.now()}`,
           data: dataHoje,
           titulo: 'Solicitação de Reparo Registrada',
-          descricao: `Abertura realizada por ${currentUser.nome} (${currentUser.unidade}). Aguardando análise técnica da administração.`,
+          descricao: `Abertura realizada por ${currentUser.nome || 'Morador'} (${solicitanteUnidadeStr}). Aguardando análise técnica da administração.`,
           autorRole: currentUser.role,
           statusAlvo: 'Solicitado'
         }
@@ -4342,7 +4542,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       fotosAntes: anexoUrl && anexoTipo !== 'video' ? [anexoUrl] : ['https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80']
     };
 
-    setReparos(prev => [novoReparo, ...prev]);
+    setReparos(prev => {
+      const lista = [novoReparo, ...(prev || [])];
+      try {
+        localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(lista));
+        localStorage.setItem('condo_reparos_list', JSON.stringify(lista));
+      } catch {}
+      return lista;
+    });
+
     setSelectedReparoId(novoReparo.id);
     salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', novoReparo).catch(console.error);
   };
@@ -4425,7 +4633,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const atualizarStatusReclamacao = (id: string, novoStatus: StatusReclamacao) => {
     setReclamacoes(prev => prev.map(rec => {
       if (rec.id === id) {
-        return { ...rec, status: novoStatus };
+        const atualizada = { ...rec, status: novoStatus };
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', atualizada).catch(console.error);
+        return atualizada;
       }
       return rec;
     }));
@@ -4434,9 +4644,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const toggleOcultarComentario = (reclamacaoId: string, comentarioId: string, motivo?: string) => {
     setReclamacoes(prev => prev.map(rec => {
       if (rec.id === reclamacaoId) {
-        return {
+        const atualizada = {
           ...rec,
-          comentarios: rec.comentarios.map(c => {
+          comentarios: (rec.comentarios || []).map(c => {
             if (c.id === comentarioId) {
               const novoOculto = !c.oculto;
               return {
@@ -4449,6 +4659,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             return c;
           })
         };
+
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', atualizada).catch(console.error);
+        return atualizada;
       }
       return rec;
     }));
@@ -4457,10 +4670,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const excluirComentario = (reclamacaoId: string, comentarioId: string) => {
     setReclamacoes(prev => prev.map(rec => {
       if (rec.id === reclamacaoId) {
-        return {
+        const atualizada = {
           ...rec,
-          comentarios: rec.comentarios.filter(c => c.id !== comentarioId)
+          comentarios: (rec.comentarios || []).filter(c => c.id !== comentarioId)
         };
+
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', atualizada).catch(console.error);
+        return atualizada;
       }
       return rec;
     }));
@@ -4468,6 +4684,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const excluirReclamacao = (reclamacaoId: string) => {
     setReclamacoes(prev => prev.filter(r => r.id !== reclamacaoId));
+    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', reclamacaoId).catch(console.error);
   };
 
   return (

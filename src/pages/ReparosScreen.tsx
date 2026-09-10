@@ -439,7 +439,7 @@ export const ReparosScreen: React.FC = () => {
         ) : (
           filteredReparos.map((rep) => {
             const isExpanded = expandedId === rep.id;
-            const isApoiado = (rep.apoiadores && userIdentifier ? rep.apoiadores.includes(userIdentifier) : false) || Boolean(rep.apoiadoPeloUsuario);
+            const isApoiado = Boolean(userIdentifier && Array.isArray(rep.apoiadores) && rep.apoiadores.includes(userIdentifier));
             const isOwner = checkIsOwner(rep);
             const comentariosCount = rep.comentarios?.length || 0;
 

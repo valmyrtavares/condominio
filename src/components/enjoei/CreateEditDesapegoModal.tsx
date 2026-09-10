@@ -79,7 +79,7 @@ export const CreateEditDesapegoModal: React.FC<CreateEditDesapegoModalProps> = (
       setCondicao(itemToEdit.condicao || 'Seminovo (Excelente)');
       setFotoUrl(itemToEdit.fotos && itemToEdit.fotos.length > 0 ? itemToEdit.fotos[0] : '');
       setMoradorNome(itemToEdit.moradorNome || currentUser?.nome || 'Morador');
-      setMoradorUnidade(itemToEdit.moradorUnidade || (currentUser?.unidade ? `Apto ${currentUser.unidade}` : 'Apto 502'));
+      setMoradorUnidade(itemToEdit.moradorUnidade || (currentUser?.unidade ? `Apto ${currentUser.unidade}` : 'Apto 11'));
       setContatoWhatsapp(itemToEdit.contatoWhatsapp || '5511988887766');
     } else {
       setTitulo('');
@@ -91,7 +91,7 @@ export const CreateEditDesapegoModal: React.FC<CreateEditDesapegoModalProps> = (
       setCondicao('Seminovo (Excelente)');
       setFotoUrl(FOTOS_SUGERIDAS[0].url);
       setMoradorNome(currentUser?.nome || 'Morador');
-      setMoradorUnidade(currentUser?.unidade ? `Apto ${currentUser.unidade} - Bloco A` : 'Apto 502 - Bloco B');
+      setMoradorUnidade(currentUser?.unidade ? `Apto ${currentUser.unidade} - Bloco A` : 'Apto 11 - Bloco A');
       setContatoWhatsapp('5511988887766');
     }
   }, [itemToEdit, isOpen, currentUser]);
@@ -132,7 +132,7 @@ export const CreateEditDesapegoModal: React.FC<CreateEditDesapegoModalProps> = (
       condicao,
       fotos,
       moradorNome: moradorNome.trim() || 'Morador',
-      moradorUnidade: moradorUnidade.trim() || 'Apto 502',
+      moradorUnidade: moradorUnidade.trim() || 'Apto 11',
       moradorFoto: currentUser?.foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
       contatoWhatsapp: cleanWhatsapp.startsWith('55') ? cleanWhatsapp : `55${cleanWhatsapp}`
     };

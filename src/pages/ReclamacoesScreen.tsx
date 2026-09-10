@@ -298,7 +298,7 @@ export const ReclamacoesScreen: React.FC = () => {
         ) : (
           filteredReclamacoes.map((rec) => {
             const isExpanded = expandedId === rec.id;
-            const isApoiado = (rec.apoiadores && userIdentifier ? rec.apoiadores.includes(userIdentifier) : false) || Boolean(rec.apoiadoPeloUsuario);
+            const isApoiado = Boolean(userIdentifier && Array.isArray(rec.apoiadores) && rec.apoiadores.includes(userIdentifier));
             const isOwner = checkIsOwner(rec);
             const comentariosCount = rec.comentarios?.length || 0;
 

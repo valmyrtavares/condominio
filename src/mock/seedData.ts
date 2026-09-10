@@ -3,259 +3,31 @@ import { User, Unidade, Reclamacao, Reparo, PrestacaoContas, Funcionario, Espinh
 export const CURRENT_CONDO_ID = 'condo-jardim-paulista';
 
 export const MOCK_USERS: User[] = [
-  // Unit 102
+  // Unit 11 - Carlos Silva
   {
-    id: 'usr-morador-102',
-    nome: 'Marcos Almeida',
-    email: 'marcos.almeida@email.com',
+    id: 'usr-carlos-11',
+    nome: 'Carlos Silva',
+    email: 'carlos.11@email.com',
     role: 'morador',
-    unidade: '102',
-    bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Administrador de Empresas',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'usr-sandra-102',
-    nome: 'Sandra Almeida',
-    email: 'sandra.almeida@email.com',
-    role: 'morador',
-    unidade: '102',
-    bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Designer Gráfica',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'usr-lucas-102',
-    nome: 'Lucas Almeida',
-    email: 'lucas.almeida@email.com',
-    role: 'morador',
-    unidade: '102',
-    bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Estudante',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'usr-giulia-102',
-    nome: 'Giulia Almeida',
-    email: 'giulia.almeida@email.com',
-    role: 'morador',
-    unidade: '102',
-    bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Estudante',
-    condominioId: CURRENT_CONDO_ID
-  },
-  // Unit 401
-  {
-    id: 'usr-admin-401',
-    nome: 'Dra. Mariana Costa',
-    email: 'mariana.costa@jardimpaulista.com.br',
-    role: 'subsindico',
-    unidade: '401',
-    bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Advogada & Subsíndica',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'usr-sofia-401',
-    nome: 'Sofia Costa',
-    email: 'sofia.costa@email.com',
-    role: 'morador',
-    unidade: '401',
-    bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Estudante',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'usr-tobias-401',
-    nome: 'Tobias (Cachorro)',
-    email: 'tobias.dog@email.com',
-    role: 'morador',
-    unidade: '401',
-    bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Pet da Família',
-    condominioId: CURRENT_CONDO_ID
-  },
-  // Unit 101
-  {
-    id: 'usr-morador-101',
-    nome: 'Renato Alencar',
-    email: 'renato.alencar@email.com',
-    role: 'morador',
-    unidade: '101',
+    unidade: '11',
     bloco: 'Bloco A',
     foto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Arquiteto',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'usr-camila-101',
-    nome: 'Camila Alencar',
-    email: 'camila.alencar@email.com',
-    role: 'morador',
-    unidade: '101',
-    bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Fisioterapeuta',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'usr-leo-101',
-    nome: 'Leo Alencar',
-    email: 'leo.alencar@email.com',
-    role: 'morador',
-    unidade: '101',
-    bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Estudante',
-    condominioId: CURRENT_CONDO_ID
-  },
-  // Unit 201
-  {
-    id: 'usr-morador-201',
-    nome: 'João Carlos',
-    email: 'joao.carlos@email.com',
-    role: 'morador',
-    unidade: '201',
-    bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Médico',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'usr-luiz-201',
-    nome: 'Luiz Souza',
-    email: 'luiz.souza@email.com',
-    role: 'morador',
-    unidade: '201',
-    bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Arquiteto',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'usr-miumiu-201',
-    nome: 'Miu Miu (Gato)',
-    email: 'miumiu.cat@email.com',
-    role: 'morador',
-    unidade: '201',
-    bloco: 'Bloco A',
-    foto: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Pet da Família',
-    condominioId: CURRENT_CONDO_ID
-  },
-  // Unit 302
-  {
-    id: 'usr-morador-302',
-    nome: 'Eduardo Prado',
-    email: 'eduardo.prado@email.com',
-    role: 'morador',
-    unidade: '302',
-    bloco: 'Bloco B',
-    foto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Professor Universitário',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'usr-clara-302',
-    nome: 'Clara Prado',
-    email: 'clara.prado@email.com',
-    role: 'morador',
-    unidade: '302',
-    bloco: 'Bloco B',
-    foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Jornalista',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'usr-felipe-302',
-    nome: 'Felipe Prado',
-    email: 'felipe.prado@email.com',
-    role: 'morador',
-    unidade: '302',
-    bloco: 'Bloco B',
-    foto: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80',
-    profissao: 'Designer',
+    profissao: 'Engenheiro Civil',
     condominioId: CURRENT_CONDO_ID
   }
 ];
 
 export const MOCK_UNIDADES: Unidade[] = [
   {
-    id: 'unid-001',
-    numero: '001',
-    bloco: 'Bloco A',
-    tipo: 'Apartamento',
-    vagaGaragem: 'Vaga 001',
-    statusCadastro: 'Pendente',
-    moradores: [],
-    senhaAcesso: '001'
-  },
-  {
-    id: 'unid-002',
-    numero: '002',
-    bloco: 'Bloco A',
-    tipo: 'Apartamento',
-    vagaGaragem: 'Vaga 002',
-    statusCadastro: 'Pendente',
-    moradores: [],
-    senhaAcesso: '002'
-  },
-  {
-    id: 'unid-101',
-    numero: '101',
+    id: 'unid-11',
+    numero: '11',
     bloco: 'Bloco A',
     tipo: 'Apartamento',
     vagaGaragem: 'G-11',
-    moradores: [MOCK_USERS[7], MOCK_USERS[8], MOCK_USERS[9]],
-    fotoCelula: '/family_101.jpg',
-    nomeCelula: 'Renato Alencar, Camila Alencar & Leo'
-  },
-  {
-    id: 'unid-102',
-    numero: '102',
-    bloco: 'Bloco A',
-    tipo: 'Apartamento',
-    vagaGaragem: 'G-12',
-    moradores: [MOCK_USERS[0], MOCK_USERS[1], MOCK_USERS[2], MOCK_USERS[3]],
-    fotoCelula: '/family_102.jpg',
-    nomeCelula: 'Família Almeida'
-  },
-  {
-    id: 'unid-201',
-    numero: '201',
-    bloco: 'Bloco A',
-    tipo: 'Apartamento',
-    vagaGaragem: 'G-21',
-    moradores: [MOCK_USERS[10], MOCK_USERS[11], MOCK_USERS[12]],
-    fotoCelula: '/couple_201.jpg',
-    nomeCelula: 'João Carlos, Luiz Souza & Miu Miu'
-  },
-  {
-    id: 'unid-302',
-    numero: '302',
-    bloco: 'Bloco B',
-    tipo: 'Apartamento',
-    vagaGaragem: 'G-32',
-    moradores: [MOCK_USERS[13], MOCK_USERS[14], MOCK_USERS[15]],
-    fotoCelula: '/siblings_302.jpg',
-    nomeCelula: 'Eduardo Prado, Clara Prado & Felipe'
-  },
-  {
-    id: 'unid-401',
-    numero: '401',
-    bloco: 'Bloco A',
-    tipo: 'Cobertura',
-    vagaGaragem: 'G-41',
-    moradores: [MOCK_USERS[4], MOCK_USERS[5], MOCK_USERS[6]],
-    fotoCelula: '/family_401.jpg',
-    nomeCelula: 'Dra. Mariana Costa, Sofia Costa & Tobias'
+    statusCadastro: 'Cadastrado',
+    moradores: [MOCK_USERS[0]],
+    fotoCelula: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    nomeCelula: 'Carlos Silva'
   }
 ];
 
@@ -265,9 +37,9 @@ export const MOCK_RECLAMACOES: Reclamacao[] = [
     titulo: 'Música elevada na área Gourmet após as 22h no sábado',
     descricao: 'Uso de caixa de som em volume incompatível com o regulamento interno após o horário de silêncio (estendeu-se até 01h30 da manhã), gerando incômodo aos apartamentos vizinhos. Solicito notificação e reforço das normas.',
     categoria: 'Barulho',
-    autorId: 'usr-morador-101',
-    autorNome: 'Renato Alencar',
-    autorUnidade: 'Apt 101 - Bloco A',
+    autorId: 'usr-carlos-11',
+    autorNome: 'Carlos Silva',
+    autorUnidade: 'Apt 11 - Bloco A',
     data: '16/08/2026 às 23:45',
     status: 'Resolvida',
     apoiosCount: 8,
@@ -276,22 +48,22 @@ export const MOCK_RECLAMACOES: Reclamacao[] = [
     comentarios: [
       {
         id: 'com-1',
-        autorId: 'usr-morador-102',
-        autorNome: 'Marcos Almeida',
+        autorId: 'usr-carlos-11',
+        autorNome: 'Carlos Silva',
         autorRole: 'morador',
-        autorUnidade: 'Apt 102',
-        autorFoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+        autorUnidade: 'Apt 11',
+        autorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
         texto: 'Também ouvimos claramente daqui. O regulamento estipula silêncio rigoroso após as 22h.',
         data: '17/08/2026 às 08:20'
       },
       {
         id: 'com-2',
-        autorId: 'usr-admin-401',
-        autorNome: 'Dra. Mariana Costa (Subsíndica)',
-        autorRole: 'subsindico',
-        autorUnidade: 'Administração',
-        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
-        texto: 'Comunicado Oficial: A unidade locatária do espaço foi advertida formalmente conforme artigo 24 do regulamento interno.',
+        autorId: 'func-1',
+        autorNome: 'Ademar Lopes (Porteiro)',
+        autorRole: 'colaborador',
+        autorUnidade: 'Portaria',
+        autorFoto: '/ademar_porteiro.png',
+        texto: 'Comunicado Oficial: A unidade locatária do espaço foi advertida formalmente conforme o regulamento interno.',
         data: '17/08/2026 às 11:00',
         oficial: true
       }
@@ -302,9 +74,9 @@ export const MOCK_RECLAMACOES: Reclamacao[] = [
     titulo: 'Portão de pedestres deixado destravado e entrada de entregador sem identificação',
     descricao: 'Presenciei moradores deixando o portão social de pedestres aberto com calço para receber entregas. Isso anula a clausura de segurança e coloca em risco todos os condôminos.',
     categoria: 'Segurança',
-    autorId: 'usr-morador-102',
-    autorNome: 'Marcos Almeida',
-    autorUnidade: 'Apt 102 - Bloco A',
+    autorId: 'usr-carlos-11',
+    autorNome: 'Carlos Silva',
+    autorUnidade: 'Apt 11 - Bloco A',
     data: '18/08/2026 às 19:30',
     status: 'Em andamento',
     apoiosCount: 14,
@@ -313,11 +85,11 @@ export const MOCK_RECLAMACOES: Reclamacao[] = [
     comentarios: [
       {
         id: 'com-s1',
-        autorId: 'usr-admin-401',
-        autorNome: 'Dra. Mariana Costa (Subsíndica)',
-        autorRole: 'subsindico',
-        autorUnidade: 'Administração',
-        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+        autorId: 'func-1',
+        autorNome: 'Ademar Lopes (Porteiro)',
+        autorRole: 'colaborador',
+        autorUnidade: 'Portaria',
+        autorFoto: '/ademar_porteiro.png',
         texto: 'A portaria foi reorientada sobre o protocolo rígido de clausura. Lembramos que é proibido calçar as portas de acesso.',
         data: '19/08/2026 às 08:00',
         oficial: true
@@ -329,9 +101,9 @@ export const MOCK_RECLAMACOES: Reclamacao[] = [
     titulo: 'Intimidação e ameaça verbal por desacordo de vaga na garagem',
     descricao: 'Ao solicitar a um morador que liberasse a circulação bloqueada por sua caminhonete no subsolo 1, fui vítima de ofensas verbais e intimidações agressivas. Solicito mediação imediata da sindicância e registro no livro de ocorrências.',
     categoria: 'Ameaça',
-    autorId: 'usr-morador-302',
-    autorNome: 'Eduardo Prado',
-    autorUnidade: 'Apt 302 - Bloco B',
+    autorId: 'usr-carlos-11',
+    autorNome: 'Carlos Silva',
+    autorUnidade: 'Apt 11 - Bloco A',
     data: '20/08/2026 às 18:45',
     status: 'Em análise',
     apoiosCount: 11,
@@ -340,52 +112,25 @@ export const MOCK_RECLAMACOES: Reclamacao[] = [
     comentarios: [
       {
         id: 'com-am1',
-        autorId: 'usr-admin-401',
-        autorNome: 'Dra. Mariana Costa (Subsíndica)',
-        autorRole: 'subsindico',
-        autorUnidade: 'Administração',
-        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
-        texto: 'As imagens do CFTV do subsolo foram resguardadas e os envolvidos foram convocados para reunião formal de mediação e aplicação de penalidade.',
+        autorId: 'func-1',
+        autorNome: 'Ademar Lopes (Porteiro)',
+        autorRole: 'colaborador',
+        autorUnidade: 'Portaria',
+        autorFoto: '/ademar_porteiro.png',
+        texto: 'As imagens do CFTV do subsolo foram resguardadas para avaliação da administração.',
         data: '21/08/2026 às 09:15',
         oficial: true
       }
     ]
   },
   {
-    id: 'rec-assedio-elevador',
-    titulo: 'Abordagem inconveniente e constrangimento no hall do elevador social',
-    descricao: 'Relato de comportamento desrespeitoso de intimidação verbal e comentários impróprios dirigidos a moradores ao aguardar o elevador no período noturno. Solicito averiguação rigorosa.',
-    categoria: 'Assédio',
-    autorId: 'usr-morador-201',
-    autorNome: 'Beatriz Souza',
-    autorUnidade: 'Apt 201 - Bloco A',
-    data: '22/08/2026 às 21:05',
-    status: 'Em análise',
-    apoiosCount: 16,
-    apoiadoPeloUsuario: true,
-    condominioId: CURRENT_CONDO_ID,
-    comentarios: [
-      {
-        id: 'com-a1',
-        autorId: 'usr-admin-401',
-        autorNome: 'Dra. Mariana Costa (Subsíndica)',
-        autorRole: 'subsindico',
-        autorUnidade: 'Administração',
-        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
-        texto: 'Caso tratado com máxima prioridade e sigilo. O jurídico e a administração já tomaram as medidas cabíveis para garantir a tranquilidade dos moradores.',
-        data: '23/08/2026 às 08:30',
-        oficial: true
-      }
-    ]
-  },
-  {
     id: 'rec-limpeza-corredor',
-    titulo: 'Sacos de lixo doméstico deixados no corredor do 3º andar vazando chorume',
+    titulo: 'Sacos de lixo doméstico deixados no corredor do 1º andar vazando chorume',
     descricao: 'Sacos de lixo orgânico foram deixados no chão do hall dos apartamentos por mais de 24 horas, causando mau odor e sujeira no piso comum. Todo descarte deve ser direcionado à lixeira central.',
     categoria: 'Limpeza',
-    autorId: 'usr-morador-302',
-    autorNome: 'Eduardo Prado',
-    autorUnidade: 'Apt 302 - Bloco B',
+    autorId: 'func-2',
+    autorNome: 'Anastácia Moreira',
+    autorUnidade: 'Limpeza',
     data: '23/08/2026 às 14:15',
     status: 'Resolvida',
     apoiosCount: 7,
@@ -394,472 +139,20 @@ export const MOCK_RECLAMACOES: Reclamacao[] = [
     comentarios: [
       {
         id: 'com-l1',
-        autorId: 'usr-admin-401',
-        autorNome: 'Dra. Mariana Costa (Subsíndica)',
-        autorRole: 'subsindico',
-        autorUnidade: 'Administração',
-        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
-        texto: 'A equipe de limpeza higienizou o corredor e a unidade responsável foi notificada sobre a proibição de depósito de resíduos nas áreas comuns.',
+        autorId: 'func-2',
+        autorNome: 'Anastácia Moreira',
+        autorRole: 'colaborador',
+        autorUnidade: 'Limpeza',
+        autorFoto: '/anastacia_faxineira.png',
+        texto: 'A equipe de limpeza higienizou o corredor e noticiou a zeladoria.',
         data: '23/08/2026 às 16:00',
         oficial: true
-      }
-    ]
-  },
-  {
-    id: 'rec-pets-parquinho',
-    titulo: 'Cachorro de grande porte solto sem coleira/guia na área do parquinho infantil',
-    descricao: 'Animal de grande porte estava correndo solto sem guia próximo às crianças no parquinho. É obrigatório o uso de coleira e guia em todas as áreas sociais do condomínio por segurança.',
-    categoria: 'Animais Domésticos',
-    autorId: 'usr-morador-102',
-    autorNome: 'Sandra Almeida',
-    autorUnidade: 'Apt 102 - Bloco A',
-    data: '24/08/2026 às 17:40',
-    status: 'Em andamento',
-    apoiosCount: 12,
-    apoiadoPeloUsuario: false,
-    condominioId: CURRENT_CONDO_ID,
-    comentarios: [
-      {
-        id: 'com-p1',
-        autorId: 'usr-morador-101',
-        autorNome: 'Camila Alencar',
-        autorRole: 'morador',
-        autorUnidade: 'Apt 101',
-        autorFoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-        texto: 'Apoiado! Todos amamos os pets, mas a segurança das crianças e dos próprios animais exige a guia.',
-        data: '24/08/2026 às 18:10'
       }
     ]
   }
 ];
 
-export const MOCK_REPAROS: Reparo[] = [
-  {
-    id: 'rep-motor-portao',
-    titulo: 'Manutenção preventiva e substituição do motor do portão principal',
-    descricao: 'Troca da engrenagem do fuso, placa de controle inversora e lubrificação técnica dos trilhos de corrediça do portão da garagem do Bloco A.',
-    porte: 'Médio',
-    categoria: 'Garagem',
-    solicitanteNome: 'Carlos Silva',
-    solicitanteUnidade: 'Apt 11 - Bloco A',
-    dataSolicitacao: '12/08/2026',
-    responsavel: 'Dra. Mariana Costa (Subsíndica)',
-    empresaEscolhida: 'Automatiza Tech Condominial',
-    valorFinal: 1850.00,
-    status: 'Orçamento Contratado',
-    condominioId: CURRENT_CONDO_ID,
-    apoiosCount: 9,
-    apoiadoPeloUsuario: true,
-    apoiadores: ['usr-morador-102', 'usr-morador-201', 'usr-morador-302'],
-    comentarios: [
-      {
-        id: 'com-rep-m1',
-        autorId: 'usr-admin-401',
-        autorNome: 'Dra. Mariana Costa (Subsíndica)',
-        autorRole: 'subsindico',
-        autorUnidade: 'Administração',
-        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
-        texto: 'Proposta da empresa Automatiza Tech aprovada e contratada. O serviço está agendado para execução técnica nesta quinta-feira.',
-        data: '17/08/2026 às 10:30',
-        oficial: true
-      },
-      {
-        id: 'com-rep-m2',
-        autorId: 'usr-morador-101',
-        autorNome: 'Renato Alencar',
-        autorRole: 'morador',
-        autorUnidade: 'Apt 101',
-        autorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-        texto: 'Excelente agilidade na aprovação do orçamento. O portão estava travando constantemente.',
-        data: '17/08/2026 às 11:15'
-      }
-    ],
-    orcamentos: [
-      {
-        id: 'orc-1',
-        empresa: 'Portões & Cia Ltda',
-        siteUrl: 'https://portoesecia.exemplo.com.br',
-        cnpj: '12.345.678/0001-90',
-        valor: 2100.00,
-        descricao: 'Substituição completa por motor Rossi Ninja 1/3hp + mão de obra.',
-        prazoDias: 3,
-        selecionado: false,
-        documentoUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-        documentoNome: 'Orcamento_PortoesCia_2026.pdf'
-      },
-      {
-        id: 'orc-2',
-        empresa: 'Automatiza Tech Condominial',
-        siteUrl: 'https://automatizatech.exemplo.com.br',
-        cnpj: '98.765.432/0001-11',
-        valor: 1850.00,
-        descricao: 'Motor industrial PPA JetFlex de alta velocidade + substituição de roletes blindados e garantia de 12 meses.',
-        prazoDias: 2,
-        selecionado: true,
-        documentoUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-        documentoNome: 'Proposta_AutomatizaTech_Aprovada.pdf'
-      },
-      {
-        id: 'orc-3',
-        empresa: 'Serviços Seguras SP',
-        siteUrl: 'https://segurassp.exemplo.com.br',
-        cnpj: '45.888.999/0001-33',
-        valor: 2300.00,
-        descricao: 'Kit automatizador deslizante reforçado + sensores antiesmagamento.',
-        prazoDias: 5,
-        selecionado: false,
-        documentoUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-        documentoNome: 'Cotacao_SegurasSP.pdf'
-      }
-    ],
-    timeline: [
-      {
-        id: 'tl-1',
-        data: '12/08/2026',
-        titulo: 'Vistoria e Registro do Problema',
-        descricao: 'Morador e zeladoria constataram travamento intermitente e desgaste no motor do portão.',
-        autorRole: 'morador'
-      },
-      {
-        id: 'tl-2',
-        data: '13/08/2026',
-        titulo: 'Análise Técnica Inicial',
-        descricao: 'Técnico inspecionou e constatou desgaste crítico na engrenagem principal.',
-        autorRole: 'subsindico'
-      },
-      {
-        id: 'tl-3',
-        data: '14/08/2026',
-        titulo: 'Tomada de Orçamentos',
-        descricao: 'Obtidos 3 orçamentos comparativos de empresas credenciadas.',
-        autorRole: 'subsindico'
-      },
-      {
-        id: 'tl-4',
-        data: '15/08/2026',
-        titulo: 'Aprovação do Orçamento',
-        descricao: 'Proposta da Automatiza Tech (R$ 1.850,00) aprovada por apresentar melhor prazo (2 dias) e garantia de 12 meses.',
-        autorRole: 'subsindico',
-        statusAlvo: 'Orçamento Contratado'
-      },
-      {
-        id: 'tl-5',
-        data: '17/08/2026',
-        titulo: 'Agendamento Técnico',
-        descricao: 'Equipe técnica agendada para realização do serviço na quinta-feira das 09h às 12h.',
-        autorRole: 'subsindico',
-        statusAlvo: 'Em Execução'
-      }
-    ],
-    fotosAntes: [
-      'https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&w=600&q=80'
-    ],
-    fotosDepois: [
-      'https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=600&q=80'
-    ]
-  },
-  {
-    id: 'rep-infiltracao-subsolo',
-    titulo: 'Impermeabilização e contenção de infiltração no teto do Subsolo 2',
-    descricao: 'Tratamento de goteira e infiltração proveniente da junta de dilatação da laje sobre as vagas G-30 e G-31 com injeção de poliuretano impermeabilizante.',
-    porte: 'Grande',
-    categoria: 'Garagem',
-    solicitanteNome: 'Eduardo Prado',
-    solicitanteUnidade: 'Apt 302 - Bloco B',
-    dataSolicitacao: '18/08/2026',
-    responsavel: 'Dra. Mariana Costa (Subsíndica)',
-    empresaEscolhida: 'Vedatech Engenharia e Impermeabilizações',
-    valorFinal: 3200.00,
-    status: 'Análise de Orçamento',
-    condominioId: CURRENT_CONDO_ID,
-    apoiosCount: 14,
-    apoiadoPeloUsuario: false,
-    apoiadores: ['usr-morador-302', 'usr-morador-102'],
-    comentarios: [
-      {
-        id: 'com-rep-inf1',
-        autorId: 'usr-morador-302',
-        autorNome: 'Eduardo Prado',
-        autorRole: 'morador',
-        autorUnidade: 'Apt 302 - Bloco B',
-        autorFoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
-        texto: 'A água da goteira está caindo bem em cima da lataria dos carros das vagas 30 e 31 em dias de chuva forte.',
-        data: '18/08/2026 às 19:00'
-      }
-    ],
-    orcamentos: [
-      {
-        id: 'orc-inf-1',
-        empresa: 'Vedatech Engenharia',
-        siteUrl: 'https://vedatech.exemplo.com.br',
-        cnpj: '33.444.555/0001-22',
-        valor: 3200.00,
-        descricao: 'Injeção de resina flexível de poliuretano + teste de estanqueidade com 5 anos de garantia.',
-        prazoDias: 4,
-        selecionado: true
-      },
-      {
-        id: 'orc-inf-2',
-        empresa: 'ImperSoluções Condomínios',
-        siteUrl: 'https://impersolucoes.exemplo.com.br',
-        cnpj: '77.888.999/0001-44',
-        valor: 3750.00,
-        descricao: 'Tratamento de fissuras superficiais e manta asfáltica líquida.',
-        prazoDias: 6,
-        selecionado: false
-      }
-    ],
-    timeline: [
-      {
-        id: 'tl-inf-1',
-        data: '18/08/2026',
-        titulo: 'Vistoria Predial',
-        descricao: 'Goteira no subsolo 2 mapeada pela zeladoria após chuva forte.',
-        autorRole: 'subsindico'
-      },
-      {
-        id: 'tl-inf-2',
-        data: '19/08/2026',
-        titulo: 'Coleta de Laudos e Orçamentos',
-        descricao: 'Empresas de impermeabilização visitaram o subsolo para diagnóstico.',
-        autorRole: 'subsindico',
-        statusAlvo: 'Análise de Orçamento'
-      }
-    ],
-    fotosAntes: [
-      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80'
-    ],
-    fotosDepois: [
-      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80'
-    ]
-  },
-  {
-    id: 'rep-lampadas-hall',
-    titulo: 'Substituição de painéis LED queimados no Hall do 4º andar',
-    descricao: 'Dois spots embutidos de LED do hall social em frente aos apartamentos 401 e 402 pararam de funcionar, deixando o corredor escuro.',
-    porte: 'Pequeno',
-    categoria: 'Hall / Corredor',
-    solicitanteNome: 'Renato Alencar',
-    solicitanteUnidade: 'Apt 101 - Bloco A',
-    dataSolicitacao: '20/08/2026',
-    responsavel: 'Zeladoria',
-    empresaEscolhida: 'EletroPaulista Reparos',
-    valorFinal: 180.00,
-    status: 'Resolvido',
-    condominioId: CURRENT_CONDO_ID,
-    apoiosCount: 5,
-    apoiadoPeloUsuario: false,
-    apoiadores: ['usr-morador-101'],
-    comentarios: [
-      {
-        id: 'com-rep-led1',
-        autorId: 'usr-admin-401',
-        autorNome: 'Dra. Mariana Costa (Subsíndica)',
-        autorRole: 'subsindico',
-        autorUnidade: 'Administração',
-        autorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
-        texto: 'Reparo simples concluído diretamente pela zeladoria com troca dos dois painéis LED de 18W.',
-        data: '21/08/2026 às 15:30',
-        oficial: true
-      }
-    ],
-    orcamentos: [
-      {
-        id: 'orc-led-1',
-        empresa: 'EletroPaulista Reparos',
-        siteUrl: 'https://eletropaulista.exemplo.com.br',
-        cnpj: '21.000.111/0001-55',
-        valor: 180.00,
-        descricao: 'Troca de 2 painéis LED 18W + teste de disjuntores.',
-        prazoDias: 1,
-        selecionado: true
-      }
-    ],
-    timeline: [
-      {
-        id: 'tl-led-1',
-        data: '20/08/2026',
-        titulo: 'Solicitação Registrada',
-        descricao: 'Morador reportou luzes apagadas no corredor do 4º andar.',
-        autorRole: 'morador'
-      },
-      {
-        id: 'tl-led-2',
-        data: '21/08/2026',
-        titulo: 'Serviço Executado e Resolvido',
-        descricao: 'Substituição das lâmpadas e reatores efetuada com sucesso.',
-        autorRole: 'subsindico',
-        statusAlvo: 'Resolvido'
-      }
-    ],
-    fotosAntes: [
-      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80'
-    ],
-    fotosDepois: [
-      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80'
-    ]
-  },
-  {
-    id: 'rep-porta-academia',
-    titulo: 'Regulagem da mola hidráulica e trava da porta da Academia',
-    descricao: 'A porta de vidro da academia está batendo com força excessiva no batente após o uso, com risco de quebra do vidro temperado.',
-    porte: 'Pequeno',
-    categoria: 'Academia',
-    solicitanteNome: 'Renato Alencar',
-    solicitanteUnidade: 'Apt 101 - Bloco A',
-    dataSolicitacao: '22/08/2026',
-    responsavel: 'Dra. Mariana Costa (Subsíndica)',
-    empresaEscolhida: 'Vidros & Molas Express',
-    valorFinal: 250.00,
-    status: 'Em Execução',
-    condominioId: CURRENT_CONDO_ID,
-    apoiosCount: 8,
-    apoiadoPeloUsuario: true,
-    apoiadores: ['usr-morador-101', 'usr-morador-201'],
-    comentarios: [
-      {
-        id: 'com-rep-mola1',
-        autorId: 'usr-morador-101',
-        autorNome: 'Renato Alencar',
-        autorRole: 'morador',
-        autorUnidade: 'Apt 101',
-        autorFoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
-        texto: 'Obrigada pela rápida resposta! O barulho do vidro batendo estava assustando os usuários da academia.',
-        data: '23/08/2026 às 16:20'
-      }
-    ],
-    orcamentos: [
-      {
-        id: 'orc-mola-1',
-        empresa: 'Vidros & Molas Express',
-        siteUrl: 'https://vidrosexpress.exemplo.com.br',
-        cnpj: '55.666.777/0001-88',
-        valor: 250.00,
-        descricao: 'Substituição da mola de piso Dorma + regulagem de pressão.',
-        prazoDias: 2,
-        selecionado: true
-      }
-    ],
-    timeline: [
-      {
-        id: 'tl-mola-1',
-        data: '22/08/2026',
-        titulo: 'Solicitação Aberta',
-        descricao: 'Problema reportado com mola da porta da academia.',
-        autorRole: 'morador'
-      },
-      {
-        id: 'tl-mola-2',
-        data: '23/08/2026',
-        titulo: 'Visita Técnica Agendada e Início de Execução',
-        descricao: 'Técnico fará o conserto amanhã às 14h.',
-        autorRole: 'subsindico',
-        statusAlvo: 'Em Execução'
-      }
-    ],
-    fotosAntes: [
-      'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=600&q=80'
-    ]
-  },
-  {
-    id: 'rep-elevador-botoeira',
-    titulo: 'Revisão dos cabos de tração e troca da botoeira do Elevador Social',
-    descricao: 'Ruído anormal no deslocamento entre o 3º e 6º andar e botões de chamada do 2º e 5º pavimentos apresentando mau contato intermitente.',
-    porte: 'Grande',
-    categoria: 'Elevador',
-    solicitanteNome: 'Zeladoria Condominial',
-    solicitanteUnidade: 'Administração',
-    dataSolicitacao: '23/08/2026',
-    responsavel: 'Dra. Mariana Costa (Subsíndica)',
-    empresaEscolhida: 'Atlas Schindler Serviços',
-    valorFinal: 4800.00,
-    status: 'Buscando Orçamento',
-    condominioId: CURRENT_CONDO_ID,
-    apoiosCount: 19,
-    apoiadoPeloUsuario: false,
-    apoiadores: ['usr-morador-101', 'usr-morador-201', 'usr-morador-302'],
-    comentarios: [],
-    orcamentos: [
-      {
-        id: 'orc-elev-1',
-        empresa: 'Atlas Schindler Serviços',
-        siteUrl: 'https://schindler.exemplo.com.br',
-        cnpj: '11.222.333/0001-44',
-        valor: 4800.00,
-        descricao: 'Revisão integral dos cabos de aço, encoder e troca de botoeiras antivandalismo.',
-        prazoDias: 5,
-        selecionado: true
-      },
-      {
-        id: 'orc-elev-2',
-        empresa: 'Otis Elevadores do Brasil',
-        siteUrl: 'https://otis.exemplo.com.br',
-        cnpj: '44.555.666/0001-77',
-        valor: 5200.00,
-        descricao: 'Substituição de componentes de tração e placa controladora de cabine.',
-        prazoDias: 7,
-        selecionado: false
-      }
-    ],
-    timeline: [
-      {
-        id: 'tl-elev-1',
-        data: '23/08/2026',
-        titulo: 'Vistoria Preventiva',
-        descricao: 'Chamado técnico aberto com a empresa mantenedora do elevador.',
-        autorRole: 'subsindico',
-        statusAlvo: 'Buscando Orçamento'
-      }
-    ],
-    fotosAntes: [
-      'https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&w=600&q=80'
-    ]
-  },
-  {
-    id: 'rep-pintura-garagem',
-    titulo: 'Pintura e demarcação de faixas e vagas no Subsolo 1',
-    descricao: 'Desgaste da tinta epóxi nas faixas amarelas de demarcação de vagas e numeração apagada após limpeza pesada.',
-    porte: 'Médio',
-    categoria: 'Pintura',
-    solicitanteNome: 'Beatriz Souza',
-    solicitanteUnidade: 'Apt 201 - Bloco A',
-    dataSolicitacao: '24/08/2026',
-    responsavel: 'Dra. Mariana Costa (Subsíndica)',
-    empresaEscolhida: 'Pinturas Pro SP',
-    valorFinal: 2100.00,
-    status: 'Solicitado',
-    condominioId: CURRENT_CONDO_ID,
-    apoiosCount: 6,
-    apoiadoPeloUsuario: false,
-    apoiadores: ['usr-morador-201'],
-    comentarios: [],
-    orcamentos: [
-      {
-        id: 'orc-pint-1',
-        empresa: 'Pinturas Pro SP',
-        siteUrl: 'https://pinturaspro.exemplo.com.br',
-        cnpj: '66.777.888/0001-99',
-        valor: 2100.00,
-        descricao: 'Pintura em tinta epóxi de alta resistência para 35 vagas e faixas de pedestres.',
-        prazoDias: 3,
-        selecionado: true
-      }
-    ],
-    timeline: [
-      {
-        id: 'tl-pint-1',
-        data: '24/08/2026',
-        titulo: 'Solicitação Aberta',
-        descricao: 'Necessidade de renovação da demarcação de piso na garagem.',
-        autorRole: 'morador',
-        statusAlvo: 'Solicitado'
-      }
-    ],
-    fotosAntes: [
-      'https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=600&q=80'
-    ]
-  }
-];
+export const MOCK_REPAROS: Reparo[] = [];
 
 export const MOCK_BENFEITORIAS: Benfeitoria[] = [
   {
@@ -956,206 +249,20 @@ export const MOCK_VAGAS_GARAGEM: VagaGaragem[] = [
     id: 'vaga-g11',
     numeroVaga: 'G-11',
     subsolo: 'Subsolo 1',
-    unidadeNumero: '101',
+    unidadeNumero: '11',
     bloco: 'Bloco A',
     status: 'Em uso',
     tipoVaga: 'Simples',
-    moradorNome: 'Renato Alencar',
+    moradorNome: 'Carlos Silva',
     moradorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-    interfoneRamal: '101',
-    contatoWhatsapp: '(11) 98888-1101',
+    interfoneRamal: '11',
+    contatoWhatsapp: '(11) 98888-1111',
     veiculo: {
       modelo: 'Jeep Compass Limited',
       cor: 'Preto',
       placa: 'BRA-3A10',
       tipo: 'SUV'
     },
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'vaga-g12',
-    numeroVaga: 'G-12',
-    subsolo: 'Subsolo 1',
-    unidadeNumero: '102',
-    bloco: 'Bloco A',
-    status: 'Em uso',
-    tipoVaga: 'Simples',
-    moradorNome: 'Marcos Almeida',
-    moradorFoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
-    interfoneRamal: '102',
-    contatoWhatsapp: '(11) 99999-1002',
-    veiculo: {
-      modelo: 'Toyota Corolla Cross',
-      cor: 'Prata Metálico',
-      placa: 'XYZ-7890',
-      tipo: 'SUV'
-    },
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'vaga-g13',
-    numeroVaga: 'G-13',
-    subsolo: 'Subsolo 1',
-    unidadeNumero: '103',
-    bloco: 'Bloco A',
-    status: 'Para Alugar',
-    tipoVaga: 'Simples',
-    moradorNome: 'Cíntia Mendes',
-    moradorFoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-    interfoneRamal: '103',
-    contatoWhatsapp: '(11) 97777-1003',
-    valorAluguelMensal: 250.00,
-    observacoes: 'Vaga livre e coberta, próxima ao elevador social. Não possuo veículo no momento.',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'vaga-g14',
-    numeroVaga: 'G-14',
-    subsolo: 'Subsolo 1',
-    unidadeNumero: '104',
-    bloco: 'Bloco A',
-    status: 'Vazia',
-    tipoVaga: 'Simples',
-    moradorNome: 'Unidade Desocupada / Em Reforma',
-    interfoneRamal: '104',
-    observacoes: 'Apartamento em processo de locação pela imobiliária. Vaga temporariamente desocupada.',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'vaga-g21',
-    numeroVaga: 'G-21',
-    subsolo: 'Subsolo 1',
-    unidadeNumero: '201',
-    bloco: 'Bloco A',
-    status: 'Em uso',
-    tipoVaga: 'Simples',
-    moradorNome: 'Dr. João Carlos & Beatriz',
-    moradorFoto: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80',
-    interfoneRamal: '201',
-    contatoWhatsapp: '(11) 98111-2001',
-    veiculo: {
-      modelo: 'Honda Civic Touring',
-      cor: 'Branco Pérola',
-      placa: 'RIO-9G21',
-      tipo: 'Carro'
-    },
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'vaga-g22',
-    numeroVaga: 'G-22',
-    subsolo: 'Subsolo 1',
-    unidadeNumero: '202',
-    bloco: 'Bloco A',
-    status: 'Para Alugar',
-    tipoVaga: 'Simples',
-    moradorNome: 'Juliana Paes (Proprietária)',
-    moradorFoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
-    interfoneRamal: '202',
-    contatoWhatsapp: '(11) 99222-2002',
-    valorAluguelMensal: 280.00,
-    observacoes: 'Vaga espaçosa com fácil manobra no Subsolo 1. Alugo por contrato mínimo de 6 meses.',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'vaga-g31',
-    numeroVaga: 'G-31',
-    subsolo: 'Subsolo 2',
-    unidadeNumero: '301',
-    bloco: 'Bloco B',
-    status: 'Vazia',
-    tipoVaga: 'Simples',
-    moradorNome: 'Família Silveira',
-    interfoneRamal: '301',
-    observacoes: 'Moradores utilizam apenas transporte por aplicativo no momento.',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'vaga-g32',
-    numeroVaga: 'G-32',
-    subsolo: 'Subsolo 2',
-    unidadeNumero: '302',
-    bloco: 'Bloco B',
-    status: 'Em uso',
-    tipoVaga: 'Dupla',
-    moradorNome: 'Eduardo Prado',
-    moradorFoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
-    interfoneRamal: '302',
-    contatoWhatsapp: '(11) 97333-3002',
-    veiculo: {
-      modelo: 'Volkswagen T-Cross',
-      cor: 'Azul Noturno',
-      placa: 'TCX-4B32',
-      tipo: 'SUV'
-    },
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'vaga-g41',
-    numeroVaga: 'G-41',
-    subsolo: 'Subsolo 2',
-    unidadeNumero: '401',
-    bloco: 'Bloco A',
-    status: 'Em uso',
-    tipoVaga: 'Dupla',
-    moradorNome: 'Dra. Mariana Costa (Subsíndica)',
-    moradorFoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
-    interfoneRamal: '401',
-    contatoWhatsapp: '(11) 99444-4001',
-    veiculo: {
-      modelo: 'Volvo XC60 Híbrido',
-      cor: 'Cinza Platinum',
-      placa: 'EVO-8H41',
-      tipo: 'SUV'
-    },
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'vaga-g42',
-    numeroVaga: 'G-42',
-    subsolo: 'Subsolo 2',
-    unidadeNumero: '402',
-    bloco: 'Bloco A',
-    status: 'Para Alugar',
-    tipoVaga: 'Simples',
-    moradorNome: 'Roberto Campos',
-    interfoneRamal: '402',
-    contatoWhatsapp: '(11) 98555-4002',
-    valorAluguelMensal: 230.00,
-    observacoes: 'Excelente vaga no Subsolo 2 com iluminação direta. Tratar direto via interfone ou WhatsApp.',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'vaga-g51',
-    numeroVaga: 'G-51',
-    subsolo: 'Subsolo 2',
-    unidadeNumero: '501',
-    bloco: 'Bloco B',
-    status: 'Em uso',
-    tipoVaga: 'Simples',
-    moradorNome: 'Antônio Ferreira (Advogado)',
-    moradorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-    interfoneRamal: '501',
-    contatoWhatsapp: '(11) 97666-5001',
-    veiculo: {
-      modelo: 'BMW 320i',
-      cor: 'Preto Safira',
-      placa: 'BMW-5A01',
-      tipo: 'Carro'
-    },
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'vaga-g52',
-    numeroVaga: 'G-52',
-    subsolo: 'Subsolo 2',
-    unidadeNumero: '502',
-    bloco: 'Bloco B',
-    status: 'Vazia',
-    tipoVaga: 'Simples',
-    moradorNome: 'Apartamento para Locação',
-    interfoneRamal: '502',
-    observacoes: 'Vaga livre no momento.',
     condominioId: CURRENT_CONDO_ID
   }
 ];
@@ -1696,9 +803,9 @@ export const MOCK_RESERVAS: ReservaDependencia[] = [
   {
     id: 'res-1',
     dependenciaId: 'dep-salao-festas',
-    moradorId: 'usr-morador-102',
-    moradorNome: 'Marcos Almeida',
-    unidade: '102 - Bloco A',
+    moradorId: 'usr-carlos-11',
+    moradorNome: 'Carlos Silva',
+    unidade: '11 - Bloco A',
     dataReserva: '29/08/2026',
     periodo: 'Tarde/Noite (16h-23h)',
     status: 'Confirmada',
@@ -1707,9 +814,9 @@ export const MOCK_RESERVAS: ReservaDependencia[] = [
   {
     id: 'res-2',
     dependenciaId: 'dep-salao-festas',
-    moradorId: 'usr-morador-101',
-    moradorNome: 'Renato Alencar',
-    unidade: '101 - Bloco A',
+    moradorId: 'usr-carlos-11',
+    moradorNome: 'Carlos Silva',
+    unidade: '11 - Bloco A',
     dataReserva: '05/09/2026',
     periodo: 'Manhã (09h-14h)',
     status: 'Confirmada',
@@ -1833,9 +940,9 @@ export const MOCK_EVENTOS: EventoCondominio[] = [
     data: '29/08/2026',
     horario: '16:00 às 22:00',
     local: 'Salão de Festas & Espaço Gourmet',
-    organizador: 'Marcos & Família (Apto 102)',
+    organizador: 'Carlos Silva & Família (Apto 11)',
     visibilidade: 'Privado',
-    descricao: 'Festa de aniversário temática comemorando os 10 anos da Beatriz. Evento fechado e particular para familiares e amigos convidados da unidade 102. Espaço reservado conforme agendamento.',
+    descricao: 'Festa de aniversário temática comemorando os 10 anos da Beatriz. Evento fechado e particular para familiares e amigos convidados da unidade 11. Espaço reservado conforme agendamento.',
     imagem: '/Salão de festas.jpg',
     condominioId: CURRENT_CONDO_ID
   },
@@ -1889,103 +996,7 @@ export const MOCK_EVENTOS: EventoCondominio[] = [
   }
 ];
 
-export const MOCK_UNIDADES_DISPONIVEIS: UnidadeDisponivel[] = [
-  {
-    id: 'disp-apto-204-a',
-    apartamento: '204',
-    bloco: 'Bloco A',
-    finalidade: 'Aluga-se',
-    valor: 3800.00,
-    valorCondominio: 850.00,
-    valorIptu: 220.00,
-    metragemM2: 82,
-    quartos: 2,
-    suites: 1,
-    vagasGaragem: 1,
-    proprietarioNome: 'Dr. Roberto Silveira',
-    proprietarioTelefone: '(11) 98765-4321',
-    proprietarioWhatsapp: '5511987654321',
-    descricaoCurta: 'Apartamento reformado com varanda envidraçada, armários planejados na cozinha e suíte. Vista livre para a copa das árvores.',
-    dataAnuncio: '20/08/2026',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'disp-apto-502-b',
-    apartamento: '502',
-    bloco: 'Bloco B',
-    finalidade: 'Vende-se',
-    valor: 890000.00,
-    valorCondominio: 1100.00,
-    valorIptu: 340.00,
-    metragemM2: 110,
-    quartos: 3,
-    suites: 2,
-    vagasGaragem: 2,
-    proprietarioNome: 'Dra. Camila Siqueira',
-    proprietarioTelefone: '(11) 99123-8877',
-    proprietarioWhatsapp: '5511991238877',
-    descricaoCurta: 'Excelente planta de 3 dormitórios, sala ampliada para 2 ambientes, sacada gourmet e 2 vagas demarcadas no 1º subsolo.',
-    dataAnuncio: '15/08/2026',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'disp-apto-104-a',
-    apartamento: '104',
-    bloco: 'Bloco A',
-    finalidade: 'Aluga-se',
-    valor: 3200.00,
-    valorCondominio: 780.00,
-    valorIptu: 190.00,
-    metragemM2: 68,
-    quartos: 2,
-    suites: 0,
-    vagasGaragem: 1,
-    proprietarioNome: 'Fernando Menezes',
-    proprietarioTelefone: '(11) 97654-3210',
-    proprietarioWhatsapp: '5511976543210',
-    descricaoCurta: 'Apartamento aconchegante no 1º andar, recém-pintado, piso vinílico novo e cozinha com armários.',
-    dataAnuncio: '18/08/2026',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'disp-apto-303-a',
-    apartamento: '303',
-    bloco: 'Bloco A',
-    finalidade: 'Aluga-se ou Vende-se',
-    valor: 4200.00, // Aluguel R$ 4.200 ou Venda R$ 920.000
-    valorCondominio: 950.00,
-    valorIptu: 280.00,
-    metragemM2: 95,
-    quartos: 3,
-    suites: 1,
-    vagasGaragem: 2,
-    proprietarioNome: 'Juliana Prado (Proprietária)',
-    proprietarioTelefone: '(11) 99445-6677',
-    proprietarioWhatsapp: '5511994456677',
-    descricaoCurta: 'Totalmente mobiliado e decorado por arquiteto. Ar-condicionado inverter em todos os cômodos. Disponível para locação imediata ou venda.',
-    dataAnuncio: '22/08/2026',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'disp-apto-701-b',
-    apartamento: '701',
-    bloco: 'Bloco B',
-    finalidade: 'Vende-se',
-    valor: 1650000.00,
-    valorCondominio: 1850.00,
-    valorIptu: 580.00,
-    metragemM2: 185,
-    quartos: 4,
-    suites: 3,
-    vagasGaragem: 3,
-    proprietarioNome: 'Marcelo Alvarenga',
-    proprietarioTelefone: '(11) 98888-2233',
-    proprietarioWhatsapp: '5511988882233',
-    descricaoCurta: 'Cobertura duplex exclusiva com terraço privativo, churrasqueira e vista panorâmica 360º de São Paulo. 3 vagas de garagem fixas.',
-    dataAnuncio: '10/08/2026',
-    condominioId: CURRENT_CONDO_ID
-  }
-];
+export const MOCK_UNIDADES_DISPONIVEIS: UnidadeDisponivel[] = [];
 
 export const MOCK_PRESTACAO_CONTAS: PrestacaoContas = {
   id: 'pc-abril-2026',
@@ -2025,7 +1036,7 @@ export const MOCK_PRESTACAO_CONTAS: PrestacaoContas = {
       descricao: 'Taxas de locação do Salão de Festas (3 eventos no mês)',
       valor: 1800.00,
       data: '18/04/2026',
-      origem: 'Moradores Apt 102, 302 e 401'
+      origem: 'Moradores Apt 11'
     },
     {
       id: 'rec-5',
@@ -2763,9 +1774,9 @@ export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
       'https://images.unsplash.com/photo-1520523839898-507121287c8b?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1514117445516-2cefc9c4ec90?auto=format&fit=crop&w=800&q=80'
     ],
-    moradorNome: 'Eduardo Prado',
-    moradorUnidade: 'Apto 502 - Bloco B',
-    moradorFoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    moradorNome: 'Carlos Silva',
+    moradorUnidade: 'Apt 11 - Bloco A',
+    moradorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
     contatoWhatsapp: '5511988887766',
     dataPublicacao: '28/08/2026',
     status: 'disponivel',
@@ -2775,7 +1786,7 @@ export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
   {
     id: 'enj-panela-eletrica',
     titulo: 'Panela de Pressão Elétrica Electrolux 6L (Nova na Caixa)',
-    descricao: 'Ganhei em um sorteio e nunca usei, caixa lacrada com todos os manuais, copo dosador e colher antiaderente. Gostaria de trocar por uma câmera fotográfica digital ou por um casaco de frio pesado tamanho M (masculino ou unissex).',
+    descricao: 'Ganhei em um sorteio e nunca usei, caixa lacrada com todos os manuais, copo dosador e colher antiaderente.',
     categoria: 'Eletrodomésticos & Cozinha',
     tipoTransacao: 'troca',
     trocaPor: 'Câmera fotográfica semi-profissional ou Casaco de frio pesado Tam M',
@@ -2784,9 +1795,9 @@ export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
       'https://images.unsplash.com/photo-1584990347449-39908cf83a21?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80'
     ],
-    moradorNome: 'Juliana Vasconcelos',
-    moradorUnidade: 'Apto 204 - Bloco A',
-    moradorFoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+    moradorNome: 'Carlos Silva',
+    moradorUnidade: 'Apt 11 - Bloco A',
+    moradorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
     contatoWhatsapp: '5511977112233',
     dataPublicacao: '27/08/2026',
     status: 'disponivel',
@@ -2796,7 +1807,7 @@ export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
   {
     id: 'enj-sofa-retratil',
     titulo: 'Sofá Retrátil 3 Lugares Suede Cinza Chumbo',
-    descricao: 'Estamos redecorando a sala e desapegando do sofá. Tecido suede macio, estrutura firme, apenas marcas leves de uso. É GRÁTIS para quem retirar diretamente no apartamento (precisa de 2 pessoas e frete/carreto por conta do vizinho).',
+    descricao: 'Estamos redecorando a sala e desapegando do sofá. Tecido suede macio, estrutura firme, apenas marcas leves de uso.',
     categoria: 'Móveis & Decoração',
     tipoTransacao: 'retirada',
     preco: 0,
@@ -2805,8 +1816,8 @@ export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
       'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=800&q=80'
     ],
-    moradorNome: 'Carlos Menezes',
-    moradorUnidade: 'Apto 701 - Bloco A',
+    moradorNome: 'Carlos Silva',
+    moradorUnidade: 'Apt 11 - Bloco A',
     moradorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
     contatoWhatsapp: '5511999887711',
     dataPublicacao: '26/08/2026',
@@ -2814,28 +1825,9 @@ export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
     condominioId: CURRENT_CONDO_ID
   },
   {
-    id: 'enj-bike-infantil',
-    titulo: 'Bicicleta Infantil Aro 16 Caloi Cecizinha com Rodinhas',
-    descricao: 'Bicicleta infantil com cestinha frontal e rodinhas laterais de apoio removíveis. Minha filha cresceu e não usa mais. Doação sem qualquer custo para famílias com crianças no prédio.',
-    categoria: 'Infantil & Brinquedos',
-    tipoTransacao: 'doacao',
-    preco: 0,
-    condicao: 'Usado (Bom estado)',
-    fotos: [
-      'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=800&q=80'
-    ],
-    moradorNome: 'Mariana Duarte',
-    moradorUnidade: 'Apto 104 - Bloco B',
-    moradorFoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
-    contatoWhatsapp: '5511966554411',
-    dataPublicacao: '25/08/2026',
-    status: 'disponivel',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
     id: 'enj-furadeira-bosch',
     titulo: 'Furadeira de Impacto Bosch GSB 550W + Jogo de Brocas',
-    descricao: 'Disponibilizo para empréstimo/locação temporária para vizinhos que precisarem furar parede, instalar cortina ou montar móveis. Acompanha chave de mandril e kit de brocas de vídea e aço rápido.',
+    descricao: 'Disponibilizo para empréstimo/locação temporária para vizinhos que precisarem furar parede, instalar cortina ou montar móveis.',
     categoria: 'Ferramentas & Casa',
     tipoTransacao: 'emprestimo',
     preco: 20.00,
@@ -2843,9 +1835,9 @@ export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
     fotos: [
       'https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=800&q=80'
     ],
-    moradorNome: 'Ricardo Fontes',
-    moradorUnidade: 'Apto 303 - Bloco B',
-    moradorFoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+    moradorNome: 'Carlos Silva',
+    moradorUnidade: 'Apt 11 - Bloco A',
+    moradorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
     contatoWhatsapp: '5511981234567',
     dataPublicacao: '24/08/2026',
     status: 'disponivel',
@@ -2854,7 +1846,7 @@ export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
   {
     id: 'enj-jaqueta-couro',
     titulo: 'Jaqueta de Couro Legítimo Masculina (Tam G - Marrom Café)',
-    descricao: 'Jaqueta de couro 100% natural, forrada por dentro, acabamento de primeira linha. Usada 2 vezes apenas. Aceito troca por jogo de videogame PS5 (tipo Spider-Man 2 ou FIFA) ou fone de ouvido bluetooth.',
+    descricao: 'Jaqueta de couro 100% natural, forrada por dentro, acabamento de primeira linha. Usada 2 vezes apenas.',
     categoria: 'Roupas & Acessórios',
     tipoTransacao: 'troca',
     trocaPor: 'Jogos de PS5 ou Fone Bluetooth JBL/Sony',
@@ -2862,9 +1854,9 @@ export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
     fotos: [
       'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80'
     ],
-    moradorNome: 'Gabriel Silveira',
-    moradorUnidade: 'Apto 601 - Bloco B',
-    moradorFoto: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80',
+    moradorNome: 'Carlos Silva',
+    moradorUnidade: 'Apt 11 - Bloco A',
+    moradorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
     contatoWhatsapp: '5511972345678',
     dataPublicacao: '23/08/2026',
     status: 'disponivel',
@@ -2873,7 +1865,7 @@ export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
   {
     id: 'enj-monitor-gamer',
     titulo: 'Monitor Gamer AOC 24" 144Hz IPS 1ms FreeSync',
-    descricao: 'Monitor gamer sem dead pixels, suporte com ajuste de altura e rotação para modo vertical. Acompanha cabo DisplayPort original e fonte.',
+    descricao: 'Monitor gamer sem dead pixels, suporte com ajuste de altura e rotação para modo vertical.',
     categoria: 'Eletrônicos & Informática',
     tipoTransacao: 'venda',
     preco: 520.00,
@@ -2881,9 +1873,9 @@ export const MOCK_ITENS_ENJOEI: ItemEnjoei[] = [
     fotos: [
       'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80'
     ],
-    moradorNome: 'Lucas Andrade',
-    moradorUnidade: 'Apto 301 - Bloco A',
-    moradorFoto: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+    moradorNome: 'Carlos Silva',
+    moradorUnidade: 'Apt 11 - Bloco A',
+    moradorFoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
     contatoWhatsapp: '5511983456789',
     dataPublicacao: '22/08/2026',
     status: 'disponivel',
@@ -2911,10 +1903,10 @@ export const MOCK_REGRAS_MUDANCA: RegrasMudancaConfig = {
 export const MOCK_MUDANCAS: MudancaAgendamento[] = [
   {
     id: 'mud-001',
-    moradorId: 'usr-morador-301',
-    moradorNome: 'Juliana Costa',
+    moradorId: 'usr-carlos-11',
+    moradorNome: 'Carlos Silva',
     moradorTelefone: '(11) 98765-4321',
-    unidade: '301',
+    unidade: '11',
     bloco: 'Bloco A',
     tipo: 'Entrada (Novo Morador)',
     dataMudanca: '05/09/2026',
@@ -2931,49 +1923,6 @@ export const MOCK_MUDANCAS: MudancaAgendamento[] = [
     observacoes: 'Mudança residencial completa vinda de Curitiba. Caminhão baú médio.',
     criadoEm: '29/08/2026 10:15',
     condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'mud-002',
-    moradorId: 'usr-morador-502',
-    moradorNome: 'Ricardo Mendonça',
-    moradorTelefone: '(11) 99123-8877',
-    unidade: '502',
-    bloco: 'Bloco B',
-    tipo: 'Carreto / Mobília Pesada',
-    dataMudanca: '02/09/2026',
-    dataMudancaIso: '2026-09-02',
-    periodo: 'Tarde (13h às 18h)',
-    status: 'Confirmada',
-    transportadora: 'Fretes & Carretos SP Express',
-    placaVeiculo: 'DKM4A55',
-    nomeMotorista: 'Márcio Nogueira',
-    precisaElevadorServico: true,
-    precisaAcolchoamentoElevador: true,
-    termoCienciaAssinado: true,
-    observacoes: 'Entrega de sofá retrátil novo de 3 lugares e mesa de jantar com 6 cadeiras.',
-    criadoEm: '30/08/2026 16:40',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'mud-003',
-    moradorId: 'usr-morador-101',
-    moradorNome: 'Fernanda Lima',
-    moradorTelefone: '(11) 98222-1133',
-    unidade: '101',
-    bloco: 'Bloco A',
-    tipo: 'Saída (Desocupação)',
-    dataMudanca: '12/09/2026',
-    dataMudancaIso: '2026-09-12',
-    periodo: 'Integral (08h às 17h)',
-    status: 'Pendente de Aprovação',
-    transportadora: 'TransMudança Express',
-    placaVeiculo: 'FGH8J99',
-    precisaElevadorServico: true,
-    precisaAcolchoamentoElevador: true,
-    termoCienciaAssinado: true,
-    observacoes: 'Término do contrato de locação. Vistoria final marcada para a segunda-feira.',
-    criadoEm: '31/08/2026 09:30',
-    condominioId: CURRENT_CONDO_ID
   }
 ];
 
@@ -2985,9 +1934,9 @@ export const MOCK_REGISTROS_ATIVIDADES: RegistroAtividade[] = [
     hora: '14:10',
     tipo: 'reclamacao_aberta',
     titulo: 'Nova Reclamação Registrada',
-    descricao: 'Apto 204 registrou reclamação de barulho excessivo no 3º andar após às 22h.',
-    autorNome: 'Larissa Manoela',
-    autorUnidade: '204',
+    descricao: 'Apto 11 registrou reclamação de barulho excessivo no salão gourmet após às 22h.',
+    autorNome: 'Carlos Silva',
+    autorUnidade: '11',
     autorTipo: 'morador',
     categoriaBadge: 'Ocorrência',
     linkTela: 'reclamacoes',
@@ -3000,27 +1949,12 @@ export const MOCK_REGISTROS_ATIVIDADES: RegistroAtividade[] = [
     hora: '11:35',
     tipo: 'reserva_solicitada',
     titulo: 'Reserva de Espaço Confirmada',
-    descricao: 'Apto 102 agendou o Salão de Festas & Espaço Gourmet para 18/09 (Turno Noite).',
-    autorNome: 'Marcos Almeida',
-    autorUnidade: '102',
+    descricao: 'Apto 11 agendou o Salão de Festas & Espaço Gourmet para 18/09 (Turno Noite).',
+    autorNome: 'Carlos Silva',
+    autorUnidade: '11',
     autorTipo: 'morador',
     categoriaBadge: 'Reservas',
     linkTela: 'dependencias',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'act-003',
-    dataHora: '31/08/2026 09:30',
-    dataIso: '2026-08-31',
-    hora: '09:30',
-    tipo: 'mudanca_agendada',
-    titulo: 'Solicitação de Mudança de Saída',
-    descricao: 'Apto 101 solicitou agendamento de mudança para 12/09 com proteção de elevador.',
-    autorNome: 'Fernanda Lima',
-    autorUnidade: '101',
-    autorTipo: 'morador',
-    categoriaBadge: 'Mudanças',
-    linkTela: 'mudancas',
     condominioId: CURRENT_CONDO_ID
   },
   {
@@ -3036,72 +1970,15 @@ export const MOCK_REGISTROS_ATIVIDADES: RegistroAtividade[] = [
     categoriaBadge: 'Reparos',
     linkTela: 'reparos',
     condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'act-005',
-    dataHora: '30/08/2026 15:20',
-    dataIso: '2026-08-30',
-    hora: '15:20',
-    tipo: 'morador_novo',
-    titulo: 'Novo Condômino Cadastrado',
-    descricao: 'Unidade 403 teve cadastro ativado para Dr. Marcelo Antunes.',
-    autorNome: 'Administração',
-    autorTipo: 'admin',
-    categoriaBadge: 'Moradores',
-    linkTela: 'moradores',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'act-006',
-    dataHora: '30/08/2026 10:00',
-    dataIso: '2026-08-30',
-    hora: '10:00',
-    tipo: 'enjoei_publicado',
-    titulo: 'Novo Desapego no Bazar Enjoei',
-    descricao: 'Apto 201 publicou "Bicicleta Caloi Aro 29" no mural de desapegos.',
-    autorNome: 'Paula Souza',
-    autorUnidade: '201',
-    autorTipo: 'morador',
-    categoriaBadge: 'Enjoei',
-    linkTela: 'enjoei',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'act-007',
-    dataHora: '29/08/2026 14:00',
-    dataIso: '2026-08-29',
-    hora: '14:00',
-    tipo: 'financeiro_lancamento',
-    titulo: 'Prestação de Contas Atualizada',
-    descricao: 'Inserido comprovante fiscal de manutenção da piscina (R$ 680,00).',
-    autorNome: 'Conselho Fiscal',
-    autorTipo: 'admin',
-    categoriaBadge: 'Financeiro',
-    linkTela: 'prestacao-contas',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'act-008',
-    dataHora: '28/08/2026 18:30',
-    dataIso: '2026-08-28',
-    hora: '18:30',
-    tipo: 'assembleia_publicada',
-    titulo: 'Ata de Assembleia Publicada',
-    descricao: 'Ata da Assembleia Geral Ordinária de Agosto homologada e disponível para download.',
-    autorNome: 'Adriana Silva (Síndica)',
-    autorTipo: 'admin',
-    categoriaBadge: 'Assembleia',
-    linkTela: 'assembleias',
-    condominioId: CURRENT_CONDO_ID
   }
 ];
 
 export const MOCK_AUTORIZACOES_ACESSO: AutorizacaoAcesso[] = [
   {
     id: 'acesso-001',
-    moradorId: 'usr-morador-102',
-    moradorNome: 'Marcos Almeida',
-    unidade: '102',
+    moradorId: 'usr-carlos-11',
+    moradorNome: 'Carlos Silva',
+    unidade: '11',
     bloco: 'Bloco A',
     tipoVisitante: 'Prestador de Serviço',
     nomeVisitante: 'Roberto Eletricista (Luz & Força)',
@@ -3116,54 +1993,15 @@ export const MOCK_AUTORIZACOES_ACESSO: AutorizacaoAcesso[] = [
     status: 'Aguardando Chegada',
     criadoEm: '31/08/2026 11:20',
     condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'acesso-002',
-    moradorId: 'usr-morador-204',
-    moradorNome: 'Larissa Manoela',
-    unidade: '204',
-    bloco: 'Bloco B',
-    tipoVisitante: 'Visita / Familiar',
-    nomeVisitante: 'Dra. Beatriz Peixoto',
-    documentoRg: '38.990.112-4',
-    telefoneVisitante: '(11) 97654-3210',
-    fotoVisitante: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80',
-    dataPrevista: '31/08/2026',
-    dataPrevistaIso: '2026-08-31',
-    horarioEstimado: 'Entre 17:00 e 18:00',
-    deixarEntrarDireto: false,
-    observacoes: 'Minha prima do Rio. Favor interfonar assim que ela se identificar.',
-    status: 'Aguardando Chegada',
-    criadoEm: '31/08/2026 13:45',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'acesso-003',
-    moradorId: 'usr-morador-301',
-    moradorNome: 'Juliana Costa',
-    unidade: '301',
-    bloco: 'Bloco A',
-    tipoVisitante: 'Delivery / Entregador',
-    nomeVisitante: 'Carlos Silva (Farmácia Pague Menos)',
-    dataPrevista: '31/08/2026',
-    dataPrevistaIso: '2026-08-31',
-    horarioEstimado: '14:00',
-    deixarEntrarDireto: true,
-    observacoes: 'Entrega de medicamentos de uso contínuo. Pode subir até o 3º andar.',
-    status: 'Entrada Liberada / Presente',
-    horarioEntradaReal: '14:05',
-    porteiroResponsavel: 'Ademar Lopes (Portaria)',
-    criadoEm: '31/08/2026 13:10',
-    condominioId: CURRENT_CONDO_ID
   }
 ];
 
 export const MOCK_ENCOMENDAS_ENTREGAS: EncomendaEntrega[] = [
   {
     id: 'enc-001',
-    unidade: '102',
+    unidade: '11',
     bloco: 'Bloco A',
-    destinatarioNome: 'Marcos Almeida',
+    destinatarioNome: 'Carlos Silva',
     tipo: 'Pacote / Caixa',
     empresaTransporte: 'Mercado Livre (Envio Full)',
     codigoRastreio: 'MLB-987213401',
@@ -3174,55 +2012,6 @@ export const MOCK_ENCOMENDAS_ENTREGAS: EncomendaEntrega[] = [
     status: 'Aguardando Retirada',
     porteiroRecebedor: 'Ademar Lopes',
     observacoes: 'Caixa média lacrada com etiqueta Mercado Livre Full.',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'enc-002',
-    unidade: '102',
-    bloco: 'Bloco A',
-    destinatarioNome: 'Sandra Almeida',
-    tipo: 'Envelope / Documento',
-    empresaTransporte: 'Correios (Sedex)',
-    codigoRastreio: 'QC123456789BR',
-    localArmazenamento: 'Gaveta de Documentos - Portaria',
-    dataRecebimento: '31/08/2026',
-    horaRecebimento: '10:15',
-    status: 'Aguardando Retirada',
-    porteiroRecebedor: 'Ademar Lopes',
-    observacoes: 'Carta registrada com aviso de recebimento.',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'enc-003',
-    unidade: '204',
-    bloco: 'Bloco B',
-    destinatarioNome: 'Larissa Manoela',
-    tipo: 'Delivery / Alimentação',
-    empresaTransporte: 'iFood Supermercados',
-    localArmazenamento: 'Geladeira Térmica da Portaria',
-    dataRecebimento: '31/08/2026',
-    horaRecebimento: '13:00',
-    status: 'Aguardando Retirada',
-    porteiroRecebedor: 'Ademar Lopes',
-    observacoes: '2 sacolas de itens refrigerados guardadas na geladeira.',
-    condominioId: CURRENT_CONDO_ID
-  },
-  {
-    id: 'enc-004',
-    unidade: '301',
-    bloco: 'Bloco A',
-    destinatarioNome: 'Juliana Costa',
-    tipo: 'Pacote / Caixa',
-    empresaTransporte: 'Amazon Prime Express',
-    codigoRastreio: 'BR-AMZ-889900',
-    localArmazenamento: 'Armário B',
-    dataRecebimento: '30/08/2026',
-    horaRecebimento: '16:20',
-    status: 'Entregue ao Morador',
-    porteiroRecebedor: 'Valmyr Tavares',
-    dataRetirada: '30/08/2026',
-    horaRetirada: '18:45',
-    retiradoPorNome: 'Juliana Costa',
     condominioId: CURRENT_CONDO_ID
   }
 ];

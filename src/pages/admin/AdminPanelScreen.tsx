@@ -716,7 +716,7 @@ export const AdminPanelScreen: React.FC = () => {
               Painel de Administração
             </h2>
             <p className="text-xs text-slate-700 font-medium">
-              Controle central de unidades, senhas de moradores e equipe de gestão do condomínio.
+              Controle central de unidades, moradores responsáveis e equipe de gestão do condomínio.
             </p>
           </div>
         </div>
@@ -878,7 +878,7 @@ export const AdminPanelScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-black text-slate-950">
-                  1. Gestão de Unidades e Senhas
+                  1. Gestão de Unidades e Moradores Responsáveis
                 </h3>
                 {canAccessUnidades ? (
                   <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
@@ -1088,29 +1088,29 @@ export const AdminPanelScreen: React.FC = () => {
                   </div>
 
                   <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white shadow-xs max-h-[650px] overflow-y-auto custom-scrollbar touch-pan-x">
-                    <table className="w-full text-left text-xs border-collapse min-w-[920px]">
+                    <table className="w-full text-left text-xs border-collapse min-w-[960px]">
                       <thead>
                         <tr className="bg-slate-950 text-slate-100 uppercase text-[10px] font-black tracking-wider sticky top-0 z-10 shadow-xs">
-                          <th className="py-3 px-3.5 min-w-[140px]">Nome da Unidade</th>
-                          <th className="py-3 px-3.5 min-w-[100px]">Andar</th>
-                          <th className="py-3 px-3.5 min-w-[170px]">Vaga da Garagem</th>
-                          <th className="py-3 px-3.5 min-w-[200px]">Senha de Acesso & Reset</th>
-                          <th className="py-3 px-2.5 text-center min-w-[90px]">Vazio</th>
-                          <th className="py-3 px-3.5 text-center min-w-[110px]">Status</th>
-                          <th className="py-3 px-3.5 text-right min-w-[220px]">Ações</th>
+                          <th className="py-3 px-3.5 min-w-[130px]">Nome da Unidade</th>
+                          <th className="py-3 px-3.5 min-w-[90px]">Andar</th>
+                          <th className="py-3 px-3.5 min-w-[220px]">Morador Responsável</th>
+                          <th className="py-3 px-3.5 min-w-[150px]">Vaga da Garagem</th>
+                          <th className="py-3 px-3.5 text-center min-w-[130px]">Reset de Senha</th>
+                          <th className="py-3 px-2.5 text-center min-w-[80px]">Vazio</th>
+                          <th className="py-3 px-3.5 text-center min-w-[100px]">Status</th>
+                          <th className="py-3 px-3.5 text-right min-w-[200px]">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
                         {filteredUnidades.length === 0 ? (
                           <tr>
-                            <td colSpan={7} className="py-8 text-center text-slate-500 font-semibold">
+                            <td colSpan={8} className="py-8 text-center text-slate-500 font-semibold">
                               Nenhuma unidade encontrada. Use o botão no topo para gerar automaticamente.
                             </td>
                           </tr>
                         ) : (
                           filteredUnidades.map((u) => {
                             const isEditing = editingId === u.id;
-                            const senhaDisplay = u.senhaAcesso || u.numero || '----';
                             const isVazio = Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
                             const badgeText = isVazio 
                               ? 'Sem Moradores' 
@@ -1118,6 +1118,12 @@ export const AdminPanelScreen: React.FC = () => {
                             const badgeStyle = isVazio
                               ? 'bg-slate-100 text-slate-800 border-slate-300'
                               : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300');
+
+                            const moradorResponsavel = (u.moradores && u.moradores.length > 0)
+                              ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
+                              : null;
+                            const nomeResponsavel = moradorResponsavel?.nome || u.nomeCelula;
+                            const emailResponsavel = moradorResponsavel?.email || u.emailResponsavel;
 
                             return (
                               <tr 
@@ -1156,7 +1162,43 @@ export const AdminPanelScreen: React.FC = () => {
                                   </span>
                                 </td>
 
-                                {/* 3. Vaga da Garagem (Editável) */}
+                                {/* 3. Morador Responsável (Com Nome e E-mail - LGPD Compliant) */}
+                                <td className="py-2.5 px-3.5">
+                                  {nomeResponsavel ? (
+                                    <div className="flex items-center gap-2.5">
+                                      <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-950 font-black text-xs shrink-0 overflow-hidden shadow-2xs">
+                                        {moradorResponsavel?.foto || u.fotoCelula ? (
+                                          <img 
+                                            src={moradorResponsavel?.foto || u.fotoCelula} 
+                                            alt={nomeResponsavel} 
+                                            className="w-full h-full object-cover" 
+                                          />
+                                        ) : (
+                                          nomeResponsavel.charAt(0).toUpperCase()
+                                        )}
+                                      </div>
+                                      <div className="flex flex-col min-w-0 max-w-[210px]">
+                                        <span className="font-black text-slate-950 text-xs truncate" title={nomeResponsavel}>
+                                          {nomeResponsavel}
+                                        </span>
+                                        {emailResponsavel ? (
+                                          <span className="text-[11px] text-slate-600 font-medium truncate font-mono flex items-center gap-1" title={emailResponsavel}>
+                                            <Mail className="w-3 h-3 text-amber-800 shrink-0 inline" />
+                                            {emailResponsavel}
+                                          </span>
+                                        ) : (
+                                          <span className="text-[10px] text-amber-800 font-semibold italic">Sem e-mail cadastrado</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 italic text-xs font-normal bg-slate-50 border border-dashed border-slate-300 px-2.5 py-1 rounded-lg inline-block">
+                                      Pendente
+                                    </span>
+                                  )}
+                                </td>
+
+                                {/* 4. Vaga da Garagem (Editável) */}
                                 <td className="py-2.5 px-3.5">
                                   {isEditing ? (
                                     <input
@@ -1181,37 +1223,17 @@ export const AdminPanelScreen: React.FC = () => {
                                   )}
                                 </td>
 
-                                {/* 4. Senha Padrão & Botão de Reset (Não editável por digitação) */}
-                                <td className="py-2.5 px-3.5">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <div className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-2 py-1 rounded-lg shadow-2xs">
-                                      <KeyRound className="w-3 h-3 text-amber-800 shrink-0" />
-                                      <span className="font-mono font-black text-slate-950 text-xs">{senhaDisplay}</span>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleCopySenha(u)}
-                                        className="p-0.5 hover:bg-slate-200 rounded text-slate-600 transition-colors ml-0.5"
-                                        title="Copiar dados de acesso"
-                                      >
-                                        {copiadoId === u.id ? (
-                                          <Check className="w-3 h-3 text-emerald-700" />
-                                        ) : (
-                                          <Copy className="w-3 h-3" />
-                                        )}
-                                      </button>
-                                    </div>
-
-                                    {/* Botão de Reset de Senha exclusivo para Síndico */}
-                                    <button
-                                      type="button"
-                                      onClick={() => handleResetSenha(u)}
-                                      className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shadow-2xs transition-all active:scale-95 cursor-pointer"
-                                      title={`Resetar senha do ${u.numero} para a padrão (${u.numero})`}
-                                    >
-                                      <RotateCcw className="w-3 h-3 text-amber-800" />
-                                      <span>Reset Senha</span>
-                                    </button>
-                                  </div>
+                                {/* 5. Reset de Senha Seguro (Sem expor senha em texto aberto - LGPD) */}
+                                <td className="py-2.5 px-3.5 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleResetSenha(u)}
+                                    className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-xs font-black inline-flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                                    title={`Resetar senha do ${u.numero ? `Apto ${u.numero}` : 'apartamento'} para a padrão`}
+                                  >
+                                    <RotateCcw className="w-3 h-3 text-amber-800" />
+                                    <span>Reset Senha</span>
+                                  </button>
                                 </td>
 
                                 {/* 5. Coluna Vazio */}
@@ -1374,6 +1396,12 @@ export const AdminPanelScreen: React.FC = () => {
                       ? 'bg-slate-200 text-slate-800 border-slate-300'
                       : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300');
 
+                    const moradorResponsavel = (u.moradores && u.moradores.length > 0)
+                      ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
+                      : null;
+                    const nomeResponsavel = moradorResponsavel?.nome || u.nomeCelula;
+                    const emailResponsavel = moradorResponsavel?.email || u.emailResponsavel;
+
                     return (
                       <div
                         key={u.id}
@@ -1398,38 +1426,44 @@ export const AdminPanelScreen: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* Senha e Botões */}
-                        <div className="p-2 rounded-xl bg-slate-100/90 border border-slate-200 flex items-center justify-between text-xs gap-1">
-                          <div className="flex items-center gap-1 text-slate-700 min-w-0 truncate">
-                            <KeyRound className="w-3.5 h-3.5 text-amber-800 shrink-0" />
-                            <span className="text-[10px] font-extrabold uppercase shrink-0">Senha:</span>
-                            <strong className="text-slate-950 font-mono font-black ml-1 truncate">{senhaDisplay}</strong>
-                          </div>
-
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => handleCopySenha(u)}
-                              className="p-1 rounded-lg hover:bg-slate-200 text-slate-700 transition-colors shrink-0"
-                              title="Copiar dados de acesso"
-                            >
-                              {copiadoId === u.id ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-700" />
+                        {/* Morador Responsável e Botão de Reset de Senha (Sem exibição de senha aberta) */}
+                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs gap-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-950 font-black text-xs shrink-0 overflow-hidden shadow-2xs">
+                              {moradorResponsavel?.foto || u.fotoCelula ? (
+                                <img 
+                                  src={moradorResponsavel?.foto || u.fotoCelula} 
+                                  alt={nomeResponsavel || ''} 
+                                  className="w-full h-full object-cover" 
+                                />
                               ) : (
-                                <Copy className="w-3.5 h-3.5" />
+                                (nomeResponsavel ? nomeResponsavel.charAt(0).toUpperCase() : '?')
                               )}
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleResetSenha(u)}
-                              className="px-1.5 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-md text-[9px] font-black flex items-center gap-0.5 transition-all"
-                              title="Resetar para a senha padrão"
-                            >
-                              <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
-                              <span>Reset</span>
-                            </button>
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="font-black text-slate-950 text-xs truncate">
+                                {nomeResponsavel || <span className="text-slate-400 italic font-normal">Sem morador</span>}
+                              </span>
+                              {emailResponsavel ? (
+                                <span className="text-[10px] text-slate-500 font-medium truncate font-mono flex items-center gap-1" title={emailResponsavel}>
+                                  <Mail className="w-2.5 h-2.5 text-amber-800 shrink-0 inline" />
+                                  {emailResponsavel}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-amber-800 font-semibold italic">Pendente</span>
+                              )}
+                            </div>
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleResetSenha(u)}
+                            className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                            title="Resetar senha da unidade para o padrão"
+                          >
+                            <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
+                            <span>Reset Senha</span>
+                          </button>
                         </div>
 
                         {/* Ações: Check Vazio (canto esquerdo) + Editar + Notificar + Excluir (canto direito) */}

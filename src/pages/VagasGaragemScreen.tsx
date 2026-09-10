@@ -32,7 +32,7 @@ export const VagasGaragemScreen: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Identifica a vaga pertencente ao morador logado
-  const minhaVaga = vagasGaragem.find(v => v.unidadeNumero === currentUser.unidade) || vagasGaragem[1];
+  const minhaVaga = vagasGaragem.find(v => v.unidadeNumero === currentUser.unidade) || vagasGaragem[0];
 
   // Form State para a vaga do morador logado
   const [meuStatus, setMeuStatus] = useState<StatusVaga>(minhaVaga?.status || 'Em uso');
