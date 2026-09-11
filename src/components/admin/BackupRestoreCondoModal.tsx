@@ -13,7 +13,8 @@ import {
   Users, 
   FileJson,
   Sparkles,
-  Info
+  Info,
+  KeyRound
 } from 'lucide-react';
 
 interface BackupRestoreCondoModalProps {
@@ -29,12 +30,14 @@ export const BackupRestoreCondoModal: React.FC<BackupRestoreCondoModalProps> = (
     currentCondo, 
     currentCondoId, 
     recuperarMoradoresDoCondominio,
+    padronizarSenhasTodasUnidades,
     exportarBackupCondominio,
     restaurarBackupCondominio
   } = useCondo();
 
   const [abaAtiva, setAbaAtiva] = useState<'recuperar' | 'backup'>('recuperar');
   const [loading, setLoading] = useState(false);
+  const [statusSenha, setStatusSenha] = useState<string | null>(null);
   const [resultadoRecuperacao, setResultadoRecuperacao] = useState<{
     success: boolean;
     countRestaurados?: number;
@@ -250,6 +253,52 @@ export const BackupRestoreCondoModal: React.FC<BackupRestoreCondoModalProps> = (
                   {loading ? 'Varrendo e Restaurando...' : 'Executar Resgate de Moradores Agora'}
                 </button>
               </div>
+
+              {/* Padronização de Senhas em Massa */}
+              <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-900 flex items-center justify-center shrink-0">
+                    <KeyRound size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black uppercase text-amber-950">Padronizar Senha de Todos os Apartamentos</h4>
+                    <p className="text-[11px] text-amber-900/80">
+                      Define a senha de acesso de todas as unidades para <strong className="font-mono text-xs bg-amber-200/80 px-1 py-0.5 rounded">123456</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={async () => {
+                    setLoading(true);
+                    setStatusSenha(null);
+                    try {
+                      const res = await padronizarSenhasTodasUnidades(canonicalCondoId, '123456');
+                      if (res.success) {
+                        setStatusSenha(`Sucesso! ${res.totalAlteradas || 'Todas as'} unidades atualizadas com a senha "123456".`);
+                      } else {
+                        setStatusSenha('Erro: ' + (res.error || 'Falha ao alterar senhas.'));
+                      }
+                    } catch (e: any) {
+                      setStatusSenha('Erro: ' + e.message);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs shrink-0 cursor-pointer transition-colors"
+                >
+                  Definir "123456" para Todos
+                </button>
+              </div>
+
+              {statusSenha && (
+                <div className="p-3 bg-emerald-100 border border-emerald-300 text-emerald-950 rounded-xl text-xs flex items-center gap-2 font-bold animate-in fade-in">
+                  <CheckCircle2 size={16} className="text-emerald-700 shrink-0" />
+                  <span>{statusSenha}</span>
+                </div>
+              )}
 
               {/* Relatório de Resultado */}
               {resultadoRecuperacao && (

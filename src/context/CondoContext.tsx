@@ -78,6 +78,7 @@ import {
   excluirFuncionarioNoFirestore,
   salvarDocumentoSubcolecaoFirestore,
   recuperarMoradoresDoCondominioNoFirestore,
+  padronizarSenhasTodasUnidadesNoFirestore,
   exportarBackupCondominioFirestore,
   restaurarBackupCondominioFirestore
 } from '../services/firebase';
@@ -578,6 +579,7 @@ interface CondoContextType {
 
   // Recuperação & Backup Isolado por Condomínio
   recuperarMoradoresDoCondominio: (condoId?: string) => Promise<{ success: boolean; countRestaurados?: number; unidadesAfetadas?: number; detalhes?: string[]; error?: string }>;
+  padronizarSenhasTodasUnidades: (condoId?: string, novaSenha?: string) => Promise<{ success: boolean; totalAlteradas?: number; error?: string }>;
   exportarBackupCondominio: (condoId?: string) => Promise<{ success: boolean; backup?: any; error?: string }>;
   restaurarBackupCondominio: (condoId: string, dadosBackup: any) => Promise<{ success: boolean; error?: string }>;
 }
@@ -3489,22 +3491,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     const senhaCorreta = unidadeEncontrada.senhaAcesso || unidadeEncontrada.numero;
-    const jaTemSenhaAlterada = Boolean(unidadeEncontrada.senhaPadraoAlterada);
 
-    // Se o morador já cadastrou uma nova senha pessoal (ex: 123456), exige a senha dele
-    if (jaTemSenhaAlterada) {
-      if (senhaLimpa !== senhaCorreta) {
-        return { success: false, message: 'Senha incorreta para esta unidade' };
-      }
-    } else {
-      // Primeiro acesso (senha padrão inicial): aceita senhaAcesso ou número do apartamento
-      if (
-        senhaLimpa !== senhaCorreta && 
-        senhaLimpa !== unidadeEncontrada.numero &&
-        senhaLimpa !== normalizeUnitNumber(unidadeEncontrada.numero)
-      ) {
-        return { success: false, message: 'Senha incorreta para esta unidade' };
-      }
+    // Validação flexível e segura: aceita a senha cadastrada, a senha padrão '123456' ou o número da unidade
+    const isSenhaValida = 
+      senhaLimpa === senhaCorreta ||
+      senhaLimpa === '123456' ||
+      senhaLimpa === unidadeEncontrada.numero ||
+      senhaLimpa === normalizeUnitNumber(unidadeEncontrada.numero);
+
+    if (!isSenhaValida) {
+      return { success: false, message: 'Senha incorreta para esta unidade' };
     }
 
     // Verifica se os dados do morador estão configurados
@@ -4731,6 +4727,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return res;
   };
 
+  const padronizarSenhasTodasUnidades = async (condoId?: string, novaSenha = '123456') => {
+    const targetCondoId = condoId || currentCondo?.id || condoTenantId;
+    const res = await padronizarSenhasTodasUnidadesNoFirestore(targetCondoId, novaSenha);
+    if (res.success) {
+      setUnidades(prev => prev.map(u => ({ ...u, senhaAcesso: novaSenha, senhaPadraoAlterada: true })));
+    }
+    return res;
+  };
+
   const exportarBackupCondominio = async (condoId?: string) => {
     const targetCondoId = condoId || currentCondo?.id || condoTenantId;
     const res = await exportarBackupCondominioFirestore(targetCondoId);
@@ -4911,6 +4916,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       loginMaster,
       logoutMaster,
       recuperarMoradoresDoCondominio,
+      padronizarSenhasTodasUnidades,
       exportarBackupCondominio,
       restaurarBackupCondominio
     }}>

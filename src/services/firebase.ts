@@ -1033,6 +1033,8 @@ export const recuperarMoradoresDoCondominioNoFirestore = async (condoId: string)
         moradores: moradoresLista,
         statusCadastro: 'Cadastrado',
         semMoradores: false,
+        senhaAcesso: (unidadeObj.senhaAcesso && unidadeObj.senhaAcesso !== unidadeObj.numero) ? unidadeObj.senhaAcesso : '123456',
+        senhaPadraoAlterada: true,
         emailResponsavel: unidadeObj.emailResponsavel || morador.email,
         nomeCelula: moradoresLista.map(m => m.nome).join(', '),
         fotoCelula: morador.foto || unidadeObj.fotoCelula || '',
@@ -1062,6 +1064,32 @@ export const recuperarMoradoresDoCondominioNoFirestore = async (condoId: string)
       success: false,
       error: error.message || 'Erro ao executar recuperação de moradores'
     };
+  }
+};
+
+/**
+ * Define a senha padrão (ex: '123456') para todas as unidades do condomínio no Firestore
+ */
+export const padronizarSenhasTodasUnidadesNoFirestore = async (condoId: string, novaSenha: string = '123456') => {
+  try {
+    if (!condoId) return { success: false, error: 'ID do condomínio obrigatório' };
+    const colRef = collection(db, 'condominios', condoId, 'unidades');
+    const snap = await getDocs(colRef);
+    let totalAlteradas = 0;
+
+    for (const docSnap of snap.docs) {
+      await updateDoc(docSnap.ref, {
+        senhaAcesso: String(novaSenha),
+        senhaPadraoAlterada: true,
+        atualizadoEm: new Date().toISOString()
+      });
+      totalAlteradas++;
+    }
+
+    return { success: true, totalAlteradas };
+  } catch (error: any) {
+    console.error('🔥 Erro ao padronizar senhas das unidades:', error);
+    return { success: false, error: error.message };
   }
 };
 
