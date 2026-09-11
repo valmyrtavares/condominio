@@ -76,7 +76,10 @@ import {
   salvarNotificacaoPrivadaNoFirestore,
   salvarFuncionarioNoFirestore,
   excluirFuncionarioNoFirestore,
-  salvarDocumentoSubcolecaoFirestore
+  salvarDocumentoSubcolecaoFirestore,
+  recuperarMoradoresDoCondominioNoFirestore,
+  exportarBackupCondominioFirestore,
+  restaurarBackupCondominioFirestore
 } from '../services/firebase';
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -572,6 +575,11 @@ interface CondoContextType {
   suspenderItemEnjoei: (id: string, motivo: string) => void;
   reativarItemEnjoei: (id: string) => void;
   excluirItemEnjoei: (id: string) => void;
+
+  // Recuperação & Backup Isolado por Condomínio
+  recuperarMoradoresDoCondominio: (condoId?: string) => Promise<{ success: boolean; countRestaurados?: number; unidadesAfetadas?: number; detalhes?: string[]; error?: string }>;
+  exportarBackupCondominio: (condoId?: string) => Promise<{ success: boolean; backup?: any; error?: string }>;
+  restaurarBackupCondominio: (condoId: string, dadosBackup: any) => Promise<{ success: boolean; error?: string }>;
 }
 
 const CondoContext = createContext<CondoContextType | undefined>(undefined);
@@ -1367,20 +1375,45 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const atualizado = { ...c, ...dados };
         salvarCondominioNoFirestore(atualizado).catch(console.error);
 
-        // Se alterou totalAndares, padraoPrimeiroAndar ou totalUnidades, regenera a sequência de apartamentos
+        // Se alterou totalAndares, padraoPrimeiroAndar ou totalUnidades, regenera a sequência preservando dados existentes
         if (
           dados.padraoPrimeiroAndar !== undefined || 
           dados.totalAndares !== undefined || 
           dados.totalUnidades !== undefined
         ) {
           const totalUnits = atualizado.totalUnidades || 75;
-          const novasUnidades = gerarUnidadesPorPadraoEAndar(
+          const templateUnidades = gerarUnidadesPorPadraoEAndar(
             totalUnits,
             atualizado.totalAndares,
             atualizado.padraoPrimeiroAndar,
             id,
             atualizado.totalBlocos || 1
           );
+
+          // Preserva estritamente os moradores e senhas existentes pelo número da unidade
+          const mapaExistentes = new Map<string, Unidade>();
+          unidades.forEach(u => {
+            const k = normalizeUnitNumber(u.numero);
+            if (k && !mapaExistentes.has(k)) {
+              mapaExistentes.set(k, u);
+            }
+          });
+
+          const novasUnidades = templateUnidades.map(tmpl => {
+            const k = normalizeUnitNumber(tmpl.numero);
+            const existente = mapaExistentes.get(k);
+            if (existente) {
+              return {
+                ...tmpl,
+                ...existente,
+                id: existente.id || tmpl.id,
+                numero: tmpl.numero,
+                andar: tmpl.andar,
+                bloco: tmpl.bloco
+              };
+            }
+            return tmpl;
+          });
 
           if (currentCondoId === id) {
             setUnidades(novasUnidades);
@@ -1391,7 +1424,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             localStorage.setItem('condo_unidades_list', JSON.stringify(novasUnidades));
           } catch {}
 
-          // Limpa unidades antigas e salva as novas na subcoleção condominios/{id}/unidades no Firestore
+          // Salva as unidades no Firestore preservando os moradores
           limparESubstituirSubcolecaoFirestore(id, 'unidades', novasUnidades).catch(console.error);
         }
 
@@ -1502,77 +1535,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const expectedTotal = currentCondo?.totalUnidades || 75;
 
-    // 1. Ouvinte em tempo real da subcoleção no Cloud Firestore
+    // 1. Ouvinte em tempo real da subcoleção no Cloud Firestore (100% Passivo - NUNCA faz escrita destrutiva)
     const unsubscribeUnits = ouvirSubcolecaoFirestore(condoTenantId, 'unidades', (unidadesFirestore) => {
       if (Array.isArray(unidadesFirestore) && unidadesFirestore.length > 0) {
-        let curadas = curarUnidadesSemNumero(
-          unidadesFirestore,
-          expectedTotal,
-          currentCondo?.totalAndares,
-          currentCondo?.padraoPrimeiroAndar,
-          condoTenantId,
-          currentCondo?.totalBlocos || 1
-        );
-
-        // Se o condomínio tem padrão específico configurado (ex: "1 3 5" com 11 andares = 33 unidades),
-        // garante que apenas as unidades que batem com o padrão atual do condomínio sejam mantidas
-        if (currentCondo?.padraoPrimeiroAndar && currentCondo?.totalAndares) {
-          const gabarito = gerarUnidadesPorPadraoEAndar(
-            expectedTotal,
-            currentCondo.totalAndares,
-            currentCondo.padraoPrimeiroAndar,
-            condoTenantId,
-            currentCondo.totalBlocos || 1
-          );
-          const gabaritoNumeros = new Set(gabarito.map(g => normalizeUnitNumber(g.numero)));
-
-          // Verifica se existem unidades órfãs (ex: 02, 04, 12, 14) ou duplicatas
-          const temOrfasOuExcedentes = curadas.some(u => !gabaritoNumeros.has(normalizeUnitNumber(u.numero))) || 
-                                       curadas.length > expectedTotal ||
-                                       new Set(curadas.map(u => normalizeUnitNumber(u.numero))).size !== curadas.length;
-
-          if (temOrfasOuExcedentes) {
-            const mapExistentes = new Map<string, Unidade>();
-            curadas.forEach(u => {
-              const k = normalizeUnitNumber(u.numero);
-              if (gabaritoNumeros.has(k) && !mapExistentes.has(k)) {
-                mapExistentes.set(k, u);
-              }
-            });
-
-            curadas = gabarito.map(g => {
-              const k = normalizeUnitNumber(g.numero);
-              const existente = mapExistentes.get(k);
-              return existente ? { ...g, ...existente, numero: g.numero } : g;
-            });
-
-            // Limpa o Firestore removendo as unidades órfãs/duplicadas de forma atômica
-            limparESubstituirSubcolecaoFirestore(condoTenantId, 'unidades', curadas).catch(console.error);
-          }
-        }
-
-        const sorted = deduplicateAndSortUnidades(curadas);
+        const sorted = deduplicateAndSortUnidades(unidadesFirestore);
         setUnidades(sorted);
         try {
           localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(sorted));
           localStorage.setItem('condo_unidades_list', JSON.stringify(sorted));
         } catch {}
-      } else if (Array.isArray(unidadesFirestore) && unidadesFirestore.length === 0) {
-        // Se a subcoleção estiver vazia na nuvem, gera as unidades limpas baseadas nas configurações do condomínio
-        const listToSeed = deduplicateAndSortUnidades(gerarUnidadesPorPadraoEAndar(
-          expectedTotal,
-          currentCondo?.totalAndares,
-          currentCondo?.padraoPrimeiroAndar,
-          condoTenantId,
-          currentCondo?.totalBlocos || 1
-        ));
-
-        setUnidades(listToSeed);
-        try {
-          localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(listToSeed));
-          localStorage.setItem('condo_unidades_list', JSON.stringify(listToSeed));
-        } catch {}
-        limparESubstituirSubcolecaoFirestore(condoTenantId, 'unidades', listToSeed).catch(console.error);
       }
     });
 
@@ -2881,25 +2852,26 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const gerarUnidadesAutomaticas = (quantidade?: number) => {
     const total = quantidade || currentCondo?.totalUnidades || 75;
-    let novas: Unidade[] = [];
+    let template: Unidade[] = [];
 
     if (currentCondo?.totalAndares && currentCondo?.padraoPrimeiroAndar) {
-      novas = deduplicateAndSortUnidades(gerarUnidadesPorPadraoEAndar(
+      template = gerarUnidadesPorPadraoEAndar(
         total,
         currentCondo.totalAndares,
         currentCondo.padraoPrimeiroAndar,
-        currentCondo.id,
-        currentCondo.totalBlocos || 1
-      ));
+        currentCondo?.id || condoTenantId,
+        currentCondo?.totalBlocos || 1
+      );
     } else {
       const blocos = currentCondo?.totalBlocos || 1;
       for (let i = 1; i <= total; i++) {
         const numStr = i < 10 ? `00${i}` : (i < 100 ? `0${i}` : `${i}`);
         const blocoLetra = String.fromCharCode(65 + ((i - 1) % blocos));
-        novas.push({
+        template.push({
           id: `und-auto-${numStr}-${i}-${Date.now()}`,
           numero: numStr,
           bloco: blocos > 1 ? `Bloco ${blocoLetra}` : 'Bloco A',
+          andar: 1,
           tipo: 'Apartamento',
           vagaGaragem: '',
           senhaAcesso: numStr,
@@ -2909,8 +2881,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           moradores: []
         });
       }
-      novas = deduplicateAndSortUnidades(novas);
     }
+
+    // Preserva rigorosamente os dados de moradores existentes
+    const mapaExistentes = new Map<string, Unidade>();
+    unidades.forEach(u => {
+      const k = normalizeUnitNumber(u.numero);
+      if (k && !mapaExistentes.has(k)) {
+        mapaExistentes.set(k, u);
+      }
+    });
+
+    const novas = deduplicateAndSortUnidades(template.map(tmpl => {
+      const k = normalizeUnitNumber(tmpl.numero);
+      const existente = mapaExistentes.get(k);
+      return existente ? { ...tmpl, ...existente, numero: tmpl.numero } : tmpl;
+    }));
 
     setUnidades(novas);
     try {
@@ -4739,6 +4725,23 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', reclamacaoId).catch(console.error);
   };
 
+  const recuperarMoradoresDoCondominio = async (condoId?: string) => {
+    const targetCondoId = condoId || currentCondo?.id || condoTenantId;
+    const res = await recuperarMoradoresDoCondominioNoFirestore(targetCondoId);
+    return res;
+  };
+
+  const exportarBackupCondominio = async (condoId?: string) => {
+    const targetCondoId = condoId || currentCondo?.id || condoTenantId;
+    const res = await exportarBackupCondominioFirestore(targetCondoId);
+    return res;
+  };
+
+  const restaurarBackupCondominio = async (condoId: string, dadosBackup: any) => {
+    const res = await restaurarBackupCondominioFirestore(condoId, dadosBackup);
+    return res;
+  };
+
   return (
     <CondoContext.Provider value={{
       currentUser,
@@ -4906,7 +4909,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       selecionarCondominio,
       isMasterLoggedIn,
       loginMaster,
-      logoutMaster
+      logoutMaster,
+      recuperarMoradoresDoCondominio,
+      exportarBackupCondominio,
+      restaurarBackupCondominio
     }}>
       {children}
     </CondoContext.Provider>

@@ -32,6 +32,7 @@ import { CreateEditCondominioModal } from '../../components/master/CreateEditCon
 import { CondominioOcorrenciasModal } from '../../components/master/CondominioOcorrenciasModal';
 import { NotificarCondominioModal } from '../../components/master/NotificarCondominioModal';
 import { SuspenderCondominioModal } from '../../components/master/SuspenderCondominioModal';
+import { BackupRestoreCondoModal } from '../../components/admin/BackupRestoreCondoModal';
 import { executarSeedCompletoFirestore } from '../../services/firebase';
 
 export const SuperAdminDashboardScreen: React.FC = () => {
@@ -67,6 +68,7 @@ export const SuperAdminDashboardScreen: React.FC = () => {
   const [ocorrenciasCondo, setOcorrenciasCondo] = useState<CondominioProfile | null>(null);
   const [notificarCondo, setNotificarCondo] = useState<CondominioProfile | null>(null);
   const [suspenderCondo, setSuspenderCondo] = useState<CondominioProfile | null>(null);
+  const [condoParaBackup, setCondoParaBackup] = useState<CondominioProfile | null>(null);
 
   const [isSyncingFirestore, setIsSyncingFirestore] = useState(false);
   const [syncStatusMsg, setSyncStatusMsg] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
@@ -446,6 +448,13 @@ export const SuperAdminDashboardScreen: React.FC = () => {
                     <td className="py-4 px-4 align-middle text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button 
+                          onClick={() => { selecionarCondominio(condo.id); setCondoParaBackup(condo); }} 
+                          className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                          title="Backup e Resgate de Moradores"
+                        >
+                          <Database className="w-4 h-4" />
+                        </button>
+                        <button 
                           onClick={() => { setCondoToEdit(condo); setIsModalOpen(true); }} 
                           className="p-2 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                           title="Editar Cadastro"
@@ -473,6 +482,7 @@ export const SuperAdminDashboardScreen: React.FC = () => {
       <CondominioOcorrenciasModal isOpen={Boolean(ocorrenciasCondo)} onClose={() => setOcorrenciasCondo(null)} condominio={ocorrenciasCondo} reclamacoes={reclamacoes} reparos={reparos} />
       <NotificarCondominioModal isOpen={Boolean(notificarCondo)} onClose={() => setNotificarCondo(null)} condominio={notificarCondo} />
       <SuspenderCondominioModal isOpen={Boolean(suspenderCondo)} onClose={() => setSuspenderCondo(null)} condominio={suspenderCondo} onConfirm={handleConfirmSuspender} />
+      <BackupRestoreCondoModal isOpen={Boolean(condoParaBackup)} onClose={() => setCondoParaBackup(null)} />
     </div>
   );
 };

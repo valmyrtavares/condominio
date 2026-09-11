@@ -34,6 +34,7 @@ import {
 } from '../../types';
 import { 
   Building, 
+  Database,
   Plus, 
   Trash2, 
   Edit3, 
@@ -134,6 +135,7 @@ import { CreateAutorizacaoModal } from '../../components/portaria/CreateAutoriza
 import { CreateEncomendaModal } from '../../components/portaria/CreateEncomendaModal';
 import { AdminPermissionsSelector } from '../../components/admin/AdminPermissionsSelector';
 import { ColaboradorFirstAccessModal } from '../../components/admin/ColaboradorFirstAccessModal';
+import { BackupRestoreCondoModal } from '../../components/admin/BackupRestoreCondoModal';
 import { AdminModuloKey } from '../../types';
 
 const AVATARES_SUGERIDOS = [
@@ -270,6 +272,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [isDependenciasAdminOpen, setIsDependenciasAdminOpen] = useState(false);
   const [isMudancasAdminOpen, setIsMudancasAdminOpen] = useState(false);
   const [isPortariaAdminOpen, setIsPortariaAdminOpen] = useState(false);
+  const [isBackupRestoreModalOpen, setIsBackupRestoreModalOpen] = useState(false);
 
   // 15. Gestão de Portaria & Acessos State
   const [abaPortariaAdmin, setAbaPortariaAdmin] = useState<'acessos' | 'encomendas'>('acessos');
@@ -722,11 +725,20 @@ export const AdminPanelScreen: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="px-3.5 py-1.5 bg-amber-500 text-slate-950 rounded-xl font-black text-xs shadow-xs">
+          <button
+            type="button"
+            onClick={() => setIsBackupRestoreModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-900 hover:bg-indigo-950 text-white rounded-xl font-black text-xs shadow-md transition-all cursor-pointer border border-indigo-700/50 hover:scale-105 active:scale-95"
+            title="Recuperação de Moradores e Backup JSON deste condomínio"
+          >
+            <Database className="w-3.5 h-3.5 text-amber-300" />
+            <span>Recuperar Moradores / Backup</span>
+          </button>
+          <span className="px-3.5 py-2 bg-amber-500 text-slate-950 rounded-xl font-black text-xs shadow-xs">
             {unidades.length} Unidades
           </span>
-          <span className="px-3.5 py-1.5 bg-slate-900 text-amber-300 rounded-xl font-black text-xs shadow-xs">
-            {adminUsers.length} Administradores & Gestores
+          <span className="px-3.5 py-2 bg-slate-900 text-amber-300 rounded-xl font-black text-xs shadow-xs">
+            {adminUsers.length} Gestores
           </span>
         </div>
       </div>
@@ -924,11 +936,22 @@ export const AdminPanelScreen: React.FC = () => {
             
             {/* Form de Criação de Unidade */}
             <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-2xs">
-              <div className="flex items-center gap-2 pb-1">
-                <Building className="w-4 h-4 text-amber-800" />
-                <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-950">
-                  Cadastrar Nova Unidade / Apartamento
-                </h4>
+              <div className="flex items-center justify-between gap-2 pb-1 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Building className="w-4 h-4 text-amber-800" />
+                  <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-950">
+                    Cadastrar Nova Unidade / Apartamento
+                  </h4>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsBackupRestoreModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                >
+                  <Database className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Resgatar Moradores (Nuvem)</span>
+                </button>
               </div>
 
               <form onSubmit={handleAddUnidade} className="space-y-3">
@@ -8707,6 +8730,12 @@ export const AdminPanelScreen: React.FC = () => {
       <CreateEncomendaModal
         isOpen={isCreateEncomendaAdminOpen}
         onClose={() => setIsCreateEncomendaAdminOpen(false)}
+      />
+
+      {/* Modal de Segurança, Resgate de Moradores e Backup Isolado por Condomínio */}
+      <BackupRestoreCondoModal
+        isOpen={isBackupRestoreModalOpen}
+        onClose={() => setIsBackupRestoreModalOpen(false)}
       />
 
     </div>

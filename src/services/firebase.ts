@@ -901,3 +901,282 @@ export const ativarSindicoAuth = async (params: {
     };
   }
 };
+
+/**
+ * Recupera os moradores do condomínio a partir da coleção global 'users' e subcoleções históricas
+ * Reassocia os moradores às suas respectivas unidades e persiste as correções no Firestore.
+ */
+export const recuperarMoradoresDoCondominioNoFirestore = async (condoId: string) => {
+  try {
+    if (!condoId) return { success: false, error: 'ID do condomínio não informado.' };
+
+    const detalhes: string[] = [];
+    let countRestaurados = 0;
+    const unidadesAtualizadasMap = new Map<string, any>();
+
+    // 1. Busca todas as unidades atuais do condomínio no Firestore
+    const unidadesColRef = collection(db, 'condominios', condoId, 'unidades');
+    const unidadesSnap = await getDocs(unidadesColRef);
+    const unidadesAtuais: any[] = [];
+    unidadesSnap.forEach(d => {
+      unidadesAtuais.push({ id: d.id, ...d.data() });
+    });
+
+    // 2. Busca todos os usuários da coleção raiz 'users'
+    const usersColRef = collection(db, 'users');
+    const usersSnap = await getDocs(usersColRef);
+    const moradoresCandidatos: any[] = [];
+
+    usersSnap.forEach(docSnap => {
+      const u = docSnap.data();
+      const userCondo = String(u.condominioId || '').trim();
+      const userRole = String(u.role || '').toLowerCase();
+      
+      // Filtra usuários pertencentes a este condomínio ou sem condoId mas com unidade
+      if (userCondo === condoId || (!userCondo && u.unidade && userRole === 'morador')) {
+        moradoresCandidatos.push({
+          id: docSnap.id,
+          uid: docSnap.id,
+          nome: String(u.nome || 'Morador').trim(),
+          email: String(u.email || '').trim(),
+          unidade: String(u.unidade || '').trim(),
+          bloco: String(u.bloco || 'Bloco A').trim(),
+          profissao: String(u.profissao || '').trim(),
+          foto: typeof u.foto === 'string' && !u.foto.startsWith('data:') ? u.foto : '',
+          role: 'morador',
+          condominioId: condoId
+        });
+      }
+    });
+
+    // 3. Busca serviços de moradores para encontrar dados complementares
+    try {
+      const servicosColRef = collection(db, 'condominios', condoId, 'servicos_moradores');
+      const servicosSnap = await getDocs(servicosColRef);
+      servicosSnap.forEach(d => {
+        const s = d.data();
+        if (s.moradorNome && s.moradorUnidade) {
+          const jaExiste = moradoresCandidatos.some(
+            m => m.unidade.toLowerCase() === String(s.moradorUnidade).toLowerCase() && 
+                 m.nome.toLowerCase() === String(s.moradorNome).toLowerCase()
+          );
+          if (!jaExiste) {
+            moradoresCandidatos.push({
+              id: `usr-recup-${s.moradorUnidade}-${Date.now()}`,
+              uid: `usr-recup-${s.moradorUnidade}`,
+              nome: String(s.moradorNome).trim(),
+              email: s.moradorEmail || `morador.${s.moradorUnidade}@condominio.com`,
+              unidade: String(s.moradorUnidade).trim(),
+              bloco: String(s.moradorBloco || 'Bloco A').trim(),
+              profissao: String(s.categoria || s.titulo || '').trim(),
+              foto: typeof s.imagem === 'string' && !s.imagem.startsWith('data:') ? s.imagem : '',
+              role: 'morador',
+              condominioId: condoId
+            });
+          }
+        }
+      });
+    } catch (errServ) {
+      console.warn('Aviso ao consultar serviços para recuperação:', errServ);
+    }
+
+    if (moradoresCandidatos.length === 0) {
+      return {
+        success: true,
+        countRestaurados: 0,
+        unidadesAfetadas: 0,
+        detalhes: ['Nenhum registro de morador órfão encontrado na base de usuários para este condomínio.']
+      };
+    }
+
+    // 4. Reassocia cada morador à sua unidade correspondente
+    for (const morador of moradoresCandidatos) {
+      if (!morador.unidade) continue;
+
+      const numNormalizado = morador.unidade.replace(/\D/g, '') || morador.unidade.toLowerCase();
+      
+      // Procura a unidade pelo ID ou pelo número
+      let targetUnit = unidadesAtuais.find(u => {
+        const uNum = String(u.numero || '').replace(/\D/g, '') || String(u.numero || '').toLowerCase();
+        return uNum === numNormalizado || String(u.numero) === morador.unidade;
+      });
+
+      const unitId = targetUnit?.id || `unit-${condoId}-1-${morador.unidade}-1`;
+      
+      let unidadeObj = unidadesAtualizadasMap.get(unitId) || targetUnit || {
+        id: unitId,
+        numero: morador.unidade,
+        bloco: morador.bloco || 'Bloco A',
+        andar: 1,
+        tipo: 'Apartamento',
+        vagaGaragem: '',
+        senhaAcesso: morador.unidade,
+        senhaPadraoAlterada: false,
+        condoId: condoId,
+        moradores: []
+      };
+
+      const moradoresLista = Array.isArray(unidadeObj.moradores) ? [...unidadeObj.moradores] : [];
+      const indexExistente = moradoresLista.findIndex(
+        m => m.id === morador.id || (m.email && morador.email && m.email.toLowerCase() === morador.email.toLowerCase()) || m.nome.toLowerCase() === morador.nome.toLowerCase()
+      );
+
+      if (indexExistente >= 0) {
+        moradoresLista[indexExistente] = { ...moradoresLista[indexExistente], ...morador };
+      } else {
+        moradoresLista.push(morador);
+        countRestaurados++;
+      }
+
+      unidadeObj = {
+        ...unidadeObj,
+        moradores: moradoresLista,
+        statusCadastro: 'Cadastrado',
+        semMoradores: false,
+        emailResponsavel: unidadeObj.emailResponsavel || morador.email,
+        nomeCelula: moradoresLista.map(m => m.nome).join(', '),
+        fotoCelula: morador.foto || unidadeObj.fotoCelula || '',
+        atualizadoEm: new Date().toISOString()
+      };
+
+      unidadesAtualizadasMap.set(unitId, unidadeObj);
+      detalhes.push(`Morador ${morador.nome} restaurado com sucesso na Unidade ${unidadeObj.numero}`);
+    }
+
+    // 5. Grava as unidades corrigidas de volta no Firestore com merge
+    for (const [unitDocId, unitData] of unidadesAtualizadasMap.entries()) {
+      const docRef = doc(db, 'condominios', condoId, 'unidades', unitDocId);
+      const limpo = higienizarUnidadeParaFirestore(unitData, condoId);
+      await setDoc(docRef, limpo, { merge: true });
+    }
+
+    return {
+      success: true,
+      countRestaurados,
+      unidadesAfetadas: unidadesAtualizadasMap.size,
+      detalhes
+    };
+  } catch (error: any) {
+    console.error('🔥 Erro na recuperação de moradores:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro ao executar recuperação de moradores'
+    };
+  }
+};
+
+/**
+ * Exporta todos os dados de um único condomínio (backup JSON isolado por tenant)
+ */
+export const exportarBackupCondominioFirestore = async (condoId: string) => {
+  try {
+    if (!condoId) throw new Error('ID do condomínio obrigatório');
+
+    // 1. Dados do condomínio
+    const condoDocRef = doc(db, 'condominios', condoId);
+    const condoDocSnap = await getDoc(condoDocRef);
+    const condoData = condoDocSnap.exists() ? { id: condoDocSnap.id, ...condoDocSnap.data() } : null;
+
+    // 2. Subcoleções
+    const subcolecoes = [
+      'unidades',
+      'servicos_moradores',
+      'reclamacoes',
+      'eventos',
+      'notificacoes_privadas',
+      'regras',
+      'dependencias',
+      'funcionarios'
+    ];
+
+    const subcolecoesData: Record<string, any[]> = {};
+    for (const sub of subcolecoes) {
+      const colRef = collection(db, 'condominios', condoId, sub);
+      const snap = await getDocs(colRef);
+      const lista: any[] = [];
+      snap.forEach(d => lista.push({ id: d.id, ...d.data() }));
+      subcolecoesData[sub] = lista;
+    }
+
+    // 3. Usuários do condomínio
+    const usersColRef = collection(db, 'users');
+    const usersSnap = await getDocs(usersColRef);
+    const usersDoCondo: any[] = [];
+    usersSnap.forEach(d => {
+      const u = d.data();
+      if (u.condominioId === condoId) {
+        usersDoCondo.push({ id: d.id, ...u });
+      }
+    });
+
+    const backupCompleto = {
+      versao: '2.0',
+      dataExportacao: new Date().toISOString(),
+      condoId,
+      condominio: condoData,
+      subcolecoes: subcolecoesData,
+      users: usersDoCondo
+    };
+
+    return { success: true, backup: backupCompleto };
+  } catch (error: any) {
+    console.error('🔥 Erro ao exportar backup do condomínio:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Restaura um backup JSON isolado para o condomínio sem afetar outros tenants
+ */
+export const restaurarBackupCondominioFirestore = async (condoId: string, backupData: any) => {
+  try {
+    if (!condoId || !backupData) throw new Error('Dados de restauração inválidos');
+    if (backupData.condoId && backupData.condoId !== condoId) {
+      console.warn(`Restaurando backup de ${backupData.condoId} para o condomínio ativo ${condoId}`);
+    }
+
+    // 1. Restaura dados do condomínio
+    if (backupData.condominio) {
+      const condoRef = doc(db, 'condominios', condoId);
+      await setDoc(condoRef, sanitizarParaFirestore({
+        ...backupData.condominio,
+        id: condoId,
+        atualizadoEm: new Date().toISOString()
+      }), { merge: true });
+    }
+
+    // 2. Restaura subcoleções
+    if (backupData.subcolecoes) {
+      for (const [subNome, itens] of Object.entries(backupData.subcolecoes)) {
+        if (Array.isArray(itens)) {
+          for (const item of itens) {
+            if (!item.id) continue;
+            const docRef = doc(db, 'condominios', condoId, subNome, String(item.id));
+            await setDoc(docRef, sanitizarParaFirestore({
+              ...item,
+              condoId: condoId
+            }), { merge: true });
+          }
+        }
+      }
+    }
+
+    // 3. Restaura usuários
+    if (Array.isArray(backupData.users)) {
+      for (const user of backupData.users) {
+        if (!user.id) continue;
+        const userRef = doc(db, 'users', String(user.id));
+        await setDoc(userRef, sanitizarParaFirestore({
+          ...user,
+          condominioId: condoId
+        }), { merge: true });
+      }
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('🔥 Erro ao restaurar backup do condomínio:', error);
+    return { success: false, error: error.message };
+  }
+};
+
