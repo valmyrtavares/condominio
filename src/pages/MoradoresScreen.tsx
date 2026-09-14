@@ -71,15 +71,15 @@ export const MoradoresScreen: React.FC = () => {
         </h2>
       </div>
 
-      {/* Translucent Glass Search Input */}
+      {/* Translucent Glass Search Input -> Now Solid White */}
       <div className="relative">
-        <Search className="w-4 h-4 text-slate-700 absolute left-3.5 top-3" />
+        <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
         <input
           type="text"
           placeholder="Buscar por unidade ou morador..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white/50 border border-white/70 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-700 focus:outline-none focus:bg-white/70 shadow-md transition-colors font-semibold"
+          className="w-full bg-white border border-slate-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-md transition-colors font-semibold"
         />
       </div>
 
@@ -110,15 +110,15 @@ export const MoradoresScreen: React.FC = () => {
               <button
                 key={u.id}
                 onClick={() => setSelectedUnidadeId(u.id)}
-                className={`relative px-3.5 py-1.5 rounded-full border text-xs font-extrabold transition-all shrink-0 shadow-sm ${
+                className={`relative px-3.5 py-1.5 rounded-full border text-xs font-extrabold transition-all shrink-0 shadow-sm cursor-pointer ${
                   isSelected
                     ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md scale-105'
-                    : 'bg-white/40 text-slate-900 border-white/60 hover:bg-white/60'
+                    : 'bg-white text-slate-900 border-slate-300 hover:bg-slate-100 shadow-xs'
                 }`}
               >
                 {title}
                 {hasUnread && (
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border border-white animate-pulse" />
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white animate-pulse" />
                 )}
               </button>
             );
@@ -146,12 +146,12 @@ export const MoradoresScreen: React.FC = () => {
 
         if (!hasMoradorConfigurado) {
           return (
-            <div className="bg-white/45 border border-white/60 rounded-3xl p-4 sm:p-5 shadow-xl hover:bg-white/55 transition-all duration-300">
+            <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xl transition-all duration-300">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   {/* Quadrado vazio sem foto */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-dashed border-slate-500/40 bg-white/20 flex flex-col items-center justify-center shrink-0 shadow-inner">
-                    <div className="w-7 h-7 rounded-xl border border-slate-400/40 bg-white/20" />
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-100 flex flex-col items-center justify-center shrink-0 shadow-inner">
+                    <div className="w-7 h-7 rounded-xl border border-slate-300 bg-slate-200" />
                     <span className="text-[9px] font-black text-slate-700 mt-1">{unitLabel}</span>
                   </div>
 
@@ -161,7 +161,7 @@ export const MoradoresScreen: React.FC = () => {
                       {isUnidadeVazia ? 'Unidade Vazia (Sem Moradores)' : 'Morador sem dados configurados'}
                     </h3>
                     {selectedUnidade.vagaGaragem && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/60 text-slate-900 border border-white/80 shadow-2xs text-[11px] font-bold">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 text-slate-900 border border-slate-200 shadow-2xs text-[11px] font-bold">
                         <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga: {selectedUnidade.vagaGaragem}
                       </span>
                     )}
@@ -186,7 +186,7 @@ export const MoradoresScreen: React.FC = () => {
                   {canEdit && (
                     <button
                       onClick={() => setIsEditModalOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400 shadow-md font-black text-xs transition-all active:scale-95 shrink-0"
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400 shadow-md font-black text-xs transition-all active:scale-95 shrink-0 cursor-pointer"
                     >
                       <Edit3 className="w-3.5 h-3.5" /> Editar
                     </button>
@@ -198,7 +198,7 @@ export const MoradoresScreen: React.FC = () => {
         }
 
         return (
-          <div className="bg-white/45 border border-white/60 rounded-3xl p-5 shadow-xl hover:bg-white/55 transition-all duration-300">
+          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xl transition-all duration-300">
             <div className="flex flex-col md:flex-row gap-5 items-start">
               
               {/* Resident Cell Portrait & Message Link (Left Column) */}
@@ -207,9 +207,9 @@ export const MoradoresScreen: React.FC = () => {
                   <img
                     src={selectedUnidade.fotoCelula || 'https://images.unsplash.com/photo-1542037104857-ffbb0b9155fb?auto=format&fit=crop&w=800&q=80'}
                     alt={selectedUnidade.nomeCelula || 'Célula de Moradores'}
-                    className="w-full h-full rounded-2xl object-cover border-2 border-white/80 shadow-md"
+                    className="w-full h-full rounded-2xl object-cover border-2 border-slate-100 shadow-md"
                   />
-                  <div className="absolute bottom-2 left-2 bg-slate-950/70 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/10 text-white text-[10px] font-extrabold uppercase tracking-wider">
+                  <div className="absolute bottom-2 left-2 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md">
                     {unitLabel}
                   </div>
                 </div>
@@ -243,10 +243,10 @@ export const MoradoresScreen: React.FC = () => {
               {/* Resident Information */}
               <div className="flex-1 space-y-4 w-full">
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-800">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
                     Quem reside no apartamento
                   </span>
-                  <h3 className="text-lg font-extrabold text-slate-950 leading-tight">
+                  <h3 className="text-lg font-black text-slate-950 leading-tight">
                     Célula de Moradores
                   </h3>
                 </div>
@@ -256,14 +256,14 @@ export const MoradoresScreen: React.FC = () => {
                   {selectedUnidade.moradores.map((morador) => (
                     <div 
                       key={morador.id} 
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-white/40 border border-white/30 shadow-2xs hover:bg-white/65 transition-colors"
+                      className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 shadow-xs hover:bg-slate-100 transition-colors"
                     >
                       <div>
                         <p className="text-xs font-extrabold text-slate-950 leading-tight">
                           {morador.nome}
                         </p>
                         {morador.profissao && (
-                          <p className="text-[10px] text-amber-900 font-bold mt-0.5">
+                          <p className="text-[10px] text-amber-700 font-bold mt-0.5">
                             {morador.profissao}
                           </p>
                         )}
@@ -279,13 +279,13 @@ export const MoradoresScreen: React.FC = () => {
                 </div>
 
                 {/* Operational details & Yellow Edit Button */}
-                <div className="border-t border-slate-950/10 pt-3 flex flex-wrap items-center justify-between gap-2.5 text-[11px]">
+                <div className="border-t border-slate-200 pt-3 flex flex-wrap items-center justify-between gap-2.5 text-[11px]">
                   <div className="flex flex-wrap gap-2.5">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 text-slate-950 border border-white/80 shadow-2xs font-extrabold">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-950 border border-slate-200 shadow-2xs font-extrabold">
                       <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga de Garagem: {selectedUnidade.vagaGaragem || 'Sem vaga vinculada'}
                     </span>
                     {selectedUnidade.bloco && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 text-slate-950 border border-white/80 shadow-2xs font-extrabold">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-950 border border-slate-200 shadow-2xs font-extrabold">
                         <Building2 className="w-3.5 h-3.5 text-slate-800" /> Bloco: {selectedUnidade.bloco}
                       </span>
                     )}
