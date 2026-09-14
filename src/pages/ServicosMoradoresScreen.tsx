@@ -134,10 +134,10 @@ export const ServicosMoradoresScreen: React.FC = () => {
             <button
               key={cat}
               onClick={() => setSelectedCategoria(cat)}
-              className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all border shadow-sm shrink-0 ${
+              className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all border shadow-xs shrink-0 cursor-pointer ${
                 selectedCategoria === cat
-                  ? 'bg-amber-500 text-slate-950 border-amber-400 scale-105'
-                  : 'bg-white/40 text-slate-900 border-white/60 hover:bg-white/60'
+                  ? 'bg-amber-500 text-slate-950 border-amber-400 scale-105 shadow-sm'
+                  : 'bg-white text-slate-900 border-slate-300 hover:bg-slate-100'
               }`}
             >
               {cat}
@@ -151,7 +151,7 @@ export const ServicosMoradoresScreen: React.FC = () => {
             placeholder="Buscar por serviço, profissional ou apto (ex: Tortas, Advocacia, 404)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white/70 border border-white/80 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs"
+            className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 font-semibold shadow-xs"
           />
           <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.8" />
         </div>
@@ -166,11 +166,11 @@ export const ServicosMoradoresScreen: React.FC = () => {
         </div>
 
         {filteredServicos.length === 0 ? (
-          <div className="p-8 text-center bg-white/50 border border-white/70 rounded-3xl space-y-3">
+          <div className="p-8 text-center bg-white border border-slate-200 rounded-3xl space-y-3 shadow-md">
             <p className="text-sm font-black text-slate-950">Nenhum serviço encontrado para este filtro.</p>
             <button
               onClick={handleOpenNovoAnuncio}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-md"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[3]" /> Seja o primeiro a anunciar seu serviço!
             </button>
@@ -204,14 +204,14 @@ export const ServicosMoradoresScreen: React.FC = () => {
                 key={servico.id}
                 className={`border rounded-3xl overflow-hidden shadow-xl transition-all duration-300 ${
                   isSuspenso
-                    ? 'bg-rose-50/90 border-rose-300 ring-2 ring-rose-500/20'
-                    : 'bg-white/45 border-white/60 hover:bg-white/55'
+                    ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-500/20'
+                    : 'bg-white border-slate-200 hover:border-amber-300'
                 }`}
               >
                 {/* Header section (Always visible) */}
                 <button
                   onClick={() => toggleExpand(servico.id)}
-                  className="w-full p-4 flex items-center justify-between gap-3 text-left focus:outline-none"
+                  className="w-full p-4 flex items-center justify-between gap-3 text-left focus:outline-none cursor-pointer"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -240,7 +240,7 @@ export const ServicosMoradoresScreen: React.FC = () => {
                       {servico.titulo}
                     </h3>
                     
-                    <p className="text-[11px] text-amber-950 font-bold mt-0.5">
+                    <p className="text-[11px] text-amber-900 font-bold mt-0.5">
                       Oferecido por: <strong>{servico.moradorNome}</strong> {servico.moradorUnidade ? `(Apto ${servico.moradorUnidade})` : ''}
                     </p>
                   </div>
@@ -250,7 +250,7 @@ export const ServicosMoradoresScreen: React.FC = () => {
                     {isDono && (
                       <button
                         onClick={(e) => handleOpenEditar(servico, e)}
-                        className="p-1.5 rounded-xl bg-amber-500/80 hover:bg-amber-500 text-slate-950 text-[11px] font-black flex items-center gap-1 shadow-2xs transition-all active:scale-95"
+                        className="p-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-black flex items-center gap-1 shadow-2xs transition-all active:scale-95 cursor-pointer"
                         title="Editar Anúncio"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
@@ -258,7 +258,7 @@ export const ServicosMoradoresScreen: React.FC = () => {
                       </button>
                     )}
 
-                    <div className="p-1.5 rounded-full bg-white/50 border border-white/60 text-slate-800">
+                    <div className="p-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700">
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
                   </div>
@@ -266,7 +266,7 @@ export const ServicosMoradoresScreen: React.FC = () => {
 
                 {/* Expandable Section */}
                 {isExpanded && (
-                  <div className="px-4 pb-4 space-y-3 border-t border-slate-950/10 pt-3 animate-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 pb-4 space-y-3 border-t border-slate-100 pt-3 animate-in slide-in-from-top-2 duration-200">
                     
                     {/* Banner de Aviso caso o anúncio esteja suspenso */}
                     {isSuspenso && (
@@ -281,7 +281,7 @@ export const ServicosMoradoresScreen: React.FC = () => {
                         <div className="pl-5 pt-1 space-y-1">
                           <button
                             onClick={(e) => handleOpenEditar(servico, e)}
-                            className="inline-flex items-center gap-1 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-black uppercase shadow-xs"
+                            className="inline-flex items-center gap-1 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-black uppercase shadow-xs cursor-pointer"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                             Editar Anúncio
@@ -293,20 +293,20 @@ export const ServicosMoradoresScreen: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Service Image */}
+                    {/* Service Image - Quadrada com object-contain proporcional */}
                     {servico.imagem && (
-                      <div className="relative h-48 sm:h-56 w-full overflow-hidden rounded-2xl border border-white/50 shadow-sm bg-slate-100">
+                      <div className="relative w-full max-w-[280px] sm:max-w-[320px] aspect-square mx-auto overflow-hidden rounded-2xl border-2 border-amber-300/80 shadow-inner bg-slate-950/5 flex items-center justify-center p-1">
                         <img 
                           src={servico.imagem} 
                           alt={servico.titulo} 
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain rounded-xl"
                         />
                       </div>
                     )}
 
                     {/* Service Details */}
                     <div className="space-y-2">
-                      <div className="bg-white/55 border border-white/60 p-3.5 rounded-2xl text-xs space-y-1.5 shadow-2xs">
+                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-xs space-y-1.5 shadow-2xs">
                         {servico.subtitulo && (
                           <p className="font-extrabold text-slate-950 text-sm">
                             {servico.subtitulo}
@@ -322,7 +322,7 @@ export const ServicosMoradoresScreen: React.FC = () => {
                         href={contactLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-2 px-4 py-3 w-full justify-center rounded-2xl text-xs font-black uppercase shadow-md transition-all active:scale-95 ${
+                        className={`inline-flex items-center gap-2 px-4 py-3 w-full justify-center rounded-2xl text-xs font-black uppercase shadow-md transition-all active:scale-95 cursor-pointer ${
                           isWhatsApp
                             ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30'
                             : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/30'

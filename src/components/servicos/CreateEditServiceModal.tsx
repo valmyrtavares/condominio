@@ -41,6 +41,17 @@ const FOTOS_SUGERIDAS = [
   'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80'
 ];
 
+export const formatPhoneNumber = (value: string): string => {
+  const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+  if (!digits) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
 export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
   isOpen,
   onClose,
@@ -67,7 +78,7 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
       setDescricao(servicoParaEditar.descricao);
       setImagem(servicoParaEditar.imagem || FOTOS_SUGERIDAS[0]);
       setTipoBotao(servicoParaEditar.tipoBotao || 'whatsapp');
-      setWhatsapp(servicoParaEditar.whatsapp || servicoParaEditar.contato || '');
+      setWhatsapp(formatPhoneNumber(servicoParaEditar.whatsapp || servicoParaEditar.contato || ''));
       setLinkSite(servicoParaEditar.linkSite || '');
     } else {
       setTitulo('');
@@ -206,21 +217,22 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
           <form id="form-servico-morador" onSubmit={handleSubmit} className="space-y-3.5">
             
             {/* Foto do Serviço */}
-            <div className="space-y-2 bg-amber-50/60 border border-amber-200 rounded-2xl p-3">
-              <label className="text-[10px] font-extrabold uppercase text-slate-700 block">
+            <div className="space-y-2 bg-amber-50/80 border border-amber-200 rounded-2xl p-3">
+              <label className="text-[10px] font-extrabold uppercase text-slate-700 block text-center sm:text-left">
                 Imagem / Foto Ilustrativa do Serviço:
               </label>
 
-              <div className="relative h-36 w-full rounded-xl overflow-hidden border border-amber-300 shadow-inner bg-slate-100">
+              {/* Janela de imagem quadrada com ajuste proporcional de largura/altura */}
+              <div className="relative w-full max-w-[280px] sm:max-w-[320px] aspect-square mx-auto rounded-2xl overflow-hidden border-2 border-amber-300 shadow-inner bg-slate-950/5 flex items-center justify-center p-1">
                 <img
                   src={imagem || FOTOS_SUGERIDAS[0]}
                   alt="Preview"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain rounded-xl"
                 />
                 
                 <label 
                   htmlFor="upload-servico-foto"
-                  className="absolute bottom-2 right-2 px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 cursor-pointer shadow-md border border-white flex items-center gap-1.5 text-xs font-black uppercase"
+                  className="absolute bottom-2.5 right-2.5 px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 cursor-pointer shadow-md border border-white flex items-center gap-1.5 text-xs font-black uppercase z-10 active:scale-95 transition-all"
                 >
                   <Camera className="w-3.5 h-3.5" /> Trocar Foto
                   <input
@@ -234,14 +246,14 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
               </div>
 
               {/* Sugestões rápidas de imagem */}
-              <div className="flex items-center gap-1.5 pt-1 overflow-x-auto pb-1">
+              <div className="flex items-center gap-1.5 pt-1 overflow-x-auto pb-1 justify-center sm:justify-start">
                 <span className="text-[9px] font-bold text-slate-500 uppercase shrink-0">Fotos prontas:</span>
                 {FOTOS_SUGERIDAS.map((f, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => setImagem(f)}
-                    className={`w-9 h-7 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${
+                    className={`w-9 h-9 rounded-lg overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
                       imagem === f ? 'border-amber-600 scale-105 shadow-xs' : 'border-transparent opacity-70 hover:opacity-100'
                     }`}
                   >
@@ -359,17 +371,18 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
                   </label>
                   <div className="relative">
                     <input
-                      type="text"
-                      placeholder="Ex: 11999998888 ou (11) 99999-8888"
+                      type="tel"
+                      placeholder="Ex: (11) 99999-9999"
+                      maxLength={15}
                       value={whatsapp}
-                      onChange={(e) => setWhatsapp(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pl-9 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      onChange={(e) => setWhatsapp(formatPhoneNumber(e.target.value))}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pl-9 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
                       required={tipoBotao === 'whatsapp'}
                     />
                     <MessageCircle className="w-4 h-4 text-emerald-600 absolute left-3 top-2.5" />
                   </div>
-                  <p className="text-[10px] text-slate-500">
-                    * Ao clicar no botão, o vizinho abrirá uma conversa direta no seu WhatsApp.
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    * Digite seu DDD + número do celular. Ao clicar, o vizinho abrirá uma conversa direta no seu WhatsApp.
                   </p>
                 </div>
               ) : (

@@ -587,11 +587,20 @@ export const CreateEditDesapegoModal: React.FC<CreateEditDesapegoModalProps> = (
               <div className="space-y-1">
                 <span className="text-[11px] font-bold text-slate-700">WhatsApp de Contato:</span>
                 <input
-                  type="text"
-                  placeholder="5511988887766"
+                  type="tel"
+                  placeholder="Ex: (11) 99999-9999"
+                  maxLength={15}
                   value={contatoWhatsapp}
-                  onChange={(e) => setContatoWhatsapp(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-950 font-semibold focus:outline-none focus:border-rose-500"
+                  onChange={(e) => {
+                    const digits = (e.target.value || '').replace(/\D/g, '').slice(0, 11);
+                    let formatted = digits;
+                    if (digits.length > 2 && digits.length <= 6) formatted = `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+                    else if (digits.length > 6 && digits.length <= 10) formatted = `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+                    else if (digits.length === 11) formatted = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+                    else if (digits.length <= 2 && digits.length > 0) formatted = `(${digits}`;
+                    setContatoWhatsapp(formatted);
+                  }}
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:border-rose-500 shadow-xs"
                   required
                 />
               </div>
