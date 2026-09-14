@@ -3,6 +3,7 @@ import {
   User, 
   Reclamacao, 
   Reparo, 
+  ApoiadorDetalhe,
   Orcamento,
   PrestacaoContas, 
   DespesaItem,
@@ -3986,20 +3987,47 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const apoiarReclamacao = (id: string) => {
     const userIdentifier = currentUser?.id || currentUser?.unidade || 'morador-anon';
+    let unidadeFormatada = '';
+    if (currentUser.unidade) {
+      const uNum = currentUser.unidade.toLowerCase().startsWith('apt') || currentUser.unidade.toLowerCase().startsWith('cobertura')
+        ? currentUser.unidade
+        : `Apt ${currentUser.unidade}`;
+      unidadeFormatada = currentUser.bloco ? `${uNum} - ${currentUser.bloco}` : uNum;
+    } else {
+      unidadeFormatada = currentUser.role === 'sindico' || currentUser.role === 'subsindico' ? 'Administração' : 'Morador';
+    }
+
+    const apoiadorInfo: ApoiadorDetalhe = {
+      id: userIdentifier,
+      nome: currentUser.nome || 'Morador',
+      unidade: unidadeFormatada,
+      bloco: currentUser.bloco || '',
+      foto: currentUser.foto || '',
+      email: currentUser.email || '',
+      data: `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+    };
+
     setReclamacoes(prev => {
       const atualizadas = prev.map(rec => {
         if (rec.id === id) {
           const apoiadores = Array.isArray(rec.apoiadores) ? rec.apoiadores : [];
-          const jaApoiou = apoiadores.includes(userIdentifier);
+          const apoiadoresDetalhes = Array.isArray(rec.apoiadoresDetalhes) ? rec.apoiadoresDetalhes : [];
+          const jaApoiou = apoiadores.includes(userIdentifier) || apoiadoresDetalhes.some(a => a.id === userIdentifier);
+
           const novosApoiadores = jaApoiou
             ? apoiadores.filter(u => u !== userIdentifier)
             : [...apoiadores, userIdentifier];
+
+          const novosDetalhes = jaApoiou
+            ? apoiadoresDetalhes.filter(a => a.id !== userIdentifier)
+            : [...apoiadoresDetalhes, apoiadorInfo];
 
           const atualizada: Reclamacao = {
             ...rec,
             apoiosCount: novosApoiadores.length,
             apoiadoPeloUsuario: !jaApoiou,
             apoiadores: novosApoiadores,
+            apoiadoresDetalhes: novosDetalhes,
             condominioId: condoTenantId
           };
 
@@ -4142,6 +4170,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       apoiosCount: reclamacao?.apoiosCount || 0,
       apoiadoPeloUsuario: reclamacao?.apoiadoPeloUsuario || false,
       apoiadores: reclamacao?.apoiadores || [],
+      apoiadoresDetalhes: reclamacao?.apoiadoresDetalhes || [],
       comentarios: []
     };
 
@@ -4273,20 +4302,47 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const apoiarReparo = (id: string) => {
     const userIdentifier = currentUser?.id || currentUser?.unidade || 'morador-anon';
+    let unidadeFormatada = '';
+    if (currentUser.unidade) {
+      const uNum = currentUser.unidade.toLowerCase().startsWith('apt') || currentUser.unidade.toLowerCase().startsWith('cobertura')
+        ? currentUser.unidade
+        : `Apt ${currentUser.unidade}`;
+      unidadeFormatada = currentUser.bloco ? `${uNum} - ${currentUser.bloco}` : uNum;
+    } else {
+      unidadeFormatada = currentUser.role === 'sindico' || currentUser.role === 'subsindico' ? 'Administração' : 'Morador';
+    }
+
+    const apoiadorInfo: ApoiadorDetalhe = {
+      id: userIdentifier,
+      nome: currentUser.nome || 'Morador',
+      unidade: unidadeFormatada,
+      bloco: currentUser.bloco || '',
+      foto: currentUser.foto || '',
+      email: currentUser.email || '',
+      data: `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+    };
+
     setReparos(prev => {
       const atualizados = prev.map(rep => {
         if (rep.id === id) {
           const apoiadores = Array.isArray(rep.apoiadores) ? rep.apoiadores : [];
-          const jaApoiou = apoiadores.includes(userIdentifier);
+          const apoiadoresDetalhes = Array.isArray(rep.apoiadoresDetalhes) ? rep.apoiadoresDetalhes : [];
+          const jaApoiou = apoiadores.includes(userIdentifier) || apoiadoresDetalhes.some(a => a.id === userIdentifier);
+
           const novosApoiadores = jaApoiou
             ? apoiadores.filter(u => u !== userIdentifier)
             : [...apoiadores, userIdentifier];
+
+          const novosDetalhes = jaApoiou
+            ? apoiadoresDetalhes.filter(a => a.id !== userIdentifier)
+            : [...apoiadoresDetalhes, apoiadorInfo];
 
           const atualizado: Reparo = {
             ...rep,
             apoiosCount: novosApoiadores.length,
             apoiadoPeloUsuario: !jaApoiou,
             apoiadores: novosApoiadores,
+            apoiadoresDetalhes: novosDetalhes,
             condominioId: condoTenantId
           };
 

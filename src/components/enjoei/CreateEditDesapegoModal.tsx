@@ -17,8 +17,13 @@ import {
   Check, 
   Sparkles,
   Building,
-  User
+  User,
+  Upload,
+  Camera,
+  Trash2,
+  Loader2
 } from 'lucide-react';
+import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 
 const CATEGORIAS_ENJOEI = [
   'Móveis & Decoração',
@@ -63,9 +68,35 @@ export const CreateEditDesapegoModal: React.FC<CreateEditDesapegoModalProps> = (
   const [trocaPor, setTrocaPor] = useState('');
   const [condicao, setCondicao] = useState<CondicaoItemEnjoei>('Seminovo (Excelente)');
   const [fotoUrl, setFotoUrl] = useState('');
+  const [isCarregandoFoto, setIsCarregandoFoto] = useState(false);
   const [moradorNome, setMoradorNome] = useState('');
   const [moradorUnidade, setMoradorUnidade] = useState('');
   const [contatoWhatsapp, setContatoWhatsapp] = useState('');
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsCarregandoFoto(true);
+    try {
+      const fotoOtimizada = await otimizarImagemArquivo(file, {
+        maxLargura: 1024,
+        maxAltura: 1024,
+        qualidade: 0.82
+      });
+      setFotoUrl(fotoOtimizada);
+    } catch (err: any) {
+      console.warn('Erro ao otimizar imagem do item:', err);
+      alert(err?.message || 'Falha ao processar o arquivo de imagem.');
+    } finally {
+      setIsCarregandoFoto(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   // Sincroniza formulário ao abrir com item a ser editado ou reseta para novo cadastro
   useEffect(() => {
@@ -416,49 +447,109 @@ export const CreateEditDesapegoModal: React.FC<CreateEditDesapegoModalProps> = (
           </div>
 
           {/* 5. FOTO DO ITEM */}
-          <div className="space-y-2">
-            <label className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-              <ImageIcon className="w-3.5 h-3.5 text-rose-600" />
-              4. Foto do Item (URL ou escolha um exemplo)
-            </label>
+          <div className="space-y-3 bg-slate-50 border border-slate-200 rounded-2xl p-4">
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-rose-600" />
+                4. Foto do Item (Celular, Computador ou URL)
+              </label>
 
-            <input
-              type="url"
-              placeholder="https://images.unsplash.com/..."
-              value={fotoUrl}
-              onChange={(e) => setFotoUrl(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-950 font-mono focus:outline-none focus:bg-white focus:border-rose-500"
-            />
-
-            {/* Sugestões Rápidas de Fotos */}
-            <div className="flex flex-wrap gap-1.5">
-              {FOTOS_SUGERIDAS.map(item => (
+              {fotoUrl && (
                 <button
-                  key={item.label}
                   type="button"
-                  onClick={() => setFotoUrl(item.url)}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
-                    fotoUrl === item.url
-                      ? 'bg-rose-500 text-white border-rose-600 shadow-2xs font-black'
-                      : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-rose-50 hover:text-rose-950'
-                  }`}
+                  onClick={() => setFotoUrl('')}
+                  className="text-[10px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-1 cursor-pointer"
                 >
-                  📷 {item.label}
+                  <Trash2 className="w-3 h-3" />
+                  Remover foto
                 </button>
-              ))}
+              )}
             </div>
 
-            {/* Prévia da Foto */}
+            {/* Input oculto de arquivo */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFotoUpload}
+              className="hidden"
+            />
+
+            {/* Botão de Upload do Dispositivo (Celular / Computador) */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isCarregandoFoto}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              >
+                {isCarregandoFoto ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Processando imagem...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4" />
+                    <span>📁 Escolher do Celular / Computador</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Entrada alternativa via URL */}
+            <div className="space-y-1.5 pt-1 border-t border-slate-200">
+              <span className="text-[11px] font-bold text-slate-700 block">
+                Ou digite/cole o link direto de uma imagem (URL):
+              </span>
+              <input
+                type="url"
+                placeholder="https://images.unsplash.com/..."
+                value={fotoUrl}
+                onChange={(e) => setFotoUrl(e.target.value)}
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-950 font-mono focus:outline-none focus:border-rose-500 shadow-2xs"
+              />
+            </div>
+
+            {/* Sugestões Rápidas de Fotos */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-slate-500 block uppercase tracking-wider">
+                Exemplos Rápidos:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {FOTOS_SUGERIDAS.map(item => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => setFotoUrl(item.url)}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                      fotoUrl === item.url
+                        ? 'bg-rose-500 text-white border-rose-600 shadow-2xs font-black'
+                        : 'bg-white text-slate-700 border-slate-300 hover:bg-rose-50 hover:text-rose-950'
+                    }`}
+                  >
+                    📷 {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Janela Quadrada de Prévia da Foto (sem corte, usando largura/altura máxima) */}
             {fotoUrl && (
-              <div className="mt-2 w-full h-32 rounded-2xl overflow-hidden border border-slate-300 relative bg-slate-100">
-                <img
-                  src={fotoUrl}
-                  alt="Prévia do item"
-                  className="w-full h-full object-cover object-center"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = FOTOS_SUGERIDAS[0].url;
-                  }}
-                />
+              <div className="pt-2">
+                <span className="text-[10px] font-bold text-slate-500 block mb-1.5 uppercase tracking-wider">
+                  Prévia da Foto (Janela Quadrada):
+                </span>
+                <div className="w-full max-w-xs sm:max-w-sm mx-auto aspect-square rounded-2xl overflow-hidden border-2 border-slate-300 bg-slate-950/85 relative flex items-center justify-center p-2 shadow-inner">
+                  <img
+                    src={fotoUrl}
+                    alt="Prévia do item"
+                    className="max-w-full max-h-full w-auto h-auto object-contain object-center rounded-lg shadow-sm"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = FOTOS_SUGERIDAS[0].url;
+                    }}
+                  />
+                </div>
               </div>
             )}
           </div>

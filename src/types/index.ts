@@ -184,6 +184,16 @@ export interface Comentario {
   ocultadoEm?: string;
 }
 
+export interface ApoiadorDetalhe {
+  id: string;
+  nome: string;
+  unidade: string;
+  bloco?: string;
+  foto?: string;
+  data?: string;
+  email?: string;
+}
+
 export interface Reclamacao {
   id: string;
   titulo: string;
@@ -197,6 +207,7 @@ export interface Reclamacao {
   apoiosCount: number;
   apoiadoPeloUsuario?: boolean;
   apoiadores?: string[];
+  apoiadoresDetalhes?: ApoiadorDetalhe[];
   comentarios: Comentario[];
   reparoId?: string;
   condominioId: string;
@@ -282,6 +293,7 @@ export interface Reparo {
   apoiosCount: number;
   apoiadoPeloUsuario?: boolean;
   apoiadores?: string[];
+  apoiadoresDetalhes?: ApoiadorDetalhe[];
   comentarios: Comentario[];
   anexoUrl?: string;
   anexoTipo?: 'imagem' | 'video';

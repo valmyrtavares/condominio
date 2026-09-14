@@ -326,15 +326,15 @@ export const EnjoeiScreen: React.FC = () => {
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     
                     {/* Miniatura da Foto */}
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-slate-200 border border-white/80 shrink-0 shadow-2xs">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-slate-950/80 border border-white/80 shrink-0 shadow-2xs flex items-center justify-center p-0.5">
                       {item.fotos && item.fotos.length > 0 ? (
                         <img
                           src={item.fotos[0]}
                           alt={item.titulo}
-                          className="w-full h-full object-cover object-center"
+                          className="max-w-full max-h-full w-auto h-auto object-contain object-center rounded-lg"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-rose-100 text-rose-600">
+                        <div className="w-full h-full flex items-center justify-center bg-rose-100 text-rose-600 rounded-xl">
                           <ShoppingBag className="w-5 h-5" />
                         </div>
                       )}
@@ -401,13 +401,13 @@ export const EnjoeiScreen: React.FC = () => {
                   <div className="overflow-hidden">
                     <div className="px-4 pb-5 sm:px-5 space-y-3.5 border-t border-slate-950/10 pt-3.5">
                       
-                      {/* Galeria de Fotos */}
+                      {/* Galeria de Fotos Quadrada (sem corte, usa limite máximo de largura ou altura) */}
                       {item.fotos && item.fotos.length > 0 && (
-                        <div className="rounded-2xl overflow-hidden border border-white/80 max-h-56 sm:max-h-72 w-full bg-slate-900 shadow-sm relative">
+                        <div className="w-full max-w-sm sm:max-w-md mx-auto aspect-square rounded-2xl overflow-hidden border-2 border-white/80 bg-slate-950/85 shadow-md flex items-center justify-center p-2 relative">
                           <img
                             src={item.fotos[0]}
                             alt={item.titulo}
-                            className="w-full h-full object-cover object-center"
+                            className="max-w-full max-h-full w-auto h-auto object-contain object-center rounded-lg shadow-sm"
                           />
                         </div>
                       )}

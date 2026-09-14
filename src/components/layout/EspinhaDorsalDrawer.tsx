@@ -66,13 +66,13 @@ export const EspinhaDorsalDrawer: React.FC = () => {
           </button>
         </div>
 
-        {/* Clean Menu Items List — White Translucent Background & Dark Slate Text */}
-        <div className="flex-1 overflow-y-auto py-2 divide-y divide-white/30">
+        {/* Clean Menu Items List — White Translucent Background (0.94) & Dark Slate Text */}
+        <div className="flex-1 overflow-y-auto py-2 divide-y divide-slate-200/70">
           {espinhaDorsalItems.map((item) => (
             <div
               key={item.id}
               onClick={() => handleNavigate(item.rota)}
-              className="group px-6 py-4 flex items-center justify-between hover:bg-white/50 transition-all cursor-pointer active:scale-98"
+              className="group px-6 py-4 flex items-center justify-between hover:bg-slate-100/80 transition-all cursor-pointer active:scale-98"
             >
               <span className="font-extrabold text-sm text-slate-900 group-hover:text-indigo-700 group-hover:translate-x-1 transition-all">
                 {item.titulo}

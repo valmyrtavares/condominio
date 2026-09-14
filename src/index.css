@@ -91,11 +91,13 @@
   animation: fadeOutOverlay 0.3s ease-in forwards;
 }
 
-/* Translucent White Glass with 0.35 opacity for Menu Drawer */
+/* Translucent White Glass with 0.94 opacity for Menu Drawer */
 .glass-drawer-light {
-  background: rgba(255, 255, 255, 0.4);
-  border-right: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.94);
+  border-right: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 /* Text Shadow for High Contrast over Image */

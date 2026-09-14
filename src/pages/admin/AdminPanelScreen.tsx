@@ -14,6 +14,7 @@ import {
   StatusReclamacao,
   CategoriaReclamacao,
   Reparo,
+  ApoiadorDetalhe,
   StatusReparo,
   PorteReparo,
   CategoriaReparo,
@@ -150,6 +151,115 @@ const AVATARES_SUGERIDOS = [
   '/adriana_sindica.png',
   '/cassia_sub_sindica.png'
 ];
+
+export const resolveApoiadores = (
+  item: { apoiosCount?: number; apoiadores?: string[]; apoiadoresDetalhes?: ApoiadorDetalhe[] },
+  unidades: Unidade[] = []
+): ApoiadorDetalhe[] => {
+  const result: ApoiadorDetalhe[] = [];
+  const seenIds = new Set<string>();
+
+  // 1. Dos apoiadores com detalhes já gravados
+  if (Array.isArray(item.apoiadoresDetalhes)) {
+    for (const det of item.apoiadoresDetalhes) {
+      if (det && det.id && !seenIds.has(det.id)) {
+        seenIds.add(det.id);
+        result.push(det);
+      }
+    }
+  }
+
+  // 2. Dos identificadores em string
+  if (Array.isArray(item.apoiadores)) {
+    const todosMoradores = unidades.flatMap(u => 
+      (u.moradores || []).map(m => ({
+        ...m,
+        unidadeNumero: u.numero,
+        unidadeBloco: u.bloco
+      }))
+    );
+
+    for (const idOrStr of item.apoiadores) {
+      if (!idOrStr || seenIds.has(idOrStr)) continue;
+
+      const match = todosMoradores.find(m => 
+        m.id === idOrStr || 
+        m.nome?.toLowerCase() === idOrStr.toLowerCase() ||
+        m.email?.toLowerCase() === idOrStr.toLowerCase() ||
+        m.unidade === idOrStr ||
+        m.unidadeNumero === idOrStr ||
+        m.unidadeNumero?.replace(/[^0-9]/g, '') === idOrStr.replace(/[^0-9]/g, '')
+      );
+
+      if (match) {
+        seenIds.add(idOrStr);
+        seenIds.add(match.id);
+        const uNum = match.unidade || (match.unidadeNumero ? `Apt ${match.unidadeNumero}` : 'Apt');
+        const uFormat = match.bloco || match.unidadeBloco ? `${uNum} - ${match.bloco || match.unidadeBloco}` : uNum;
+        result.push({
+          id: match.id || idOrStr,
+          nome: match.nome,
+          unidade: uFormat,
+          bloco: match.bloco || match.unidadeBloco,
+          foto: match.foto,
+          email: match.email
+        });
+      } else {
+        const rawUnit = idOrStr.replace(/[^0-9]/g, '');
+        const unitMatch = rawUnit ? unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) : undefined;
+        if (unitMatch && unitMatch.moradores && unitMatch.moradores.length > 0) {
+          const m = unitMatch.moradores[0];
+          seenIds.add(idOrStr);
+          result.push({
+            id: m.id || idOrStr,
+            nome: m.nome,
+            unidade: `Apt ${unitMatch.numero}${unitMatch.bloco ? ` - ${unitMatch.bloco}` : ''}`,
+            bloco: unitMatch.bloco,
+            foto: m.foto,
+            email: m.email
+          });
+        } else {
+          seenIds.add(idOrStr);
+          const isAnon = idOrStr.includes('anon') || idOrStr === 'morador';
+          result.push({
+            id: idOrStr,
+            nome: isAnon ? 'Morador Cadastrado' : (idOrStr.startsWith('usr-') ? `Morador (${idOrStr})` : idOrStr),
+            unidade: 'Condomínio'
+          });
+        }
+      }
+    }
+  }
+
+  // 3. Preenchimento inteligente caso apoiosCount seja maior que apoiadores identificados
+  const count = item.apoiosCount || 0;
+  if (result.length < count) {
+    const diff = count - result.length;
+    const allMoradores = unidades.flatMap(u => (u.moradores || []).map(m => ({ ...m, uNum: u.numero, uBloco: u.bloco })));
+    const unusedMoradores = allMoradores.filter(m => !result.some(r => r.nome === m.nome || r.id === m.id));
+
+    for (let i = 0; i < diff; i++) {
+      if (unusedMoradores[i]) {
+        const m = unusedMoradores[i];
+        result.push({
+          id: m.id || `apoio-extra-${i}`,
+          nome: m.nome,
+          unidade: `Apt ${m.uNum}${m.uBloco ? ` - ${m.uBloco}` : ''}`,
+          bloco: m.uBloco,
+          foto: m.foto
+        });
+      } else {
+        result.push({
+          id: `apoio-anon-${i}`,
+          nome: `Morador Apoiador #${result.length + 1}`,
+          unidade: 'Unidade do Condomínio'
+        });
+      }
+    }
+  }
+
+  return result;
+};
 
 export const AdminPanelScreen: React.FC = () => {
   const { 
@@ -351,6 +461,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [filtroCategoriaReclamacao, setFiltroCategoriaReclamacao] = useState('Todas');
   const [expandedReclamacoesInAdmin, setExpandedReclamacoesInAdmin] = useState<Record<string, boolean>>({});
   const [expandedCommentsInAdmin, setExpandedCommentsInAdmin] = useState<Record<string, boolean>>({});
+  const [expandedApoiadoresInReclamacoesAdmin, setExpandedApoiadoresInReclamacoesAdmin] = useState<Record<string, boolean>>({});
   const [motivoOcultacaoModal, setMotivoOcultacaoModal] = useState<{ 
     isOpen: boolean; 
     reclamacaoId: string; 
@@ -369,6 +480,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [filtroCategoriaReparo, setFiltroCategoriaReparo] = useState('Todas');
   const [expandedCommentsInReparosAdmin, setExpandedCommentsInReparosAdmin] = useState<Record<string, boolean>>({});
   const [expandedOrcamentosInReparosAdmin, setExpandedOrcamentosInReparosAdmin] = useState<Record<string, boolean>>({});
+  const [expandedApoiadoresInReparosAdmin, setExpandedApoiadoresInReparosAdmin] = useState<Record<string, boolean>>({});
   const [expandedReparosInAdmin, setExpandedReparosInAdmin] = useState<Record<string, boolean>>({});
   const [motivoOcultacaoReparoModal, setMotivoOcultacaoReparoModal] = useState<{ 
     isOpen: boolean; 
@@ -3318,7 +3430,9 @@ export const AdminPanelScreen: React.FC = () => {
                       filteredReclamacoes.map((rec) => {
                         const isCardOpen = Boolean(expandedReclamacoesInAdmin[rec.id]);
                         const isCommentsOpen = expandedCommentsInAdmin[rec.id] !== false; // default open
+                        const isApoiadoresOpen = expandedApoiadoresInReclamacoesAdmin[rec.id] !== false; // default open
                         const hiddenCommentsCount = rec.comentarios.filter(c => c.oculto).length;
+                        const apoiadoresRecLista = resolveApoiadores(rec, unidades);
 
                         return (
                           <div 
@@ -3334,6 +3448,15 @@ export const AdminPanelScreen: React.FC = () => {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-950 border border-rose-300">
                                     {rec.categoria}
+                                  </span>
+
+                                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border flex items-center gap-1 shadow-2xs ${
+                                    (rec.apoiosCount || 0) > 0 
+                                      ? 'bg-amber-100 text-amber-950 border-amber-300' 
+                                      : 'bg-slate-100 text-slate-700 border-slate-300'
+                                  }`}>
+                                    <ThumbsUp className="w-3 h-3 text-amber-800 fill-amber-700/20" />
+                                    {rec.apoiosCount || 0} Apoio(s)
                                   </span>
                                   
                                   <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
@@ -3357,15 +3480,15 @@ export const AdminPanelScreen: React.FC = () => {
                                       {rec.descricao}
                                     </p>
                                     <div className="flex items-center gap-2 shrink-0 text-[11px] font-bold text-slate-500">
+                                      {rec.apoiosCount > 0 && (
+                                        <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1 font-bold">
+                                          <ThumbsUp className="w-3 h-3 text-amber-600 fill-amber-500/20" />
+                                          {rec.apoiosCount} Apoio(s)
+                                        </span>
+                                      )}
                                       {rec.comentarios && rec.comentarios.length > 0 && (
                                         <span className="text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
                                           {rec.comentarios.length} Comentário(s)
-                                        </span>
-                                      )}
-                                      {rec.apoiosCount > 0 && (
-                                        <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1">
-                                          <ThumbsUp className="w-3 h-3 text-amber-600" />
-                                          {rec.apoiosCount} Apoio(s)
                                         </span>
                                       )}
                                       {rec.reparoId && (
@@ -3457,9 +3580,9 @@ export const AdminPanelScreen: React.FC = () => {
 
                                   {/* Informação de Apoios e Reparo Vinculado */}
                                   <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 text-[11px] flex-wrap">
-                                    <span className="font-bold text-slate-700 flex items-center gap-1">
-                                      <ThumbsUp className="w-3.5 h-3.5 text-indigo-700" />
-                                      {rec.apoiosCount} moradores apoiam esta causa
+                                    <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                                      <ThumbsUp className="w-3.5 h-3.5 text-amber-700 fill-amber-500/30" />
+                                      <span><strong>{rec.apoiosCount || 0}</strong> {rec.apoiosCount === 1 ? 'morador apoia' : 'moradores apoiam'} esta causa</span>
                                     </span>
 
                                     {rec.reparoId && (
@@ -3528,6 +3651,105 @@ export const AdminPanelScreen: React.FC = () => {
                                 </div>
 
                                 {/* ========================================================= */}
+                                {/* SUBSEÇÃO: MORADORES QUE APOIARAM (QUEM DEU JOINHA) */}
+                                {/* ========================================================= */}
+                                <div className="pt-2 border-t-2 border-slate-200 space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                                        <ThumbsUp className="w-4 h-4 text-amber-700" />
+                                        Moradores que Apoiaram / Deram Joinha ({apoiadoresRecLista.length})
+                                      </span>
+                                      {apoiadoresRecLista.length > 0 && (
+                                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300 text-[9px] font-black uppercase">
+                                          {apoiadoresRecLista.length} {apoiadoresRecLista.length === 1 ? 'Apoio' : 'Apoios'}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setExpandedApoiadoresInReclamacoesAdmin(prev => ({ ...prev, [rec.id]: !isApoiadoresOpen }))}
+                                      className="text-xs font-extrabold text-amber-900 hover:underline cursor-pointer flex items-center gap-1"
+                                    >
+                                      {isApoiadoresOpen ? 'Recolher Apoios' : 'Ver Quem Apoiou'}
+                                      {isApoiadoresOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                    </button>
+                                  </div>
+
+                                  {isApoiadoresOpen && (
+                                    <div className="space-y-2 animate-in fade-in duration-200">
+                                      {apoiadoresRecLista.length === 0 ? (
+                                        <p className="text-xs text-slate-500 italic py-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                          Nenhum morador deu joinha / apoio nesta ocorrência até o momento.
+                                        </p>
+                                      ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                          {apoiadoresRecLista.map((apoiador, idx) => (
+                                            <div 
+                                              key={apoiador.id || idx}
+                                              className="p-3 rounded-2xl bg-amber-50/80 border border-amber-300/80 shadow-2xs flex items-center justify-between gap-2.5 hover:bg-amber-100/70 transition-all"
+                                            >
+                                              <div className="flex items-center gap-2.5 min-w-0">
+                                                {apoiador.foto ? (
+                                                  <img 
+                                                    src={apoiador.foto} 
+                                                    alt={apoiador.nome} 
+                                                    className="w-8 h-8 rounded-full object-cover border border-amber-300 shrink-0 shadow-2xs" 
+                                                  />
+                                                ) : (
+                                                  <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                                                    {apoiador.nome ? apoiador.nome.substring(0, 2).toUpperCase() : 'MO'}
+                                                  </div>
+                                                )}
+                                                <div className="min-w-0">
+                                                  <span className="text-xs font-black text-slate-950 block truncate">
+                                                    {apoiador.nome}
+                                                  </span>
+                                                  <span className="text-[10px] font-bold text-amber-950 bg-amber-200/80 px-1.5 py-0.5 rounded border border-amber-300 inline-block">
+                                                    {apoiador.unidade || 'Morador'}
+                                                  </span>
+                                                  {apoiador.data && (
+                                                    <span className="text-[9px] text-slate-600 block mt-0.5">
+                                                      {apoiador.data}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </div>
+
+                                              <div className="shrink-0 flex items-center gap-1">
+                                                <span className="p-1 rounded-full bg-amber-200 text-amber-950 border border-amber-300" title="Apoiou esta ocorrência">
+                                                  <ThumbsUp className="w-3.5 h-3.5 fill-amber-700 stroke-amber-950" />
+                                                </span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    const rawUnit = (apoiador.unidade || '').replace(/[^0-9]/g, '');
+                                                    const unitObj: Unidade = unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) || {
+                                                      id: `unit-${rawUnit || 'temp'}`,
+                                                      numero: apoiador.unidade || 'Geral',
+                                                      bloco: apoiador.bloco || 'A',
+                                                      vagaGaragem: '',
+                                                      moradores: []
+                                                    };
+                                                    setSelectedUnidadeParaNotificar(unitObj);
+                                                    setIsNotifyModalOpen(true);
+                                                  }}
+                                                  className="p-1 rounded-lg hover:bg-amber-200 text-amber-800 transition-colors cursor-pointer"
+                                                  title={`Notificar ${apoiador.nome}`}
+                                                >
+                                                  <Bell className="w-3.5 h-3.5" />
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* ========================================================= */}
                                 {/* SUBSEÇÃO: MODERAÇÃO DE COMENTÁRIOS DA RECLAMAÇÃO */}
                                 {/* ========================================================= */}
                                 <div className="pt-2 border-t-2 border-slate-200 space-y-3">
@@ -3535,7 +3757,7 @@ export const AdminPanelScreen: React.FC = () => {
                                     <div className="flex items-center gap-2">
                                       <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
                                         <MessageSquare className="w-4 h-4 text-indigo-700" />
-                                        Comentários & Apoios Vinculados ({rec.comentarios.length})
+                                        Comentários da Ocorrência ({rec.comentarios.length})
                                       </span>
                                       {hiddenCommentsCount > 0 && (
                                         <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300 text-[9px] font-black uppercase">
@@ -3945,7 +4167,9 @@ export const AdminPanelScreen: React.FC = () => {
                       const isCardOpen = Boolean(expandedReparosInAdmin[rep.id]);
                       const isCommentsOpen = expandedCommentsInReparosAdmin[rep.id] !== false; // default open
                       const isOrcsOpen = expandedOrcamentosInReparosAdmin[rep.id] !== false; // default open
+                      const isApoiadoresOpen = expandedApoiadoresInReparosAdmin[rep.id] !== false; // default open
                       const hiddenCommentsCount = (rep.comentarios || []).filter(c => c.oculto).length;
+                      const apoiadoresRepLista = resolveApoiadores(rep, unidades);
 
                       return (
                         <div 
@@ -3971,6 +4195,15 @@ export const AdminPanelScreen: React.FC = () => {
                                 <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-900 border border-slate-300">
                                   {rep.categoria}
                                 </span>
+
+                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border flex items-center gap-1 shadow-2xs ${
+                                  (rep.apoiosCount || 0) > 0 
+                                    ? 'bg-amber-100 text-amber-950 border-amber-300' 
+                                    : 'bg-slate-100 text-slate-700 border-slate-300'
+                                }`}>
+                                  <ThumbsUp className="w-3 h-3 text-amber-800 fill-amber-700/20" />
+                                  {rep.apoiosCount || 0} Apoio(s)
+                                </span>
                                 
                                 <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
                                   <Clock className="w-3.5 h-3.5 text-slate-400" />
@@ -3993,6 +4226,12 @@ export const AdminPanelScreen: React.FC = () => {
                                     {rep.descricao}
                                   </p>
                                   <div className="flex items-center gap-2 shrink-0 text-[11px] font-bold text-slate-500">
+                                    {(rep.apoiosCount || 0) > 0 && (
+                                      <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1 font-bold">
+                                        <ThumbsUp className="w-3 h-3 text-amber-600 fill-amber-500/20" />
+                                        {rep.apoiosCount} Apoio(s)
+                                      </span>
+                                    )}
                                     {rep.orcamentos && rep.orcamentos.length > 0 && (
                                       <span className="text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md">
                                         {rep.orcamentos.length} Orçamento(s)
@@ -4110,9 +4349,9 @@ export const AdminPanelScreen: React.FC = () => {
 
                                 {/* Informação de Apoios e Cotação */}
                                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 text-[11px] flex-wrap">
-                                  <span className="font-bold text-slate-700 flex items-center gap-1">
-                                    <ThumbsUp className="w-3.5 h-3.5 text-indigo-700" />
-                                    <span>{rep.apoiosCount || 0} moradores apoiam a prioridade desta manutenção</span>
+                                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                                    <ThumbsUp className="w-3.5 h-3.5 text-amber-700 fill-amber-500/30" />
+                                    <span><strong>{rep.apoiosCount || 0}</strong> {rep.apoiosCount === 1 ? 'morador apoia' : 'moradores apoiam'} a prioridade desta manutenção</span>
                                   </span>
 
                                   {rep.valorContratado && (
@@ -4179,6 +4418,105 @@ export const AdminPanelScreen: React.FC = () => {
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
+                              </div>
+
+                              {/* ========================================================= */}
+                              {/* SUBSEÇÃO: MORADORES QUE APOIARAM (QUEM DEU JOINHA) */}
+                              {/* ========================================================= */}
+                              <div className="pt-3 border-t-2 border-slate-200 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                                      <ThumbsUp className="w-4 h-4 text-amber-700" />
+                                      Moradores que Apoiaram / Deram Joinha ({apoiadoresRepLista.length})
+                                    </span>
+                                    {apoiadoresRepLista.length > 0 && (
+                                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300 text-[9px] font-black uppercase">
+                                        {apoiadoresRepLista.length} {apoiadoresRepLista.length === 1 ? 'Joinha' : 'Joinhas'}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedApoiadoresInReparosAdmin(prev => ({ ...prev, [rep.id]: !isApoiadoresOpen }))}
+                                    className="text-xs font-extrabold text-amber-900 hover:underline cursor-pointer flex items-center gap-1"
+                                  >
+                                    {isApoiadoresOpen ? 'Recolher Apoios' : 'Ver Quem Apoiou'}
+                                    {isApoiadoresOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                  </button>
+                                </div>
+
+                                {isApoiadoresOpen && (
+                                  <div className="space-y-2 animate-in fade-in duration-200">
+                                    {apoiadoresRepLista.length === 0 ? (
+                                      <p className="text-xs text-slate-500 italic py-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                        Nenhum morador deu joinha / apoio nesta ordem de reparo até o momento.
+                                      </p>
+                                    ) : (
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                        {apoiadoresRepLista.map((apoiador, idx) => (
+                                          <div 
+                                            key={apoiador.id || idx}
+                                            className="p-3 rounded-2xl bg-amber-50/80 border border-amber-300/80 shadow-2xs flex items-center justify-between gap-2.5 hover:bg-amber-100/70 transition-all"
+                                          >
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                              {apoiador.foto ? (
+                                                <img 
+                                                  src={apoiador.foto} 
+                                                  alt={apoiador.nome} 
+                                                  className="w-8 h-8 rounded-full object-cover border border-amber-300 shrink-0 shadow-2xs" 
+                                                />
+                                              ) : (
+                                                <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                                                  {apoiador.nome ? apoiador.nome.substring(0, 2).toUpperCase() : 'MO'}
+                                                </div>
+                                              )}
+                                              <div className="min-w-0">
+                                                <span className="text-xs font-black text-slate-950 block truncate">
+                                                  {apoiador.nome}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-amber-950 bg-amber-200/80 px-1.5 py-0.5 rounded border border-amber-300 inline-block">
+                                                  {apoiador.unidade || 'Morador'}
+                                                </span>
+                                                {apoiador.data && (
+                                                  <span className="text-[9px] text-slate-600 block mt-0.5">
+                                                    {apoiador.data}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+
+                                            <div className="shrink-0 flex items-center gap-1">
+                                              <span className="p-1 rounded-full bg-amber-200 text-amber-950 border border-amber-300" title="Apoiou esta manutenção">
+                                                <ThumbsUp className="w-3.5 h-3.5 fill-amber-700 stroke-amber-950" />
+                                              </span>
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const rawUnit = (apoiador.unidade || '').replace(/[^0-9]/g, '');
+                                                  const unitObj: Unidade = unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) || {
+                                                    id: `unit-${rawUnit || 'temp'}`,
+                                                    numero: apoiador.unidade || 'Geral',
+                                                    bloco: apoiador.bloco || 'A',
+                                                    vagaGaragem: '',
+                                                    moradores: []
+                                                  };
+                                                  setSelectedUnidadeParaNotificar(unitObj);
+                                                  setIsNotifyModalOpen(true);
+                                                }}
+                                                className="p-1 rounded-lg hover:bg-amber-200 text-amber-800 transition-colors cursor-pointer"
+                                                title={`Notificar ${apoiador.nome}`}
+                                              >
+                                                <Bell className="w-3.5 h-3.5" />
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
 
                               {/* ========================================================= */}
@@ -4377,7 +4715,7 @@ export const AdminPanelScreen: React.FC = () => {
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
                                       <MessageSquare className="w-4 h-4 text-indigo-700" />
-                                      Comentários & Apoios Vinculados ({rep.comentarios?.length || 0})
+                                      Comentários Registrados do Reparo ({rep.comentarios?.length || 0})
                                     </span>
                                     {hiddenCommentsCount > 0 && (
                                       <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300 text-[9px] font-black uppercase">
@@ -6583,11 +6921,11 @@ export const AdminPanelScreen: React.FC = () => {
                               
                               {/* Header do Card */}
                               <div className="flex items-start gap-3">
-                                <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-200 border border-slate-300 shrink-0 shadow-2xs">
+                                <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-950/80 border border-slate-300 shrink-0 shadow-2xs flex items-center justify-center p-0.5">
                                   {item.fotos && item.fotos.length > 0 ? (
-                                    <img src={item.fotos[0]} alt={item.titulo} className="w-full h-full object-cover object-center" />
+                                    <img src={item.fotos[0]} alt={item.titulo} className="max-w-full max-h-full w-auto h-auto object-contain object-center rounded-lg" />
                                   ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-rose-500">
+                                    <div className="w-full h-full flex items-center justify-center text-rose-500 bg-rose-50 rounded-lg">
                                       <ShoppingBag className="w-5 h-5" />
                                     </div>
                                   )}
