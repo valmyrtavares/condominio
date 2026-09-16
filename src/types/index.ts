@@ -47,9 +47,11 @@ export interface User {
 
 export interface Unidade {
   id: string;
+  condominioId?: string;
   numero: string;
   andar?: number;
   bloco: string;
+  rua?: string; // Nome da rua / alameda (para condomínios de casas)
   tipo?: 'Apartamento' | 'Cobertura' | 'Casa';
   vagaGaragem?: string;
   senhaAcesso?: string;
@@ -751,6 +753,7 @@ export interface EncomendaEntrega {
 // ==========================================
 export type StatusCondominio = 'ativo' | 'bloqueado' | 'em_implantacao';
 export type ModeloInicialCondominio = 'limpo' | 'exemplo';
+export type TipoCondominio = 'apartamentos' | 'casas';
 
 export interface NotificacaoMasterCondo {
   id: string;
@@ -766,6 +769,8 @@ export interface CondominioProfile {
   id: string;                    // ex: "condo-jardim-paulista", "condo-aurora"
   slug: string;                  // ex: "jardim-paulista", "edificio-aurora"
   nome: string;                  // ex: "Residencial Jardim Paulista"
+  tipoCondominio?: TipoCondominio; // 'apartamentos' | 'casas'
+  ruas?: string[];               // Lista de ruas cadastradas para condomínios de casas
   endereco: string;              // ex: "Av. Paulista, 1500 - Bela Vista, SP"
   cidade?: string;
   estado?: string;

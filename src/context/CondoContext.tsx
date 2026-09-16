@@ -480,8 +480,8 @@ interface CondoContextType {
   condominios: CondominioProfile[];
   currentCondo: CondominioProfile;
   currentCondoId: string;
-  adicionarCondominio: (novo: Omit<CondominioProfile, 'id' | 'criadoEm'>) => CondominioProfile;
-  editarCondominio: (id: string, dados: Partial<CondominioProfile>) => void;
+  adicionarCondominio: (novo: Omit<CondominioProfile, 'id' | 'criadoEm'>, unidadesCustomizadas?: { numero: string; rua?: string }[]) => CondominioProfile;
+  editarCondominio: (id: string, dados: Partial<CondominioProfile>, unidadesCustomizadas?: { numero: string; rua?: string }[]) => void;
   excluirCondominio: (id: string) => void;
   alternarStatusCondominio: (id: string) => void;
   selecionarCondominio: (slugOuId: string) => void;
@@ -1423,7 +1423,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const adicionarCondominio = (novo: Omit<CondominioProfile, 'id' | 'criadoEm'>): CondominioProfile => {
+  const adicionarCondominio = (
+    novo: Omit<CondominioProfile, 'id' | 'criadoEm'>,
+    unidadesCustomizadas?: { numero: string; rua?: string }[]
+  ): CondominioProfile => {
     const cleanSlug = (novo.slug || novo.nome)
       .toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -1447,8 +1450,48 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Persiste imediatamente no Cloud Firestore
     salvarCondominioNoFirestore(novoCondo).catch(console.error);
 
-    // Se o modelo for "limpo", gera as unidades automáticas para aquele condomínio
-    if (novo.modeloInicial === 'limpo') {
+    // Se for condomínio de casas:
+    if (novo.tipoCondominio === 'casas') {
+      const totalUnits = novo.totalUnidades || 16;
+      let novasUnidadesCasas: Unidade[] = [];
+
+      if (unidadesCustomizadas && unidadesCustomizadas.length > 0) {
+        novasUnidadesCasas = unidadesCustomizadas.slice(0, totalUnits).map((casa, idx) => ({
+          id: `unit-${id}-casa-${casa.numero || idx + 1}-${Date.now()}-${idx}`,
+          numero: casa.numero ? String(casa.numero).trim() : String(idx + 1),
+          andar: 0,
+          bloco: casa.rua || 'Geral',
+          rua: casa.rua || '',
+          tipo: 'Casa' as const,
+          vagaGaragem: '',
+          senhaAcesso: casa.numero ? String(casa.numero).trim() : String(idx + 1),
+          senhaPadraoAlterada: false,
+          statusCadastro: 'Pendente' as const,
+          semMoradores: false,
+          moradores: []
+        }));
+      } else {
+        novasUnidadesCasas = Array.from({ length: totalUnits }, (_, idx) => ({
+          id: `unit-${id}-casa-${idx + 1}`,
+          numero: String(idx + 1),
+          andar: 0,
+          bloco: 'Geral',
+          rua: '',
+          tipo: 'Casa' as const,
+          vagaGaragem: '',
+          senhaAcesso: String(idx + 1),
+          senhaPadraoAlterada: false,
+          statusCadastro: 'Pendente' as const,
+          semMoradores: false,
+          moradores: []
+        }));
+      }
+
+      try {
+        localStorage.setItem(`condo_unidades_list_${id}`, JSON.stringify(novasUnidadesCasas));
+      } catch {}
+      limparESubstituirSubcolecaoFirestore(id, 'unidades', novasUnidadesCasas).catch(console.error);
+    } else if (novo.modeloInicial === 'limpo') {
       const totalUnits = novo.totalUnidades || 75;
       const novasUnidadesLimpo = gerarUnidadesPorPadraoEAndar(
         totalUnits,
@@ -1466,14 +1509,65 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return novoCondo;
   };
 
-  const editarCondominio = (id: string, dados: Partial<CondominioProfile>) => {
+  const editarCondominio = (
+    id: string, 
+    dados: Partial<CondominioProfile>,
+    unidadesCustomizadas?: { numero: string; rua?: string }[]
+  ) => {
     setCondominios(prev => prev.map(c => {
       if (c.id === id) {
         const atualizado = { ...c, ...dados };
         salvarCondominioNoFirestore(atualizado).catch(console.error);
 
-        // Se alterou totalAndares, padraoPrimeiroAndar ou totalUnidades, regenera a sequência preservando dados existentes
-        if (
+        // Se for condomínio de casas e recebeu lista de unidades atualizadas:
+        if (dados.tipoCondominio === 'casas' && unidadesCustomizadas && unidadesCustomizadas.length > 0) {
+          const mapaExistentes = new Map<string, Unidade>();
+          unidades.forEach(u => {
+            const k = normalizeUnitNumber(u.numero);
+            if (k && !mapaExistentes.has(k)) {
+              mapaExistentes.set(k, u);
+            }
+          });
+
+          const novasUnidades = unidadesCustomizadas.map((casa, idx) => {
+            const k = normalizeUnitNumber(casa.numero || String(idx + 1));
+            const existente = mapaExistentes.get(k);
+            if (existente) {
+              return {
+                ...existente,
+                numero: casa.numero || String(idx + 1),
+                bloco: casa.rua || existente.bloco || 'Geral',
+                rua: casa.rua || existente.rua || '',
+                tipo: 'Casa' as const
+              };
+            }
+            return {
+              id: `unit-${id}-casa-${casa.numero || idx + 1}-${Date.now()}-${idx}`,
+              numero: casa.numero ? String(casa.numero).trim() : String(idx + 1),
+              andar: 0,
+              bloco: casa.rua || 'Geral',
+              rua: casa.rua || '',
+              tipo: 'Casa' as const,
+              vagaGaragem: '',
+              senhaAcesso: casa.numero ? String(casa.numero).trim() : String(idx + 1),
+              senhaPadraoAlterada: false,
+              statusCadastro: 'Pendente' as const,
+              semMoradores: false,
+              moradores: []
+            };
+          });
+
+          if (currentCondoId === id) {
+            setUnidades(novasUnidades);
+          }
+
+          try {
+            localStorage.setItem(`condo_unidades_list_${id}`, JSON.stringify(novasUnidades));
+            localStorage.setItem('condo_unidades_list', JSON.stringify(novasUnidades));
+          } catch {}
+
+          limparESubstituirSubcolecaoFirestore(id, 'unidades', novasUnidades).catch(console.error);
+        } else if (
           dados.padraoPrimeiroAndar !== undefined || 
           dados.totalAndares !== undefined || 
           dados.totalUnidades !== undefined
