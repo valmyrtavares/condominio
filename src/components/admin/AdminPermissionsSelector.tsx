@@ -162,7 +162,7 @@ export const AdminPermissionsSelector: React.FC<AdminPermissionsSelectorProps> =
                     {icon}
                   </span>
                   <span className="text-[11px] font-black text-slate-950 truncate leading-tight">
-                    {modulo.titulo}
+                    {modulo.numero > 0 ? `${modulo.numero}. ` : ''}{modulo.titulo}
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">

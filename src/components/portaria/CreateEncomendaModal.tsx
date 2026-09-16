@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useCondo } from '../../context/CondoContext';
-import { EncomendaEntrega, TipoEncomenda } from '../../types';
+import { EncomendaEntrega, TipoEncomenda, StatusEncomenda } from '../../types';
 import { 
   Package, 
   X, 
@@ -25,40 +25,57 @@ const FOTOS_PACOTES_EXEMPLO = [
 interface CreateEncomendaModalProps {
   isOpen: boolean;
   onClose: () => void;
+  encomendaToEdit?: EncomendaEntrega | null;
 }
 
 export const CreateEncomendaModal: React.FC<CreateEncomendaModalProps> = ({
   isOpen,
-  onClose
+  onClose,
+  encomendaToEdit
 }) => {
-  const { unidades, adicionarEncomenda, currentUser } = useCondo();
+  const { unidades, adicionarEncomenda, editarEncomenda, currentUser } = useCondo();
 
   const [unidadeSelecionada, setUnidadeSelecionada] = useState('');
   const [destinatarioNome, setDestinatarioNome] = useState('');
   const [tipo, setTipo] = useState<TipoEncomenda>('Pacote / Caixa');
-  const [empresaTransporte, setEmpresaTransporte] = useState('Mercado Livre');
+  const [status, setStatus] = useState<StatusEncomenda>('Aguardando Chegada na Portaria');
+  const [empresaTransporte, setEmpresaTransporte] = useState('');
   const [codigoRastreio, setCodigoRastreio] = useState('');
-  const [localArmazenamento, setLocalArmazenamento] = useState('Armário da Portaria');
+  const [localArmazenamento, setLocalArmazenamento] = useState('');
   const [fotoPacote, setFotoPacote] = useState('');
   const [observacoes, setObservacoes] = useState('');
-  const [porteiroRecebedor, setPorteiroRecebedor] = useState(currentUser.nome || 'Portaria');
+  const [porteiroRecebedor, setPorteiroRecebedor] = useState('');
 
   const [erroMsg, setErroMsg] = useState('');
 
   useEffect(() => {
     if (isOpen) {
-      setUnidadeSelecionada(unidades[0]?.numero || '101');
-      setDestinatarioNome('');
-      setTipo('Pacote / Caixa');
-      setEmpresaTransporte('Mercado Livre');
-      setCodigoRastreio('');
-      setLocalArmazenamento('Armário da Portaria');
-      setFotoPacote('');
-      setObservacoes('');
-      setPorteiroRecebedor(currentUser.nome || 'Portaria');
+      if (encomendaToEdit) {
+        setUnidadeSelecionada(encomendaToEdit.unidade || '');
+        setDestinatarioNome(encomendaToEdit.destinatarioNome || '');
+        setTipo(encomendaToEdit.tipo || 'Pacote / Caixa');
+        setStatus(encomendaToEdit.status || 'Aguardando Chegada na Portaria');
+        setEmpresaTransporte(encomendaToEdit.empresaTransporte || '');
+        setCodigoRastreio(encomendaToEdit.codigoRastreio || '');
+        setLocalArmazenamento(encomendaToEdit.localArmazenamento || '');
+        setFotoPacote(encomendaToEdit.fotoPacote || '');
+        setObservacoes(encomendaToEdit.observacoes || '');
+        setPorteiroRecebedor(encomendaToEdit.porteiroRecebedor || '');
+      } else {
+        setUnidadeSelecionada(currentUser.unidade || unidades[0]?.numero || '');
+        setDestinatarioNome(currentUser.role === 'morador' ? currentUser.nome : '');
+        setTipo('Pacote / Caixa');
+        setStatus(currentUser.role === 'morador' ? 'Aguardando Chegada na Portaria' : 'Aguardando Retirada');
+        setEmpresaTransporte('');
+        setCodigoRastreio('');
+        setLocalArmazenamento('');
+        setFotoPacote('');
+        setObservacoes('');
+        setPorteiroRecebedor(currentUser.role !== 'morador' ? currentUser.nome : '');
+      }
       setErroMsg('');
     }
-  }, [isOpen, unidades, currentUser]);
+  }, [isOpen, encomendaToEdit, unidades, currentUser]);
 
   // Ao mudar a unidade, tenta sugerir o nome do morador
   const handleUnidadeChange = (numero: string) => {
@@ -95,18 +112,36 @@ export const CreateEncomendaModal: React.FC<CreateEncomendaModalProps> = ({
 
     const unitObj = unidades.find(u => u.numero === unidadeSelecionada);
 
-    adicionarEncomenda({
-      unidade: unidadeSelecionada,
-      bloco: unitObj?.bloco || undefined,
-      destinatarioNome: destinatarioNome.trim(),
-      tipo,
-      empresaTransporte: empresaTransporte.trim(),
-      codigoRastreio: codigoRastreio.trim() || undefined,
-      localArmazenamento: localArmazenamento.trim() || undefined,
-      fotoPacote: fotoPacote.trim() || undefined,
-      porteiroRecebedor: porteiroRecebedor.trim() || 'Portaria',
-      observacoes: observacoes.trim() || undefined
-    });
+    if (encomendaToEdit) {
+      editarEncomenda(encomendaToEdit.id, {
+        unidade: unidadeSelecionada,
+        bloco: unitObj?.bloco || undefined,
+        destinatarioNome: destinatarioNome.trim(),
+        tipo,
+        status,
+        empresaTransporte: empresaTransporte.trim(),
+        codigoRastreio: codigoRastreio.trim() || undefined,
+        localArmazenamento: localArmazenamento.trim() || undefined,
+        fotoPacote: fotoPacote.trim() || undefined,
+        porteiroRecebedor: porteiroRecebedor.trim() || (status === 'Aguardando Retirada' ? (currentUser.nome || 'Portaria') : 'Pendente de Chegada'),
+        observacoes: observacoes.trim() || undefined
+      });
+    } else {
+      adicionarEncomenda({
+        unidade: unidadeSelecionada,
+        bloco: unitObj?.bloco || undefined,
+        destinatarioNome: destinatarioNome.trim(),
+        tipo,
+        status,
+        empresaTransporte: empresaTransporte.trim(),
+        codigoRastreio: codigoRastreio.trim() || undefined,
+        localArmazenamento: localArmazenamento.trim() || undefined,
+        fotoPacote: fotoPacote.trim() || undefined,
+        porteiroRecebedor: porteiroRecebedor.trim() || (status === 'Aguardando Retirada' ? (currentUser.nome || 'Portaria') : 'Pendente de Chegada'),
+        observacoes: observacoes.trim() || undefined,
+        moradorId: currentUser.id
+      });
+    }
 
     onClose();
   };
@@ -126,7 +161,7 @@ export const CreateEncomendaModal: React.FC<CreateEncomendaModalProps> = ({
                 Portaria & Recepção de Mercadorias
               </span>
               <h2 className="text-lg sm:text-xl font-black text-white">
-                Registrar Chegada de Encomenda
+                {encomendaToEdit ? 'Editar Registro de Encomenda' : 'Registrar Chegada de Encomenda'}
               </h2>
             </div>
           </div>
@@ -180,6 +215,65 @@ export const CreateEncomendaModal: React.FC<CreateEncomendaModalProps> = ({
                 onChange={(e) => setDestinatarioNome(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-bold placeholder-slate-500 focus:outline-none focus:border-indigo-400"
               />
+            </div>
+          </div>
+
+          {/* Status Inicial da Encomenda */}
+          <div className="space-y-1.5 bg-slate-950/40 p-3 rounded-2xl border border-slate-800">
+            <label className="text-[11px] font-extrabold uppercase text-slate-300 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-amber-400" /> Situação Atual da Encomenda *:
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setStatus('Aguardando Chegada na Portaria')}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  status === 'Aguardando Chegada na Portaria'
+                    ? 'bg-sky-500/20 border-sky-400 text-white ring-2 ring-sky-500/30'
+                    : 'bg-slate-950/60 border-slate-700 text-slate-400 hover:bg-slate-800'
+                }`}
+              >
+                <div className="text-xs font-black text-sky-400 flex items-center gap-1">
+                  ⏳ Aguarda Chegada
+                </div>
+                <div className="text-[10px] text-slate-300 mt-0.5 font-medium leading-tight">
+                  Aviso prévio do morador. O item ainda não chegou.
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatus('Aguardando Retirada')}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  status === 'Aguardando Retirada'
+                    ? 'bg-amber-500/20 border-amber-400 text-white ring-2 ring-amber-500/30'
+                    : 'bg-slate-950/60 border-slate-700 text-slate-400 hover:bg-slate-800'
+                }`}
+              >
+                <div className="text-xs font-black text-amber-400 flex items-center gap-1">
+                  📦 Chegou na Portaria
+                </div>
+                <div className="text-[10px] text-slate-300 mt-0.5 font-medium leading-tight">
+                  Pacote recebido. Aguarda retirada do morador.
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatus('Entregue ao Morador')}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  status === 'Entregue ao Morador'
+                    ? 'bg-emerald-500/20 border-emerald-400 text-white ring-2 ring-emerald-500/30'
+                    : 'bg-slate-950/60 border-slate-700 text-slate-400 hover:bg-slate-800'
+                }`}
+              >
+                <div className="text-xs font-black text-emerald-400 flex items-center gap-1">
+                  ✓ Entregue ao Morador
+                </div>
+                <div className="text-[10px] text-slate-300 mt-0.5 font-medium leading-tight">
+                  Pacote já entregue/retirado pelo morador.
+                </div>
+              </button>
             </div>
           </div>
 

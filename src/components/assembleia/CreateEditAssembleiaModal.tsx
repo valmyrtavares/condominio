@@ -62,8 +62,8 @@ export const CreateEditAssembleiaModal: React.FC<CreateEditAssembleiaModalProps>
   const [tipoSubformato, setTipoSubformato] = useState<'Ordinária' | 'Extraordinária' | 'Reunião de Comissão' | 'Reunião com Moradores' | 'Outro'>('Ordinária');
   const [titulo, setTitulo] = useState('');
   const [data, setData] = useState('');
-  const [primeiraChamada, setPrimeiraChamada] = useState('19:30');
-  const [segundaChamada, setSegundaChamada] = useState('20:00');
+  const [primeiraChamada, setPrimeiraChamada] = useState('');
+  const [segundaChamada, setSegundaChamada] = useState('');
   const [local, setLocal] = useState(PRESET_LOCAIS[0]);
   const [localCustom, setLocalCustom] = useState('');
   const [descricaoGeral, setDescricaoGeral] = useState('');
@@ -101,8 +101,8 @@ export const CreateEditAssembleiaModal: React.FC<CreateEditAssembleiaModalProps>
         }
       }
       setData(dataIso);
-      setPrimeiraChamada(assembleiaToEdit.primeiraChamada || '19:30');
-      setSegundaChamada(assembleiaToEdit.segundaChamada || '20:00');
+      setPrimeiraChamada(assembleiaToEdit.primeiraChamada || '');
+      setSegundaChamada(assembleiaToEdit.segundaChamada || '');
       
       if (PRESET_LOCAIS.includes(assembleiaToEdit.local)) {
         setLocal(assembleiaToEdit.local);
@@ -122,11 +122,9 @@ export const CreateEditAssembleiaModal: React.FC<CreateEditAssembleiaModalProps>
       setTipoEncontro('Assembleia Geral');
       setTipoSubformato('Ordinária');
       setTitulo('');
-      const today = new Date();
-      today.setDate(today.getDate() + 7); // Daqui a 7 dias
-      setData(today.toISOString().split('T')[0]);
-      setPrimeiraChamada('19:30');
-      setSegundaChamada('20:00');
+      setData('');
+      setPrimeiraChamada('');
+      setSegundaChamada('');
       setLocal(PRESET_LOCAIS[0]);
       setLocalCustom('');
       setDescricaoGeral('');
@@ -134,14 +132,7 @@ export const CreateEditAssembleiaModal: React.FC<CreateEditAssembleiaModalProps>
       setParticipantesTipo('todos');
       setParticipantesSelecionados([]);
       setParticipantesDescricao('');
-      setPautas([
-        {
-          id: `pauta-${Date.now()}-1`,
-          titulo: 'Apresentação e Deliberações da Ordem do Dia',
-          descricao: 'Discussão dos tópicos prioritários de interesse coletivo dos moradores.',
-          origemTipo: 'extra'
-        }
-      ]);
+      setPautas([]);
     }
   }, [assembleiaToEdit, isOpen]);
 
@@ -451,7 +442,7 @@ export const CreateEditAssembleiaModal: React.FC<CreateEditAssembleiaModalProps>
               </label>
               <input
                 type="text"
-                placeholder="19:30"
+                placeholder="Ex: 19:30"
                 value={primeiraChamada}
                 onChange={(e) => setPrimeiraChamada(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"
@@ -465,7 +456,7 @@ export const CreateEditAssembleiaModal: React.FC<CreateEditAssembleiaModalProps>
               </label>
               <input
                 type="text"
-                placeholder="20:00"
+                placeholder="Ex: 20:00"
                 value={segundaChamada}
                 onChange={(e) => setSegundaChamada(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"

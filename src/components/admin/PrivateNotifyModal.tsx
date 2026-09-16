@@ -34,7 +34,7 @@ export const PrivateNotifyModal: React.FC<PrivateNotifyModalProps> = ({
   unidade
 }) => {
   const { notificacoesPrivadas, enviarNotificacaoPrivada } = useCondo();
-  const [titulo, setTitulo] = useState('Notificação da Sindicância');
+  const [titulo, setTitulo] = useState('');
   const [mensagem, setMensagem] = useState('');
   const [sucessoMsg, setSucessoMsg] = useState('');
 
@@ -54,7 +54,7 @@ export const PrivateNotifyModal: React.FC<PrivateNotifyModalProps> = ({
     e.preventDefault();
     if (!mensagem.trim()) return;
 
-    enviarNotificacaoPrivada(unidade.numero, mensagem.trim(), titulo.trim());
+    enviarNotificacaoPrivada(unidade.numero, mensagem.trim(), titulo.trim() || 'Notificação da Sindicância');
     setMensagem('');
     setSucessoMsg('Notificação enviada com sucesso para os moradores!');
     setTimeout(() => setSucessoMsg(''), 3000);

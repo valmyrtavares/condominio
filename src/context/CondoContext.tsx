@@ -467,9 +467,12 @@ interface CondoContextType {
   autorizacoesAcesso: AutorizacaoAcesso[];
   adicionarAutorizacaoAcesso: (nova: Omit<AutorizacaoAcesso, 'id' | 'condominioId' | 'criadoEm' | 'status'> & { status?: StatusAutorizacaoAcesso }) => void;
   atualizarStatusAcesso: (id: string, status: StatusAutorizacaoAcesso, porteiroNome?: string) => void;
+  editarAutorizacaoAcesso: (id: string, dados: Partial<AutorizacaoAcesso>) => void;
   excluirAutorizacaoAcesso: (id: string) => void;
   encomendasEntregas: EncomendaEntrega[];
-  adicionarEncomenda: (nova: Omit<EncomendaEntrega, 'id' | 'condominioId' | 'status' | 'dataRecebimento' | 'horaRecebimento'> & { dataRecebimento?: string; horaRecebimento?: string; status?: StatusEncomenda }) => void;
+  adicionarEncomenda: (nova: Omit<EncomendaEntrega, 'id' | 'condominioId' | 'status' | 'dataRecebimento' | 'horaRecebimento'> & { dataRecebimento?: string; horaRecebimento?: string; status?: StatusEncomenda; moradorId?: string }) => void;
+  editarEncomenda: (id: string, dados: Partial<EncomendaEntrega>) => void;
+  atualizarStatusEncomenda: (id: string, status: StatusEncomenda, dados?: { porteiroRecebedor?: string; localArmazenamento?: string; retiradoPorNome?: string; fotoPacote?: string }) => void;
   darBaixaEncomenda: (id: string, retiradoPorNome?: string) => void;
   excluirEncomenda: (id: string) => void;
 
@@ -643,6 +646,71 @@ const ALL_MODULOS: AdminModuloKey[] = [
 ];
 
 export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // ==========================================
+  // SUPERADMIN & MULTI-TENANT CONDOMÍNIOS
+  // ==========================================
+  const [condominios, setCondominios] = useState<CondominioProfile[]>(() => {
+    const saved = localStorage.getItem('condo_multi_condominios_list');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('condo_multi_condominios_list', JSON.stringify(condominios));
+    } catch {}
+  }, [condominios]);
+
+  const [currentCondoId, setCurrentCondoId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const resolved = getScreenFromPath(window.location.pathname);
+      if (resolved.tenantSlug) {
+        return resolved.tenantSlug;
+      }
+    }
+    const saved = localStorage.getItem('condo_active_tenant_id');
+    return saved || 'condo-edificio-aurora';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('condo_active_tenant_id', currentCondoId);
+    } catch {}
+  }, [currentCondoId]);
+
+  const currentCondo: CondominioProfile = condominios.find(
+    c => c.id === currentCondoId || c.slug === currentCondoId || c.id.toLowerCase() === `condo-${currentCondoId.toLowerCase()}` || c.slug.toLowerCase() === currentCondoId.toLowerCase()
+  ) || {
+    id: currentCondoId.startsWith('condo-') ? currentCondoId : `condo-${currentCondoId}`,
+    slug: currentCondoId.replace(/^condo-/, ''),
+    nome: currentCondoId.replace(/^condo-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    endereco: 'Endereço não informado',
+    cidade: 'São Paulo',
+    estado: 'SP',
+    totalUnidades: 75,
+    totalBlocos: 1,
+    fotoFachada: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=85',
+    senhaAdminGeral: 'admin',
+    emailAdmin: '',
+    nomeSindico: 'Administração',
+    telefoneSindico: '',
+    status: 'ativo',
+    criadoEm: '2026-01-01',
+    modeloInicial: 'limpo',
+    dataImplementacao: '2026-01-01',
+    diaVencimento: 10,
+    statusEmDia: true,
+    valorMensalidade: 0,
+    statusMensalidade: 'pago'
+  };
+
+  const condoTenantId = currentCondo?.id || currentCondoId || 'condo-edificio-aurora';
+
   // Serviços de Moradores integrados exclusivamente ao Cloud Firestore e Firebase Storage
   const [servicosMoradores, setServicosMoradores] = useState<ServicoMorador[]>([]);
 
@@ -1092,7 +1160,20 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // ==========================================
   // PORTARIA: AUTORIZAÇÃO DE ACESSOS E VISITAS
   // ==========================================
-  const [autorizacoesAcesso, setAutorizacoesAcesso] = useState<AutorizacaoAcesso[]>([]);
+  const [autorizacoesAcesso, setAutorizacoesAcesso] = useState<AutorizacaoAcesso[]>(() => {
+    try {
+      const salvo = localStorage.getItem(`condo_acessos_list_${condoTenantId}`);
+      if (salvo) return JSON.parse(salvo);
+    } catch {}
+    return [];
+  });
+
+  useEffect(() => {
+    if (!condoTenantId) return;
+    try {
+      localStorage.setItem(`condo_acessos_list_${condoTenantId}`, JSON.stringify(autorizacoesAcesso));
+    } catch {}
+  }, [autorizacoesAcesso, condoTenantId]);
 
   const adicionarAutorizacaoAcesso = (nova: Omit<AutorizacaoAcesso, 'id' | 'condominioId' | 'criadoEm' | 'status'> & { status?: StatusAutorizacaoAcesso }) => {
     const id = `acesso-${Date.now()}`;
@@ -1134,7 +1215,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         itemAtualizado = {
           ...a,
           status: novoStatus,
-          porteiroResponsavel: porteiroNome || a.porteiroResponsavel || 'Portaria',
+          porteiroResponsavel: porteiroNome || a.porteiroResponsavel || currentUser.nome || 'Portaria',
           horarioEntradaReal: novoStatus === 'Entrada Liberada / Presente' ? (a.horarioEntradaReal || horaAtual) : a.horarioEntradaReal,
           horarioSaidaReal: novoStatus === 'Finalizado / Saiu' ? horaAtual : a.horarioSaidaReal
         };
@@ -1148,6 +1229,20 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const editarAutorizacaoAcesso = (id: string, dados: Partial<AutorizacaoAcesso>) => {
+    let itemAtualizado: AutorizacaoAcesso | null = null;
+    setAutorizacoesAcesso(prev => prev.map(a => {
+      if (a.id === id) {
+        itemAtualizado = { ...a, ...dados };
+        return itemAtualizado;
+      }
+      return a;
+    }));
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'autorizacoes_acesso', itemAtualizado).catch(console.error);
+    }
+  };
+
   const excluirAutorizacaoAcesso = (id: string) => {
     setAutorizacoesAcesso(prev => prev.filter(a => a.id !== id));
     excluirDocumentoSubcolecaoFirestore(condoTenantId, 'autorizacoes_acesso', id).catch(console.error);
@@ -1156,37 +1251,64 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // ==========================================
   // PORTARIA: ENCOMENDAS & ENTREGAS
   // ==========================================
-  const [encomendasEntregas, setEncomendasEntregas] = useState<EncomendaEntrega[]>([]);
+  const [encomendasEntregas, setEncomendasEntregas] = useState<EncomendaEntrega[]>(() => {
+    try {
+      const salvo = localStorage.getItem(`condo_encomendas_list_${condoTenantId}`);
+      if (salvo) return JSON.parse(salvo);
+    } catch {}
+    return [];
+  });
 
-  const adicionarEncomenda = (nova: Omit<EncomendaEntrega, 'id' | 'condominioId' | 'status' | 'dataRecebimento' | 'horaRecebimento'> & { dataRecebimento?: string; horaRecebimento?: string; status?: StatusEncomenda }) => {
+  useEffect(() => {
+    if (!condoTenantId) return;
+    try {
+      localStorage.setItem(`condo_encomendas_list_${condoTenantId}`, JSON.stringify(encomendasEntregas));
+    } catch {}
+  }, [encomendasEntregas, condoTenantId]);
+
+  const adicionarEncomenda = (nova: Omit<EncomendaEntrega, 'id' | 'condominioId' | 'status' | 'dataRecebimento' | 'horaRecebimento'> & { dataRecebimento?: string; horaRecebimento?: string; status?: StatusEncomenda; moradorId?: string }) => {
     const id = `enc-${Date.now()}`;
     const agora = new Date();
     const dataStr = nova.dataRecebimento || agora.toLocaleDateString('pt-BR');
     const horaStr = nova.horaRecebimento || `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
     
+    // Se quem está cadastrando for morador e não definiu status, o status inicial é 'Aguardando Chegada na Portaria' (aviso de pacote que vai chegar)
+    const statusDefault: StatusEncomenda = nova.status || (currentUser.role === 'morador' ? 'Aguardando Chegada na Portaria' : 'Aguardando Retirada');
+
     const novaEnc: EncomendaEntrega = {
       ...nova,
       id,
       dataRecebimento: dataStr,
       horaRecebimento: horaStr,
-      status: nova.status || 'Aguardando Retirada',
+      status: statusDefault,
       condominioId: condoTenantId
     };
     setEncomendasEntregas(prev => [novaEnc, ...prev]);
     salvarDocumentoSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', novaEnc).catch(console.error);
 
-    // Envia Notificação Privada automática para a unidade
-    const cleanUnit = nova.unidade.replace(/[^0-9]/g, '');
-    if (cleanUnit) {
-      enviarNotificacaoPrivada(
-        cleanUnit,
-        `📦 Nova Encomenda na Portaria: Chegou um(a) ${nova.tipo} (${nova.empresaTransporte}) para ${nova.destinatarioNome}. Guardado em: ${nova.localArmazenamento || 'Portaria'}.`,
-        'alta'
-      );
+    // Se já foi cadastrada como 'Aguardando Retirada' (pelo porteiro na chegada), notifica a unidade
+    if (statusDefault === 'Aguardando Retirada') {
+      const cleanUnit = nova.unidade.replace(/[^0-9]/g, '');
+      if (cleanUnit) {
+        enviarNotificacaoPrivada(
+          cleanUnit,
+          `📦 Nova Encomenda Recebida: Chegou um(a) ${nova.tipo} (${nova.empresaTransporte}) para ${nova.destinatarioNome}. Guardado em: ${nova.localArmazenamento || 'Portaria'}.`,
+          'Aviso de Entrega'
+        );
+      }
     }
   };
 
-  const darBaixaEncomenda = (id: string, retiradoPorNome?: string) => {
+  const atualizarStatusEncomenda = (
+    id: string, 
+    novoStatus: StatusEncomenda, 
+    dados?: { 
+      porteiroRecebedor?: string; 
+      localArmazenamento?: string; 
+      retiradoPorNome?: string; 
+      fotoPacote?: string 
+    }
+  ) => {
     const agora = new Date();
     const dataStr = agora.toLocaleDateString('pt-BR');
     const horaStr = `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
@@ -1196,10 +1318,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (enc.id === id) {
         itemAtualizado = {
           ...enc,
-          status: 'Entregue ao Morador',
-          dataRetirada: dataStr,
-          horaRetirada: horaStr,
-          retiradoPorNome: retiradoPorNome || enc.destinatarioNome
+          status: novoStatus,
+          porteiroRecebedor: dados?.porteiroRecebedor || (novoStatus === 'Aguardando Retirada' ? (currentUser.nome || 'Portaria') : enc.porteiroRecebedor),
+          localArmazenamento: dados?.localArmazenamento !== undefined ? dados.localArmazenamento : enc.localArmazenamento,
+          fotoPacote: dados?.fotoPacote !== undefined ? dados.fotoPacote : enc.fotoPacote,
+          dataRecebimento: (novoStatus === 'Aguardando Retirada' && enc.status === 'Aguardando Chegada na Portaria') ? dataStr : enc.dataRecebimento,
+          horaRecebimento: (novoStatus === 'Aguardando Retirada' && enc.status === 'Aguardando Chegada na Portaria') ? horaStr : enc.horaRecebimento,
+          dataRetirada: novoStatus === 'Entregue ao Morador' ? (enc.dataRetirada || dataStr) : (novoStatus === 'Aguardando Retirada' ? undefined : enc.dataRetirada),
+          horaRetirada: novoStatus === 'Entregue ao Morador' ? (enc.horaRetirada || horaStr) : (novoStatus === 'Aguardando Retirada' ? undefined : enc.horaRetirada),
+          retiradoPorNome: novoStatus === 'Entregue ao Morador' ? (dados?.retiradoPorNome || enc.retiradoPorNome || enc.destinatarioNome) : (novoStatus === 'Aguardando Retirada' ? undefined : enc.retiradoPorNome)
         };
         return itemAtualizado;
       }
@@ -1208,75 +1335,42 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (itemAtualizado) {
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', itemAtualizado).catch(console.error);
+
+      // Notifica o morador quando o porteiro confirmar a chegada física do pacote
+      if (novoStatus === 'Aguardando Retirada') {
+        const cleanUnit = (itemAtualizado as EncomendaEntrega).unidade.replace(/[^0-9]/g, '');
+        if (cleanUnit) {
+          enviarNotificacaoPrivada(
+            cleanUnit,
+            `📦 Encomenda Chegou na Portaria: O seu pacote (${(itemAtualizado as EncomendaEntrega).tipo} - ${(itemAtualizado as EncomendaEntrega).empresaTransporte}) foi recebido pelo porteiro e está disponível para retirada.`,
+            'Aviso de Entrega'
+          );
+        }
+      }
+    }
+  };
+
+  const darBaixaEncomenda = (id: string, retiradoPorNome?: string) => {
+    atualizarStatusEncomenda(id, 'Entregue ao Morador', { retiradoPorNome });
+  };
+
+  const editarEncomenda = (id: string, dados: Partial<EncomendaEntrega>) => {
+    let itemAtualizado: EncomendaEntrega | null = null;
+    setEncomendasEntregas(prev => prev.map(enc => {
+      if (enc.id === id) {
+        itemAtualizado = { ...enc, ...dados };
+        return itemAtualizado;
+      }
+      return enc;
+    }));
+    if (itemAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', itemAtualizado).catch(console.error);
     }
   };
 
   const excluirEncomenda = (id: string) => {
     setEncomendasEntregas(prev => prev.filter(enc => enc.id !== id));
     excluirDocumentoSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', id).catch(console.error);
-  };
-
-  // ==========================================
-  // SUPERADMIN & MULTI-TENANT CONDOMÍNIOS
-  // ==========================================
-  const [condominios, setCondominios] = useState<CondominioProfile[]>(() => {
-    const saved = localStorage.getItem('condo_multi_condominios_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch {}
-    }
-    return [];
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('condo_multi_condominios_list', JSON.stringify(condominios));
-    } catch {}
-  }, [condominios]);
-
-  const [currentCondoId, setCurrentCondoId] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const resolved = getScreenFromPath(window.location.pathname);
-      if (resolved.tenantSlug) {
-        return resolved.tenantSlug;
-      }
-    }
-    const saved = localStorage.getItem('condo_active_tenant_id');
-    return saved || 'condo-edificio-aurora';
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('condo_active_tenant_id', currentCondoId);
-    } catch {}
-  }, [currentCondoId]);
-
-  const currentCondo: CondominioProfile = condominios.find(
-    c => c.id === currentCondoId || c.slug === currentCondoId || c.id.toLowerCase() === `condo-${currentCondoId.toLowerCase()}` || c.slug.toLowerCase() === currentCondoId.toLowerCase()
-  ) || {
-    id: currentCondoId.startsWith('condo-') ? currentCondoId : `condo-${currentCondoId}`,
-    slug: currentCondoId.replace(/^condo-/, ''),
-    nome: currentCondoId.replace(/^condo-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    endereco: 'Endereço não informado',
-    cidade: 'São Paulo',
-    estado: 'SP',
-    totalUnidades: 75,
-    totalBlocos: 1,
-    fotoFachada: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=85',
-    senhaAdminGeral: 'admin',
-    emailAdmin: '',
-    nomeSindico: 'Administração',
-    telefoneSindico: '',
-    status: 'ativo',
-    criadoEm: '2026-01-01',
-    modeloInicial: 'limpo',
-    dataImplementacao: '2026-01-01',
-    diaVencimento: 10,
-    statusEmDia: true,
-    valorMensalidade: 0,
-    statusMensalidade: 'pago'
   };
 
   // SuperAdmin Master Auth com suporte a Firebase Auth & LocalStorage
@@ -1530,8 +1624,6 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return [];
   });
 
-  const condoTenantId = currentCondo?.id || currentCondoId || 'condo-edificio-aurora';
-
   // Sincroniza a lista de unidades quando o condomínio ativo muda (ex: Edifício Aurora / Mona Lisa)
   useEffect(() => {
     if (!condoTenantId) return;
@@ -1586,38 +1678,21 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [condoTenantId, currentCondo?.totalUnidades, currentCondo?.totalAndares, currentCondo?.padraoPrimeiroAndar]);
 
-  // Listener em tempo real para a subcoleção servicos_moradores no Cloud Firestore com expurgo de dados sem morador cadastrado
+  // Listener em tempo real para a subcoleção servicos_moradores no Cloud Firestore
   useEffect(() => {
     if (!condoTenantId) return;
 
     const unsubscribeServicos = ouvirSubcolecaoFirestore(condoTenantId, 'servicos_moradores', (dadosFirestore) => {
       if (Array.isArray(dadosFirestore)) {
-        // IDs de mock de demonstração que devem ser limpos
+        // IDs de mock antigos que não devem poluir caso existam
         const mockIdsFicticios = new Set(['serv-1', 'serv-2', 'serv-3', 'serv-4', 'serv-5', 'serv-6']);
 
-        // Moradores e unidades realmente cadastrados no condomínio
-        const moradoresCadastrados = unidades.flatMap(u => u.moradores || []);
-        const uidsCadastrados = new Set(moradoresCadastrados.map(m => String(m.id || (m as any).uid || '').toLowerCase()));
-        const unidadesCadastradas = new Set(unidades.map(u => String(u.numero).toLowerCase()));
-
-        const servicosValidos: ServicoMorador[] = [];
-
-        dadosFirestore.forEach((servicoRaw: any) => {
-          const idStr = String(servicoRaw.id || '');
-          const moradorIdStr = String(servicoRaw.moradorId || servicoRaw.moradorUid || '').toLowerCase();
-          const moradorUnidadeStr = String(servicoRaw.moradorUnidade || '').toLowerCase();
-
-          const isMockId = mockIdsFicticios.has(idStr);
-          const temUnidadeCadastrada = moradorUnidadeStr && unidadesCadastradas.has(moradorUnidadeStr);
-          const temMoradorIdCadastrado = moradorIdStr && uidsCadastrados.has(moradorIdStr);
-
-          // Se for mock ou não puder ser identificado com moradores/unidades cadastrados, expurga do Firestore
-          if (isMockId || (!temUnidadeCadastrada && !temMoradorIdCadastrado && idStr.startsWith('serv-'))) {
-            excluirServicoMoradorNoFirestore(condoTenantId, idStr).catch(() => {});
-          } else {
-            servicosValidos.push(servicoRaw as ServicoMorador);
-          }
-        });
+        const servicosValidos: ServicoMorador[] = dadosFirestore
+          .filter((s: any) => s && s.id && !mockIdsFicticios.has(String(s.id)))
+          .map((s: any) => ({
+            ...s,
+            ativo: s.ativo !== false
+          }));
 
         setServicosMoradores(servicosValidos);
       }
@@ -1626,7 +1701,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => {
       unsubscribeServicos();
     };
-  }, [condoTenantId, unidades]);
+  }, [condoTenantId]);
 
   // Listener em tempo real para a subcoleção notificacoes_privadas no Cloud Firestore
   useEffect(() => {
@@ -4955,9 +5030,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       autorizacoesAcesso,
       adicionarAutorizacaoAcesso,
       atualizarStatusAcesso,
+      editarAutorizacaoAcesso,
       excluirAutorizacaoAcesso,
       encomendasEntregas,
       adicionarEncomenda,
+      editarEncomenda,
+      atualizarStatusEncomenda,
       darBaixaEncomenda,
       excluirEncomenda,
       condominios,

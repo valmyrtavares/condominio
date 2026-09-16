@@ -29,15 +29,16 @@ const FOTOS_PREDEFINIDAS = [
 interface CreateAutorizacaoModalProps {
   isOpen: boolean;
   onClose: () => void;
+  autorizacaoToEdit?: AutorizacaoAcesso | null;
 }
 
 export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
   isOpen,
-  onClose
+  onClose,
+  autorizacaoToEdit
 }) => {
-  const { currentUser, adicionarAutorizacaoAcesso } = useCondo();
+  const { currentUser, adicionarAutorizacaoAcesso, editarAutorizacaoAcesso } = useCondo();
 
-  const hojeStr = new Date().toLocaleDateString('pt-BR');
   const hojeIso = new Date().toISOString().split('T')[0];
 
   const [nomeVisitante, setNomeVisitante] = useState('');
@@ -54,18 +55,30 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setNomeVisitante('');
-      setTipoVisitante('Visita / Familiar');
-      setDocumentoRg('');
-      setTelefoneVisitante('');
-      setFotoVisitante('');
-      setDataPrevistaIso(hojeIso);
-      setHorarioEstimado('');
-      setDeixarEntrarDireto(true);
-      setObservacoes('');
+      if (autorizacaoToEdit) {
+        setNomeVisitante(autorizacaoToEdit.nomeVisitante || '');
+        setTipoVisitante(autorizacaoToEdit.tipoVisitante || 'Visita / Familiar');
+        setDocumentoRg(autorizacaoToEdit.documentoRg || '');
+        setTelefoneVisitante(autorizacaoToEdit.telefoneVisitante || '');
+        setFotoVisitante(autorizacaoToEdit.fotoVisitante || '');
+        setDataPrevistaIso(autorizacaoToEdit.dataPrevistaIso || hojeIso);
+        setHorarioEstimado(autorizacaoToEdit.horarioEstimado || '');
+        setDeixarEntrarDireto(autorizacaoToEdit.deixarEntrarDireto ?? true);
+        setObservacoes(autorizacaoToEdit.observacoes || '');
+      } else {
+        setNomeVisitante('');
+        setTipoVisitante('Visita / Familiar');
+        setDocumentoRg('');
+        setTelefoneVisitante('');
+        setFotoVisitante('');
+        setDataPrevistaIso(hojeIso);
+        setHorarioEstimado('');
+        setDeixarEntrarDireto(true);
+        setObservacoes('');
+      }
       setErroMsg('');
     }
-  }, [isOpen, hojeIso]);
+  }, [isOpen, autorizacaoToEdit, hojeIso]);
 
   if (!isOpen) return null;
 
@@ -94,22 +107,37 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
     const [ano, mes, dia] = dataPrevistaIso.split('-');
     const dataFormatada = `${dia}/${mes}/${ano}`;
 
-    adicionarAutorizacaoAcesso({
-      moradorId: currentUser.id,
-      moradorNome: currentUser.nome,
-      unidade: currentUser.unidade,
-      bloco: currentUser.bloco,
-      tipoVisitante,
-      nomeVisitante: nomeVisitante.trim(),
-      documentoRg: documentoRg.trim() || undefined,
-      telefoneVisitante: telefoneVisitante.trim() || undefined,
-      fotoVisitante: fotoVisitante.trim() || undefined,
-      dataPrevista: dataFormatada,
-      dataPrevistaIso,
-      horarioEstimado: horarioEstimado.trim(),
-      deixarEntrarDireto,
-      observacoes: observacoes.trim() || undefined
-    });
+    if (autorizacaoToEdit) {
+      editarAutorizacaoAcesso(autorizacaoToEdit.id, {
+        tipoVisitante,
+        nomeVisitante: nomeVisitante.trim(),
+        documentoRg: documentoRg.trim() || undefined,
+        telefoneVisitante: telefoneVisitante.trim() || undefined,
+        fotoVisitante: fotoVisitante.trim() || undefined,
+        dataPrevista: dataFormatada,
+        dataPrevistaIso,
+        horarioEstimado: horarioEstimado.trim(),
+        deixarEntrarDireto,
+        observacoes: observacoes.trim() || undefined
+      });
+    } else {
+      adicionarAutorizacaoAcesso({
+        moradorId: currentUser.id,
+        moradorNome: currentUser.nome,
+        unidade: currentUser.unidade,
+        bloco: currentUser.bloco,
+        tipoVisitante,
+        nomeVisitante: nomeVisitante.trim(),
+        documentoRg: documentoRg.trim() || undefined,
+        telefoneVisitante: telefoneVisitante.trim() || undefined,
+        fotoVisitante: fotoVisitante.trim() || undefined,
+        dataPrevista: dataFormatada,
+        dataPrevistaIso,
+        horarioEstimado: horarioEstimado.trim(),
+        deixarEntrarDireto,
+        observacoes: observacoes.trim() || undefined
+      });
+    }
 
     onClose();
   };
@@ -129,7 +157,7 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
                 Portaria & Acessos da Unidade {currentUser.unidade}
               </span>
               <h2 className="text-lg sm:text-xl font-black text-white">
-                Autorizar Entrada na Portaria
+                {autorizacaoToEdit ? 'Editar Autorização de Entrada' : 'Autorizar Entrada na Portaria'}
               </h2>
             </div>
           </div>

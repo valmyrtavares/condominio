@@ -44,7 +44,7 @@ export const DiarioSindicoScreen: React.FC = () => {
   const [novoTitulo, setNovoTitulo] = useState('');
   const [novaDescricao, setNovaDescricao] = useState('');
   const [novoTipo, setNovoTipo] = useState<TipoAtividade>('aviso_geral');
-  const [novoAutor, setNovoAutor] = useState('Administração / Síndica');
+  const [novoAutor, setNovoAutor] = useState('');
 
   const categorias = [
     { id: 'Todas', label: 'Todas as Atividades' },
@@ -448,6 +448,7 @@ export const DiarioSindicoScreen: React.FC = () => {
                 </label>
                 <input
                   type="text"
+                  placeholder="Ex: Administração / Síndica"
                   value={novoAutor}
                   onChange={(e) => setNovoAutor(e.target.value)}
                   className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl px-3 py-2 text-white font-semibold"

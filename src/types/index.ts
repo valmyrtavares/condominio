@@ -722,7 +722,7 @@ export interface AutorizacaoAcesso {
 }
 
 export type TipoEncomenda = 'Pacote / Caixa' | 'Envelope / Documento' | 'Delivery / Alimentação' | 'Medicamento' | 'Volume Grande' | 'Outro';
-export type StatusEncomenda = 'Aguardando Retirada' | 'Entregue ao Morador' | 'Devolvido';
+export type StatusEncomenda = 'Aguardando Chegada na Portaria' | 'Aguardando Retirada' | 'Entregue ao Morador' | 'Devolvido';
 
 export interface EncomendaEntrega {
   id: string;
@@ -742,6 +742,7 @@ export interface EncomendaEntrega {
   horaRetirada?: string;
   retiradoPorNome?: string;
   observacoes?: string;
+  moradorId?: string;
   condominioId: string;
 }
 

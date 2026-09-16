@@ -50,7 +50,7 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
 
   const [titulo, setTitulo] = useState('');
   const [data, setData] = useState('');
-  const [horario, setHorario] = useState('14:00 às 20:00');
+  const [horario, setHorario] = useState('');
   const [local, setLocal] = useState(PRESET_LOCAIS[0]);
   const [localCustom, setLocalCustom] = useState('');
   const [visibilidade, setVisibilidade] = useState<TipoVisibilidadeEvento>('Público');
@@ -82,7 +82,7 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
       setTitulo('');
       const today = new Date().toISOString().split('T')[0];
       setData(today);
-      setHorario('16:00 às 22:00');
+      setHorario('');
       setLocal(PRESET_LOCAIS[0]);
       setLocalCustom('');
       setVisibilidade('Público');

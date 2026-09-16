@@ -32,7 +32,7 @@ export const CreateEditUnidadeDisponivelModal: React.FC<CreateEditUnidadeDisponi
   const { unidades, adicionarUnidadeDisponivel, editarUnidadeDisponivel } = useCondo();
 
   const [apartamento, setApartamento] = useState('');
-  const [bloco, setBloco] = useState('Bloco A');
+  const [bloco, setBloco] = useState('');
   const [finalidade, setFinalidade] = useState<FinalidadeImovel>('Aluga-se');
   const [valor, setValor] = useState<string>('');
   const [valorCondominio, setValorCondominio] = useState<string>('');
@@ -50,7 +50,7 @@ export const CreateEditUnidadeDisponivelModal: React.FC<CreateEditUnidadeDisponi
   useEffect(() => {
     if (unidadeToEdit) {
       setApartamento(unidadeToEdit.apartamento || '');
-      setBloco(unidadeToEdit.bloco || 'Bloco A');
+      setBloco(unidadeToEdit.bloco || '');
       setFinalidade(unidadeToEdit.finalidade || 'Aluga-se');
       setValor(unidadeToEdit.valor ? String(unidadeToEdit.valor) : '');
       setValorCondominio(unidadeToEdit.valorCondominio ? String(unidadeToEdit.valorCondominio) : '');
@@ -64,24 +64,22 @@ export const CreateEditUnidadeDisponivelModal: React.FC<CreateEditUnidadeDisponi
       setProprietarioWhatsapp(unidadeToEdit.proprietarioWhatsapp || '');
       setDescricaoCurta(unidadeToEdit.descricaoCurta || '');
     } else {
-      // Valor padrão inicial para novo anúncio
-      const primeiraUnidade = unidades[0]?.numero || '101';
-      setApartamento(primeiraUnidade);
-      setBloco(unidades[0]?.bloco || 'Bloco A');
+      setApartamento('');
+      setBloco('');
       setFinalidade('Aluga-se');
       setValor('');
-      setValorCondominio('850');
-      setValorIptu('220');
-      setMetragemM2('75');
+      setValorCondominio('');
+      setValorIptu('');
+      setMetragemM2('');
       setQuartos(2);
       setSuites(1);
       setVagasGaragem(1);
       setProprietarioNome('');
-      setProprietarioTelefone('(11) 9');
-      setProprietarioWhatsapp('5511');
+      setProprietarioTelefone('');
+      setProprietarioWhatsapp('');
       setDescricaoCurta('');
     }
-  }, [unidadeToEdit, isOpen, unidades]);
+  }, [unidadeToEdit, isOpen]);
 
   // Tecla ESC para fechar
   useEffect(() => {

@@ -362,6 +362,7 @@ export const AdminPanelScreen: React.FC = () => {
     excluirAutorizacaoAcesso,
     encomendasEntregas,
     adicionarEncomenda,
+    atualizarStatusEncomenda,
     darBaixaEncomenda,
     excluirEncomenda
   } = useCondo();
@@ -470,7 +471,7 @@ export const AdminPanelScreen: React.FC = () => {
     autorUnidade: string;
     texto: string;
   } | null>(null);
-  const [motivoOcultacaoTexto, setMotivoOcultacaoTexto] = useState('Comentário em desacordo com as regras de convivência e moderação do condomínio.');
+  const [motivoOcultacaoTexto, setMotivoOcultacaoTexto] = useState('');
   const [enviarNotificacaoAoOcultar, setEnviarNotificacaoAoOcultar] = useState(true);
 
   // Reparos & Manutenções Moderation State
@@ -590,8 +591,8 @@ export const AdminPanelScreen: React.FC = () => {
   const [novoAdminFoto, setNovoAdminFoto] = useState('');
   const [novoColabCargo, setNovoColabCargo] = useState('');
   const [novoColabCategoria, setNovoColabCategoria] = useState<CategoriaFuncionario>('Portaria');
-  const [novoColabHorario, setNovoColabHorario] = useState('08:00 - 17:00');
-  const [novoColabDisponibilidade, setNovoColabDisponibilidade] = useState('Segunda a Sexta');
+  const [novoColabHorario, setNovoColabHorario] = useState('');
+  const [novoColabDisponibilidade, setNovoColabDisponibilidade] = useState('');
   const [novoColabStatus, setNovoColabStatus] = useState<StatusFuncionario>('Ativo');
   const [novoColabEmail, setNovoColabEmail] = useState('');
   const [novoColabSenha, setNovoColabSenha] = useState('');
@@ -976,7 +977,7 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 1: GESTÃO DE UNIDADES E SENHAS (CARD RETRÁTIL QUE ABRE E FECHA) */}
+      {/* SEÇÃO 1: UNIDADES E MORADORES */}
       {/* ========================================================================= */}
       <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
         canAccessUnidades ? 'bg-emerald-50/70 border-emerald-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
@@ -1002,7 +1003,7 @@ export const AdminPanelScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-black text-slate-950">
-                  1. Gestão de Unidades e Moradores Responsáveis
+                  1. Unidades e moradores
                 </h3>
                 {canAccessUnidades ? (
                   <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
@@ -1675,7 +1676,7 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 2: CRIANDO SENHA DE ACESSOS & QUADRO DE FUNCIONÁRIOS E GESTÃO */}
+      {/* SEÇÃO 2: EQUIPE E GESTÃO DE ACESSOS */}
       {/* ========================================================================= */}
       <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
         canAccessEquipe ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
@@ -1701,7 +1702,7 @@ export const AdminPanelScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-black text-slate-950">
-                  2. Senhas de Acessos & Equipe de Gestão
+                  2. Equipe e gestão de acessos
                 </h3>
                 {canAccessEquipe ? (
                   <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
@@ -2324,7 +2325,7 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 3: SERVIÇOS DE MORADORES & MODERAÇÃO */}
+      {/* SEÇÃO 3: ANUNCIOS DE MORADORES */}
       {/* ========================================================================= */}
       <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
         canAccessServicos ? 'bg-purple-50/70 border-purple-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
@@ -2350,7 +2351,7 @@ export const AdminPanelScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-black text-slate-950">
-                  3. Moderação de Serviços de Moradores
+                  3. Anuncios de moradores
                 </h3>
                 {canAccessServicos ? (
                   <>
@@ -2543,7 +2544,7 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 4: MODERAÇÃO DE EVENTOS & MURAL DE CELEBRAÇÕES (AZUL PASTEL CLARINHO) */}
+      {/* SEÇÃO 4: EVENTOS E MURAL DE COMUNITÁRIO */}
       {/* ========================================================================= */}
       <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
         canAccessEventos ? 'bg-sky-50/80 border-sky-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
@@ -2569,7 +2570,7 @@ export const AdminPanelScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="font-black text-sm sm:text-base text-slate-950">
-                  4. Moderação de Eventos & Mural Comunitário
+                  4. Eventos e Mural de comunitário
                 </h2>
                 {canAccessEventos ? (
                   <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-sky-200 text-sky-950 border border-sky-300 shadow-2xs">
@@ -2802,7 +2803,7 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 5: GESTÃO DE ASSEMBLEIAS & REUNIÕES INFORMAIS (ROSA PASTEL) */}
+      {/* SEÇÃO 5: ASSEMBLEIAS E REUNIÕES INFORMAIS */}
       {/* ========================================================================= */}
       <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
         canAccessAssembleias ? 'bg-rose-50/70 border-rose-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
@@ -2828,7 +2829,7 @@ export const AdminPanelScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="font-black text-sm sm:text-base text-slate-950">
-                  5. Gestão de Assembleias & Reuniões Informais
+                  5. Assembleias e reuniões informais
                 </h2>
                 {canAccessAssembleias ? (
                   <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-950 border border-rose-300 shadow-2xs">
@@ -3249,7 +3250,7 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 6: MODERAÇÃO DE RECLAMAÇÕES & OCORRÊNCIAS DOS MORADORES (LARANJA PASTEL) */}
+      {/* SEÇÃO 6: RECLAMAÇÕES E OCORRENCIAS */}
       {/* ========================================================================= */}
       <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
         canAccessReclamacoes ? 'bg-orange-50/70 border-orange-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
@@ -3275,7 +3276,7 @@ export const AdminPanelScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-black text-slate-950 tracking-tight">
-                  6. Moderação de Reclamações & Ocorrências
+                  6. Reclamações e ocorrencias
                 </h3>
                 {canAccessReclamacoes ? (
                   <>
@@ -3945,7 +3946,7 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 7: MODERAÇÃO & GESTÃO DE REPAROS & OBRAS (TEAL/VERDE-ÁGUA PASTEL) */}
+      {/* SEÇÃO 7: REPAROS E MANUTENÇÕES */}
       {/* ========================================================================= */}
       <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
         canAccessReparos ? 'bg-teal-50/70 border-teal-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
@@ -3971,7 +3972,7 @@ export const AdminPanelScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-black text-base text-slate-950 tracking-tight">
-                  7. Moderação & Gestão de Reparos & Manutenções
+                  7. Reparos e manutenções
                 </h3>
                 {canAccessReparos ? (
                   <>
@@ -4901,7 +4902,7 @@ export const AdminPanelScreen: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 8: GESTÃO & PRESTAÇÃO DE CONTAS FINANCEIRAS (MÊS A MÊS) */}
+      {/* SEÇÃO 8: PRESTAÇÃO DE CONTAS */}
       {/* ========================================================================= */}
       {(() => {
         const mesesDisponiveis = Object.keys(mesesPrestacao).length > 0 
@@ -4996,7 +4997,7 @@ export const AdminPanelScreen: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
-                      8. Gestão & Prestação de Contas Financeiras (Mês a Mês)
+                      8. Prestação de contas
                     </h3>
                     {canAccessFinanceiro ? (
                       <>
@@ -5704,7 +5705,7 @@ export const AdminPanelScreen: React.FC = () => {
       })()}
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 9: REGULAMENTO & REGRAS DO CONDOMÍNIO (CARDS DINÂMICOS COM EDITOR) */}
+      {/* SEÇÃO 9: REGULAMENTOS */}
       {/* ========================================================================= */}
       {(() => {
         // Filtragem dinâmica de regras
@@ -5746,7 +5747,7 @@ export const AdminPanelScreen: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
-                      9. Regulamento & Regras do Condomínio
+                      9. Regulamentos
                     </h3>
                     {canAccessRegras ? (
                       <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
@@ -6011,7 +6012,7 @@ export const AdminPanelScreen: React.FC = () => {
       })()}
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 10: GESTÃO DE UNIDADES DISPONÍVEIS (ALUGUEL & VENDA) */}
+      {/* SEÇÃO 10: ALUGUEL E VENDA */}
       {/* ========================================================================= */}
       {(() => {
         const filteredUnidadesAdmin = unidadesDisponiveis.filter(uni => {
@@ -6068,7 +6069,7 @@ export const AdminPanelScreen: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
-                      10. Gestão de Unidades Disponíveis (Aluguel & Venda)
+                      10. Aluguel e venda
                     </h3>
                     {canAccessImoveis ? (
                       <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
@@ -6353,7 +6354,7 @@ export const AdminPanelScreen: React.FC = () => {
 
 
       {/* ========================================================================= */}
-      {/* 11. GESTÃO DE FORNECEDORES & SERVIÇOS DO CONDOMÍNIO (CATÁLOGO OFICIAL) */}
+      {/* SEÇÃO 11: FORNECEDORES */}
       {/* ========================================================================= */}
       {(() => {
         const categoriasFornecedores = [
@@ -6403,7 +6404,7 @@ export const AdminPanelScreen: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
-                      11. Gestão de Fornecedores & Serviços Contratados
+                      11. Fornecedores
                     </h3>
                     {canAccessFornecedores ? (
                       <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-sky-200 text-sky-950 border border-sky-300">
@@ -6688,7 +6689,7 @@ export const AdminPanelScreen: React.FC = () => {
 
 
       {/* ========================================================================= */}
-      {/* 12. GESTÃO & MODERAÇÃO DO ENJOEI DO CONDOMÍNIO (DESAPEGO, VENDA & TROCAS) */}
+      {/* SEÇÃO 12: ENJOEI/ TROCAS E DOAÇÕES */}
       {/* ========================================================================= */}
       {(() => {
         const filteredItensAdmin = itensEnjoei.filter(item => {
@@ -6736,7 +6737,7 @@ export const AdminPanelScreen: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
-                      12. Gestão & Moderação do Enjoei do Condomínio
+                      12. Enjoei/ trocas e doações
                     </h3>
                     {canAccessEnjoei ? (
                       <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-rose-200 text-rose-950 border border-rose-300">
@@ -7049,7 +7050,7 @@ export const AdminPanelScreen: React.FC = () => {
       })()}
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 13: GESTÃO DE DEPENDÊNCIAS & ÁREAS COMUNS (CARD RETRÁTIL) */}
+      {/* SEÇÃO 13: ÁREAS COMUNS */}
       {/* ========================================================================= */}
       {(() => {
         const totalReservaveis = dependencias.filter(d => d.requerReserva).length;
@@ -7103,7 +7104,7 @@ export const AdminPanelScreen: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
-                      13. Gestão de Dependências & Áreas Comuns
+                      13. Áreas comuns
                     </h3>
                     {canAccessDependencias ? (
                       <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
@@ -7393,7 +7394,7 @@ export const AdminPanelScreen: React.FC = () => {
       })()}
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 14: GESTÃO & AUTORIZAÇÃO DE MUDANÇAS E CARRETOS */}
+      {/* SEÇÃO 14: MUDANÇAS E SAÍDAS */}
       {/* ========================================================================= */}
       {(() => {
         const totalPendentes = mudancas.filter(m => m.status === 'Pendente de Aprovação').length;
@@ -7436,7 +7437,7 @@ export const AdminPanelScreen: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
-                      14. Gestão & Autorização de Mudanças
+                      14. Mudanças e saídas
                     </h3>
                     {canAccessMudancas ? (
                       <>
@@ -7666,11 +7667,12 @@ export const AdminPanelScreen: React.FC = () => {
       })()}
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 15: GESTÃO DA PORTARIA: ACESSOS, VISITAS & ENCOMENDAS (INDIGO PASTEL) */}
+      {/* SEÇÃO 15: PORTARIA ENCOMENDAS/VISITAS */}
       {/* ========================================================================= */}
       {(() => {
         const totalAguardandoAcesso = autorizacoesAcesso.filter(a => a.status === 'Aguardando Chegada').length;
         const totalPresentes = autorizacoesAcesso.filter(a => a.status === 'Entrada Liberada / Presente').length;
+        const totalEncomendasEsperadas = encomendasEntregas.filter(e => e.status === 'Aguardando Chegada na Portaria').length;
         const totalEncomendasPendentes = encomendasEntregas.filter(e => e.status === 'Aguardando Retirada').length;
 
         const filteredAcessosAdmin = autorizacoesAcesso.filter(a => {
@@ -7723,15 +7725,20 @@ export const AdminPanelScreen: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
-                      15. Gestão da Portaria: Acessos, Visitas & Encomendas
+                      15. Portaria encomendas/visitas
                     </h3>
                     {canAccessPortaria ? (
                       <>
                         <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-950 border border-indigo-300">
                           {autorizacoesAcesso.length} acessos • {encomendasEntregas.length} encomendas
                         </span>
+                        {totalEncomendasEsperadas > 0 && (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-sky-400 text-slate-950 shadow-2xs">
+                            ⏳ {totalEncomendasEsperadas} a caminho
+                          </span>
+                        )}
                         {totalEncomendasPendentes > 0 && (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 animate-pulse">
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 animate-pulse shadow-2xs">
                             📦 {totalEncomendasPendentes} a retirar
                           </span>
                         )}
@@ -7785,6 +7792,12 @@ export const AdminPanelScreen: React.FC = () => {
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                       {totalPresentes} visitantes no condomínio
                     </span>
+                    {totalEncomendasEsperadas > 0 && (
+                      <span className="flex items-center gap-1.5 bg-sky-50 px-2.5 py-1 rounded-xl border border-sky-200 text-sky-950 font-black">
+                        <Clock className="w-3.5 h-3.5 text-sky-600" />
+                        {totalEncomendasEsperadas} a caminho
+                      </span>
+                    )}
                     <span className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200 text-amber-950 font-black">
                       <Package className="w-3.5 h-3.5 text-amber-600" />
                       {totalEncomendasPendentes} pacotes na portaria
@@ -7874,8 +7887,10 @@ export const AdminPanelScreen: React.FC = () => {
                         className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-2xs cursor-pointer"
                       >
                         <option value="Todas">Status: Todas</option>
+                        <option value="Aguardando Chegada na Portaria">Aguardando Chegada na Portaria</option>
                         <option value="Aguardando Retirada">Aguardando Retirada</option>
                         <option value="Entregue ao Morador">Entregue ao Morador</option>
+                        <option value="Devolvido">Devolvido</option>
                       </select>
                     </div>
                   )}
@@ -8060,20 +8075,26 @@ export const AdminPanelScreen: React.FC = () => {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                         {filteredEncomendasAdmin.map((enc) => {
+                          const isEsperando = enc.status === 'Aguardando Chegada na Portaria';
                           const isPendente = enc.status === 'Aguardando Retirada';
+                          const isEntregue = enc.status === 'Entregue ao Morador';
 
                           return (
                             <div
                               key={enc.id}
                               className={`border rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${
-                                isPendente ? 'bg-amber-50/80 border-amber-300' : 'bg-white border-slate-200'
+                                isEsperando ? 'bg-sky-50/80 border-sky-300' :
+                                isPendente ? 'bg-amber-50/80 border-amber-300' :
+                                isEntregue ? 'bg-emerald-50/70 border-emerald-300' : 'bg-white border-slate-200'
                               }`}
                             >
                               <div className="space-y-2.5">
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex items-center gap-2">
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black shrink-0 ${
-                                      isPendente ? 'bg-amber-500 text-slate-950' : 'bg-slate-200 text-slate-700'
+                                      isEsperando ? 'bg-sky-600 text-white' :
+                                      isPendente ? 'bg-amber-500 text-slate-950' :
+                                      isEntregue ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'
                                     }`}>
                                       <Package className="w-5 h-5" />
                                     </div>
@@ -8088,7 +8109,10 @@ export const AdminPanelScreen: React.FC = () => {
                                   </div>
 
                                   <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${
-                                    isPendente ? 'bg-amber-400 text-slate-950 border-amber-500 animate-pulse' : 'bg-emerald-100 text-emerald-950 border-emerald-300'
+                                    isEsperando ? 'bg-sky-100 text-sky-950 border-sky-300' :
+                                    isPendente ? 'bg-amber-400 text-slate-950 border-amber-500 animate-pulse' :
+                                    isEntregue ? 'bg-emerald-100 text-emerald-950 border-emerald-300' :
+                                    'bg-slate-100 text-slate-800 border-slate-300'
                                   }`}>
                                     {enc.status}
                                   </span>
@@ -8096,22 +8120,34 @@ export const AdminPanelScreen: React.FC = () => {
 
                                 {/* Dados da Encomenda */}
                                 <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+                                  {isEsperando && (
+                                    <div className="text-[10px] text-sky-900 font-bold bg-sky-50 p-1.5 rounded-lg border border-sky-200">
+                                      ⏳ Aviso registrado pelo morador • Aguardando entrega física
+                                    </div>
+                                  )}
+
                                   <div className="flex items-center justify-between">
                                     <span className="text-[10px] text-slate-500 font-bold">Tipo:</span>
                                     <strong className="text-slate-950">{enc.tipo}</strong>
                                   </div>
 
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[10px] text-slate-500 font-bold">Guardado em:</span>
-                                    <span className="text-indigo-900 font-bold flex items-center gap-1">
-                                      <MapPin className="w-3 h-3 text-indigo-600" />
-                                      {enc.localArmazenamento || 'Portaria'}
-                                    </span>
-                                  </div>
+                                  {enc.localArmazenamento && (
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] text-slate-500 font-bold">Guardado em:</span>
+                                      <span className="text-indigo-900 font-bold flex items-center gap-1">
+                                        <MapPin className="w-3 h-3 text-indigo-600" />
+                                        {enc.localArmazenamento}
+                                      </span>
+                                    </div>
+                                  )}
 
                                   <div className="flex items-center justify-between text-[10px] text-slate-600">
-                                    <span>Recebido: {enc.dataRecebimento} às {enc.horaRecebimento}</span>
-                                    <span>Por: {enc.porteiroRecebedor}</span>
+                                    {isEsperando ? (
+                                      <span>Aviso em: {enc.dataRecebimento || 'Hoje'}</span>
+                                    ) : (
+                                      <span>Recebido: {enc.dataRecebimento} às {enc.horaRecebimento}</span>
+                                    )}
+                                    {enc.porteiroRecebedor && <span>Por: {enc.porteiroRecebedor}</span>}
                                   </div>
 
                                   {enc.codigoRastreio && (
@@ -8119,7 +8155,26 @@ export const AdminPanelScreen: React.FC = () => {
                                       Rastreio: {enc.codigoRastreio}
                                     </div>
                                   )}
+
+                                  {enc.observacoes && (
+                                    <div className="text-[10px] text-slate-700 bg-slate-50 p-1.5 rounded border border-slate-200">
+                                      <b>Obs:</b> {enc.observacoes}
+                                    </div>
+                                  )}
                                 </div>
+
+                                {enc.fotoPacote && (
+                                  <div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-50 border border-slate-200">
+                                    <img
+                                      src={enc.fotoPacote}
+                                      alt="Pacote"
+                                      className="w-10 h-10 rounded-lg object-cover border border-slate-300"
+                                    />
+                                    <span className="text-[10px] text-slate-600 font-medium">
+                                      Foto do pacote registrada
+                                    </span>
+                                  </div>
+                                )}
 
                                 {enc.status === 'Entregue ao Morador' && (
                                   <div className="text-[10px] text-emerald-950 font-bold bg-emerald-100 p-1.5 rounded-lg">
@@ -8130,7 +8185,19 @@ export const AdminPanelScreen: React.FC = () => {
 
                               {/* Ações */}
                               <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-200 flex-wrap">
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {isEsperando && (
+                                    <button
+                                      type="button"
+                                      onClick={() => atualizarStatusEncomenda(enc.id, 'Aguardando Retirada')}
+                                      className="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                      title="Confirmar recebimento do pacote na portaria"
+                                    >
+                                      <Package className="w-3.5 h-3.5" />
+                                      <span>Receber na Portaria</span>
+                                    </button>
+                                  )}
+
                                   {isPendente && (
                                     <button
                                       type="button"
