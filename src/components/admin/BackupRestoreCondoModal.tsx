@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useCondo } from '../../context/CondoContext';
-import { 
-  ShieldCheck, 
-  X, 
-  Database, 
-  RefreshCw, 
-  Download, 
-  Upload, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Users, 
+import {
+  ShieldCheck,
+  X,
+  Database,
+  RefreshCw,
+  Download,
+  Upload,
+  CheckCircle2,
+  AlertTriangle,
+  Users,
   FileJson,
   Sparkles,
   Info,
@@ -26,9 +26,9 @@ export const BackupRestoreCondoModal: React.FC<BackupRestoreCondoModalProps> = (
   isOpen,
   onClose
 }) => {
-  const { 
-    currentCondo, 
-    currentCondoId, 
+  const {
+    currentCondo,
+    currentCondoId,
     recuperarMoradoresDoCondominio,
     padronizarSenhasTodasUnidades,
     exportarBackupCondominio,
@@ -160,7 +160,7 @@ export const BackupRestoreCondoModal: React.FC<BackupRestoreCondoModalProps> = (
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div 
+      <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100"
         onClick={(e) => e.stopPropagation()}
       >
@@ -169,7 +169,7 @@ export const BackupRestoreCondoModal: React.FC<BackupRestoreCondoModalProps> = (
           <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 opacity-10">
             <Database size={160} />
           </div>
-          
+
           <div className="flex items-center gap-3 relative z-10">
             <div className="w-11 h-11 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
               <ShieldCheck size={24} />
@@ -194,22 +194,20 @@ export const BackupRestoreCondoModal: React.FC<BackupRestoreCondoModalProps> = (
         <div className="flex border-b border-slate-100 bg-slate-50 px-6 pt-3 gap-2">
           <button
             onClick={() => setAbaAtiva('recuperar')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all border-b-2 ${
-              abaAtiva === 'recuperar'
-                ? 'bg-white text-indigo-600 border-indigo-600 shadow-sm'
-                : 'text-slate-500 border-transparent hover:text-slate-700'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all border-b-2 ${abaAtiva === 'recuperar'
+              ? 'bg-white text-indigo-600 border-indigo-600 shadow-sm'
+              : 'text-slate-500 border-transparent hover:text-slate-700'
+              }`}
           >
             <Sparkles size={16} />
             Resgate de Moradores (Nuvem)
           </button>
           <button
             onClick={() => setAbaAtiva('backup')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all border-b-2 ${
-              abaAtiva === 'backup'
-                ? 'bg-white text-indigo-600 border-indigo-600 shadow-sm'
-                : 'text-slate-500 border-transparent hover:text-slate-700'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all border-b-2 ${abaAtiva === 'backup'
+              ? 'bg-white text-indigo-600 border-indigo-600 shadow-sm'
+              : 'text-slate-500 border-transparent hover:text-slate-700'
+              }`}
           >
             <FileJson size={16} />
             Backup & Restauração JSON
@@ -302,11 +300,10 @@ export const BackupRestoreCondoModal: React.FC<BackupRestoreCondoModalProps> = (
 
               {/* Relatório de Resultado */}
               {resultadoRecuperacao && (
-                <div className={`p-4 rounded-xl border ${
-                  resultadoRecuperacao.success 
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-950' 
-                    : 'bg-rose-50 border-rose-200 text-rose-950'
-                }`}>
+                <div className={`p-4 rounded-xl border ${resultadoRecuperacao.success
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+                  : 'bg-rose-50 border-rose-200 text-rose-950'
+                  }`}>
                   <div className="flex items-center gap-2 font-bold text-sm mb-2">
                     {resultadoRecuperacao.success ? (
                       <>
@@ -414,11 +411,10 @@ export const BackupRestoreCondoModal: React.FC<BackupRestoreCondoModalProps> = (
 
               {/* Mensagem de status */}
               {statusBackup.mensagem && (
-                <div className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 ${
-                  statusBackup.tipo === 'sucesso' 
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
-                    : 'bg-rose-50 border-rose-200 text-rose-800'
-                }`}>
+                <div className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 ${statusBackup.tipo === 'sucesso'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
+                  }`}>
                   {statusBackup.tipo === 'sucesso' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
                   <span>{statusBackup.mensagem}</span>
                 </div>

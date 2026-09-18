@@ -685,7 +685,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved && !saved.includes('aurora')) {
       return saved;
     }
-    return 'condo-newville';
+    return '';
   });
 
   useEffect(() => {
@@ -707,27 +707,27 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const currentCondo: CondominioProfile = condominios.find(
     c => c.id === currentCondoId || c.slug === currentCondoId || c.id.toLowerCase() === `condo-${currentCondoId.toLowerCase()}` || c.slug.toLowerCase() === currentCondoId.toLowerCase()
   ) || condominios[0] || {
-    id: 'condo-newville',
-    slug: 'newville',
-    nome: 'New Ville',
-    endereco: 'Endereço não informado',
-    cidade: 'Santana do Parnaiba',
-    estado: 'SP',
+    id: '',
+    slug: '',
+    nome: 'Nenhum condomínio selecionado',
+    endereco: '',
+    cidade: '',
+    estado: '',
     tipoCondominio: 'casas',
-    totalUnidades: 781,
-    fotoFachada: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=85',
-    senhaAdminGeral: 'admin',
+    totalUnidades: 0,
+    fotoFachada: '',
+    senhaAdminGeral: '',
     emailAdmin: '',
-    nomeSindico: 'Administração',
+    nomeSindico: '',
     telefoneSindico: '',
     status: 'ativo',
-    criadoEm: '2026-01-01',
+    criadoEm: '',
     modeloInicial: 'limpo',
-    dataImplementacao: '2026-01-01',
+    dataImplementacao: '',
     diaVencimento: 10,
-    statusEmDia: true,
-    valorMensalidade: 450,
-    statusMensalidade: 'pago'
+    statusEmDia: false,
+    valorMensalidade: 0,
+    statusMensalidade: 'pendente'
   };
 
   const condoTenantId = condominios.length > 0 ? (currentCondo?.id || condominios[0]?.id || '') : '';
@@ -1721,11 +1721,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   useEffect(() => {
-    localStorage.setItem('condo_admin_roles', JSON.stringify(adminRoles));
+    if (adminRoles.length > 0 && JSON.stringify(adminRoles) !== JSON.stringify(DEFAULT_ADMIN_ROLES)) {
+      localStorage.setItem('condo_admin_roles', JSON.stringify(adminRoles));
+    }
   }, [adminRoles]);
 
   useEffect(() => {
-    localStorage.setItem('condo_admin_users', JSON.stringify(adminUsers));
+    if (adminUsers.length > 0 && JSON.stringify(adminUsers) !== JSON.stringify(DEFAULT_ADMIN_USERS)) {
+      localStorage.setItem('condo_admin_users', JSON.stringify(adminUsers));
+    }
   }, [adminUsers]);
 
   const adicionarAdminRole = (nome: string, tipoAcesso: 'total' | 'morador_destaque', descricao?: string) => {
@@ -2439,7 +2443,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   useEffect(() => {
+    if (!categoriasDespesa || categoriasDespesa.length === 0) return;
     try {
+      const saved = localStorage.getItem('condo_categorias_despesa');
+      if (saved === JSON.stringify(categoriasDespesa)) return;
       localStorage.setItem('condo_categorias_despesa', JSON.stringify(categoriasDespesa));
     } catch (e) {
       console.warn('Could not save condo_categorias_despesa to localStorage:', e);
@@ -2465,7 +2472,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   useEffect(() => {
+    if (!categoriasReceita || categoriasReceita.length === 0) return;
     try {
+      const saved = localStorage.getItem('condo_categorias_receita');
+      if (saved === JSON.stringify(categoriasReceita)) return;
       localStorage.setItem('condo_categorias_receita', JSON.stringify(categoriasReceita));
     } catch (e) {
       console.warn('Could not save condo_categorias_receita to localStorage:', e);
@@ -2789,7 +2799,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   useEffect(() => {
-    localStorage.setItem('condo_avaliacoes_funcionarios', JSON.stringify(avaliacoesFuncionarios));
+    if (avaliacoesFuncionarios.length > 0) {
+      localStorage.setItem('condo_avaliacoes_funcionarios', JSON.stringify(avaliacoesFuncionarios));
+    }
   }, [avaliacoesFuncionarios]);
 
   useEffect(() => {
@@ -3230,21 +3242,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return JSON.parse(saved);
       } catch {}
     }
-    return [
-      {
-        id: 'notif-1',
-        unidadeNumero: '101',
-        titulo: 'Aviso de Encomenda na Portaria',
-        mensagem: 'Olá morador, chegou um pacote grande na portaria para sua unidade. Favor retirar na zeladoria.',
-        autorNome: 'Valmyr Tavares (Síndico)',
-        dataHora: '26/08/2026 às 15:30',
-        lida: false
-      }
-    ];
+    return [];
   });
 
   useEffect(() => {
-    localStorage.setItem('condo_notificacoes_privadas', JSON.stringify(notificacoesPrivadas));
+    if (notificacoesPrivadas.length > 0) {
+      localStorage.setItem('condo_notificacoes_privadas', JSON.stringify(notificacoesPrivadas));
+    }
   }, [notificacoesPrivadas]);
 
   // Sincronização em tempo real entre diferentes abas abertas no navegador
@@ -3609,7 +3613,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     nome: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const canonicalCondoId = currentCondo?.id || condoTenantId || condominios[0]?.id || 'condo-newville';
+      const canonicalCondoId = currentCondo?.id || condoTenantId || condominios[0]?.id || '';
       
       // 1. Grava no Firebase Authentication e no Firestore users/{uid} + condominios/{condoId}
       const authResult = await ativarSindicoAuth({
@@ -3885,7 +3889,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     const outrosMoradores = moradoresData.slice(1).filter(m => m.nome.trim().length > 0);
-    const canonicalCondoId = currentCondo?.id || condoTenantId || condominios[0]?.id || 'condo-newville';
+    const canonicalCondoId = currentCondo?.id || condoTenantId || condominios[0]?.id || '';
     const canonicalUnitId = targetUnit?.id || `unit-${canonicalCondoId}-1-${numeroOficial}-1`;
 
     // Chama o serviço de autenticação e gravação no Firebase Auth + Firestore
@@ -4207,7 +4211,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const alvo = unidades.find(u => u.id === unidadeId || normalizeUnitNumber(u.numero) === numLimpo);
     if (!alvo) return;
 
-    const canonicalCondoId = currentCondo?.id || condoTenantId || condominios[0]?.id || 'condo-newville';
+    const canonicalCondoId = currentCondo?.id || condoTenantId || condominios[0]?.id || '';
     const nomeFinal = nomeCelula || moradores.map(m => m.nome).join(', ');
     const emailPrincipal = moradores[0]?.email || alvo.emailResponsavel;
 

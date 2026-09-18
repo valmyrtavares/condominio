@@ -94,6 +94,7 @@ export const ouvirCondominiosFirestore = (callback: (condos: any[]) => void) => 
 export const salvarCondominioNoFirestore = async (condo: any) => {
   try {
     const limpo = sanitizarParaFirestore(condo);
+    if (!limpo.id) return { success: false, error: 'ID do condomínio vazio' };
     const condoRef = doc(db, 'condominios', limpo.id);
 
     const camposAtualizados: Record<string, any> = {
@@ -142,7 +143,7 @@ export const SUBCOLECOES_ESTRUTURAIS_PADRAO = [
  */
 export const inicializarEstruturaCondominioNoFirestore = async (condoId: string) => {
   try {
-    if (!condoId) return;
+    if (!condoId || condoId === 'condo-newville' || condoId === 'condo-edificio-aurora') return;
     for (const sub of SUBCOLECOES_ESTRUTURAIS_PADRAO) {
       const initRef = doc(db, 'condominios', condoId, sub, '_init');
       const snap = await getDoc(initRef);
@@ -164,6 +165,7 @@ export const inicializarEstruturaCondominioNoFirestore = async (condoId: string)
  */
 export const excluirCondominioNoFirestore = async (condoId: string) => {
   try {
+    if (!condoId) return { success: false, error: 'ID do condomínio vazio' };
     const condoRef = doc(db, 'condominios', condoId);
     await deleteDoc(condoRef);
     return { success: true };
@@ -491,7 +493,7 @@ export const excluirFuncionarioNoFirestore = async (condoId: string, id: string)
  */
 export const excluirDocumentoSubcolecaoFirestore = async (condoId: string, nomeSubcolecao: string, docId: string) => {
   try {
-    if (!condoId || !docId) return { success: false };
+    if (!condoId || !nomeSubcolecao || !docId) return { success: false };
     const docRef = doc(db, 'condominios', condoId, nomeSubcolecao, String(docId));
     await deleteDoc(docRef);
     return { success: true };
