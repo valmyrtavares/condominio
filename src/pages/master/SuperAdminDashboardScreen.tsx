@@ -319,7 +319,9 @@ export const SuperAdminDashboardScreen: React.FC = () => {
                           {condo.totalUnidades}
                         </strong>
                         <span className="text-[10px] text-slate-400 font-medium">
-                          {condo.totalBlocos || 1} {condo.totalBlocos === 1 ? 'bloco' : 'blocos'}
+                          {condo.tipoCondominio === 'casas' 
+                            ? 'casas' 
+                            : `${condo.totalBlocos || 1} ${condo.totalBlocos === 1 ? 'bloco' : 'blocos'}`}
                         </span>
                       </div>
                     </td>

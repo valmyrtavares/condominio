@@ -11,8 +11,10 @@ export const ResidentLoginScreen: React.FC = () => {
     targetRedirectScreen, 
     setTargetRedirectScreen,
     unidades,
-    setPendingRegistrationUnit
+    setPendingRegistrationUnit,
+    currentCondo
   } = useCondo();
+  const isCasas = currentCondo?.tipoCondominio === 'casas';
   const [unidade, setUnidade] = useState('');
   const [senha, setSenha] = useState('');
   const [showSenha, setShowSenha] = useState(false);
@@ -24,43 +26,57 @@ export const ResidentLoginScreen: React.FC = () => {
   const handleCadastrarDirectly = () => {
     setErro('');
     if (!unidade.trim()) {
-      setErro('Por favor, selecione seu apartamento/unidade para prosseguir com o cadastro.');
+      setErro(isCasas ? 'Por favor, selecione sua casa para prosseguir com o cadastro.' : 'Por favor, selecione seu apartamento/unidade para prosseguir com o cadastro.');
       return;
     }
 
+    const normalizeUnitStr = (str?: string) => (str || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento|casa)\s*/i, '').trim();
+
     const found = unidades.find(u => 
+      normalizeUnitStr(u.numero) === normalizeUnitStr(unidade.trim()) ||
       u.numero.toLowerCase() === unidade.trim().toLowerCase() ||
       u.id === unidade.trim()
     );
 
-    // Freio de Segurança: Verifica se o apartamento já possui morador cadastrado
+    if (!found) {
+      setErro(isCasas ? 'Casa não encontrada no condomínio.' : 'Unidade não encontrada no condomínio.');
+      return;
+    }
+
+    // 1. Freio de Segurança: Verifica se a residência já possui morador cadastrado
     const isAlreadyRegistered = Boolean(
-      found && (
-        found.statusCadastro === 'Cadastrado' ||
-        (found.moradores && found.moradores.length > 0) ||
-        found.senhaPadraoAlterada
-      )
+      (found.statusCadastro === 'Cadastrado' || found.senhaPadraoAlterada) &&
+      found.moradores && 
+      found.moradores.length > 0 &&
+      !found.semMoradores
     );
 
     if (isAlreadyRegistered) {
       setErro(
-        `Este apartamento (${found?.numero || unidade}) já possui morador cadastrado. Se você é morador desta unidade, digite sua senha pessoal no campo abaixo. Caso precise de suporte ou troca de moradores, entre em contato com o síndico.`
+        isCasas
+          ? 'Essa casa já tem morador e não está disponivel.'
+          : 'Esse apartamento já tem morador e não está disponivel.'
       );
       return;
     }
 
-    if (found) {
-      setPendingRegistrationUnit(found);
-    } else {
-      setPendingRegistrationUnit({
-        id: `und-${unidade}`,
-        numero: unidade,
-        bloco: 'Bloco A',
-        moradores: [],
-        statusCadastro: 'Pendente'
-      });
+    // 2. Verifica se a residência está suspensa pelo síndico
+    const isSuspensa = Boolean(
+      found.suspensa || 
+      found.statusCadastro === 'Suspenso'
+    );
+
+    if (isSuspensa) {
+      setErro(
+        isCasas
+          ? 'Esta casa está suspensa pelo síndico e não está disponível.'
+          : 'Este apartamento está suspenso pelo síndico e não está disponível.'
+      );
+      return;
     }
 
+    // 3. Residência vazia e não suspensa: abre diretamente a tela de cadastro para criar a primeira senha
+    setPendingRegistrationUnit(found);
     setCurrentScreen('resident-register');
   };
 
@@ -149,7 +165,7 @@ export const ResidentLoginScreen: React.FC = () => {
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
-                Selecione sua Unidade / Apartamento
+                {isCasas ? 'Selecione sua Casa' : 'Selecione sua Unidade / Apartamento'}
               </label>
               <button
                 type="button"
@@ -167,7 +183,7 @@ export const ResidentLoginScreen: React.FC = () => {
               {isManualInput ? (
                 <input
                   type="text"
-                  placeholder="Ex: dev@dev.com ou funcionário"
+                  placeholder={isCasas ? "Ex: Casa 12 ou dev@dev.com" : "Ex: dev@dev.com ou funcionário"}
                   value={unidade}
                   autoComplete="username"
                   onChange={(e) => setUnidade(e.target.value)}
@@ -184,12 +200,16 @@ export const ResidentLoginScreen: React.FC = () => {
                   autoFocus
                 >
                   <option value="" disabled className="text-slate-500">
-                    -- Escolha o seu apartamento / unidade --
+                    -- {isCasas ? 'Escolha a sua casa' : 'Escolha o seu apartamento / unidade'} --
                   </option>
                   {unidades.map((u) => {
-                    const label = u.bloco && !u.numero.toLowerCase().includes('bloco')
-                      ? `Apto ${u.numero} (${u.bloco})`
-                      : `Unidade ${u.numero}`;
+                    const label = isCasas
+                      ? (u.rua 
+                          ? `Casa ${u.numero} (${u.rua})` 
+                          : (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`))
+                      : (u.bloco && !u.numero.toLowerCase().includes('bloco')
+                          ? `Apto ${u.numero} (${u.bloco})`
+                          : `Unidade ${u.numero}`);
                     return (
                       <option key={u.id} value={u.numero} className="text-slate-950 font-semibold bg-white py-1">
                         {label}
@@ -227,7 +247,6 @@ export const ResidentLoginScreen: React.FC = () => {
                 autoComplete="new-password"
                 onChange={(e) => setSenha(e.target.value)}
                 className="w-full bg-white/80 border border-white rounded-2xl px-4 py-3 pl-10 pr-10 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
-                required
               />
               <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
               <button
@@ -254,13 +273,13 @@ export const ResidentLoginScreen: React.FC = () => {
             {/* Link direto para Primeiro Acesso / Cadastro de Unidade */}
             <div className="text-center pt-2 border-t border-slate-300/60">
               <p className="text-xs text-slate-700 font-medium">
-                Primeiro acesso à sua unidade?{' '}
+                {isCasas ? 'Primeiro acesso à sua casa?' : 'Primeiro acesso à sua unidade?'}{' '}
                 <button
                   type="button"
                   onClick={handleCadastrarDirectly}
                   className="text-amber-950 font-black hover:underline cursor-pointer inline-flex items-center gap-1"
                 >
-                  <KeyRound className="w-3.5 h-3.5 text-amber-800" /> Cadastrar minha unidade
+                  <KeyRound className="w-3.5 h-3.5 text-amber-800" /> {isCasas ? 'Cadastrar minha casa' : 'Cadastrar minha unidade'}
                 </button>
               </p>
             </div>

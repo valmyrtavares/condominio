@@ -17,6 +17,7 @@ import {
   getDocs, 
   updateDoc, 
   deleteDoc, 
+  deleteField,
   query, 
   where,
   writeBatch,
@@ -88,19 +89,73 @@ export const ouvirCondominiosFirestore = (callback: (condos: any[]) => void) => 
 
 /**
  * Salva ou atualiza os metadados de um condomínio na coleção raiz 'condominios'
+ * Impondo estrita separação entre casas (sem andares/padrão/blocos) e prédios (sem ruas).
  */
 export const salvarCondominioNoFirestore = async (condo: any) => {
   try {
     const limpo = sanitizarParaFirestore(condo);
     const condoRef = doc(db, 'condominios', limpo.id);
-    await setDoc(condoRef, {
+
+    const camposAtualizados: Record<string, any> = {
       ...limpo,
       atualizadoEm: new Date().toISOString()
-    }, { merge: true });
+    };
+
+    if (limpo.tipoCondominio === 'casas') {
+      // Condomínio de Casas: PROIBIDO ter andares, padrão de primeiro andar ou blocos de prédio
+      camposAtualizados.padraoPrimeiroAndar = deleteField();
+      camposAtualizados.totalAndares = deleteField();
+      camposAtualizados.totalBlocos = deleteField();
+    } else if (limpo.tipoCondominio === 'apartamentos') {
+      // Condomínio de Apartamentos: PROIBIDO ter ruas
+      camposAtualizados.ruas = deleteField();
+    }
+
+    await setDoc(condoRef, camposAtualizados, { merge: true });
     return { success: true };
   } catch (error: any) {
     console.error('🔥 Erro ao salvar condomínio no Firestore:', error);
     return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Subcoleções padrão que definem a estrutura completa de qualquer condomínio
+ */
+export const SUBCOLECOES_ESTRUTURAIS_PADRAO = [
+  'unidades',
+  'regras',
+  'reparos',
+  'reclamacoes',
+  'funcionarios',
+  'eventos',
+  'assembleias',
+  'encomendas_entregas',
+  'servicos_moradores',
+  'notificacoes_privadas'
+];
+
+/**
+ * Inicializa a estrutura de subcoleções do condomínio no Cloud Firestore,
+ * criando o documento estrutural `_init` para que a arquitetura exista imediatamente
+ * no banco de dados, independente de existirem dados preenchidos ou estarem vazias.
+ */
+export const inicializarEstruturaCondominioNoFirestore = async (condoId: string) => {
+  try {
+    if (!condoId) return;
+    for (const sub of SUBCOLECOES_ESTRUTURAIS_PADRAO) {
+      const initRef = doc(db, 'condominios', condoId, sub, '_init');
+      const snap = await getDoc(initRef);
+      if (!snap.exists()) {
+        await setDoc(initRef, {
+          _placeholder: true,
+          subcolecao: sub,
+          criadoEm: new Date().toISOString()
+        });
+      }
+    }
+  } catch (err) {
+    console.warn(`Erro ao inicializar estrutura de subcoleções para ${condoId}:`, err);
   }
 };
 
@@ -217,6 +272,7 @@ export const ouvirSubcolecaoFirestore = (
     return onSnapshot(colRef, (snapshot) => {
       const lista: any[] = [];
       snapshot.forEach((docSnap) => {
+        if (docSnap.id === '_init' || docSnap.data()?._placeholder) return;
         lista.push({ id: docSnap.id, ...docSnap.data() });
       });
 
@@ -269,7 +325,8 @@ export const higienizarUnidadeParaFirestore = (u: any, condoId: string) => {
   return {
     id: String(u.id),
     numero: String(u.numero || ''),
-    bloco: String(u.bloco || 'Bloco A'),
+    rua: String(u.rua || u.bloco || ''),
+    bloco: String(u.bloco || u.rua || 'Bloco A'),
     andar: typeof u.andar === 'number' ? u.andar : 1,
     tipo: String(u.tipo || 'Apartamento'),
     vagaGaragem: String(u.vagaGaragem || ''),
@@ -291,6 +348,9 @@ export const higienizarUnidadeParaFirestore = (u: any, condoId: string) => {
 export const salvarUnidadeNoFirestore = async (condoId: string, unidade: any) => {
   try {
     if (!condoId || !unidade || !unidade.id) return { success: false };
+    if (condoId === 'condo-edificio-aurora' || condoId === 'newville' || condoId.includes('aurora')) {
+      return { success: false };
+    }
 
     // Se tiver foto em Base64, faz o upload para o Firebase Storage antes de salvar no Firestore
     let fotoUrlFinal = unidade.fotoCelula;
@@ -452,6 +512,9 @@ export const salvarDocumentoSubcolecaoFirestore = async (
 ) => {
   try {
     if (!condoId || !nomeSubcolecao || !item || !item.id) return { success: false, error: 'Dados inválidos' };
+    if (condoId === 'condo-edificio-aurora' || condoId === 'newville' || condoId.includes('aurora')) {
+      return { success: false, error: 'Condomínio fantasma bloqueado' };
+    }
 
     let itemProcessado = { ...item };
 
@@ -515,6 +578,9 @@ export const limparESubstituirSubcolecaoFirestore = async (
 ) => {
   try {
     if (!condoId) return { success: false, error: 'CondoId ausente' };
+    if (condoId === 'condo-edificio-aurora' || condoId === 'newville' || condoId.includes('aurora')) {
+      return { success: false, error: 'Condomínio fantasma bloqueado' };
+    }
     const colRef = collection(db, 'condominios', condoId, nomeSubcolecao);
     const snapshot = await getDocs(colRef);
     

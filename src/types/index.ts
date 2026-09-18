@@ -57,8 +57,10 @@ export interface Unidade {
   senhaAcesso?: string;
   senhaPadraoAlterada?: boolean;
   emailResponsavel?: string;
-  statusCadastro?: 'Pendente' | 'Cadastrado' | 'Vazio';
+  statusCadastro?: 'Pendente' | 'Cadastrado' | 'Vazio' | 'Suspenso';
   semMoradores?: boolean;
+  suspensa?: boolean;
+  motivoSuspensao?: string;
   moradores: User[];
   fotoCelula?: string;
   nomeCelula?: string;

@@ -10,8 +10,11 @@ export const MoradoresScreen: React.FC = () => {
     currentUser, 
     isAdminLoggedIn, 
     notificacoesPrivadas,
-    marcarTodasNotificacoesUnidadeComoLidas 
+    marcarTodasNotificacoesUnidadeComoLidas,
+    currentCondo
   } = useCondo();
+
+  const isCasas = currentCondo?.tipoCondominio === 'casas';
 
   const normalizeUnit = (str?: string) => str ? str.toLowerCase().replace(/^(apt|apto|unidade|apartamento|cobertura|casa)\s*/i, '').trim() : '';
 
@@ -23,9 +26,43 @@ export const MoradoresScreen: React.FC = () => {
     return unidades[0]?.id || '';
   });
 
+  const [selectedRua, setSelectedRua] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+
+  // Lista de ruas do condomínio de casas (vindas do perfil do condomínio ou extraídas das unidades cadastradas)
+  const listaRuas = React.useMemo(() => {
+    const setRuas = new Set<string>();
+    if (currentCondo?.ruas && Array.isArray(currentCondo.ruas)) {
+      currentCondo.ruas.forEach(r => {
+        if (r && r.trim()) setRuas.add(r.trim());
+      });
+    }
+    unidades.forEach(u => {
+      if (u.rua && u.rua.trim()) {
+        setRuas.add(u.rua.trim());
+      }
+    });
+    return Array.from(setRuas);
+  }, [currentCondo?.ruas, unidades]);
+
+  // Formata o nome de exibição da unidade (ex: "Casa 223" para casas ou "Apt 223" para apartamentos)
+  const formatUnitLabel = (numOrId: string) => {
+    const raw = (numOrId || '').trim();
+    if (isCasas) {
+      if (raw.toLowerCase().startsWith('casa')) {
+        return raw;
+      }
+      const cleanNum = raw.replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim();
+      return cleanNum ? `Casa ${cleanNum}` : (raw ? `Casa ${raw}` : 'Casa');
+    }
+
+    if (raw.toLowerCase().startsWith('apt') || raw.toLowerCase().startsWith('cobertura')) {
+      return raw;
+    }
+    return raw ? `Apt ${raw}` : 'Apt';
+  };
 
   // Sincroniza a unidade selecionada com o morador logado quando as unidades carregam
   React.useEffect(() => {
@@ -41,10 +78,30 @@ export const MoradoresScreen: React.FC = () => {
 
   const selectedUnidade = unidades.find(u => u.id === selectedUnidadeId) || unidades[0];
 
-  const filteredUnidades = unidades.filter(u => 
-    u.numero.includes(searchTerm) || 
-    u.moradores.some(m => m.nome.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredUnidades = unidades.filter(u => {
+    const matchesSearch = 
+      u.numero.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      u.moradores.some(m => m.nome.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (isCasas && u.rua && u.rua.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    if (isCasas && selectedRua) {
+      return (u.rua || '').trim().toLowerCase() === selectedRua.trim().toLowerCase();
+    }
+
+    return true;
+  });
+
+  const handleSelectRua = (rua: string) => {
+    setSelectedRua(rua);
+    if (rua) {
+      const firstInRua = unidades.find(u => (u.rua || '').trim().toLowerCase() === rua.trim().toLowerCase());
+      if (firstInRua) {
+        setSelectedUnidadeId(firstInRua.id);
+      }
+    }
+  };
 
   const isMyUnit = Boolean(
     currentUser?.unidade &&
@@ -67,7 +124,7 @@ export const MoradoresScreen: React.FC = () => {
       {/* Title */}
       <div>
         <h2 className="text-xl font-extrabold text-white tracking-tight drop-shadow-md">
-          Apartamentos
+          {isCasas ? 'Casas' : 'Apartamentos'}
         </h2>
       </div>
 
@@ -76,25 +133,50 @@ export const MoradoresScreen: React.FC = () => {
         <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
         <input
           type="text"
-          placeholder="Buscar por unidade ou morador..."
+          placeholder={isCasas ? "Buscar por casa, rua ou morador..." : "Buscar por unidade ou morador..."}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-white border border-slate-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-md transition-colors font-semibold"
         />
       </div>
 
-      {/* Unidades selector */}
+      {/* Unidades / Casas selector */}
       <div>
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-white drop-shadow block mb-2">
-          Unidades
-        </span>
+        <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-white drop-shadow">
+            {isCasas ? 'Casas' : 'Unidades'}
+          </span>
+
+          {isCasas && listaRuas.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label htmlFor="select-rua-condo" className="text-[11px] font-bold text-white/90 drop-shadow hidden sm:inline">
+                Rua:
+              </label>
+              <select
+                id="select-rua-condo"
+                value={selectedRua}
+                onChange={(e) => handleSelectRua(e.target.value)}
+                className="bg-white text-slate-900 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold shadow-md focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer min-w-[150px] sm:min-w-[190px]"
+              >
+                <option value="">Todas as ruas ({unidades.length})</option>
+                {listaRuas.map((rua) => {
+                  const countNaRua = unidades.filter(u => (u.rua || '').trim().toLowerCase() === rua.trim().toLowerCase()).length;
+                  return (
+                    <option key={rua} value={rua}>
+                      {rua} {countNaRua > 0 ? `(${countNaRua})` : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
+        </div>
+
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {filteredUnidades.map((u) => {
             const isSelected = u.id === selectedUnidadeId;
             const rawNum = u.numero && u.numero.trim() ? u.numero.trim() : (u.id.match(/\d+$/)?.[0] || '');
-            const title = rawNum.toLowerCase().startsWith('apt') || rawNum.toLowerCase().startsWith('cobertura')
-              ? rawNum
-              : (rawNum ? `Apt ${rawNum}` : `Apt ${u.id}`);
+            const title = formatUnitLabel(rawNum || u.id);
 
             const isThisTabMine = Boolean(
               currentUser?.unidade &&
@@ -138,9 +220,7 @@ export const MoradoresScreen: React.FC = () => {
           ? selectedUnidade.numero.trim() 
           : (selectedUnidade.id.match(/\d+$/)?.[0] || '');
 
-        const unitLabel = selNum.toLowerCase().startsWith('apt') || selNum.toLowerCase().startsWith('cobertura')
-          ? selNum
-          : (selNum ? `Apt ${selNum}` : `Apt`);
+        const unitLabel = formatUnitLabel(selNum || selectedUnidade.id);
 
         const canSeeNotifications = Boolean(isMyUnit || isSindicoOrAdmin);
 
@@ -244,7 +324,7 @@ export const MoradoresScreen: React.FC = () => {
               <div className="flex-1 space-y-4 w-full">
                 <div>
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                    Quem reside no apartamento
+                    {isCasas ? 'Quem reside na casa' : 'Quem reside no apartamento'}
                   </span>
                   <h3 className="text-lg font-black text-slate-950 leading-tight">
                     Célula de Moradores
@@ -284,10 +364,18 @@ export const MoradoresScreen: React.FC = () => {
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-950 border border-slate-200 shadow-2xs font-extrabold">
                       <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga de Garagem: {selectedUnidade.vagaGaragem || 'Sem vaga vinculada'}
                     </span>
-                    {selectedUnidade.bloco && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-950 border border-slate-200 shadow-2xs font-extrabold">
-                        <Building2 className="w-3.5 h-3.5 text-slate-800" /> Bloco: {selectedUnidade.bloco}
-                      </span>
+                    {isCasas ? (
+                      (selectedUnidade.rua || selectedUnidade.bloco) && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-950 border border-slate-200 shadow-2xs font-extrabold">
+                          <Building2 className="w-3.5 h-3.5 text-slate-800" /> Rua: {selectedUnidade.rua || selectedUnidade.bloco}
+                        </span>
+                      )
+                    ) : (
+                      selectedUnidade.bloco && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-950 border border-slate-200 shadow-2xs font-extrabold">
+                          <Building2 className="w-3.5 h-3.5 text-slate-800" /> Bloco: {selectedUnidade.bloco}
+                        </span>
+                      )
                     )}
                   </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useCondo, sortUnidades, deduplicateAndSortUnidades, isMockReclamacao } from '../../context/CondoContext';
 import { 
   Unidade, 
@@ -58,6 +58,7 @@ import {
   ArrowLeftRight,
   Users,
   User,
+  MapPin,
   Car,
   Eye,
   EyeOff,
@@ -89,7 +90,6 @@ import {
   Star,
   PartyPopper,
   Pencil,
-  MapPin,
   Gavel,
   FileCheck,
   Building2,
@@ -179,16 +179,18 @@ export const resolveApoiadores = (
       }))
     );
 
-    for (const idOrStr of item.apoiadores) {
-      if (!idOrStr || seenIds.has(idOrStr)) continue;
+    for (const rawId of item.apoiadores) {
+      if (!rawId) continue;
+      const idOrStr = String(rawId);
+      if (seenIds.has(idOrStr)) continue;
 
       const match = todosMoradores.find(m => 
         m.id === idOrStr || 
         m.nome?.toLowerCase() === idOrStr.toLowerCase() ||
         m.email?.toLowerCase() === idOrStr.toLowerCase() ||
         m.unidade === idOrStr ||
-        m.unidadeNumero === idOrStr ||
-        m.unidadeNumero?.replace(/[^0-9]/g, '') === idOrStr.replace(/[^0-9]/g, '')
+        String(m.unidadeNumero || '') === idOrStr ||
+        (m.unidadeNumero && String(m.unidadeNumero).replace(/[^0-9]/g, '') === idOrStr.replace(/[^0-9]/g, ''))
       );
 
       if (match) {
@@ -206,14 +208,14 @@ export const resolveApoiadores = (
         });
       } else {
         const rawUnit = idOrStr.replace(/[^0-9]/g, '');
-        const unitMatch = rawUnit ? unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) : undefined;
+        const unitMatch = rawUnit ? unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) : undefined;
         if (unitMatch && unitMatch.moradores && unitMatch.moradores.length > 0) {
           const m = unitMatch.moradores[0];
           seenIds.add(idOrStr);
           result.push({
             id: m.id || idOrStr,
             nome: m.nome,
-            unidade: `Apt ${unitMatch.numero}${unitMatch.bloco ? ` - ${unitMatch.bloco}` : ''}`,
+            unidade: `Apt ${unitMatch.numero || ''}${unitMatch.bloco ? ` - ${unitMatch.bloco}` : ''}`,
             bloco: unitMatch.bloco,
             foto: m.foto,
             email: m.email
@@ -261,6 +263,573 @@ export const resolveApoiadores = (
   return result;
 };
 
+interface AdminCasaItemProps {
+  u: Unidade;
+  index: number;
+  condoRuas: string[];
+  onSaveCasa: (id: string, numero: string, rua: string, indexPos?: number) => void;
+  onResetSenha: (u: Unidade) => void;
+  onToggleVazio: (id: string) => void;
+  onToggleSuspensa?: (id: string) => void;
+  onNotificar: (u: Unidade) => void;
+  onExcluir: (id: string) => void;
+}
+
+const AdminCasaTableRow: React.FC<AdminCasaItemProps> = React.memo(({
+  u,
+  index,
+  condoRuas,
+  onSaveCasa,
+  onResetSenha,
+  onToggleVazio,
+  onToggleSuspensa,
+  onNotificar,
+  onExcluir
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [localNumero, setLocalNumero] = useState(u.numero || '');
+  const [localRua, setLocalRua] = useState(u.rua || u.bloco || (condoRuas[0] || ''));
+
+  useEffect(() => {
+    if (!isEditing) {
+      setLocalNumero(u.numero || '');
+      setLocalRua(u.rua || u.bloco || (condoRuas[0] || ''));
+    }
+  }, [u.numero, u.rua, u.bloco, condoRuas, isEditing]);
+
+  const handleStartEdit = () => {
+    setLocalNumero(u.numero || '');
+    setLocalRua(u.rua || u.bloco || (condoRuas[0] || ''));
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setLocalNumero(u.numero || '');
+    setLocalRua(u.rua || u.bloco || (condoRuas[0] || ''));
+    setIsEditing(false);
+  };
+
+  const handleSave = () => {
+    onSaveCasa(u.id, localNumero, localRua, index);
+    setIsEditing(false);
+  };
+
+  const isSuspensa = Boolean(u.suspensa || u.statusCadastro === 'Suspenso');
+  const isVazio = !isSuspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+  const badgeText = isSuspensa 
+    ? 'Suspensa' 
+    : (isVazio 
+        ? 'Sem Moradores' 
+        : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente'));
+  const badgeStyle = isSuspensa
+    ? 'bg-rose-100 text-rose-950 border-rose-300 font-black'
+    : (isVazio
+        ? 'bg-slate-100 text-slate-800 border-slate-300'
+        : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300'));
+
+  const moradorResponsavel = (u.moradores && u.moradores.length > 0)
+    ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
+    : null;
+  const nomeResponsavel = moradorResponsavel?.nome || u.nomeCelula;
+  const emailResponsavel = moradorResponsavel?.email || u.emailResponsavel;
+
+  return (
+    <tr className={`hover:bg-amber-50/60 transition-colors ${isEditing ? 'bg-amber-100/70 font-semibold' : ''}`}>
+      {/* 1. Coluna UNIDADE */}
+      <td className="py-2.5 px-3.5 text-center">
+        <span className="text-[11px] font-black text-amber-950 bg-amber-100/90 px-2.5 py-1 rounded-lg border border-amber-300 inline-block min-w-[36px] shadow-2xs">
+          #{index + 1}
+        </span>
+      </td>
+
+      {/* 2. Coluna NÚMERO DA CASA */}
+      <td className="py-2.5 px-3.5">
+        {isEditing ? (
+          <input
+            type="text"
+            value={localNumero}
+            onChange={(e) => setLocalNumero(e.target.value)}
+            placeholder={`Ex: ${index + 1}`}
+            className="w-full max-w-[130px] bg-white border border-amber-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 shadow-2xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
+            autoFocus
+          />
+        ) : (
+          <span 
+            onClick={handleStartEdit}
+            className="font-black text-slate-950 text-xs sm:text-sm whitespace-nowrap cursor-pointer hover:text-amber-800 transition-colors"
+            title="Clique para editar"
+          >
+            {u.numero ? (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`) : 'Sem número'}
+          </span>
+        )}
+      </td>
+
+      {/* 3. Coluna RUA (Select com as ruas do condomínio) */}
+      <td className="py-2.5 px-3.5 max-w-[260px]">
+        {isEditing ? (
+          condoRuas.length > 0 ? (
+            <select
+              value={localRua}
+              onChange={(e) => setLocalRua(e.target.value)}
+              className="w-full bg-white border border-amber-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 shadow-2xs focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
+            >
+              <option value="" className="text-slate-400">Selecione a rua...</option>
+              {condoRuas.map((r, i) => (
+                <option key={i} value={r}>{r}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={localRua}
+              onChange={(e) => setLocalRua(e.target.value)}
+              placeholder="Nome da Rua"
+              className="w-full bg-white border border-amber-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 shadow-2xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
+            />
+          )
+        ) : (
+          <span 
+            onClick={handleStartEdit}
+            className="text-xs font-bold text-slate-900 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5 shadow-2xs cursor-pointer hover:bg-amber-100 transition-colors"
+            title="Clique para editar"
+          >
+            <MapPin className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+            {u.rua || u.bloco || (condoRuas[0] || 'Rua Principal')}
+          </span>
+        )}
+      </td>
+
+      {/* 4. Morador Responsável */}
+      <td className="py-2.5 px-3.5">
+        {nomeResponsavel ? (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-950 font-black text-xs shrink-0 overflow-hidden shadow-2xs">
+              {moradorResponsavel?.foto || u.fotoCelula ? (
+                <img 
+                  src={moradorResponsavel?.foto || u.fotoCelula} 
+                  alt={nomeResponsavel} 
+                  className="w-full h-full object-cover" 
+                />
+              ) : (
+                nomeResponsavel.charAt(0).toUpperCase()
+              )}
+            </div>
+            <div className="flex flex-col min-w-0 max-w-[210px]">
+              <span className="font-black text-slate-950 text-xs truncate" title={nomeResponsavel}>
+                {nomeResponsavel}
+              </span>
+              {emailResponsavel ? (
+                <span className="text-[11px] text-slate-600 font-medium truncate font-mono flex items-center gap-1" title={emailResponsavel}>
+                  <Mail className="w-3 h-3 text-amber-800 shrink-0 inline" />
+                  {emailResponsavel}
+                </span>
+              ) : (
+                <span className="text-[10px] text-amber-800 font-semibold italic">Sem e-mail cadastrado</span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <span className="text-slate-400 italic text-xs font-normal bg-slate-50 border border-dashed border-slate-300 px-2.5 py-1 rounded-lg inline-block">
+            Pendente
+          </span>
+        )}
+      </td>
+
+      {/* 5. Reset de Senha */}
+      <td className="py-2.5 px-3.5 text-center">
+        <button
+          type="button"
+          onClick={() => onResetSenha(u)}
+          className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-xs font-black inline-flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
+          title={`Resetar cadastro e senha da Casa ${u.numero} para liberar novo cadastro`}
+        >
+          <RotateCcw className="w-3 h-3 text-amber-800" />
+          <span>Reset Senha</span>
+        </button>
+      </td>
+
+      {/* 6. Vazio & Suspensa */}
+      <td className="py-2.5 px-2.5 text-center">
+        <div className="inline-flex items-center justify-center gap-2">
+          <label className="inline-flex items-center gap-1 cursor-pointer select-none" title="Marcar como casa vazia">
+            <input
+              type="checkbox"
+              checked={isVazio}
+              onChange={() => onToggleVazio(u.id)}
+              className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer accent-amber-600"
+            />
+            <span className={`text-[10px] uppercase ${isVazio ? 'text-slate-950 font-black' : 'text-slate-500 font-bold'}`}>
+              Vazio
+            </span>
+          </label>
+          <label className="inline-flex items-center gap-1 cursor-pointer select-none" title="Suspender pelo síndico">
+            <input
+              type="checkbox"
+              checked={isSuspensa}
+              onChange={() => onToggleSuspensa?.(u.id)}
+              className="w-3.5 h-3.5 rounded text-rose-600 focus:ring-rose-500 border-slate-300 cursor-pointer accent-rose-600"
+            />
+            <span className={`text-[10px] uppercase ${isSuspensa ? 'text-rose-700 font-black' : 'text-slate-400 font-bold'}`}>
+              Suspensa
+            </span>
+          </label>
+        </div>
+      </td>
+
+      {/* 7. Status */}
+      <td className="py-2.5 px-3.5 text-center">
+        <span className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full border inline-block ${badgeStyle}`}>
+          {badgeText}
+        </span>
+      </td>
+
+      {/* 8. Ações */}
+      <td className="py-2.5 px-3.5 text-right">
+        <div className="flex items-center justify-end gap-1.5">
+          {isEditing ? (
+            <>
+              <button
+                type="button"
+                onClick={handleSave}
+                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                title="Salvar alterações desta casa"
+              >
+                <Check className="w-3.5 h-3.5 stroke-[3]" /> Salvar
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                title="Cancelar edição"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleStartEdit}
+                className="px-2.5 py-1 rounded-lg text-slate-800 bg-slate-100 hover:bg-amber-100 border border-slate-300 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer shadow-2xs"
+                title="Editar Casa / Rua"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-slate-700" />
+                <span className="hidden sm:inline">Editar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onNotificar(u)}
+                className="px-2 py-1 rounded-lg text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+                title="Notificar Moradia Privadamente"
+              >
+                <Bell className="w-3.5 h-3.5 text-amber-800" />
+                <span className="hidden sm:inline">Notificar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onExcluir(u.id)}
+                className="px-2 py-1 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+                title="Excluir Casa"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <span className="hidden sm:inline">Excluir</span>
+              </button>
+            </>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+});
+
+const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
+  u,
+  index,
+  condoRuas,
+  onSaveCasa,
+  onResetSenha,
+  onToggleVazio,
+  onToggleSuspensa,
+  onNotificar,
+  onExcluir
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [localNumero, setLocalNumero] = useState(u.numero || '');
+  const [localRua, setLocalRua] = useState(u.rua || u.bloco || (condoRuas[0] || ''));
+
+  useEffect(() => {
+    setLocalNumero(u.numero || '');
+    setLocalRua(u.rua || u.bloco || (condoRuas[0] || ''));
+  }, [u.numero, u.rua, u.bloco]);
+
+  const handleStartEdit = () => {
+    setLocalNumero(u.numero || '');
+    setLocalRua(u.rua || u.bloco || (condoRuas[0] || ''));
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setLocalNumero(u.numero || '');
+    setLocalRua(u.rua || u.bloco || (condoRuas[0] || ''));
+    setIsEditing(false);
+  };
+
+  const handleSave = () => {
+    onSaveCasa(u.id, localNumero, localRua, index);
+    setIsEditing(false);
+  };
+
+  const isSuspensa = Boolean(u.suspensa || u.statusCadastro === 'Suspenso');
+  const isVazio = !isSuspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+  const badgeText = isSuspensa 
+    ? 'Suspensa' 
+    : (isVazio 
+        ? 'Sem Moradores' 
+        : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente'));
+  const badgeStyle = isSuspensa
+    ? 'bg-rose-100 text-rose-950 border-rose-300 font-black'
+    : (isVazio
+        ? 'bg-slate-200 text-slate-800 border-slate-300'
+        : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300'));
+
+  const moradorResponsavel = (u.moradores && u.moradores.length > 0)
+    ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
+    : null;
+  const nomeResponsavel = moradorResponsavel?.nome || u.nomeCelula;
+  const emailResponsavel = moradorResponsavel?.email || u.emailResponsavel;
+
+  if (isEditing) {
+    return (
+      <div
+        className="bg-amber-100/90 border-2 border-amber-400 rounded-2xl p-3.5 shadow-md space-y-2.5 animate-in zoom-in-95 duration-150"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] uppercase font-black text-amber-950 block">
+            Editando Casa #{index + 1}
+          </span>
+          <span className="text-[10px] font-black text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-md border border-amber-300">
+            Unidade #{index + 1}
+          </span>
+        </div>
+
+        <div className="space-y-2">
+          <div>
+            <label className="text-[9px] font-extrabold uppercase text-slate-700 block mb-0.5">
+              Número da Casa *
+            </label>
+            <input
+              type="text"
+              value={localNumero}
+              onChange={(e) => setLocalNumero(e.target.value)}
+              placeholder={`Ex: ${index + 1}`}
+              className="w-full bg-white border border-slate-300 focus:border-amber-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 shadow-2xs focus:outline-none"
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <label className="text-[9px] font-extrabold uppercase text-slate-700 block mb-0.5">
+              Rua / Alameda *
+            </label>
+            {condoRuas.length > 0 ? (
+              <select
+                value={localRua}
+                onChange={(e) => setLocalRua(e.target.value)}
+                className="w-full bg-white border border-slate-300 focus:border-amber-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 shadow-2xs focus:outline-none cursor-pointer"
+              >
+                <option value="" className="text-slate-400">Selecione a rua...</option>
+                {condoRuas.map((r, i) => (
+                  <option key={i} value={r}>{r}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={localRua}
+                onChange={(e) => setLocalRua(e.target.value)}
+                placeholder="Nome da Rua"
+                className="w-full bg-white border border-slate-300 focus:border-amber-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 shadow-2xs focus:outline-none"
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 pt-1">
+          <button
+            type="button"
+            onClick={handleSave}
+            className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black flex items-center justify-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+          >
+            <Check className="w-3.5 h-3.5 stroke-[3]" /> Salvar
+          </button>
+          <button
+            type="button"
+            onClick={handleCancelEdit}
+            className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`bg-white border ${
+        isVazio ? 'border-slate-300 bg-slate-50/60' : 'border-slate-200 hover:border-amber-400'
+      } rounded-2xl p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-2.5 overflow-hidden`}
+    >
+      {/* Topo do Card */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-black text-amber-950 bg-amber-100/90 px-2 py-0.5 rounded-lg border border-amber-300 shadow-2xs">
+              #{index + 1}
+            </span>
+            <h4 
+              onClick={handleStartEdit}
+              className="font-black text-sm sm:text-base text-slate-950 leading-tight truncate cursor-pointer hover:text-amber-800 transition-colors"
+              title="Clique para editar"
+            >
+              {u.numero ? (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`) : 'Sem número'}
+            </h4>
+          </div>
+          <span 
+            onClick={handleStartEdit}
+            className="text-[10px] sm:text-[11px] font-bold text-slate-600 flex items-center gap-1 mt-1 truncate cursor-pointer hover:text-amber-800 transition-colors"
+            title="Clique para editar"
+          >
+            <MapPin className="w-3 h-3 text-amber-800 shrink-0" />
+            {u.rua || u.bloco || (condoRuas[0] || 'Rua Principal')}
+          </span>
+        </div>
+
+        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${badgeStyle}`}>
+          {badgeText}
+        </span>
+      </div>
+
+      {/* Morador Responsável e Botão de Reset de Senha */}
+      <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-950 font-black text-xs shrink-0 overflow-hidden shadow-2xs">
+            {moradorResponsavel?.foto || u.fotoCelula ? (
+              <img 
+                src={moradorResponsavel?.foto || u.fotoCelula} 
+                alt={nomeResponsavel || ''} 
+                className="w-full h-full object-cover" 
+              />
+            ) : (
+              (nomeResponsavel ? nomeResponsavel.charAt(0).toUpperCase() : '?')
+            )}
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="font-black text-slate-950 text-xs truncate">
+              {nomeResponsavel || <span className="text-slate-400 italic font-normal">Sem morador</span>}
+            </span>
+            {emailResponsavel ? (
+              <span className="text-[10px] text-slate-500 font-medium truncate font-mono flex items-center gap-1" title={emailResponsavel}>
+                <Mail className="w-2.5 h-2.5 text-amber-800 shrink-0 inline" />
+                {emailResponsavel}
+              </span>
+            ) : (
+              <span className="text-[10px] text-amber-800 font-semibold italic">Pendente</span>
+            )}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onResetSenha(u)}
+          className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer shadow-2xs"
+          title={`Resetar cadastro e senha da Casa ${u.numero} para liberar novo cadastro`}
+        >
+          <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
+          <span>Reset Senha</span>
+        </button>
+      </div>
+
+      {/* Ações: Check Vazio & Suspensa + Editar + Notificar + Excluir */}
+      <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
+        <div className="flex items-center gap-2 shrink-0">
+          <label 
+            className="flex items-center gap-1 cursor-pointer select-none group bg-slate-100/90 hover:bg-amber-100/70 px-1.5 py-1 rounded-lg border border-slate-200 transition-colors shrink-0"
+            title="Marcar como casa vazia / sem moradores"
+          >
+            <input
+              type="checkbox"
+              checked={isVazio}
+              onChange={() => onToggleVazio(u.id)}
+              className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer accent-amber-600"
+            />
+            <span className={`text-[9px] uppercase tracking-tight transition-colors ${
+              isVazio 
+                ? 'text-slate-950 font-black' 
+                : 'text-slate-500 font-bold group-hover:text-slate-800'
+            }`}>
+              Vazio
+            </span>
+          </label>
+
+          <label 
+            className={`flex items-center gap-1 cursor-pointer select-none px-1.5 py-1 rounded-lg border transition-colors shrink-0 ${
+              isSuspensa
+                ? 'bg-rose-100 border-rose-300 text-rose-950'
+                : 'bg-slate-100/90 hover:bg-rose-50 border-slate-200 text-slate-500 hover:text-rose-900'
+            }`}
+            title="Suspender ou bloquear cadastro/acesso desta casa pelo síndico"
+          >
+            <input
+              type="checkbox"
+              checked={isSuspensa}
+              onChange={() => onToggleSuspensa?.(u.id)}
+              className="w-3.5 h-3.5 rounded text-rose-600 focus:ring-rose-500 border-slate-300 cursor-pointer accent-rose-600"
+            />
+            <span className="text-[9px] uppercase tracking-tight font-black">
+              Suspensa
+            </span>
+          </label>
+        </div>
+
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={handleStartEdit}
+            className="px-1.5 py-1 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold cursor-pointer"
+            title="Editar Casa / Rua"
+          >
+            <Edit3 className="w-3 h-3 text-slate-600" />
+            <span>Editar</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onNotificar(u)}
+            className="px-1.5 py-1 rounded-lg text-amber-800 hover:text-amber-950 hover:bg-amber-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold cursor-pointer"
+            title="Notificar Moradia Privadamente"
+          >
+            <Bell className="w-3 h-3 text-amber-700" />
+            <span>Notificar</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onExcluir(u.id)}
+            className="px-1.5 py-1 rounded-lg text-rose-700 hover:text-rose-900 hover:bg-rose-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold cursor-pointer"
+            title="Excluir Casa"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+            <span>Excluir</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 export const AdminPanelScreen: React.FC = () => {
   const { 
     unidades, 
@@ -269,6 +838,7 @@ export const AdminPanelScreen: React.FC = () => {
     resetarSenhaUnidade,
     excluirUnidade, 
     toggleUnidadeSemMoradores,
+    toggleUnidadeSuspensa,
     gerarUnidadesAutomaticas,
     currentCondo,
     logoutAdmin, 
@@ -571,6 +1141,7 @@ export const AdminPanelScreen: React.FC = () => {
   // Form Unidades
   const [novoNumero, setNovoNumero] = useState('');
   const [novaVaga, setNovaVaga] = useState('');
+  const [novaRua, setNovaRua] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
   const [viewModeUnidades, setViewModeUnidades] = useState<'table' | 'cards'>('table');
@@ -579,6 +1150,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNumero, setEditNumero] = useState('');
   const [editVaga, setEditVaga] = useState('');
+  const [editRua, setEditRua] = useState('');
 
   // Form Admin & Colaboradores / Funcionários
   const [tipoCadastroColab, setTipoCadastroColab] = useState<'gestao' | 'operacional'>('gestao');
@@ -646,33 +1218,52 @@ export const AdminPanelScreen: React.FC = () => {
   const [novaCategoriaTipoAcesso, setNovaCategoriaTipoAcesso] = useState<'total' | 'morador_destaque'>('morador_destaque');
   const [novaCategoriaDescricao, setNovaCategoriaDescricao] = useState('');
 
+  const isCasas = currentCondo?.tipoCondominio === 'casas';
+
   const handleAddUnidade = (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoNumero.trim()) return;
 
     adicionarUnidade(
       novoNumero.trim(),
-      novaVaga.trim() || `Vaga ${novoNumero.trim()}`
+      isCasas ? '' : (novaVaga.trim() || `Vaga ${novoNumero.trim()}`),
+      undefined,
+      isCasas ? (novaRua.trim() || currentCondo?.ruas?.[0] || 'Rua Principal') : undefined
     );
 
     setNovoNumero('');
     setNovaVaga('');
+    setNovaRua('');
   };
 
-  const handleStartEdit = (u: Unidade) => {
+  const handleSaveCasa = useCallback((id: string, numero: string, rua: string, indexPos?: number) => {
+    editarUnidade(id, '', numero, undefined, rua, indexPos);
+  }, [editarUnidade]);
+
+  const handleNotificar = useCallback((unit: Unidade) => {
+    setSelectedUnidadeParaNotificar(unit);
+    setIsNotifyModalOpen(true);
+  }, []);
+
+  const handleStartEdit = useCallback((u: Unidade) => {
     setEditingId(u.id);
-    setEditNumero(u.numero);
+    setEditNumero(u.numero || '');
     setEditVaga(u.vagaGaragem || '');
-  };
+    setEditRua(u.rua || u.bloco || (currentCondo?.ruas?.[0] || ''));
+  }, [currentCondo?.ruas]);
 
-  const handleSaveEdit = (id: string) => {
-    editarUnidade(id, editVaga, editNumero);
+  const handleSaveEdit = useCallback((id: string) => {
+    editarUnidade(id, editVaga, editNumero, undefined, editRua);
     setEditingId(null);
-  };
+  }, [editarUnidade, editVaga, editNumero, editRua]);
 
   const handleResetSenha = (u: Unidade) => {
+    const unitLabel = isCasas 
+      ? (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`) 
+      : (u.numero ? `Apto ${u.numero}` : 'apartamento');
+
     const confirmou = window.confirm(
-      `Deseja realmente resetar a senha do ${u.numero ? `Apto ${u.numero}` : 'apartamento'} para a senha padrão?\n\nA nova senha será: "${u.numero}" (o próprio número do apartamento).\n\nNenhum dado cadastrado pelo morador será perdido.`
+      `Deseja realmente resetar o cadastro e senha ${isCasas ? `da ${unitLabel}` : `do ${unitLabel}`}?\n\nEsta ação liberará a residência para que o morador possa selecioná-la e realizar um novo cadastro a partir do início (definindo uma nova senha pessoal).\n\nUse esta opção caso o morador tenha esquecido a senha e o e-mail cadastrado.`
     );
     if (!confirmou) return;
 
@@ -683,7 +1274,8 @@ export const AdminPanelScreen: React.FC = () => {
   };
 
   const handleCopySenha = (u: Unidade) => {
-    const texto = `Condomínio - Unidade: ${u.numero}\nVaga de Garagem: ${u.vagaGaragem || 'Sem vaga'}\nLogin / Senha: ${u.senhaAcesso || u.numero}`;
+    const statusText = u.senhaAcesso ? 'Definida pelo morador' : 'Pendente de cadastro';
+    const texto = `Condomínio - Unidade: ${u.numero}\nVaga de Garagem: ${u.vagaGaragem || 'Sem vaga'}\nStatus: ${statusText}`;
     navigator.clipboard.writeText(texto);
     setCopiadoId(u.id);
     setTimeout(() => setCopiadoId(null), 2000);
@@ -790,10 +1382,40 @@ export const AdminPanelScreen: React.FC = () => {
     }));
   };
 
-  const filteredUnidades = deduplicateAndSortUnidades(unidades.filter(u => 
-    u.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (u.vagaGaragem && u.vagaGaragem.toLowerCase().includes(searchTerm.toLowerCase()))
-  ));
+  const filteredUnidades = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim();
+    const list = !term
+      ? unidades
+      : unidades.filter(u => 
+          (u.numero && u.numero.toLowerCase().includes(term)) ||
+          (u.vagaGaragem && u.vagaGaragem.toLowerCase().includes(term)) ||
+          (u.rua && u.rua.toLowerCase().includes(term)) ||
+          (u.bloco && u.bloco.toLowerCase().includes(term))
+        );
+    return isCasas ? list : sortUnidades(list);
+  }, [unidades, searchTerm, isCasas]);
+
+  const condoRuas = useMemo(() => {
+    const fromProfile = currentCondo?.ruas || [];
+    if (fromProfile.length > 0) return fromProfile;
+    return ['Rua Principal'];
+  }, [currentCondo?.ruas]);
+
+  // Paginação para desempenho instantâneo mesmo com centenas de unidades (ex: 780 casas)
+  const [itensPorPagina, setItensPorPagina] = useState<number>(50);
+  const [paginaAtual, setPaginaAtual] = useState<number>(1);
+
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [searchTerm]);
+
+  const totalPaginas = Math.max(1, Math.ceil(filteredUnidades.length / itensPorPagina));
+  const safePaginaAtual = Math.min(Math.max(1, paginaAtual), totalPaginas);
+
+  const displayedUnidades = useMemo(() => {
+    const start = (safePaginaAtual - 1) * itensPorPagina;
+    return filteredUnidades.slice(start, start + itensPorPagina);
+  }, [filteredUnidades, safePaginaAtual, itensPorPagina]);
 
   const unidadesCadastradas = unidades.filter(u => u.moradores && u.moradores.length > 0).length;
   const unidadesPendentes = unidades.length - unidadesCadastradas;
@@ -1007,7 +1629,7 @@ export const AdminPanelScreen: React.FC = () => {
                 </h3>
                 {canAccessUnidades ? (
                   <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
-                    {unidades.length} Apts
+                    {unidades.length} {isCasas ? 'Casas' : 'Apts'}
                   </span>
                 ) : (
                   <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
@@ -1053,7 +1675,7 @@ export const AdminPanelScreen: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Building className="w-4 h-4 text-amber-800" />
                   <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-950">
-                    Cadastrar Nova Unidade / Apartamento
+                    {isCasas ? 'Cadastrar Nova Casa / Lote' : 'Cadastrar Nova Unidade / Apartamento'}
                   </h4>
                 </div>
 
@@ -1073,11 +1695,11 @@ export const AdminPanelScreen: React.FC = () => {
                   {/* Número / Identificação Completa da Unidade */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                      Número do Apto / Identificação:
+                      {isCasas ? 'Número da Casa / Lote:' : 'Número do Apto / Identificação:'}
                     </label>
                     <input
                       type="text"
-                      placeholder="Ex: 101 Bloco A, 001, 102..."
+                      placeholder={isCasas ? "Ex: 01, 12, Casa 04..." : "Ex: 101 Bloco A, 001, 102..."}
                       value={novoNumero}
                       onChange={(e) => setNovoNumero(e.target.value)}
                       className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
@@ -1085,19 +1707,47 @@ export const AdminPanelScreen: React.FC = () => {
                     />
                   </div>
 
-                  {/* Vaga de Garagem */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                      Vaga de Garagem:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: 12 subsolo, 13, G-01..."
-                      value={novaVaga}
-                      onChange={(e) => setNovaVaga(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
-                    />
-                  </div>
+                  {/* Vaga de Garagem OU Rua (para condomínio de casas) */}
+                  {isCasas ? (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                        Rua / Alameda:
+                      </label>
+                      {currentCondo?.ruas && currentCondo.ruas.length > 0 ? (
+                        <select
+                          value={novaRua}
+                          onChange={(e) => setNovaRua(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                        >
+                          <option value="">Selecione a Rua / Alameda...</option>
+                          {currentCondo.ruas.map((r, i) => (
+                            <option key={i} value={r}>{r}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          placeholder="Ex: Alameda das Palmeiras, Rua 03..."
+                          value={novaRua}
+                          onChange={(e) => setNovaRua(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                        Vaga de Garagem:
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 12 subsolo, 13, G-01..."
+                        value={novaVaga}
+                        onChange={(e) => setNovaVaga(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                      />
+                    </div>
+                  )}
 
                   {/* Senha Padrão Automática */}
                   <div className="space-y-1">
@@ -1109,7 +1759,7 @@ export const AdminPanelScreen: React.FC = () => {
                         <KeyRound className="w-3.5 h-3.5 text-amber-800 shrink-0" />
                         <span className="text-[11px] text-slate-600 font-bold">Padrão:</span>
                         <span className="font-mono font-black text-slate-950">
-                          {novoNumero.trim() || 'Número do Apto'}
+                          {novoNumero.trim() || (isCasas ? 'Número da Casa' : 'Número do Apto')}
                         </span>
                       </div>
                       <span className="text-[9px] bg-amber-200 text-amber-950 font-black px-1.5 py-0.5 rounded uppercase">
@@ -1127,10 +1777,10 @@ export const AdminPanelScreen: React.FC = () => {
 
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-md transition-all active:scale-95 ml-auto"
+                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-md transition-all active:scale-95 ml-auto cursor-pointer"
                   >
                     <Plus className="w-4 h-4 stroke-[3]" />
-                    Adicionar Unidade à Fila
+                    {isCasas ? 'Adicionar Casa à Fila' : 'Adicionar Unidade à Fila'}
                   </button>
                 </div>
               </form>
@@ -1154,15 +1804,16 @@ export const AdminPanelScreen: React.FC = () => {
                     type="button"
                     onClick={() => {
                       const total = currentCondo?.totalUnidades || 75;
-                      if (window.confirm(`Deseja gerar/preencher automaticamente a fila com as ${total} unidades do condomínio com senhas padrão iguais ao número de cada AP?`)) {
+                      const kind = isCasas ? 'casas' : 'unidades';
+                      if (window.confirm(`Deseja gerar/preencher automaticamente a fila com as ${total} ${kind} do condomínio com senhas padrão iguais ao número de cada ${isCasas ? 'casa' : 'AP'}?`)) {
                         gerarUnidadesAutomaticas(total);
                       }
                     }}
-                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-xs transition-all active:scale-95"
-                    title={`Gerar ${currentCondo?.totalUnidades || 75} unidades automaticamente`}
+                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
+                    title={`Gerar ${currentCondo?.totalUnidades || 75} ${isCasas ? 'casas' : 'unidades'} automaticamente`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Preencher {currentCondo?.totalUnidades || 75} Unidades</span>
+                    <span>Preencher {currentCondo?.totalUnidades || 75} {isCasas ? 'Casas' : 'Unidades'}</span>
                   </button>
 
                   {/* Toggle Tabela vs Cards */}
@@ -1199,7 +1850,7 @@ export const AdminPanelScreen: React.FC = () => {
                   <div className="relative w-full sm:w-56">
                     <input
                       type="text"
-                      placeholder="Filtrar por apto ou vaga..."
+                      placeholder={isCasas ? "Filtrar por casa ou rua..." : "Filtrar por apto ou vaga..."}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-900 placeholder-slate-500 focus:outline-none font-semibold shadow-2xs"
@@ -1227,39 +1878,82 @@ export const AdminPanelScreen: React.FC = () => {
                     <table className="w-full text-left text-xs border-collapse min-w-[960px]">
                       <thead>
                         <tr className="bg-slate-950 text-slate-100 uppercase text-[10px] font-black tracking-wider sticky top-0 z-10 shadow-xs">
-                          <th className="py-3 px-3.5 min-w-[130px]">Nome da Unidade</th>
-                          <th className="py-3 px-3.5 min-w-[90px]">Andar</th>
+                          {isCasas ? (
+                            <>
+                              <th className="py-3 px-3.5 text-center min-w-[70px]">Unidade</th>
+                              <th className="py-3 px-3.5 min-w-[140px]">Número da Casa *</th>
+                              <th className="py-3 px-3.5 min-w-[220px]">Rua / Alameda Selecionada *</th>
+                            </>
+                          ) : (
+                            <>
+                              <th className="py-3 px-3.5 min-w-[130px]">Nome da Unidade</th>
+                              <th className="py-3 px-3.5 min-w-[90px]">Andar</th>
+                            </>
+                          )}
                           <th className="py-3 px-3.5 min-w-[220px]">Morador Responsável</th>
-                          <th className="py-3 px-3.5 min-w-[150px]">Vaga da Garagem</th>
+                          {!isCasas && (
+                            <th className="py-3 px-3.5 min-w-[150px]">Vaga da Garagem</th>
+                          )}
                           <th className="py-3 px-3.5 text-center min-w-[130px]">Reset de Senha</th>
                           <th className="py-3 px-2.5 text-center min-w-[80px]">Vazio</th>
                           <th className="py-3 px-3.5 text-center min-w-[100px]">Status</th>
-                          <th className="py-3 px-3.5 text-right min-w-[200px]">Ações</th>
+                          <th className="py-3 px-3.5 text-right min-w-[180px]">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
                         {filteredUnidades.length === 0 ? (
                           <tr>
                             <td colSpan={8} className="py-8 text-center text-slate-500 font-semibold">
-                              Nenhuma unidade encontrada. Use o botão no topo para gerar automaticamente.
+                              Nenhuma {isCasas ? 'casa' : 'unidade'} encontrada. Use o botão no topo para gerar automaticamente.
                             </td>
                           </tr>
                         ) : (
-                          filteredUnidades.map((u) => {
+                          displayedUnidades.map((u, idx) => {
+                            const globalIndex = (safePaginaAtual - 1) * itensPorPagina + idx;
+                            if (isCasas) {
+                              return (
+                                <AdminCasaTableRow
+                                  key={u.id}
+                                  u={u}
+                                  index={globalIndex}
+                                  condoRuas={condoRuas}
+                                  onSaveCasa={handleSaveCasa}
+                                  onResetSenha={handleResetSenha}
+                                  onToggleVazio={toggleUnidadeSemMoradores}
+                                  onToggleSuspensa={toggleUnidadeSuspensa}
+                                  onNotificar={handleNotificar}
+                                  onExcluir={excluirUnidade}
+                                />
+                              );
+                            }
+
                             const isEditing = editingId === u.id;
-                            const isVazio = Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
-                            const badgeText = isVazio 
-                              ? 'Sem Moradores' 
-                              : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente');
-                            const badgeStyle = isVazio
-                              ? 'bg-slate-100 text-slate-800 border-slate-300'
-                              : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300');
+                            const isSuspensa = Boolean(u.suspensa || u.statusCadastro === 'Suspenso');
+                            const isVazio = !isSuspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+                            const badgeText = isSuspensa
+                              ? 'Suspensa'
+                              : (isVazio 
+                                  ? 'Sem Moradores' 
+                                  : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente'));
+                            const badgeStyle = isSuspensa
+                              ? 'bg-rose-100 text-rose-950 border-rose-300 font-black'
+                              : (isVazio
+                                  ? 'bg-slate-100 text-slate-800 border-slate-300'
+                                  : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300'));
 
                             const moradorResponsavel = (u.moradores && u.moradores.length > 0)
                               ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
                               : null;
                             const nomeResponsavel = moradorResponsavel?.nome || u.nomeCelula;
                             const emailResponsavel = moradorResponsavel?.email || u.emailResponsavel;
+
+                            const formatUnitName = (num: string) => {
+                              if (!num) return 'Sem número';
+                              if (num.toLowerCase().startsWith('apt') || num.toLowerCase().startsWith('cobertura')) {
+                                return num;
+                              }
+                              return `Apto ${num}`;
+                            };
 
                             return (
                               <tr 
@@ -1278,10 +1972,8 @@ export const AdminPanelScreen: React.FC = () => {
                                     />
                                   ) : (
                                     u.numero ? (
-                                      <span className="font-black text-slate-950 text-xs sm:text-sm">
-                                        {u.numero.toLowerCase().startsWith('apt') || u.numero.toLowerCase().startsWith('cobertura')
-                                          ? u.numero 
-                                          : `Apto ${u.numero}`}
+                                      <span className="font-black text-slate-950 text-xs sm:text-sm whitespace-nowrap">
+                                        {formatUnitName(u.numero)}
                                       </span>
                                     ) : (
                                       <span className="text-slate-400 italic text-xs font-normal bg-slate-100 border border-dashed border-slate-300 px-2 py-1 rounded-md inline-block">
@@ -1291,14 +1983,14 @@ export const AdminPanelScreen: React.FC = () => {
                                   )}
                                 </td>
 
-                                {/* 2. Coluna ANDAR */}
+                                {/* 2. Coluna ANDAR (para apartamentos) */}
                                 <td className="py-2.5 px-3.5">
                                   <span className="text-[11px] font-black text-amber-950 bg-amber-100/90 border border-amber-300/80 px-2 py-0.5 rounded-md inline-block whitespace-nowrap shadow-2xs">
                                     {u.andar ? `${u.andar}º Andar` : '1º Andar'}
                                   </span>
                                 </td>
 
-                                {/* 3. Morador Responsável (Com Nome e E-mail - LGPD Compliant) */}
+                                {/* 3. Morador Responsável */}
                                 <td className="py-2.5 px-3.5">
                                   {nomeResponsavel ? (
                                     <div className="flex items-center gap-2.5">
@@ -1334,7 +2026,7 @@ export const AdminPanelScreen: React.FC = () => {
                                   )}
                                 </td>
 
-                                {/* 4. Vaga da Garagem (Editável) */}
+                                {/* 4. Vaga da Garagem */}
                                 <td className="py-2.5 px-3.5">
                                   {isEditing ? (
                                     <input
@@ -1359,42 +2051,55 @@ export const AdminPanelScreen: React.FC = () => {
                                   )}
                                 </td>
 
-                                {/* 5. Reset de Senha Seguro (Sem expor senha em texto aberto - LGPD) */}
+                                {/* 5. Reset de Senha Seguro */}
                                 <td className="py-2.5 px-3.5 text-center">
                                   <button
                                     type="button"
                                     onClick={() => handleResetSenha(u)}
                                     className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-xs font-black inline-flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
-                                    title={`Resetar senha do ${u.numero ? `Apto ${u.numero}` : 'apartamento'} para a padrão`}
+                                    title={`Resetar cadastro e senha do Apto ${u.numero} para liberar novo cadastro`}
                                   >
                                     <RotateCcw className="w-3 h-3 text-amber-800" />
                                     <span>Reset Senha</span>
                                   </button>
                                 </td>
 
-                                {/* 5. Coluna Vazio */}
+                                {/* 6. Coluna Vazio & Suspensa */}
                                 <td className="py-2.5 px-2.5 text-center">
-                                  <label className="inline-flex items-center gap-1 cursor-pointer select-none">
-                                    <input
-                                      type="checkbox"
-                                      checked={isVazio}
-                                      onChange={() => toggleUnidadeSemMoradores(u.id)}
-                                      className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer accent-amber-600"
-                                    />
-                                    <span className={`text-[10px] uppercase ${isVazio ? 'text-slate-950 font-black' : 'text-slate-500 font-bold'}`}>
-                                      Vazio
-                                    </span>
-                                  </label>
+                                  <div className="inline-flex items-center justify-center gap-2">
+                                    <label className="inline-flex items-center gap-1 cursor-pointer select-none" title="Marcar como vazio">
+                                      <input
+                                        type="checkbox"
+                                        checked={isVazio}
+                                        onChange={() => toggleUnidadeSemMoradores(u.id)}
+                                        className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer accent-amber-600"
+                                      />
+                                      <span className={`text-[10px] uppercase ${isVazio ? 'text-slate-950 font-black' : 'text-slate-500 font-bold'}`}>
+                                        Vazio
+                                      </span>
+                                    </label>
+                                    <label className="inline-flex items-center gap-1 cursor-pointer select-none" title="Suspender pelo síndico">
+                                      <input
+                                        type="checkbox"
+                                        checked={isSuspensa}
+                                        onChange={() => toggleUnidadeSuspensa(u.id)}
+                                        className="w-3.5 h-3.5 rounded text-rose-600 focus:ring-rose-500 border-slate-300 cursor-pointer accent-rose-600"
+                                      />
+                                      <span className={`text-[10px] uppercase ${isSuspensa ? 'text-rose-700 font-black' : 'text-slate-400 font-bold'}`}>
+                                        Suspensa
+                                      </span>
+                                    </label>
+                                  </div>
                                 </td>
 
-                                {/* 6. Status */}
+                                {/* 7. Status */}
                                 <td className="py-2.5 px-3.5 text-center">
                                   <span className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full border inline-block ${badgeStyle}`}>
                                     {badgeText}
                                   </span>
                                 </td>
 
-                                {/* 7. Ações & Salvar */}
+                                {/* 8. Ações & Salvar */}
                                 <td className="py-2.5 px-3.5 text-right">
                                   <div className="flex items-center justify-end gap-1.5">
                                     {isEditing ? (
@@ -1465,9 +2170,26 @@ export const AdminPanelScreen: React.FC = () => {
               ) : (
                 /* VISÃO 2: GRID DE CARDS DE UNIDADES */
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto p-1">
-                  {filteredUnidades.map((u) => {
+                  {displayedUnidades.map((u, idx) => {
+                    const globalIndex = (safePaginaAtual - 1) * itensPorPagina + idx;
+                    if (isCasas) {
+                      return (
+                        <AdminCasaCard
+                          key={u.id}
+                          u={u}
+                          index={globalIndex}
+                          condoRuas={condoRuas}
+                          onSaveCasa={handleSaveCasa}
+                          onResetSenha={handleResetSenha}
+                          onToggleVazio={toggleUnidadeSemMoradores}
+                          onToggleSuspensa={toggleUnidadeSuspensa}
+                          onNotificar={handleNotificar}
+                          onExcluir={excluirUnidade}
+                        />
+                      );
+                    }
+
                     const isEditing = editingId === u.id;
-                    const senhaDisplay = u.senhaAcesso || u.numero;
 
                     if (isEditing) {
                       return (
@@ -1518,6 +2240,7 @@ export const AdminPanelScreen: React.FC = () => {
                     }
 
                     const formatUnitTitle = (num: string) => {
+                      if (!num) return 'Sem número';
                       if (num.toLowerCase().startsWith('apt') || num.toLowerCase().startsWith('cobertura')) {
                         return num;
                       }
@@ -1595,7 +2318,7 @@ export const AdminPanelScreen: React.FC = () => {
                             type="button"
                             onClick={() => handleResetSenha(u)}
                             className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer shadow-2xs"
-                            title="Resetar senha da unidade para o padrão"
+                            title={`Resetar cadastro e senha do Apto ${u.numero} para liberar novo cadastro`}
                           >
                             <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
                             <span>Reset Senha</span>
@@ -1630,8 +2353,8 @@ export const AdminPanelScreen: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleStartEdit(u)}
-                              className="px-1.5 py-1 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
-                              title="Editar Unidade"
+                              className="px-1.5 py-1 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold cursor-pointer"
+                              title="Editar Vaga / Unidade"
                             >
                               <Edit3 className="w-3 h-3 text-slate-600" />
                               <span>Editar</span>
@@ -1643,7 +2366,7 @@ export const AdminPanelScreen: React.FC = () => {
                                 setSelectedUnidadeParaNotificar(u);
                                 setIsNotifyModalOpen(true);
                               }}
-                              className="px-1.5 py-1 rounded-lg text-amber-800 hover:text-amber-950 hover:bg-amber-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
+                              className="px-1.5 py-1 rounded-lg text-amber-800 hover:text-amber-950 hover:bg-amber-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold cursor-pointer"
                               title="Notificar Moradia Privadamente"
                             >
                               <Bell className="w-3 h-3 text-amber-700" />
@@ -1653,7 +2376,7 @@ export const AdminPanelScreen: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => excluirUnidade(u.id)}
-                              className="px-1.5 py-1 rounded-lg text-rose-700 hover:text-rose-900 hover:bg-rose-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold"
+                              className="px-1.5 py-1 rounded-lg text-rose-700 hover:text-rose-900 hover:bg-rose-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold cursor-pointer"
                               title="Excluir Unidade"
                             >
                               <Trash2 className="w-3 h-3 text-rose-600" />
@@ -1666,6 +2389,60 @@ export const AdminPanelScreen: React.FC = () => {
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* Paginação Inteligente */}
+              {filteredUnidades.length > 0 && (
+                <div className="flex items-center justify-between gap-3 flex-wrap bg-white p-3 px-4 rounded-2xl border border-slate-300 shadow-2xs text-xs font-bold text-slate-700">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-600">
+                      Exibindo <span className="font-black text-slate-950">{(safePaginaAtual - 1) * itensPorPagina + 1}</span>–<span className="font-black text-slate-950">{Math.min(safePaginaAtual * itensPorPagina, filteredUnidades.length)}</span> de <span className="font-black text-slate-950">{filteredUnidades.length}</span> {isCasas ? 'casas' : 'unidades'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-auto flex-wrap">
+                    <div className="flex items-center bg-slate-100 rounded-xl p-0.5 border border-slate-300">
+                      <button
+                        type="button"
+                        disabled={safePaginaAtual <= 1}
+                        onClick={() => setPaginaAtual(prev => Math.max(1, prev - 1))}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 hover:bg-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        ← Anterior
+                      </button>
+
+                      <span className="px-3 text-xs font-black text-slate-950">
+                        Página {safePaginaAtual} de {totalPaginas}
+                      </span>
+
+                      <button
+                        type="button"
+                        disabled={safePaginaAtual >= totalPaginas}
+                        onClick={() => setPaginaAtual(prev => Math.min(totalPaginas, prev + 1))}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 hover:bg-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        Próxima →
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-1 text-xs">
+                      <span className="text-slate-500 font-semibold hidden sm:inline">Por pág:</span>
+                      <select
+                        value={itensPorPagina}
+                        onChange={(e) => {
+                          setItensPorPagina(Number(e.target.value));
+                          setPaginaAtual(1);
+                        }}
+                        className="bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      >
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                        <option value={200}>200</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -2745,10 +3522,10 @@ export const AdminPanelScreen: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              const rawUnit = (evento.organizador || '').replace(/[^0-9]/g, '');
-                              const unitObj: Unidade = unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) || {
+                              const rawUnit = String(evento.organizador || '').replace(/[^0-9]/g, '');
+                              const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
                                 id: `unit-${rawUnit || 'temp'}`,
-                                numero: evento.organizador,
+                                numero: evento.organizador || 'Geral',
                                 bloco: 'A',
                                 vagaGaragem: '',
                                 moradores: []
@@ -3618,10 +4395,10 @@ export const AdminPanelScreen: React.FC = () => {
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        const rawUnit = rec.autorUnidade.replace(/[^0-9]/g, '');
-                                        const unitObj: Unidade = unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) || {
+                                        const rawUnit = String(rec.autorUnidade || '').replace(/[^0-9]/g, '');
+                                        const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
                                           id: `unit-${rawUnit || 'temp'}`,
-                                          numero: rec.autorUnidade,
+                                          numero: rec.autorUnidade || 'Geral',
                                           bloco: 'A',
                                           vagaGaragem: '',
                                           moradores: []
@@ -3725,8 +4502,8 @@ export const AdminPanelScreen: React.FC = () => {
                                                 <button
                                                   type="button"
                                                   onClick={() => {
-                                                    const rawUnit = (apoiador.unidade || '').replace(/[^0-9]/g, '');
-                                                    const unitObj: Unidade = unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) || {
+                                                    const rawUnit = String(apoiador.unidade || '').replace(/[^0-9]/g, '');
+                                                    const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
                                                       id: `unit-${rawUnit || 'temp'}`,
                                                       numero: apoiador.unidade || 'Geral',
                                                       bloco: apoiador.bloco || 'A',
@@ -3888,8 +4665,8 @@ export const AdminPanelScreen: React.FC = () => {
                                                 <button
                                                   type="button"
                                                   onClick={() => {
-                                                    const rawUnit = (com.autorUnidade || '').replace(/[^0-9]/g, '');
-                                                    const unitObj: Unidade = unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) || {
+                                                    const rawUnit = String(com.autorUnidade || '').replace(/[^0-9]/g, '');
+                                                    const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
                                                       id: `unit-${rawUnit || 'temp'}`,
                                                       numero: com.autorUnidade || 'Geral',
                                                       bloco: 'A',
@@ -4388,8 +5165,8 @@ export const AdminPanelScreen: React.FC = () => {
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      const rawUnit = (rep.solicitanteUnidade || '').replace(/[^0-9]/g, '');
-                                      const unitObj: Unidade = unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) || {
+                                      const rawUnit = String(rep.solicitanteUnidade || '').replace(/[^0-9]/g, '');
+                                      const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
                                         id: `unit-${rawUnit || 'temp'}`,
                                         numero: rep.solicitanteUnidade || 'Geral',
                                         bloco: 'A',
@@ -4495,8 +5272,8 @@ export const AdminPanelScreen: React.FC = () => {
                                               <button
                                                 type="button"
                                                 onClick={() => {
-                                                  const rawUnit = (apoiador.unidade || '').replace(/[^0-9]/g, '');
-                                                  const unitObj: Unidade = unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) || {
+                                                  const rawUnit = String(apoiador.unidade || '').replace(/[^0-9]/g, '');
+                                                  const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
                                                     id: `unit-${rawUnit || 'temp'}`,
                                                     numero: apoiador.unidade || 'Geral',
                                                     bloco: apoiador.bloco || 'A',
@@ -4846,8 +5623,8 @@ export const AdminPanelScreen: React.FC = () => {
                                               <button
                                                 type="button"
                                                 onClick={() => {
-                                                  const rawUnit = (com.autorUnidade || '').replace(/[^0-9]/g, '');
-                                                  const unitObj: Unidade = unidades.find(u => u.numero.replace(/[^0-9]/g, '') === rawUnit) || {
+                                                  const rawUnit = String(com.autorUnidade || '').replace(/[^0-9]/g, '');
+                                                  const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
                                                     id: `unit-${rawUnit || 'temp'}`,
                                                     numero: com.autorUnidade || 'Geral',
                                                     bloco: 'A',
@@ -8571,7 +9348,7 @@ export const AdminPanelScreen: React.FC = () => {
                   );
 
                   if (enviarNotificacaoAoOcultar && motivoOcultacaoModal.autorUnidade) {
-                    const rawUnit = motivoOcultacaoModal.autorUnidade.replace(/[^0-9]/g, '') || motivoOcultacaoModal.autorUnidade;
+                    const rawUnit = String(motivoOcultacaoModal.autorUnidade || '').replace(/[^0-9]/g, '') || motivoOcultacaoModal.autorUnidade;
                     enviarNotificacaoPrivada(
                       rawUnit,
                       `Moderação de Conteúdo: Seu comentário na ocorrência foi ocultado da visualização pública pela administração. Motivo: ${motivoOcultacaoTexto.trim()}`,
@@ -8696,7 +9473,7 @@ export const AdminPanelScreen: React.FC = () => {
                   );
 
                   if (enviarNotificacaoAoOcultarReparo && motivoOcultacaoReparoModal.autorUnidade) {
-                    const rawUnit = motivoOcultacaoReparoModal.autorUnidade.replace(/[^0-9]/g, '') || motivoOcultacaoReparoModal.autorUnidade;
+                    const rawUnit = String(motivoOcultacaoReparoModal.autorUnidade || '').replace(/[^0-9]/g, '') || motivoOcultacaoReparoModal.autorUnidade;
                     enviarNotificacaoPrivada(
                       rawUnit,
                       `Moderação de Conteúdo: Seu comentário no reparo/manutenção foi ocultado da visualização pública pela administração. Motivo: ${motivoOcultacaoReparoTexto.trim()}`,

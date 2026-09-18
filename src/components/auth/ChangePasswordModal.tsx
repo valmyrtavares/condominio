@@ -71,7 +71,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             <KeyRound className="w-8 h-8 text-amber-900" />
           </div>
           <h2 className="text-xl font-black text-slate-950 tracking-tight">
-            Verificação & Troca de Senha
+            Definir Senha de Acesso
           </h2>
           <p className="text-xs text-slate-700 font-medium">
             Unidade <strong>{unidadeNumero}</strong> • Quase pronto!
@@ -85,7 +85,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             E-mail cadastrado: <strong>{email || 'Não informado'}</strong>
           </p>
           <p className="text-[11px] text-slate-700 leading-relaxed">
-            Para garantir sua segurança, substitua a senha padrão (<strong>{unidadeNumero}</strong>) por uma senha pessoal de sua preferência.
+            Para sua segurança, defina uma senha pessoal de sua preferência para seus próximos acessos.
           </p>
         </div>
 

@@ -27,10 +27,13 @@ export const ResidentMessagesModal: React.FC<ResidentMessagesModalProps> = ({
     notificacoesPrivadas, 
     marcarTodasNotificacoesUnidadeComoLidas,
     currentUser,
-    isAdminLoggedIn
+    isAdminLoggedIn,
+    currentCondo
   } = useCondo();
 
-  const normalizeUnit = (str?: string) => (str || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim();
+  const isCasas = currentCondo?.tipoCondominio === 'casas';
+
+  const normalizeUnit = (str?: string) => (str || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento|casa)\s*/i, '').trim();
 
   const unitNumber = unidade?.numero || '';
   const isMyUnit = currentUser?.unidade && (
@@ -53,9 +56,13 @@ export const ResidentMessagesModal: React.FC<ResidentMessagesModalProps> = ({
 
   if (!isOpen || !unidade || !canAccess) return null;
 
-  const unitLabel = unidade.numero.toLowerCase().startsWith('apt') || unidade.numero.toLowerCase().startsWith('cobertura')
-    ? unidade.numero
-    : `Apt ${unidade.numero}`;
+  const unitLabel = isCasas
+    ? (unidade.numero.toLowerCase().startsWith('casa') 
+        ? unidade.numero 
+        : `Casa ${unidade.numero.replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim()}`)
+    : (unidade.numero.toLowerCase().startsWith('apt') || unidade.numero.toLowerCase().startsWith('cobertura')
+        ? unidade.numero
+        : `Apt ${unidade.numero}`);
 
   return (
     <div className="modal-overlay-safe bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">

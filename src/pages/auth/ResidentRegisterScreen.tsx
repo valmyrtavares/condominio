@@ -53,12 +53,18 @@ export const ResidentRegisterScreen: React.FC = () => {
     }
 
     const isAlreadyRegistered = Boolean(
-      pendingRegistrationUnit.statusCadastro === 'Cadastrado' &&
+      (pendingRegistrationUnit.statusCadastro === 'Cadastrado' || pendingRegistrationUnit.senhaPadraoAlterada) &&
       pendingRegistrationUnit.moradores &&
-      pendingRegistrationUnit.moradores.length > 0
+      pendingRegistrationUnit.moradores.length > 0 &&
+      !pendingRegistrationUnit.semMoradores
     );
 
-    if (isAlreadyRegistered) {
+    const isSuspensa = Boolean(
+      pendingRegistrationUnit.suspensa ||
+      pendingRegistrationUnit.statusCadastro === 'Suspenso'
+    );
+
+    if (isAlreadyRegistered || isSuspensa) {
       setCurrentScreen('resident-login');
     }
   }, [pendingRegistrationUnit, setCurrentScreen]);

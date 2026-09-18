@@ -38,7 +38,8 @@ export const EditResidentCellModal: React.FC<EditResidentCellModalProps> = ({
   unidade,
   onClose
 }) => {
-  const { atualizarMoradoresUnidade, currentCondoId } = useCondo();
+  const { atualizarMoradoresUnidade, currentCondoId, currentCondo } = useCondo();
+  const isCasas = currentCondo?.tipoCondominio === 'casas';
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [fotoPreview, setFotoPreview] = useState<string>('');
@@ -179,7 +180,7 @@ export const EditResidentCellModal: React.FC<EditResidentCellModalProps> = ({
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-black text-slate-950 tracking-tight">
-                Editar Célula do Apto {unidade.numero}
+                Editar Célula {isCasas ? `da Casa ${unidade.numero}` : `do Apto ${unidade.numero}`}
               </h3>
               <p className="text-xs text-slate-600 font-medium">
                 Adicione, remova ou atualize os dados dos moradores e foto.
