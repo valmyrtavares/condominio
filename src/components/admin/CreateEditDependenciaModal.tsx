@@ -17,7 +17,8 @@ import {
   Camera, 
   Image as ImageIcon,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 
 const TIPOS_SUGERIDOS: TipoDependencia[] = [
@@ -101,6 +102,7 @@ export const CreateEditDependenciaModal: React.FC<CreateEditDependenciaModalProp
   const [novaRegraInput, setNovaRegraInput] = useState('');
 
   const [erroMsg, setErroMsg] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Sincroniza formulário ao abrir para edição ou novo cadastro
   useEffect(() => {
@@ -136,6 +138,7 @@ export const CreateEditDependenciaModal: React.FC<CreateEditDependenciaModalProp
       ]);
     }
     setErroMsg('');
+    setIsSaving(false);
     setNovaComodidadeInput('');
     setNovaRegraInput('');
   }, [dependenciaToEdit, isOpen]);
@@ -195,8 +198,10 @@ export const CreateEditDependenciaModal: React.FC<CreateEditDependenciaModalProp
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+
     if (!nome.trim()) {
       setErroMsg('Por favor, informe o nome da dependência ou área comum.');
       return;
@@ -230,13 +235,28 @@ export const CreateEditDependenciaModal: React.FC<CreateEditDependenciaModalProp
       regrasUso: regrasUso.length > 0 ? regrasUso : ['Respeitar as normas de convivência e horário de silêncio.']
     };
 
-    if (dependenciaToEdit) {
-      editarDependencia(dependenciaToEdit.id, payload);
-    } else {
-      adicionarDependencia(payload);
-    }
+    setIsSaving(true);
+    setErroMsg('');
 
-    onClose();
+    try {
+      let res: { success: boolean; error?: string };
+      if (dependenciaToEdit) {
+        res = await editarDependencia(dependenciaToEdit.id, payload);
+      } else {
+        res = await adicionarDependencia(payload);
+      }
+
+      if (res.success) {
+        onClose();
+      } else {
+        setErroMsg(res.error || 'Falha ao salvar dependência no Firestore. Tente novamente.');
+      }
+    } catch (err: any) {
+      console.error('🔥 Exceção ao salvar dependência:', err);
+      setErroMsg(err.message || 'Erro inesperado ao conectar ao banco de dados.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return createPortal(
@@ -672,16 +692,27 @@ export const CreateEditDependenciaModal: React.FC<CreateEditDependenciaModalProp
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 font-extrabold transition-colors cursor-pointer"
+              disabled={isSaving}
+              className="px-5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 font-extrabold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-500/20 transition-all hover:scale-105 cursor-pointer flex items-center gap-2"
+              disabled={isSaving}
+              className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:bg-amber-500/50 text-slate-950 font-black shadow-lg shadow-amber-500/20 transition-all hover:scale-105 disabled:scale-100 cursor-pointer disabled:cursor-not-allowed flex items-center gap-2"
             >
-              <Check className="w-4 h-4" />
-              {dependenciaToEdit ? 'Salvar Alterações' : 'Publicar Dependência'}
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Salvando no Firestore...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>{dependenciaToEdit ? 'Salvar Alterações' : 'Publicar Dependência'}</span>
+                </>
+              )}
             </button>
           </div>
 
