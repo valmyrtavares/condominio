@@ -22,7 +22,9 @@ import {
   EyeOff,
   Mail,
   Phone,
-  Building2
+  Building2,
+  Star,
+  ChevronDown
 } from 'lucide-react';
 
 interface EditFuncionarioModalProps {
@@ -59,8 +61,9 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
   onClose,
   funcionario
 }) => {
-  const { editarFuncionario } = useCondo();
+  const { editarFuncionario, avaliacoesFuncionarios, unidades, currentUser, isMasterLoggedIn } = useCondo();
 
+  const [isAvaliacoesOpen, setIsAvaliacoesOpen] = useState(false);
   const [nome, setNome] = useState('');
   const [funcao, setFuncao] = useState('');
   const [categoria, setCategoria] = useState<CategoriaFuncionario>('Portaria');
@@ -234,6 +237,125 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
               ))}
             </div>
           </div>
+
+          {/* Média de Estrelas e Consulta de Avaliações por Morador (SuperAdmin) */}
+          {(() => {
+            const avaliacoesDoFuncionario = avaliacoesFuncionarios.filter(
+              a => a.funcionarioId === funcionario.id
+            );
+            const totalAvaliacoes = avaliacoesDoFuncionario.length;
+            const somaNotas = avaliacoesDoFuncionario.reduce((acc, curr) => acc + curr.nota, 0);
+            const mediaNumerica = totalAvaliacoes > 0 ? somaNotas / totalAvaliacoes : 0;
+            const mediaFormatada = totalAvaliacoes > 0 
+              ? (Number.isInteger(mediaNumerica) ? mediaNumerica.toFixed(1) : mediaNumerica.toFixed(2))
+              : '0.0';
+
+            const isSuperAdmin = Boolean(
+              currentUser?.isDev || 
+              currentUser?.role === 'sindico' || 
+              (currentUser as any)?.tipoAcesso === 'total' ||
+              isMasterLoggedIn
+            );
+
+            return (
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 border-2 border-amber-300 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-xs shrink-0">
+                      <Star className="w-4.5 h-4.5 fill-slate-950 text-slate-950" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-black uppercase text-amber-950">
+                          Média de Avaliações:
+                        </span>
+                        <span className="px-2 py-0.5 rounded-lg bg-amber-500 text-slate-950 font-black text-xs shadow-xs border border-amber-400">
+                          {mediaFormatada} ⭐
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-600 font-bold block">
+                        {totalAvaliacoes === 0 
+                          ? 'Nenhuma avaliação recebida ainda' 
+                          : `${totalAvaliacoes} ${totalAvaliacoes === 1 ? 'avaliação registrada' : 'avaliações registradas'}`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {isSuperAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => setIsAvaliacoesOpen(!isAvaliacoesOpen)}
+                      className="px-3 py-1.5 bg-white hover:bg-amber-100 border border-amber-300 text-amber-950 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-amber-800" />
+                      <span>{isAvaliacoesOpen ? 'Ocultar Avaliações' : `Ver Avaliações dos Moradores (${totalAvaliacoes})`}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isAvaliacoesOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Linha Sanfona Expansível para Consulta (SuperAdmin) */}
+                {isSuperAdmin && isAvaliacoesOpen && (
+                  <div className="pt-2.5 border-t border-amber-200/80 space-y-2 animate-in fade-in duration-200">
+                    <span className="text-[10px] font-black uppercase text-amber-950 block">
+                      📋 Consulta de Avaliações por Morador (Apenas Leitura / SuperAdmin):
+                    </span>
+
+                    {totalAvaliacoes === 0 ? (
+                      <div className="p-3 bg-white/80 border border-amber-200 rounded-xl text-xs text-slate-600 font-bold text-center">
+                        Nenhum morador avaliou este colaborador ainda.
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                        {avaliacoesDoFuncionario.map((aval) => {
+                          const unidadeInfo = unidades.find(u => u.numero === aval.unidade || u.id === aval.usuarioId);
+                          const moradorNome = unidadeInfo?.moradores?.[0]?.nome;
+                          const rotuloMorador = moradorNome 
+                            ? `${moradorNome} (Unidade ${aval.unidade || unidadeInfo?.numero || '---'})`
+                            : aval.unidade 
+                              ? `Morador da Unidade ${aval.unidade}` 
+                              : `Morador ID: ${aval.usuarioId}`;
+
+                          return (
+                            <div 
+                              key={aval.id}
+                              className="p-2.5 bg-white border border-amber-200 rounded-xl flex items-center justify-between text-xs shadow-2xs"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-950 border border-amber-300 flex items-center justify-center font-bold text-[10px] shrink-0">
+                                  🏠
+                                </div>
+                                <div>
+                                  <span className="font-extrabold text-slate-900 block leading-tight">
+                                    {rotuloMorador}
+                                  </span>
+                                  <span className="text-[9px] font-medium text-slate-500">
+                                    Avaliado em {aval.data}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 shrink-0">
+                                <span className="font-black text-amber-950 text-xs">{aval.nota}.0</span>
+                                <div className="flex items-center text-amber-500">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star 
+                                      key={star} 
+                                      className={`w-3 h-3 ${star <= aval.nota ? 'fill-amber-400 text-amber-500' : 'text-slate-300'}`} 
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center bg-amber-50/50 p-3.5 rounded-2xl border border-amber-200/70">
             <div className="sm:col-span-4 text-center space-y-1.5">

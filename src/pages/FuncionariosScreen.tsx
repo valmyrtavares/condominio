@@ -281,15 +281,20 @@ export const FuncionariosScreen: React.FC = () => {
                       const minhaAval = avaliacoesFuncionarios.find(
                         a => a.funcionarioId === func.id && (a.usuarioId === userIdentifier || (currentUser?.unidade && a.unidade === currentUser.unidade))
                       );
-                      const notaAtual = func.mediaNota !== undefined ? func.mediaNota : 5.0;
-                      const countAtual = func.avaliacoesCount !== undefined ? func.avaliacoesCount : 0;
+
+                      const avalsDoFunc = avaliacoesFuncionarios.filter(a => a.funcionarioId === func.id);
+                      const totalAvals = avalsDoFunc.length;
+                      const somaNotas = avalsDoFunc.reduce((acc, curr) => acc + curr.nota, 0);
+                      const mediaNumerica = totalAvals > 0 ? somaNotas / totalAvals : (func.mediaNota !== undefined ? func.mediaNota : 5.0);
+                      const countAtual = totalAvals > 0 ? totalAvals : (func.avaliacoesCount !== undefined ? func.avaliacoesCount : 0);
+                      const notaFormatada = Number.isInteger(mediaNumerica) ? mediaNumerica.toFixed(1) : mediaNumerica.toFixed(2);
 
                       return (
                         <div className="p-2.5 rounded-2xl bg-amber-500/15 border border-amber-400/50 flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5 min-w-0">
                             <Star className="w-4 h-4 text-amber-600 fill-amber-500 shrink-0" />
                             <span className="font-black text-xs text-amber-950">
-                              {notaAtual.toFixed(1)} / 5.0
+                              {notaFormatada} / 5.0
                             </span>
                             <span className="text-[10px] text-slate-700 font-bold whitespace-nowrap">
                               ({countAtual} {countAtual === 1 ? 'avaliação' : 'avaliações'})
@@ -317,7 +322,7 @@ export const FuncionariosScreen: React.FC = () => {
                             </button>
 
                             <span className="text-[10px] font-black uppercase text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
-                              {notaAtual >= 4.7 ? 'Excelente' : notaAtual >= 4.0 ? 'Muito Bom' : 'Bom'}
+                              {mediaNumerica >= 4.7 ? 'Excelente' : mediaNumerica >= 4.0 ? 'Muito Bom' : 'Bom'}
                             </span>
                           </div>
                         </div>
