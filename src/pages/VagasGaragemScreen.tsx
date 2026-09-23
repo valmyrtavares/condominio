@@ -43,6 +43,18 @@ export const VagasGaragemScreen: React.FC = () => {
   const [minhasObs, setMinhasObs] = useState(minhaVaga?.observacoes || '');
   const [salvoFeedback, setSalvoFeedback] = useState(false);
 
+  // Sincroniza formulário da minha vaga ao mudar de vaga ou receber atualização do Firestore
+  React.useEffect(() => {
+    if (minhaVaga) {
+      setMeuStatus(minhaVaga.status || 'Em uso');
+      setMeuModelo(minhaVaga.veiculo?.modelo || '');
+      setMinhaCor(minhaVaga.veiculo?.cor || '');
+      setMinhaPlaca(minhaVaga.veiculo?.placa || '');
+      setMeuAluguel(minhaVaga.valorAluguelMensal?.toString() || '250');
+      setMinhasObs(minhaVaga.observacoes || '');
+    }
+  }, [minhaVaga?.id, minhaVaga?.status, minhaVaga?.valorAluguelMensal, minhaVaga?.observacoes]);
+
   // Modal / Feedback de chamada de interfone
   const [interfoneChamando, setInterfoneChamando] = useState<string | null>(null);
 
