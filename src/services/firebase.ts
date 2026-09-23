@@ -467,6 +467,8 @@ export const salvarFuncionarioNoFirestore = async (condoId: string, funcionario:
     const funcionarioFinal = {
       ...funcionario,
       foto: typeof fotoUrlFinal === 'string' && !fotoUrlFinal.startsWith('data:') ? fotoUrlFinal : (funcionario.foto || ''),
+      avaliacoesCount: typeof funcionario.avaliacoesCount === 'number' ? funcionario.avaliacoesCount : 0,
+      mediaNota: typeof funcionario.mediaNota === 'number' ? funcionario.mediaNota : 5.0,
       atualizadoEm: new Date().toISOString()
     };
 
@@ -486,6 +488,21 @@ export const salvarFuncionarioNoFirestore = async (condoId: string, funcionario:
 export const excluirFuncionarioNoFirestore = async (condoId: string, id: string) => {
   return excluirDocumentoSubcolecaoFirestore(condoId, 'funcionarios', id);
 };
+
+/**
+ * Salva uma avaliação de funcionário no Cloud Firestore
+ */
+export const salvarAvaliacaoFuncionarioNoFirestore = async (condoId: string, avaliacao: any) => {
+  return salvarDocumentoSubcolecaoFirestore(condoId, 'avaliacoes_funcionarios', avaliacao);
+};
+
+/**
+ * Exclui uma avaliação de funcionário do Cloud Firestore
+ */
+export const excluirAvaliacaoFuncionarioNoFirestore = async (condoId: string, id: string) => {
+  return excluirDocumentoSubcolecaoFirestore(condoId, 'avaliacoes_funcionarios', id);
+};
+
 
 
 /**

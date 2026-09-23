@@ -118,6 +118,7 @@ import {
 import { PrivateNotifyModal } from '../../components/admin/PrivateNotifyModal';
 import { SuspendServiceModal } from '../../components/admin/SuspendServiceModal';
 import { EditFuncionarioModal } from '../../components/admin/EditFuncionarioModal';
+import { CreateFuncionarioModal } from '../../components/admin/CreateFuncionarioModal';
 import { SuspendEventoModal } from '../../components/admin/SuspendEventoModal';
 import { CreateEditEventoModal } from '../../components/eventos/CreateEditEventoModal';
 import { CreateEditAssembleiaModal } from '../../components/assembleia/CreateEditAssembleiaModal';
@@ -1175,6 +1176,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [filtroCategoriaColab, setFiltroCategoriaColab] = useState<string>('Todos');
   const [selectedFuncionarioToEdit, setSelectedFuncionarioToEdit] = useState<Funcionario | null>(null);
   const [isEditFuncionarioModalOpen, setIsEditFuncionarioModalOpen] = useState(false);
+  const [isCreateFuncionarioModalOpen, setIsCreateFuncionarioModalOpen] = useState(false);
   const [adminSuccessMsg, setAdminSuccessMsg] = useState('');
   const [visibleAdminPasswords, setVisibleAdminPasswords] = useState<{ [key: string]: boolean }>({});
 
@@ -1355,6 +1357,14 @@ export const AdminPanelScreen: React.FC = () => {
     setNovoColabEmail('');
     setNovoColabSenha('');
     setNovoColabCargo('');
+    setNovoColabCategoria('Portaria');
+    setNovoColabHorario('');
+    setNovoColabDisponibilidade('');
+    setNovoColabStatus('Ativo');
+    setNovoColabPermissoes(['portaria', 'mudancas']);
+    setNovoColabAcessoMorador(true);
+    setShowNovoAdminSenha(false);
+    setShowNovoColabSenha(false);
     setNovoAdminFoto(AVATARES_SUGERIDOS[Math.floor(Math.random() * AVATARES_SUGERIDOS.length)]);
     setTimeout(() => setAdminSuccessMsg(''), 4000);
   };
@@ -2580,7 +2590,7 @@ export const AdminPanelScreen: React.FC = () => {
                 </div>
               </div>
 
-              <form onSubmit={handleAddAdminUser} className="space-y-4">
+              <form onSubmit={handleAddAdminUser} autoComplete="off" className="space-y-4">
                 
                 {/* Linha 1: Foto de Perfil Individual + Dados Principais */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
@@ -2711,6 +2721,7 @@ export const AdminPanelScreen: React.FC = () => {
                             placeholder="Ex: admin, subsindico, conselheiro1"
                             value={novoAdminUsuario}
                             onChange={(e) => setNovoAdminUsuario(e.target.value)}
+                            autoComplete="off"
                             className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
                             required
                           />
@@ -2727,6 +2738,7 @@ export const AdminPanelScreen: React.FC = () => {
                               placeholder="Ex: admin123, 101..."
                               value={novoAdminSenha}
                               onChange={(e) => setNovoAdminSenha(e.target.value)}
+                              autoComplete="new-password"
                               className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pr-9 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
                               required
                             />
@@ -2889,9 +2901,19 @@ export const AdminPanelScreen: React.FC = () => {
             {/* Lista de Colaboradores & Equipe de Gestão com Foto, Status e Ações */}
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-950">
-                  Quadro de Colaboradores & Gestão ({funcionarios.length})
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-950">
+                    Quadro de Colaboradores & Gestão ({funcionarios.length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateFuncionarioModalOpen(true)}
+                    className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-[10px] font-black uppercase flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                    + Novo Colaborador
+                  </button>
+                </div>
                 
                 {/* Filtro por Categoria */}
                 <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
@@ -9204,6 +9226,12 @@ export const AdminPanelScreen: React.FC = () => {
           setSelectedFuncionarioToEdit(null);
         }}
         funcionario={selectedFuncionarioToEdit}
+      />
+
+      {/* Modal de Criação de Funcionário / Colaborador */}
+      <CreateFuncionarioModal
+        isOpen={isCreateFuncionarioModalOpen}
+        onClose={() => setIsCreateFuncionarioModalOpen(false)}
       />
 
       {/* Modal de Suspensão e Moderação de Eventos */}

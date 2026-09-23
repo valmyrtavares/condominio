@@ -240,7 +240,7 @@ export const MoradoresScreen: React.FC = () => {
                     <h3 className="text-base sm:text-lg font-black text-slate-950 tracking-tight">
                       {isUnidadeVazia ? 'Unidade Vazia (Sem Moradores)' : 'Morador sem dados configurados'}
                     </h3>
-                    {selectedUnidade.vagaGaragem && (
+                    {!isCasas && selectedUnidade.vagaGaragem && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 text-slate-900 border border-slate-200 shadow-2xs text-[11px] font-bold">
                         <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga: {selectedUnidade.vagaGaragem}
                       </span>
@@ -361,13 +361,15 @@ export const MoradoresScreen: React.FC = () => {
                 {/* Operational details & Yellow Edit Button */}
                 <div className="border-t border-slate-200 pt-3 flex flex-wrap items-center justify-between gap-2.5 text-[11px]">
                   <div className="flex flex-wrap gap-2.5">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-950 border border-slate-200 shadow-2xs font-extrabold">
-                      <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga de Garagem: {selectedUnidade.vagaGaragem || 'Sem vaga vinculada'}
-                    </span>
+                    {!isCasas && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-950 border border-slate-200 shadow-2xs font-extrabold">
+                        <Car className="w-3.5 h-3.5 text-amber-800" /> Vaga de Garagem: {selectedUnidade.vagaGaragem || 'Sem vaga vinculada'}
+                      </span>
+                    )}
                     {isCasas ? (
-                      (selectedUnidade.rua || selectedUnidade.bloco) && (
+                      selectedUnidade.rua && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-950 border border-slate-200 shadow-2xs font-extrabold">
-                          <Building2 className="w-3.5 h-3.5 text-slate-800" /> Rua: {selectedUnidade.rua || selectedUnidade.bloco}
+                          <Building2 className="w-3.5 h-3.5 text-slate-800" /> Rua: {selectedUnidade.rua}
                         </span>
                       )
                     ) : (

@@ -141,7 +141,7 @@ export const EditResidentCellModal: React.FC<EditResidentCellModalProps> = ({
         profissao: m.profissao.trim() || undefined,
         role: m.role,
         unidade: unidade.numero,
-        bloco: unidade.bloco || 'Bloco A',
+        bloco: isCasas ? (unidade.rua || '') : (unidade.bloco || 'Bloco A'),
         foto: fotoPreview || undefined,
         condominioId: currentCondoId
       }));

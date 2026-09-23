@@ -78,6 +78,7 @@ import {
   salvarNotificacaoPrivadaNoFirestore,
   salvarFuncionarioNoFirestore,
   excluirFuncionarioNoFirestore,
+  salvarAvaliacaoFuncionarioNoFirestore,
   salvarDocumentoSubcolecaoFirestore,
   recuperarMoradoresDoCondominioNoFirestore,
   padronizarSenhasTodasUnidadesNoFirestore,
@@ -336,7 +337,7 @@ export function gerarUnidadesPorPadraoEAndar(
         andar: floorIndex,
         bloco: blocos > 1 ? `Bloco ${blocoLetra}` : 'Bloco A',
         tipo: 'Apartamento',
-        vagaGaragem: '',
+        vagaGaragem: numeroApto,
         senhaAcesso: numeroApto,
         senhaPadraoAlterada: false,
         statusCadastro: 'Pendente',
@@ -404,9 +405,9 @@ interface CondoContextType {
   editarServicoContratado: (id: string, dados: Partial<ServicoContratado>) => void;
   excluirServicoContratado: (id: string) => void;
   dependencias: Dependencia[];
-  adicionarDependencia: (nova: Omit<Dependencia, 'id' | 'condominioId'>) => void;
-  editarDependencia: (id: string, dados: Partial<Dependencia>) => void;
-  excluirDependencia: (id: string) => void;
+  adicionarDependencia: (nova: Omit<Dependencia, 'id' | 'condominioId'>) => Promise<{ success: boolean; error?: string }>;
+  editarDependencia: (id: string, dados: Partial<Dependencia>) => Promise<{ success: boolean; error?: string }>;
+  excluirDependencia: (id: string) => Promise<{ success: boolean; error?: string }>;
   reservas: ReservaDependencia[];
   assembleias: Assembleia[];
   adicionarAssembleia: (nova: Omit<Assembleia, 'id' | 'condominioId'>) => void;
@@ -654,6 +655,32 @@ const ALL_MODULOS: AdminModuloKey[] = [
 ];
 
 export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // AVISO EXTREMO AUDIT DE PERSISTÊNCIA EM CLOUD FIRESTORE
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !(window as any).__condoStorageAuditInstalled) {
+      (window as any).__condoStorageAuditInstalled = true;
+      const originalSetItem = localStorage.setItem.bind(localStorage);
+      localStorage.setItem = (key: string, value: string) => {
+        const isAuthCredentialKey = 
+          key.includes('saved_pass') || 
+          key.includes('saved_password') || 
+          key.includes('master_saved') ||
+          key.includes('resident_auth') ||
+          key.includes('admin_auth') ||
+          key.includes('current_user') ||
+          key.includes('active_tenant_id') ||
+          key.includes('superadmin_master_auth');
+
+        if (!isAuthCredentialKey) {
+          console.warn(
+            `🚨 AVISO EXTREMO DE ARQUITETURA: A chave de dados '${key}' tentou ser gravada no LocalStorage! Todas as entidades de domínio devem ser salvas EXCLUSIVAMENTE no Cloud Firestore.`
+          );
+        }
+        return originalSetItem(key, value);
+      };
+    }
+  }, []);
+
   // ==========================================
   // SUPERADMIN & MULTI-TENANT CONDOMÍNIOS
   // ==========================================
@@ -1553,9 +1580,36 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     dados: Partial<CondominioProfile>,
     unidadesCustomizadas?: { numero: string; rua?: string }[]
   ) => {
+    // 1. Calcula o novo slug e ID com base no nome/slug atualizado (se alterado)
+    const nomeFormated = dados.nome ? dados.nome.trim() : undefined;
+    const slugRaw = dados.slug ? dados.slug.trim() : nomeFormated;
+
+    let targetId = id;
+    let targetSlug: string | undefined = undefined;
+
+    if (slugRaw) {
+      const cleanSlug = slugRaw
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+      if (cleanSlug) {
+        targetSlug = cleanSlug;
+        targetId = `condo-${cleanSlug}`;
+      }
+    }
+
+    const isIdAltered = targetId !== id;
+
     setCondominios(prev => prev.map(c => {
       if (c.id === id) {
-        const atualizado = { ...c, ...dados };
+        const atualizado: CondominioProfile = { 
+          ...c, 
+          ...dados,
+          id: targetId,
+          slug: targetSlug || c.slug
+        };
         
         // Estrita separação e integridade de campos:
         if (atualizado.tipoCondominio === 'casas') {
@@ -1566,14 +1620,24 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           delete (atualizado as any).ruas;
         }
 
+        // Salva a nova chave/documento no Firestore (ex: 'condo-varzea')
         salvarCondominioNoFirestore(atualizado).catch(console.error);
+
+        // Se o ID do condomínio mudou no Firestore (ex: 'condo-ville' -> 'condo-varzea'):
+        if (isIdAltered) {
+          // Deleta a entrada legada com o ID antigo no Firestore
+          excluirCondominioNoFirestore(id).catch(console.error);
+          inicializarEstruturaCondominioNoFirestore(targetId).catch(console.error);
+          try {
+            localStorage.removeItem(`condo_unidades_list_${id}`);
+          } catch {}
+        }
 
         // Se for condomínio de casas e recebeu lista de unidades atualizadas:
         if (dados.tipoCondominio === 'casas' && unidadesCustomizadas && unidadesCustomizadas.length > 0) {
           const mapaExistentes = new Map<string, Unidade>();
           unidades.forEach(u => {
-            // Isolamento rigoroso: só aproveita se a unidade pertencer comprovadamente a este condomínio
-            const pertenceAEsteCondo = u.id.startsWith(`unit-${id}`) || (u as any).condoId === id || u.condominioId === id;
+            const pertenceAEsteCondo = u.id.startsWith(`unit-${id}`) || u.id.startsWith(`unit-${targetId}`) || (u as any).condoId === id || u.condominioId === id;
             if (!pertenceAEsteCondo) return;
             const k = normalizeUnitNumber(u.numero);
             if (k && !mapaExistentes.has(k)) {
@@ -1587,7 +1651,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (existente) {
               return {
                 ...existente,
-                id: existente.id.startsWith(`unit-${id}`) ? existente.id : `unit-${id}-casa-${casa.numero || idx + 1}`,
+                id: existente.id.replace(`unit-${id}`, `unit-${targetId}`),
+                condominioId: targetId,
                 numero: casa.numero || String(idx + 1),
                 bloco: casa.rua || existente.bloco || 'Geral',
                 rua: casa.rua || existente.rua || '',
@@ -1595,7 +1660,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               };
             }
             return {
-              id: `unit-${id}-casa-${casa.numero || idx + 1}-${Date.now()}-${idx}`,
+              id: `unit-${targetId}-casa-${casa.numero || idx + 1}-${Date.now()}-${idx}`,
+              condominioId: targetId,
               numero: casa.numero ? String(casa.numero).trim() : String(idx + 1),
               andar: 0,
               bloco: casa.rua || 'Geral',
@@ -1615,10 +1681,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
 
           try {
-            localStorage.setItem(`condo_unidades_list_${id}`, JSON.stringify(novasUnidades));
+            localStorage.setItem(`condo_unidades_list_${targetId}`, JSON.stringify(novasUnidades));
           } catch {}
 
-          limparESubstituirSubcolecaoFirestore(id, 'unidades', novasUnidades).catch(console.error);
+          limparESubstituirSubcolecaoFirestore(targetId, 'unidades', novasUnidades).catch(console.error);
         } else if (
           dados.padraoPrimeiroAndar !== undefined || 
           dados.totalAndares !== undefined || 
@@ -1629,14 +1695,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             totalUnits,
             atualizado.totalAndares,
             atualizado.padraoPrimeiroAndar,
-            id,
+            targetId,
             atualizado.totalBlocos || 1
           );
 
-          // Preserva estritamente os moradores e senhas existentes pelo número da unidade pertencente a este condomínio
           const mapaExistentes = new Map<string, Unidade>();
           unidades.forEach(u => {
-            const pertenceAEsteCondo = u.id.startsWith(`unit-${id}`) || (u as any).condoId === id || u.condominioId === id;
+            const pertenceAEsteCondo = u.id.startsWith(`unit-${id}`) || u.id.startsWith(`unit-${targetId}`) || (u as any).condoId === id || u.condominioId === id;
             if (!pertenceAEsteCondo) return;
             const k = normalizeUnitNumber(u.numero);
             if (k && !mapaExistentes.has(k)) {
@@ -1651,7 +1716,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               return {
                 ...tmpl,
                 ...existente,
-                id: existente.id.startsWith(`unit-${id}`) ? existente.id : tmpl.id,
+                id: existente.id.replace(`unit-${id}`, `unit-${targetId}`),
+                condominioId: targetId,
                 numero: tmpl.numero,
                 andar: tmpl.andar,
                 bloco: tmpl.bloco
@@ -1665,17 +1731,23 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
 
           try {
-            localStorage.setItem(`condo_unidades_list_${id}`, JSON.stringify(novasUnidades));
+            localStorage.setItem(`condo_unidades_list_${targetId}`, JSON.stringify(novasUnidades));
           } catch {}
 
-          // Salva as unidades no Firestore preservando os moradores
-          limparESubstituirSubcolecaoFirestore(id, 'unidades', novasUnidades).catch(console.error);
+          limparESubstituirSubcolecaoFirestore(targetId, 'unidades', novasUnidades).catch(console.error);
         }
 
         return atualizado;
       }
       return c;
     }));
+
+    if (isIdAltered && (currentCondoId === id || condoTenantId === id)) {
+      setCurrentCondoId(targetId);
+      try {
+        localStorage.setItem('condo_active_tenant_id', targetId);
+      } catch {}
+    }
   };
 
   const excluirCondominio = (id: string) => {
@@ -1885,7 +1957,26 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const unsubscribeFuncionarios = ouvirSubcolecaoFirestore(condoTenantId, 'funcionarios', (dadosFirestore) => {
       if (Array.isArray(dadosFirestore) && dadosFirestore.length > 0) {
-        const funcs = dadosFirestore as Funcionario[];
+        const funcs = dadosFirestore.map((f: any) => {
+          const count = typeof f.avaliacoesCount === 'number' ? f.avaliacoesCount : 0;
+          const media = typeof f.mediaNota === 'number' ? f.mediaNota : 5.0;
+
+          // Se o documento no Firestore ainda não possui esses parâmetros (ex: Porteiro Ademar), salva no Firestore agora
+          if (typeof f.avaliacoesCount !== 'number' || typeof f.mediaNota !== 'number') {
+            salvarFuncionarioNoFirestore(condoTenantId, {
+              ...f,
+              avaliacoesCount: count,
+              mediaNota: media
+            }).catch(console.error);
+          }
+
+          return {
+            ...f,
+            avaliacoesCount: count,
+            mediaNota: media
+          } as Funcionario;
+        });
+
         setFuncionarios(funcs);
 
         // Sincroniza em tempo real as permissões do colaborador ativo caso sua conta seja atualizada no Firestore
@@ -1925,6 +2016,21 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return () => {
       unsubscribeFuncionarios();
+    };
+  }, [condoTenantId]);
+
+  // Listener em tempo real para a subcoleção avaliacoes_funcionarios no Cloud Firestore
+  useEffect(() => {
+    if (!condoTenantId) return;
+
+    const unsubscribeAvaliacoes = ouvirSubcolecaoFirestore(condoTenantId, 'avaliacoes_funcionarios', (dadosFirestore) => {
+      if (Array.isArray(dadosFirestore)) {
+        setAvaliacoesFuncionarios(dadosFirestore as AvaliacaoFuncionario[]);
+      }
+    });
+
+    return () => {
+      unsubscribeAvaliacoes();
     };
   }, [condoTenantId]);
 
@@ -2263,7 +2369,61 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [vagasGaragem, setVagasGaragem] = useState<VagaGaragem[]>([]);
   const [dependencias, setDependencias] = useState<Dependencia[]>([]);
 
-  const adicionarDependencia = (nova: Omit<Dependencia, 'id' | 'condominioId'>) => {
+  // Auto-cura e sincronização automática de vagas de garagem por unidade em condomínios de prédio (ex: Monalisa)
+  useEffect(() => {
+    if (!condoTenantId || unidades.length === 0) return;
+    const isPredio = !currentCondo || currentCondo.tipoCondominio !== 'casas';
+    if (!isPredio) return;
+
+    unidades.forEach((u) => {
+      const numVaga = (u.vagaGaragem && u.vagaGaragem.trim()) || u.numero;
+      if (!numVaga) return;
+
+      const vagaExistente = vagasGaragem.find(v => v.unidadeNumero === u.numero || v.numeroVaga === numVaga);
+      const temMorador = Boolean(u.moradores && u.moradores.length > 0);
+      const primeiroMorador = temMorador && u.moradores ? u.moradores[0] : null;
+
+      if (!vagaExistente) {
+        const novaVaga: VagaGaragem = {
+          id: `vaga-${condoTenantId}-${u.numero}`,
+          numeroVaga: numVaga,
+          subsolo: 'Subsolo 1',
+          unidadeNumero: u.numero,
+          bloco: u.bloco || 'Bloco A',
+          status: temMorador ? 'Em uso' : 'Vazia',
+          moradorNome: primeiroMorador ? primeiroMorador.nome : 'Apartamento Vago',
+          moradorFoto: primeiroMorador?.foto || undefined,
+          interfoneRamal: u.numero,
+          condominioId: condoTenantId
+        };
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'vagas_garagem', novaVaga).catch(console.error);
+      } else {
+        let precisaAtualizar = false;
+        const vagaAtualizada = { ...vagaExistente };
+
+        if (!temMorador && vagaExistente.status !== 'Vazia' && vagaExistente.moradorNome !== 'Apartamento Vago') {
+          vagaAtualizada.status = 'Vazia';
+          vagaAtualizada.moradorNome = 'Apartamento Vago';
+          vagaAtualizada.moradorFoto = undefined;
+          precisaAtualizar = true;
+        } else if (temMorador && (vagaExistente.moradorNome === 'Apartamento Vago' || !vagaExistente.moradorNome)) {
+          vagaAtualizada.status = 'Em uso';
+          vagaAtualizada.moradorNome = primeiroMorador?.nome || 'Morador Cadastrado';
+          vagaAtualizada.moradorFoto = primeiroMorador?.foto;
+          precisaAtualizar = true;
+        }
+
+        if (precisaAtualizar) {
+          salvarDocumentoSubcolecaoFirestore(condoTenantId, 'vagas_garagem', vagaAtualizada).catch(console.error);
+        }
+      }
+    });
+  }, [condoTenantId, unidades, vagasGaragem, currentCondo]);
+
+  const adicionarDependencia = async (nova: Omit<Dependencia, 'id' | 'condominioId'>): Promise<{ success: boolean; error?: string }> => {
+    if (!condoTenantId) {
+      return { success: false, error: 'Nenhum condomínio ativo selecionado.' };
+    }
     const cleanNome = nova.nome.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'dep';
     const id = `dep-${cleanNome}-${Date.now()}`;
     const novaDep: Dependencia = {
@@ -2271,24 +2431,46 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id,
       condominioId: condoTenantId
     };
-    setDependencias(prev => [novaDep, ...prev]);
-    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'dependencias', novaDep).catch(console.error);
+
+    const res = await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'dependencias', novaDep);
+    if (res.success) {
+      setDependencias(prev => [novaDep, ...prev.filter(d => d.id !== id)]);
+      return { success: true };
+    } else {
+      console.error('🔥 Erro ao salvar dependência no Firestore:', res.error);
+      return { success: false, error: res.error || 'Erro ao salvar dependência no Firestore.' };
+    }
   };
 
-  const editarDependencia = (id: string, dados: Partial<Dependencia>) => {
-    setDependencias(prev => prev.map(d => {
-      if (d.id === id) {
-        const at = { ...d, ...dados };
-        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'dependencias', at).catch(console.error);
-        return at;
-      }
-      return d;
-    }));
+  const editarDependencia = async (id: string, dados: Partial<Dependencia>): Promise<{ success: boolean; error?: string }> => {
+    if (!condoTenantId) {
+      return { success: false, error: 'Nenhum condomínio ativo selecionado.' };
+    }
+    const depExistente = dependencias.find(d => d.id === id);
+    if (!depExistente) {
+      return { success: false, error: 'Dependência não encontrada para edição.' };
+    }
+    const at: Dependencia = { ...depExistente, ...dados };
+    const res = await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'dependencias', at);
+    if (res.success) {
+      setDependencias(prev => prev.map(d => d.id === id ? at : d));
+      return { success: true };
+    } else {
+      console.error('🔥 Erro ao editar dependência no Firestore:', res.error);
+      return { success: false, error: res.error || 'Erro ao editar dependência no Firestore.' };
+    }
   };
 
-  const excluirDependencia = (id: string) => {
+  const excluirDependencia = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    if (!condoTenantId) {
+      return { success: false, error: 'Nenhum condomínio ativo selecionado.' };
+    }
     setDependencias(prev => prev.filter(d => d.id !== id));
-    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'dependencias', id).catch(console.error);
+    const res = await excluirDocumentoSubcolecaoFirestore(condoTenantId, 'dependencias', id);
+    if (!res.success) {
+      console.error('🔥 Erro ao excluir dependência no Firestore:', res.error);
+    }
+    return res;
   };
 
   const [reservas, setReservas] = useState<ReservaDependencia[]>([]);
@@ -2706,6 +2888,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       tipoAcesso: novo.tipoAcesso || 'personalizado',
       permissoesModulos: novo.permissoesModulos && novo.permissoesModulos.length > 0 ? novo.permissoesModulos : ['portaria'],
       permiteAcessoAreaMorador: novo.permiteAcessoAreaMorador !== undefined ? novo.permiteAcessoAreaMorador : true,
+      avaliacoesCount: novo.avaliacoesCount ?? 0,
+      mediaNota: novo.mediaNota ?? 5.0,
       criadoEm: `${new Date().toLocaleDateString('pt-BR')}`,
       condominioId: condoTenantId
     };
@@ -2787,33 +2971,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Avaliações anônimas/privadas de funcionários dadas pelos moradores
-  const [avaliacoesFuncionarios, setAvaliacoesFuncionarios] = useState<AvaliacaoFuncionario[]>(() => {
-    const saved = localStorage.getItem('condo_avaliacoes_funcionarios');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return [];
-  });
+  // Avaliações anônimas/privadas de funcionários salvas EXCLUSIVAMENTE no Cloud Firestore
+  const [avaliacoesFuncionarios, setAvaliacoesFuncionarios] = useState<AvaliacaoFuncionario[]>([]);
 
+  // Limpa quaisquer resquícios legados do localStorage para avaliações
   useEffect(() => {
-    if (avaliacoesFuncionarios.length > 0) {
-      localStorage.setItem('condo_avaliacoes_funcionarios', JSON.stringify(avaliacoesFuncionarios));
-    }
-  }, [avaliacoesFuncionarios]);
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'condo_avaliacoes_funcionarios' && e.newValue) {
-        try {
-          setAvaliacoesFuncionarios(JSON.parse(e.newValue));
-        } catch {}
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    try {
+      localStorage.removeItem('condo_avaliacoes_funcionarios');
+    } catch {}
   }, []);
 
   const avaliarFuncionario = (funcionarioId: string, nota: number) => {
@@ -2824,27 +2989,35 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       a => a.funcionarioId === funcionarioId && (a.usuarioId === userIdentifier || (unidadeMorador && a.unidade === unidadeMorador))
     );
 
-    let novasAvaliacoes: AvaliacaoFuncionario[];
+    const avaliacaoSalvar: AvaliacaoFuncionario = avaliacaoExistente
+      ? { ...avaliacaoExistente, nota, data: new Date().toLocaleDateString('pt-BR') }
+      : {
+          id: `aval-${Date.now()}`,
+          funcionarioId,
+          usuarioId: userIdentifier,
+          unidade: unidadeMorador,
+          nota,
+          data: new Date().toLocaleDateString('pt-BR')
+        };
 
-    if (avaliacaoExistente) {
-      novasAvaliacoes = avaliacoesFuncionarios.map(a => 
-        a.id === avaliacaoExistente.id ? { ...a, nota, data: new Date().toLocaleDateString('pt-BR') } : a
-      );
-    } else {
-      const nova: AvaliacaoFuncionario = {
-        id: `aval-${Date.now()}`,
-        funcionarioId,
-        usuarioId: userIdentifier,
-        unidade: unidadeMorador,
-        nota,
-        data: new Date().toLocaleDateString('pt-BR')
-      };
-      novasAvaliacoes = [...avaliacoesFuncionarios, nova];
-    }
+    // 1. Gravação direta no Cloud Firestore
+    salvarAvaliacaoFuncionarioNoFirestore(condoTenantId, avaliacaoSalvar).catch(err => {
+      console.error('🔥 Erro ao salvar avaliação no Firestore:', err);
+    });
 
-    setAvaliacoesFuncionarios(novasAvaliacoes);
+    // 2. Atualização otimista no estado local de avaliações
+    setAvaliacoesFuncionarios(prev => {
+      const idx = prev.findIndex(a => a.id === avaliacaoSalvar.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = avaliacaoSalvar;
+        return copy;
+      }
+      return [...prev, avaliacaoSalvar];
+    });
 
-    // Recalcula média e contagem do funcionário
+    // 3. Recalcula média e contagem do funcionário e atualiza o documento no Cloud Firestore
+    let funcionarioAtualizado: Funcionario | null = null;
     setFuncionarios(prev => prev.map(f => {
       if (f.id === funcionarioId) {
         const baseCount = f.avaliacoesCount || 0;
@@ -2854,7 +3027,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const notaAntiga = avaliacaoExistente.nota;
           const somaTotal = (baseMedia * Math.max(1, baseCount)) - notaAntiga + nota;
           const novaMedia = Math.min(5.0, Math.max(1.0, somaTotal / Math.max(1, baseCount)));
-          return {
+          funcionarioAtualizado = {
             ...f,
             mediaNota: Number(novaMedia.toFixed(1))
           };
@@ -2862,15 +3035,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const novoCount = baseCount + 1;
           const somaTotal = (baseMedia * baseCount) + nota;
           const novaMedia = Math.min(5.0, Math.max(1.0, somaTotal / novoCount));
-          return {
+          funcionarioAtualizado = {
             ...f,
             avaliacoesCount: novoCount,
             mediaNota: Number(novaMedia.toFixed(1))
           };
         }
+        return funcionarioAtualizado;
       }
       return f;
     }));
+
+    if (funcionarioAtualizado) {
+      salvarFuncionarioNoFirestore(condoTenantId, funcionarioAtualizado).catch(err => {
+        console.error('🔥 Erro ao salvar métricas do funcionário no Firestore:', err);
+      });
+    }
   };
 
   const [espinhaDorsalItems] = useState<EspinhaDorsalItem[]>(ESPINHA_DORSAL_ITEMS);
@@ -3053,6 +3233,27 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       // Salva no Firestore garantido estritamente no tenant oficial do condomínio
       salvarUnidadeNoFirestore(condoTenantId, unidadeSalva).catch(console.error);
+
+      // Atualiza também a vaga de garagem equivalente na subcoleção vagas_garagem do Firestore
+      const numVaga = (unidadeSalva.vagaGaragem && unidadeSalva.vagaGaragem.trim()) || unidadeSalva.numero;
+      if (numVaga) {
+        const temMorador = Boolean(unidadeSalva.moradores && unidadeSalva.moradores.length > 0);
+        const primeiroMorador = temMorador && unidadeSalva.moradores ? unidadeSalva.moradores[0] : null;
+
+        const vagaAtualizar: VagaGaragem = {
+          id: `vaga-${condoTenantId}-${unidadeSalva.numero}`,
+          numeroVaga: numVaga,
+          subsolo: 'Subsolo 1',
+          unidadeNumero: unidadeSalva.numero,
+          bloco: unidadeSalva.bloco || 'Bloco A',
+          status: temMorador ? 'Em uso' : 'Vazia',
+          moradorNome: primeiroMorador ? primeiroMorador.nome : 'Apartamento Vago',
+          moradorFoto: primeiroMorador?.foto || undefined,
+          interfoneRamal: unidadeSalva.numero,
+          condominioId: condoTenantId
+        };
+        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'vagas_garagem', vagaAtualizar).catch(console.error);
+      }
 
       return ordenadas;
     });
@@ -3796,8 +3997,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return { success: true, needsRegistration: false };
     }
 
-    // Busca a unidade com correspondência flexível (ex: 21, Apto 21, 021)
+    // Busca a unidade com correspondência flexível ou ID exato (ex: u.id, Casa 222 (Rua Argentina), 21, Apto 21, 021)
     const unidadeEncontrada = unidades.find(u => 
+      u.id === unidadeInput.trim() ||
+      (u.rua ? `casa ${u.numero} (${u.rua})`.toLowerCase() === unidadeInput.trim().toLowerCase() : false) ||
+      (u.rua ? `${u.numero} (${u.rua})`.toLowerCase() === unidadeInput.trim().toLowerCase() : false) ||
       normalizeUnitNumber(u.numero) === numLimpo || 
       u.numero.toLowerCase() === unidadeInput.trim().toLowerCase()
     );
@@ -3831,10 +4035,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
 
     // Se a residência ainda NÃO tem morador cadastrado (está livre/vazia):
-    // Não há senha inicial! O morador é direcionado para a tela de cadastro para criar a primeira senha pessoal.
+    // Não permite login diretamente com senha arbitrária. Morador deve ir para o cadastro.
     if (!isCadastrado) {
       setPendingRegistrationUnit(unidadeEncontrada);
-      return { success: true, needsRegistration: true };
+      return { 
+        success: false, 
+        message: isCasas 
+          ? 'Esta casa ainda não possui morador cadastrado. Clique em "Cadastrar minha casa" abaixo.' 
+          : 'Esta unidade ainda não possui morador cadastrado. Clique em "Cadastrar minha unidade" abaixo.' 
+      };
     }
 
     // 3. Se a residência JÁ tem morador cadastrado: exige a senha pessoal criada no cadastro
@@ -3932,6 +4141,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       } catch {}
       return atualizadas;
     });
+
+    if (novaSenha && novaSenha.trim()) {
+      try {
+        localStorage.setItem('condo_resident_saved_password', novaSenha.trim());
+        if (canonicalUnitId) {
+          localStorage.setItem(`condo_saved_pass_${canonicalUnitId}`, novaSenha.trim());
+        }
+      } catch {}
+    }
 
     const authData = {
       unidade: numeroOficial,
