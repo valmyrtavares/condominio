@@ -29,7 +29,8 @@ export const ResidentRegisterScreen: React.FC = () => {
   const { 
     pendingRegistrationUnit, 
     concluirCadastroMorador, 
-    setCurrentScreen 
+    setCurrentScreen,
+    currentCondo
   } = useCondo();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,8 +44,9 @@ export const ResidentRegisterScreen: React.FC = () => {
   const [isSalvando, setIsSalvando] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
+  const isCasas = currentCondo?.tipoCondominio === 'casas';
   const unidadeNumero = pendingRegistrationUnit?.numero || '';
-  const blocoNome = pendingRegistrationUnit?.bloco || 'Bloco A';
+  const blocoNome = isCasas ? (pendingRegistrationUnit?.rua || '') : (pendingRegistrationUnit?.bloco || 'Bloco A');
 
   React.useEffect(() => {
     if (!pendingRegistrationUnit) {

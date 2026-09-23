@@ -304,7 +304,9 @@ export const Header: React.FC = () => {
                       : currentUser.role === 'sindico' || currentUser.role === 'subsindico'
                       ? `Gestão / Sindicância • ${currentCondo?.nome || 'Condomínio'}`
                       : currentUser.unidade 
-                      ? `Apt ${currentUser.unidade} (${currentUser.bloco || 'Bloco A'})` 
+                      ? (currentCondo?.tipoCondominio === 'casas' 
+                          ? (currentUser.unidade.toLowerCase().startsWith('casa') ? currentUser.unidade : `Casa ${currentUser.unidade}`) 
+                          : `Apt ${currentUser.unidade} (${currentUser.bloco || 'Bloco A'})`) 
                       : 'Não identificado'
                     }
                   </p>
