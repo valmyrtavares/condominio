@@ -31,7 +31,9 @@ import {
   TipoDependencia,
   MudancaAgendamento,
   StatusMudanca,
-  RegrasMudancaConfig
+  RegrasMudancaConfig,
+  Benfeitoria,
+  TipoBenfeitoria
 } from '../../types';
 import { 
   Building, 
@@ -133,6 +135,7 @@ import { CreateEditUnidadeDisponivelModal } from '../../components/admin/CreateE
 import { CreateEditServicoContratadoModal } from '../../components/admin/CreateEditServicoContratadoModal';
 import { CreateEditDesapegoModal } from '../../components/enjoei/CreateEditDesapegoModal';
 import { CreateEditDependenciaModal } from '../../components/admin/CreateEditDependenciaModal';
+import { CreateEditBenfeitoriaModal } from '../../components/admin/CreateEditBenfeitoriaModal';
 import { CreateAutorizacaoModal } from '../../components/portaria/CreateAutorizacaoModal';
 import { CreateEncomendaModal } from '../../components/portaria/CreateEncomendaModal';
 import { AdminPermissionsSelector } from '../../components/admin/AdminPermissionsSelector';
@@ -935,7 +938,11 @@ export const AdminPanelScreen: React.FC = () => {
     adicionarEncomenda,
     atualizarStatusEncomenda,
     darBaixaEncomenda,
-    excluirEncomenda
+    excluirEncomenda,
+    benfeitorias,
+    adicionarBenfeitoria,
+    editarBenfeitoria,
+    excluirBenfeitoria
   } = useCondo();
 
   // Accordion section collapse states (all closed by default on entry)
@@ -954,7 +961,14 @@ export const AdminPanelScreen: React.FC = () => {
   const [isDependenciasAdminOpen, setIsDependenciasAdminOpen] = useState(false);
   const [isMudancasAdminOpen, setIsMudancasAdminOpen] = useState(false);
   const [isPortariaAdminOpen, setIsPortariaAdminOpen] = useState(false);
+  const [isBenfeitoriasAdminOpen, setIsBenfeitoriasAdminOpen] = useState(false);
   const [isBackupRestoreModalOpen, setIsBackupRestoreModalOpen] = useState(false);
+
+  // 16. Gestão de Benfeitorias & Conquistas State
+  const [isCreateEditBenfeitoriaModalOpen, setIsCreateEditBenfeitoriaModalOpen] = useState(false);
+  const [benfeitoriaToEditInAdmin, setBenfeitoriaToEditInAdmin] = useState<Benfeitoria | null>(null);
+  const [searchBenfeitoriaAdmin, setSearchBenfeitoriaAdmin] = useState('');
+  const [filtroTipoBenfeitoriaAdmin, setFiltroTipoBenfeitoriaAdmin] = useState('Todas');
 
   // 15. Gestão de Portaria & Acessos State
   const [abaPortariaAdmin, setAbaPortariaAdmin] = useState<'acessos' | 'encomendas'>('acessos');
@@ -1213,6 +1227,7 @@ export const AdminPanelScreen: React.FC = () => {
   const canAccessDependencias = hasModuloPermission('dependencias');
   const canAccessMudancas = hasModuloPermission('mudancas');
   const canAccessPortaria = hasModuloPermission('portaria');
+  const canAccessBenfeitorias = hasModuloPermission('benfeitorias');
 
   // Modal / Seção de Criação de Novas Categorias de Gestão
   const [isModalNovaCategoriaOpen, setIsModalNovaCategoriaOpen] = useState(false);
@@ -3966,6 +3981,29 @@ export const AdminPanelScreen: React.FC = () => {
                                   </div>
                                 )}
 
+                                {/* Presenças Confirmadas pelos Moradores */}
+                                {assembleia.confirmados && assembleia.confirmados.length > 0 && (
+                                  <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200/80 text-xs space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-bold text-indigo-950 flex items-center gap-1.5">
+                                        <Users className="w-4 h-4 text-indigo-600" /> Presenças Confirmadas ({assembleia.confirmados.length})
+                                      </span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {assembleia.confirmados.map((conf, i) => (
+                                        <span
+                                          key={i}
+                                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-indigo-200 rounded-lg text-[11px] font-medium text-indigo-900 shadow-2xs"
+                                          title={`Confirmado em ${new Date(conf.confirmadoEm).toLocaleString('pt-BR')}`}
+                                        >
+                                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                          <span>{conf.nome || conf.nomeMorador || 'Morador'} ({conf.unidade || conf.unidadeMorador})</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
                                 {/* Botões de Ação do Admin */}
                                 <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 flex-wrap">
                                   <div className="flex items-center gap-2 flex-wrap">
@@ -3991,6 +4029,8 @@ export const AdminPanelScreen: React.FC = () => {
                                           });
                                           alert(`Notificação enviada com sucesso para os convocados (${assembleia.participantesIds.join(', ')})!`);
                                         } else {
+                                          // Envia convocacao geral explicitamente para scope 'geral' e por unidade
+                                          enviarNotificacaoPrivada('geral', msg, `Convocação Geral: ${assembleia.titulo}`);
                                           unidades.forEach(u => {
                                             enviarNotificacaoPrivada(u.numero, msg, `Convocação Geral: ${assembleia.titulo}`);
                                           });
@@ -9058,6 +9098,288 @@ export const AdminPanelScreen: React.FC = () => {
       })()}
 
       {/* ========================================================================= */}
+      {/* 16. GESTÃO DE BENFEITORIAS & CONQUISTAS DA GESTÃO                         */}
+      {/* ========================================================================= */}
+      {(() => {
+        const tiposBenfeitoriaOptions: TipoBenfeitoria[] = [
+          'Grande Reparo & Manutenção',
+          'Nova Aquisição & Modernização',
+          'Equilíbrio Financeiro & Economia',
+          'Área Comum & Convivência'
+        ];
+
+        const filteredBenfeitoriasAdmin = benfeitorias.filter(item => {
+          const matchTipo = filtroTipoBenfeitoriaAdmin === 'Todas' || item.tipo === filtroTipoBenfeitoriaAdmin;
+          const termo = searchBenfeitoriaAdmin.toLowerCase().trim();
+          const matchBusca = !termo ||
+            (item.titulo || '').toLowerCase().includes(termo) ||
+            (item.subtitulo || '').toLowerCase().includes(termo) ||
+            (item.descricao || '').toLowerCase().includes(termo) ||
+            (item.impactoGestao || '').toLowerCase().includes(termo);
+          return matchTipo && matchBusca;
+        });
+
+        const totalInvestimento = benfeitorias.reduce((acc, curr) => acc + (curr.investimento || 0), 0);
+        const totalEconomiaMensal = benfeitorias.reduce((acc, curr) => acc + (curr.economiaMensal || 0), 0);
+
+        return (
+          <div className={`rounded-3xl border transition-all duration-300 overflow-hidden shadow-sm ${
+            canAccessBenfeitorias ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+          }`}>
+            <button
+              type="button"
+              disabled={!canAccessBenfeitorias}
+              onClick={() => canAccessBenfeitorias && setIsBenfeitoriasAdminOpen(!isBenfeitoriasAdminOpen)}
+              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-amber-100/50 transition-colors focus:outline-none cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-2xl border ${
+                  canAccessBenfeitorias ? 'bg-amber-500/20 border-amber-400/40 text-amber-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                }`}>
+                  {canAccessBenfeitorias ? <Sparkles className="w-5 h-5 text-amber-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
+                      canAccessBenfeitorias ? 'bg-amber-100 text-amber-950 border-amber-300' : 'bg-slate-200 text-slate-600 border-slate-300'
+                    }`}>
+                      16. Gestão de Benfeitorias & Obras
+                    </span>
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 shadow-2xs">
+                      {benfeitorias.length} Conquistas
+                    </span>
+                  </div>
+                  <h3 className={`text-base sm:text-lg font-black mt-0.5 ${canAccessBenfeitorias ? 'text-slate-950' : 'text-slate-700'}`}>
+                    Benfeitorias, Obras & Realizações da Gestão
+                  </h3>
+                  <p className={`text-xs font-medium max-w-2xl mt-0.5 ${canAccessBenfeitorias ? 'text-slate-700' : 'text-slate-500'}`}>
+                    Publique e gerencie grandes reparos concluídos, aquisições de equipamentos e o demonstrativo de economia para a transparência do condomínio.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-amber-900 hidden sm:inline">
+                  {isBenfeitoriasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                </span>
+                <div className="p-2 rounded-xl bg-white/80 border border-amber-300/80 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isBenfeitoriasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
+              </div>
+            </button>
+
+            {/* Conteúdo Expansível */}
+            <div className={`grid transition-all duration-500 ease-in-out ${
+              canAccessBenfeitorias && isBenfeitoriasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}>
+              <div className="overflow-hidden">
+                <div className="p-4 sm:p-5 border-t border-amber-200/80 space-y-4">
+
+                  {/* Cards Informativos de Métricas */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="bg-white/80 border border-amber-200 p-3.5 rounded-2xl shadow-2xs flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-300">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
+                          Total de Entregas
+                        </span>
+                        <span className="text-base font-black text-slate-950">
+                          {benfeitorias.length} Conquistas Publicadas
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white/80 border border-purple-200 p-3.5 rounded-2xl shadow-2xs flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-purple-100 text-purple-900 border border-purple-300">
+                        <DollarSign className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
+                          Investimento Acumulado
+                        </span>
+                        <span className="text-base font-black text-purple-950">
+                          R$ {totalInvestimento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white/80 border border-emerald-200 p-3.5 rounded-2xl shadow-2xs flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-900 border border-emerald-300">
+                        <TrendingDown className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
+                          Economia Mensal Gerada
+                        </span>
+                        <span className="text-base font-black text-emerald-900">
+                          + R$ {totalEconomiaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Barra de Busca, Filtros e Botão Novo */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white/70 p-3 rounded-2xl border border-amber-200 shadow-2xs">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="relative flex-1">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={searchBenfeitoriaAdmin}
+                          onChange={(e) => setSearchBenfeitoriaAdmin(e.target.value)}
+                          placeholder="Buscar por título, resumo ou descrição..."
+                          className="w-full bg-white border border-slate-300 focus:border-amber-500 rounded-xl pl-9 pr-3 py-1.5 text-xs font-bold text-slate-950 placeholder-slate-400 shadow-2xs focus:outline-none"
+                        />
+                      </div>
+
+                      <select
+                        value={filtroTipoBenfeitoriaAdmin}
+                        onChange={(e) => setFiltroTipoBenfeitoriaAdmin(e.target.value)}
+                        className="bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-950 focus:outline-none cursor-pointer shadow-2xs shrink-0"
+                      >
+                        <option value="Todas">Todas as Categorias</option>
+                        {tiposBenfeitoriaOptions.map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBenfeitoriaToEditInAdmin(null);
+                        setIsCreateEditBenfeitoriaModalOpen(true);
+                      }}
+                      className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Nova Benfeitoria</span>
+                    </button>
+                  </div>
+
+                  {/* Listagem de Benfeitorias */}
+                  {filteredBenfeitoriasAdmin.length === 0 ? (
+                    <div className="text-center py-10 bg-white/60 border border-dashed border-amber-300 rounded-2xl p-6">
+                      <Sparkles className="w-10 h-10 text-amber-400 mx-auto mb-2 opacity-80" />
+                      <h4 className="text-sm font-black text-slate-900">Nenhuma benfeitoria encontrada</h4>
+                      <p className="text-xs text-slate-600 font-medium max-w-md mx-auto mt-1">
+                        {searchBenfeitoriaAdmin || filtroTipoBenfeitoriaAdmin !== 'Todas'
+                          ? 'Tente alterar os filtros de busca para visualizar os registros.'
+                          : 'Clique no botão "Nova Benfeitoria" acima para cadastrar a primeira realização da gestão.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredBenfeitoriasAdmin.map((item) => (
+                        <div
+                          key={item.id}
+                          className="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-3"
+                        >
+                          <div className="space-y-2">
+                            {/* Header do Card */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300 inline-block">
+                                  {item.tipo}
+                                </span>
+                                <h4 className="text-sm sm:text-base font-black text-slate-950 leading-snug">
+                                  {item.titulo}
+                                </h4>
+                              </div>
+
+                              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md shrink-0">
+                                {item.dataEntrega}
+                              </span>
+                            </div>
+
+                            {/* Foto & Subtítulo */}
+                            {item.subtitulo && (
+                              <p className="text-xs text-slate-700 font-semibold italic">
+                                "{item.subtitulo}"
+                              </p>
+                            )}
+
+                            {item.fotos && item.fotos.length > 0 && (
+                              <div className="w-full max-w-[280px] aspect-square mx-auto rounded-2xl overflow-hidden border border-amber-300/80 bg-slate-950 flex items-center justify-center p-1.5 shadow-inner">
+                                <img
+                                  src={item.fotos[0]}
+                                  alt={item.titulo}
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                            )}
+
+                            {/* Descrição */}
+                            <p className="text-xs text-slate-800 line-clamp-2 leading-relaxed">
+                              {item.descricao}
+                            </p>
+
+                            {/* Impacto na Gestão */}
+                            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] font-bold text-amber-950">
+                              <span className="text-[10px] uppercase font-black text-amber-800 block mb-0.5">
+                                Impacto na Gestão:
+                              </span>
+                              {item.impactoGestao}
+                            </div>
+
+                            {/* Valores de Investimento e Economia */}
+                            <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 font-bold">
+                              <span className="text-slate-600">
+                                Investimento: <strong className="text-slate-950">{item.investimento ? `R$ ${item.investimento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A'}</strong>
+                              </span>
+                              {item.economiaMensal && (
+                                <span className="text-emerald-700 font-black">
+                                  Economia: +R$ {item.economiaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Botões de Ação */}
+                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBenfeitoriaToEditInAdmin(item);
+                                setIsCreateEditBenfeitoriaModalOpen(true);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-amber-100 border border-slate-300 text-slate-800 text-xs font-black transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Editar benfeitoria"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-slate-700" />
+                              <span>Editar</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm(`Deseja excluir permanentemente a benfeitoria "${item.titulo}"?`)) {
+                                  excluirBenfeitoria(item.id);
+                                }
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-black transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Excluir benfeitoria"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                              <span>Excluir</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                </div>
+              </div>
+            </div>
+
+          </div>
+        );
+      })()}
+
+      {/* ========================================================================= */}
       {/* MODAL: CRIAR NOVA CATEGORIA / CARGO DINÂMICO */}
       {/* ========================================================================= */}
       {isModalNovaCategoriaOpen && (
@@ -9940,6 +10262,13 @@ export const AdminPanelScreen: React.FC = () => {
       <CreateEncomendaModal
         isOpen={isCreateEncomendaAdminOpen}
         onClose={() => setIsCreateEncomendaAdminOpen(false)}
+      />
+
+      {/* Modal de Criação / Edição de Benfeitorias */}
+      <CreateEditBenfeitoriaModal
+        isOpen={isCreateEditBenfeitoriaModalOpen}
+        onClose={() => setIsCreateEditBenfeitoriaModalOpen(false)}
+        benfeitoriaToEdit={benfeitoriaToEditInAdmin}
       />
 
       {/* Modal de Segurança, Resgate de Moradores e Backup Isolado por Condomínio */}

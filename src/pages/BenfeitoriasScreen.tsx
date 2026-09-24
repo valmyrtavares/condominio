@@ -30,7 +30,7 @@ export const BenfeitoriasScreen: React.FC = () => {
     toggleRole 
   } = useCondo();
 
-  const [expandedId, setExpandedId] = useState<string | null>('benf-esteira-academia');
+  const [expandedId, setExpandedId] = useState<string | null>('initial');
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [filterTipo, setFilterTipo] = useState<string>('Todas');
 
@@ -55,7 +55,10 @@ export const BenfeitoriasScreen: React.FC = () => {
   ];
 
   const toggleExpand = (id: string) => {
-    setExpandedId(prev => (prev === id ? null : id));
+    setExpandedId(prev => {
+      const isCurrentlyExpanded = prev === id || (prev === 'initial' && benfeitorias[0]?.id === id);
+      return isCurrentlyExpanded ? 'closed' : id;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -441,9 +444,18 @@ export const BenfeitoriasScreen: React.FC = () => {
           Histórico de Entregas & Obras Concluídas ({filteredBenfeitorias.length})
         </span>
 
-        {filteredBenfeitorias.map((item) => {
-          const isExpanded = expandedId === item.id;
-          return (
+        {filteredBenfeitorias.length === 0 ? (
+          <div className="bg-white/45 border border-white/60 rounded-3xl p-8 text-center space-y-2 shadow-xl">
+            <Sparkles className="w-10 h-10 text-amber-400 mx-auto opacity-90 drop-shadow" />
+            <h3 className="text-sm font-extrabold text-slate-950">Nenhuma Benfeitoria Registrada</h3>
+            <p className="text-xs text-slate-800 font-semibold max-w-sm mx-auto">
+              As benfeitorias, grandes reparos concluídos e realizações publicadas pela administração serão exibidas aqui.
+            </p>
+          </div>
+        ) : (
+          filteredBenfeitorias.map((item) => {
+            const isExpanded = expandedId === item.id || (expandedId === 'initial' && item === filteredBenfeitorias[0]);
+            return (
             <div
               key={item.id}
               className="bg-white/45 border border-white/60 rounded-3xl overflow-hidden shadow-xl hover:bg-white/55 transition-all duration-300"
@@ -482,15 +494,15 @@ export const BenfeitoriasScreen: React.FC = () => {
                 <div className="px-4 pb-5 space-y-4 border-t border-slate-950/10 pt-4 animate-in slide-in-from-top-2 duration-200">
                   
                   {/* Photo Gallery */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 justify-center">
                     {item.fotosAntes && item.fotosAntes.length > 0 && (
-                      <div className="relative rounded-2xl overflow-hidden border border-white/80 h-44 group shadow-md">
+                      <div className="relative rounded-2xl overflow-hidden border border-white/80 w-full max-w-[280px] aspect-square mx-auto bg-slate-950 flex items-center justify-center p-1.5 shadow-md">
                         <img 
                           src={item.fotosAntes[0]} 
                           alt="Antes da melhoria" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          className="w-full h-full object-contain"
                         />
-                        <div className="absolute inset-0 bg-slate-950/30 flex items-end p-2">
+                        <div className="absolute inset-0 bg-slate-950/20 pointer-events-none flex items-end p-2">
                           <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-rose-600 text-white shadow-xs">
                             Estado Anterior (Avaria/Desgaste)
                           </span>
@@ -498,15 +510,15 @@ export const BenfeitoriasScreen: React.FC = () => {
                       </div>
                     )}
 
-                    <div className={`relative rounded-2xl overflow-hidden border border-white/80 h-44 group shadow-md ${
+                    <div className={`relative rounded-2xl overflow-hidden border border-white/80 w-full max-w-[280px] aspect-square mx-auto bg-slate-950 flex items-center justify-center p-1.5 shadow-md ${
                       !item.fotosAntes || item.fotosAntes.length === 0 ? 'sm:col-span-2' : ''
                     }`}>
                       <img 
                         src={item.fotos[0]} 
                         alt={item.titulo} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        className="w-full h-full object-contain"
                       />
-                      <div className="absolute inset-0 bg-slate-950/25 flex items-end p-2">
+                      <div className="absolute inset-0 bg-slate-950/20 pointer-events-none flex items-end p-2">
                         <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-600 text-white shadow-xs">
                           Entrega Concluída ✓
                         </span>
@@ -583,7 +595,7 @@ export const BenfeitoriasScreen: React.FC = () => {
               )}
             </div>
           );
-        })}
+        }))}
       </div>
 
     </div>

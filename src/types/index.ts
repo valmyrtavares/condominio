@@ -16,7 +16,8 @@ export type AdminModuloKey =
   | 'fornecedores'
   | 'enjoei'
   | 'assembleias'
-  | 'diario-sindico';
+  | 'diario-sindico'
+  | 'benfeitorias';
 
 export interface AdminModuloInfo {
   key: AdminModuloKey;
@@ -443,6 +444,18 @@ export interface AtaAssembleia {
   solucoesPautas?: { pautaId: string; solucao: string; aprovada?: boolean }[];
 }
 
+export interface ParticipanteConfirmado {
+  id: string;
+  nome: string;
+  unidade: string;
+  moradorId?: string;
+  nomeMorador?: string;
+  unidadeMorador?: string;
+  bloco?: string;
+  foto?: string;
+  confirmadoEm: string;
+}
+
 export interface Assembleia {
   id: string;
   titulo: string;
@@ -459,6 +472,7 @@ export interface Assembleia {
   descricaoGeral: string;
   pautas: PautaAssembleia[];
   ata?: AtaAssembleia;
+  confirmados?: ParticipanteConfirmado[];
   condominioId: string;
   criadoEm?: string;
 }

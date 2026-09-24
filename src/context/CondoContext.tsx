@@ -29,6 +29,7 @@ import {
   AtaAssembleia,
   StatusAssembleia,
   PautaAssembleia,
+  ParticipanteConfirmado,
   EventoCondominio,
   UnidadeDisponivel,
   FinalidadeImovel,
@@ -553,6 +554,8 @@ interface CondoContextType {
   excluirReparo: (reparoId: string) => void;
   resolverReparoSimples: (reparoId: string, observacao?: string) => void;
   adicionarBenfeitoria: (titulo: string, subtitulo: string, tipo: TipoBenfeitoria, descricao: string, impactoGestao: string, fotos: string[], investimento?: number, economiaMensal?: number, regrasUso?: string) => void;
+  editarBenfeitoria: (id: string, payload: Partial<Benfeitoria>) => Promise<{ success: boolean; error?: string }>;
+  excluirBenfeitoria: (id: string) => Promise<{ success: boolean; error?: string }>;
   solicitarReserva: (dependenciaId: string, dataReserva: string, periodo: ReservaDependencia['periodo']) => void;
   cancelarReserva: (reservaId: string) => void;
   atualizarStatusReclamacao: (id: string, novoStatus: StatusReclamacao) => void;
@@ -565,6 +568,7 @@ interface CondoContextType {
   adicionarOrcamentoReparo: (reparoId: string, orcamento: Omit<Orcamento, 'id' | 'selecionado'>) => void;
   excluirOrcamentoReparo: (reparoId: string, orcamentoId: string) => void;
   atualizarStatusReparo: (reparoId: string, novoStatus: StatusReparo) => void;
+  togglePresencaAssembleia: (assembleiaId: string, moradorInfo?: Partial<ParticipanteConfirmado>) => Promise<{ success: boolean; confirmado: boolean }>;
 
   // Serviços de Moradores
   servicosMoradores: ServicoMorador[];
@@ -2525,6 +2529,68 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       return a;
     }));
+  };
+
+  const togglePresencaAssembleia = async (
+    assembleiaId: string, 
+    moradorInfo?: Partial<ParticipanteConfirmado>
+  ): Promise<{ success: boolean; confirmado: boolean }> => {
+    try {
+      let estaConfirmado = false;
+      let assembleiaAtualizada: Assembleia | null = null;
+
+      const mId = moradorInfo?.id || currentUser.id || currentUser.unidade || 'usr-anon';
+      const mNome = moradorInfo?.nome || currentUser.nome || 'Morador';
+      let mUnidade = moradorInfo?.unidade || currentUser.unidade || 'Condomínio';
+      if (mUnidade && !mUnidade.toLowerCase().startsWith('apt') && !mUnidade.toLowerCase().startsWith('casa') && !mUnidade.toLowerCase().startsWith('cobertura') && mUnidade !== 'Administração' && mUnidade !== 'Condomínio') {
+        mUnidade = `Apt ${mUnidade}`;
+      }
+      const mBloco = moradorInfo?.bloco || currentUser.bloco || '';
+      const mFoto = moradorInfo?.foto || currentUser.foto || '';
+
+      const agora = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+
+      setAssembleias(prev => prev.map(a => {
+        if (a.id === assembleiaId) {
+          const list = a.confirmados || [];
+          const jaExisteIndex = list.findIndex(c => 
+            c.id === mId || 
+            (c.nome && mNome && c.nome.toLowerCase() === mNome.toLowerCase()) || 
+            (c.unidade && mUnidade && normalizeUnitNumber(c.unidade) === normalizeUnitNumber(mUnidade))
+          );
+
+          let novaLista: ParticipanteConfirmado[];
+          if (jaExisteIndex >= 0) {
+            novaLista = list.filter((_, idx) => idx !== jaExisteIndex);
+            estaConfirmado = false;
+          } else {
+            const novoItem: ParticipanteConfirmado = {
+              id: mId,
+              nome: mNome,
+              unidade: mUnidade,
+              bloco: mBloco,
+              foto: mFoto,
+              confirmadoEm: agora
+            };
+            novaLista = [...list, novoItem];
+            estaConfirmado = true;
+          }
+
+          assembleiaAtualizada = { ...a, confirmados: novaLista };
+          return assembleiaAtualizada;
+        }
+        return a;
+      }));
+
+      if (assembleiaAtualizada && condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'assembleias', assembleiaAtualizada);
+      }
+
+      return { success: true, confirmado: estaConfirmado };
+    } catch (err: any) {
+      console.error('🔥 Erro ao alternar presença na assembleia:', err);
+      return { success: false, confirmado: false };
+    }
   };
 
   const [eventos, setEventos] = useState<EventoCondominio[]>([]);
@@ -5223,6 +5289,38 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', novaBenfeitoria).catch(console.error);
   };
 
+  const editarBenfeitoria = async (id: string, payload: Partial<Benfeitoria>): Promise<{ success: boolean; error?: string }> => {
+    try {
+      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      setBenfeitorias(prev => prev.map(b => {
+        if (b.id === id) {
+          benfeitoriaAtualizada = { ...b, ...payload };
+          return benfeitoriaAtualizada;
+        }
+        return b;
+      }));
+
+      if (benfeitoriaAtualizada) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', benfeitoriaAtualizada);
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao editar benfeitoria:', err);
+      return { success: false, error: err.message || 'Erro ao editar benfeitoria' };
+    }
+  };
+
+  const excluirBenfeitoria = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setBenfeitorias(prev => prev.filter(b => b.id !== id));
+      await excluirDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', id);
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao excluir benfeitoria:', err);
+      return { success: false, error: err.message || 'Erro ao excluir benfeitoria' };
+    }
+  };
+
   const atualizarStatusVaga = (
     vagaId: string, 
     novoStatus: StatusVaga, 
@@ -5458,6 +5556,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       excluirReparo,
       resolverReparoSimples,
       adicionarBenfeitoria,
+      editarBenfeitoria,
+      excluirBenfeitoria,
       servicosContratados,
       adicionarServicoContratado,
       editarServicoContratado,
@@ -5474,6 +5574,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adicionarOrcamentoReparo,
       excluirOrcamentoReparo,
       atualizarStatusReparo,
+      togglePresencaAssembleia,
       servicosMoradores,
       adicionarServicoMorador,
       editarServicoMorador,
