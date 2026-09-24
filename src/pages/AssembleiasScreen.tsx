@@ -37,7 +37,8 @@ export const AssembleiasScreen: React.FC = () => {
     setCurrentScreen, 
     currentUser, 
     isAdminLoggedIn,
-    excluirAssembleia 
+    excluirAssembleia,
+    togglePresencaAssembleia 
   } = useCondo();
 
   const [expandedAssembleiaId, setExpandedAssembleiaId] = useState<string | null>('ass-age-setembro-2026');
@@ -98,12 +99,13 @@ export const AssembleiasScreen: React.FC = () => {
     setExpandedAssembleiaId(prev => (prev === id ? null : id));
   };
 
-  const handleTogglePresenca = (id: string, e: React.MouseEvent) => {
+  const handleTogglePresenca = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setPresencaConfirmada(prev => ({
       ...prev,
       [id]: !prev[id]
     }));
+    await togglePresencaAssembleia(id);
   };
 
   // Card theme helper based on user specification:
@@ -243,7 +245,14 @@ export const AssembleiasScreen: React.FC = () => {
             const isAgendada = assembleia.status === 'Agendada';
             const isRealizadaComAta = assembleia.status === 'Realizada com Ata Publicada';
             const isAguardandoAta = assembleia.status === 'Realizada - Aguardando Ata';
-            const estaConfirmado = presencaConfirmada[assembleia.id];
+            const isUserInConfirmados = assembleia.confirmados && assembleia.confirmados.some(c => 
+              (currentUser.id && (c.id === currentUser.id || c.moradorId === currentUser.id)) ||
+              (currentUser.nome && (c.nome === currentUser.nome || c.nomeMorador === currentUser.nome)) ||
+              (currentUser.unidade && (c.unidade === currentUser.unidade || c.unidadeMorador === currentUser.unidade))
+            );
+            const estaConfirmado = presencaConfirmada[assembleia.id] !== undefined 
+              ? presencaConfirmada[assembleia.id] 
+              : Boolean(isUserInConfirmados);
             const isInformal = assembleia.tipoEncontro === 'Reunião Informal';
 
             return (
@@ -393,6 +402,29 @@ export const AssembleiasScreen: React.FC = () => {
                         <strong className="text-slate-950 font-bold">{assembleia.segundaChamada}</strong>
                       </div>
                     </div>
+
+                    {/* Presenças Confirmadas */}
+                    {assembleia.confirmados && assembleia.confirmados.length > 0 && (
+                      <div className="p-3 rounded-2xl bg-indigo-50/90 border border-indigo-200 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between font-bold text-indigo-950">
+                          <span className="flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5 text-indigo-700" /> Presenças Confirmadas ({assembleia.confirmados.length}):
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {assembleia.confirmados.map((conf, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-white border border-indigo-200 rounded-lg text-[11px] font-semibold text-indigo-950 shadow-2xs"
+                              title={`Confirmado em ${new Date(conf.confirmadoEm).toLocaleString('pt-BR')}`}
+                            >
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>{conf.nome || conf.nomeMorador || 'Morador'} ({conf.unidade || conf.unidadeMorador})</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Seção 1: Pautas / Assuntos Tratados com Soluções Integradas */}
                     <div className="space-y-2">
