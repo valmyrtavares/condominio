@@ -35,6 +35,7 @@ import {
   Benfeitoria,
   TipoBenfeitoria
 } from '../../types';
+import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 import { 
   Building, 
   Database,
@@ -136,6 +137,7 @@ import { CreateEditServicoContratadoModal } from '../../components/admin/CreateE
 import { CreateEditDesapegoModal } from '../../components/enjoei/CreateEditDesapegoModal';
 import { CreateEditDependenciaModal } from '../../components/admin/CreateEditDependenciaModal';
 import { CreateEditBenfeitoriaModal } from '../../components/admin/CreateEditBenfeitoriaModal';
+import { BenfeitoriaTimelineModal } from '../../components/admin/BenfeitoriaTimelineModal';
 import { CreateAutorizacaoModal } from '../../components/portaria/CreateAutorizacaoModal';
 import { CreateEncomendaModal } from '../../components/portaria/CreateEncomendaModal';
 import { AdminPermissionsSelector } from '../../components/admin/AdminPermissionsSelector';
@@ -967,6 +969,8 @@ export const AdminPanelScreen: React.FC = () => {
   // 16. Gestão de Benfeitorias & Conquistas State
   const [isCreateEditBenfeitoriaModalOpen, setIsCreateEditBenfeitoriaModalOpen] = useState(false);
   const [benfeitoriaToEditInAdmin, setBenfeitoriaToEditInAdmin] = useState<Benfeitoria | null>(null);
+  const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
+  const [benfeitoriaForTimelineModal, setBenfeitoriaForTimelineModal] = useState<Benfeitoria | null>(null);
   const [searchBenfeitoriaAdmin, setSearchBenfeitoriaAdmin] = useState('');
   const [filtroTipoBenfeitoriaAdmin, setFiltroTipoBenfeitoriaAdmin] = useState('Todas');
 
@@ -1298,16 +1302,15 @@ export const AdminPanelScreen: React.FC = () => {
     setTimeout(() => setCopiadoId(null), 2000);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (reader.result) {
-          setNovoAdminFoto(reader.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const result = await otimizarImagemArquivo(file, { maxBytes: 120 * 1024 });
+        setNovoAdminFoto(result);
+      } catch (err) {
+        console.error('Erro ao otimizar foto:', err);
+      }
     }
   };
 
@@ -9281,9 +9284,33 @@ export const AdminPanelScreen: React.FC = () => {
                             {/* Header do Card */}
                             <div className="flex items-start justify-between gap-2">
                               <div className="space-y-1">
-                                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300 inline-block">
-                                  {item.tipo}
-                                </span>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300 inline-block">
+                                    {item.tipo}
+                                  </span>
+
+                                  {/* Badge da Fase Atual */}
+                                  {(() => {
+                                    const st = item.statusAtual || 'entregue';
+                                    const labels: Record<string, { label: string; color: string }> = {
+                                      proposta: { label: '1. Proposta', color: 'bg-rose-100 text-rose-950 border-rose-300' },
+                                      orcamento: { label: '2. Buscando Orçamento', color: 'bg-sky-100 text-sky-950 border-sky-300' },
+                                      votacao: { label: '3. Votação Aberta', color: 'bg-amber-500 text-white border-amber-600 animate-pulse' },
+                                      contratada: { label: '4. Empresa Contratada', color: 'bg-blue-100 text-blue-950 border-blue-300' },
+                                      execucao: { label: '5. Em Execução', color: 'bg-orange-100 text-orange-950 border-orange-300' },
+                                      avaliacao: { label: '6. Avaliação Aberta', color: 'bg-purple-100 text-purple-950 border-purple-300' },
+                                      entregue: { label: '7. Entregue ✓', color: 'bg-emerald-100 text-emerald-950 border-emerald-300' },
+                                      cancelada: { label: '8. Cancelado ⚠', color: 'bg-red-600 text-white border-red-700' }
+                                    };
+                                    const conf = labels[st] || labels.entregue;
+                                    return (
+                                      <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${conf.color}`}>
+                                        {conf.label}
+                                      </span>
+                                    );
+                                  })()}
+                                </div>
+
                                 <h4 className="text-sm sm:text-base font-black text-slate-950 leading-snug">
                                   {item.titulo}
                                 </h4>
@@ -9335,10 +9362,42 @@ export const AdminPanelScreen: React.FC = () => {
                                 </span>
                               )}
                             </div>
+
+                            {/* Indicadores de Votação e Avaliação */}
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                              {item.votos && item.votos.length > 0 && (
+                                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-200">
+                                  🗳️ {item.votos.length} {item.votos.length === 1 ? 'voto' : 'votos'}
+                                </span>
+                              )}
+                              {item.notaMediaFinal && (
+                                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-100 text-purple-900 border border-purple-200 flex items-center gap-0.5">
+                                  ★ {item.notaMediaFinal} ({item.avaliacoes?.length || 0} avaliações)
+                                </span>
+                              )}
+                              {item.timeline && item.timeline.length > 0 && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                                  {item.timeline.length} {item.timeline.length === 1 ? 'evento na timeline' : 'eventos na timeline'}
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           {/* Botões de Ação */}
-                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                          <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBenfeitoriaForTimelineModal(item);
+                                setIsTimelineModalOpen(true);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                              title="Gerenciar Fases & Linha do Tempo"
+                            >
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>Fases & Timeline</span>
+                            </button>
+
                             <button
                               type="button"
                               onClick={() => {
@@ -10044,18 +10103,31 @@ export const AdminPanelScreen: React.FC = () => {
                         type="file"
                         accept=".pdf,image/*"
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              setFormOrcamento(prev => ({
-                                ...prev,
-                                documentoUrl: reader.result as string,
-                                documentoNome: file.name
-                              }));
-                            };
-                            reader.readAsDataURL(file);
+                            if (file.type.startsWith('image/')) {
+                              try {
+                                const opt = await otimizarImagemArquivo(file, { maxBytes: 120 * 1024 });
+                                setFormOrcamento(prev => ({
+                                  ...prev,
+                                  documentoUrl: opt,
+                                  documentoNome: file.name
+                                }));
+                              } catch (err) {
+                                console.error('Erro ao otimizar imagem de orçamento:', err);
+                              }
+                            } else {
+                              const reader = new FileReader();
+                              reader.onload = () => {
+                                setFormOrcamento(prev => ({
+                                  ...prev,
+                                  documentoUrl: reader.result as string,
+                                  documentoNome: file.name
+                                }));
+                              };
+                              reader.readAsDataURL(file);
+                            }
                           }
                         }}
                       />
@@ -10269,6 +10341,16 @@ export const AdminPanelScreen: React.FC = () => {
         isOpen={isCreateEditBenfeitoriaModalOpen}
         onClose={() => setIsCreateEditBenfeitoriaModalOpen(false)}
         benfeitoriaToEdit={benfeitoriaToEditInAdmin}
+      />
+
+      {/* Modal de Gestão de Ciclo de Vida e Linha do Tempo de Benfeitorias */}
+      <BenfeitoriaTimelineModal
+        isOpen={isTimelineModalOpen}
+        onClose={() => {
+          setIsTimelineModalOpen(false);
+          setBenfeitoriaForTimelineModal(null);
+        }}
+        benfeitoria={benfeitoriaForTimelineModal}
       />
 
       {/* Modal de Segurança, Resgate de Moradores e Backup Isolado por Condomínio */}

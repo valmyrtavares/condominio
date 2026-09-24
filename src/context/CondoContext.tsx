@@ -18,6 +18,14 @@ import {
   CategoriaReparo,
   Benfeitoria,
   TipoBenfeitoria,
+  StatusFaseBenfeitoria,
+  OrcamentoBenfeitoria,
+  VotoOrcamentoBenfeitoria,
+  AvaliacaoMoradorBenfeitoria,
+  PassoTimelineBenfeitoria,
+  DiarioObraItem,
+  CancelamentoInfo,
+  EmpresaContratadaInfo,
   VagaGaragem,
   StatusVaga,
   VeiculoInfo,
@@ -556,6 +564,16 @@ interface CondoContextType {
   adicionarBenfeitoria: (titulo: string, subtitulo: string, tipo: TipoBenfeitoria, descricao: string, impactoGestao: string, fotos: string[], investimento?: number, economiaMensal?: number, regrasUso?: string) => void;
   editarBenfeitoria: (id: string, payload: Partial<Benfeitoria>) => Promise<{ success: boolean; error?: string }>;
   excluirBenfeitoria: (id: string) => Promise<{ success: boolean; error?: string }>;
+  adicionarPassoTimelineBenfeitoria: (benfeitoriaId: string, passo: Omit<PassoTimelineBenfeitoria, 'id'>) => Promise<{ success: boolean; error?: string }>;
+  salvarOrcamentosBenfeitoria: (benfeitoriaId: string, orcamentos: OrcamentoBenfeitoria[]) => Promise<{ success: boolean; error?: string }>;
+  toggleVotacaoBenfeitoria: (benfeitoriaId: string, aberto: boolean, prazoFim?: string, dispararMensagem?: boolean) => Promise<{ success: boolean; error?: string }>;
+  votarOrcamentoBenfeitoria: (benfeitoriaId: string, orcamentoId: string) => Promise<{ success: boolean; error?: string }>;
+  definirContratacaoBenfeitoria: (benfeitoriaId: string, contratacao: EmpresaContratadaInfo) => Promise<{ success: boolean; error?: string }>;
+  adicionarDiarioObraBenfeitoria: (benfeitoriaId: string, item: Omit<DiarioObraItem, 'id'>) => Promise<{ success: boolean; error?: string }>;
+  toggleAvaliacaoBenfeitoria: (benfeitoriaId: string, aberto: boolean, prazoFim?: string, dispararMensagem?: boolean) => Promise<{ success: boolean; error?: string }>;
+  avaliarBenfeitoria: (benfeitoriaId: string, nota: number, comentario?: string) => Promise<{ success: boolean; error?: string }>;
+  cancelarBenfeitoria: (benfeitoriaId: string, justificativa: { motivo: string; fotos: string[]; dataCancelamento: string }) => Promise<{ success: boolean; error?: string }>;
+  concluirBenfeitoriaFinal: (benfeitoriaId: string, dadosEntrega?: { fotosDepois?: string[]; relatoFinal?: string; dataEntrega?: string }) => Promise<{ success: boolean; error?: string }>;
   solicitarReserva: (dependenciaId: string, dataReserva: string, periodo: ReservaDependencia['periodo']) => void;
   cancelarReserva: (reservaId: string) => void;
   atualizarStatusReclamacao: (id: string, novoStatus: StatusReclamacao) => void;
@@ -5274,6 +5292,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       titulo,
       subtitulo,
       tipo,
+      statusAtual: 'proposta',
+      dataCriacao: dataHoje,
       dataEntrega: dataHoje,
       descricao,
       impactoGestao,
@@ -5282,11 +5302,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       fotos: fotos.length > 0 ? fotos : ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'],
       responsavel: `${currentUser.nome} (${currentUser.role === 'subsindico' ? 'Subsíndica' : 'Síndico'})`,
       condominioId: condoTenantId,
-      regrasUso
+      regrasUso,
+      timeline: [
+        {
+          id: `passo-${Date.now()}`,
+          data: dataHoje,
+          status: 'proposta',
+          titulo: 'Proposta de Melhoria / Obra',
+          descricao: descricao || 'Proposta de melhoria cadastrada pela administração.',
+          fotos: fotos.length > 0 ? [fotos[0]] : [],
+          criadoPor: currentUser.nome || 'Administração'
+        }
+      ]
     };
 
     setBenfeitorias(prev => [novaBenfeitoria, ...prev]);
-    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', novaBenfeitoria).catch(console.error);
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(novaBenfeitoria))).catch(console.error);
   };
 
   const editarBenfeitoria = async (id: string, payload: Partial<Benfeitoria>): Promise<{ success: boolean; error?: string }> => {
@@ -5300,8 +5331,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return b;
       }));
 
-      if (benfeitoriaAtualizada) {
-        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', benfeitoriaAtualizada);
+      if (benfeitoriaAtualizada && condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
       }
       return { success: true };
     } catch (err: any) {
@@ -5318,6 +5349,466 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (err: any) {
       console.error('🔥 Erro ao excluir benfeitoria:', err);
       return { success: false, error: err.message || 'Erro ao excluir benfeitoria' };
+    }
+  };
+
+  const adicionarPassoTimelineBenfeitoria = async (
+    benfeitoriaId: string, 
+    passo: Omit<PassoTimelineBenfeitoria, 'id'>
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      const novoPasso: PassoTimelineBenfeitoria = {
+        id: `passo-${Date.now()}`,
+        ...passo,
+        criadoPor: passo.criadoPor || currentUser.nome || 'Administração'
+      };
+
+      setBenfeitorias(prev => prev.map(b => {
+        if (b.id === benfeitoriaId) {
+          const timeline = [...(b.timeline || []), novoPasso];
+          benfeitoriaAtualizada = {
+            ...b,
+            statusAtual: passo.status,
+            timeline
+          };
+          return benfeitoriaAtualizada;
+        }
+        return b;
+      }));
+
+      if (benfeitoriaAtualizada && condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao adicionar passo na timeline da benfeitoria:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const salvarOrcamentosBenfeitoria = async (
+    benfeitoriaId: string, 
+    orcamentos: OrcamentoBenfeitoria[]
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      setBenfeitorias(prev => prev.map(b => {
+        if (b.id === benfeitoriaId) {
+          const timeline = b.timeline || [];
+          const novoPasso: PassoTimelineBenfeitoria = {
+            id: `passo-${Date.now()}`,
+            data: new Date().toLocaleDateString('pt-BR'),
+            status: 'orcamento',
+            titulo: '3 Orçamentos Disponibilizados',
+            descricao: `${orcamentos.length} orçamentos comparativos cadastrados para análise.`,
+            criadoPor: currentUser.nome || 'Administração'
+          };
+          benfeitoriaAtualizada = {
+            ...b,
+            orcamentos,
+            statusAtual: b.statusAtual === 'proposta' ? 'orcamento' : b.statusAtual,
+            timeline: [...timeline, novoPasso]
+          };
+          return benfeitoriaAtualizada;
+        }
+        return b;
+      }));
+
+      if (benfeitoriaAtualizada && condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao salvar orçamentos:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const toggleVotacaoBenfeitoria = async (
+    benfeitoriaId: string, 
+    aberto: boolean, 
+    prazoFim?: string, 
+    dispararMensagem?: boolean
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      let tituloBenfeitoria = '';
+
+      setBenfeitorias(prev => prev.map(b => {
+        if (b.id === benfeitoriaId) {
+          tituloBenfeitoria = b.titulo;
+          const timeline = b.timeline || [];
+          const novoPasso: PassoTimelineBenfeitoria = {
+            id: `passo-${Date.now()}`,
+            data: new Date().toLocaleDateString('pt-BR'),
+            status: aberto ? 'votacao' : 'orcamento',
+            titulo: aberto ? 'Votação Eletrônica Aberta' : 'Votação Eletrônica Encerrada',
+            descricao: aberto 
+              ? `Votação aberta para escolha do orçamento${prazoFim ? ` até ${new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.` 
+              : 'Período de votação finalizado pela administração.',
+            criadoPor: currentUser.nome || 'Administração'
+          };
+          benfeitoriaAtualizada = {
+            ...b,
+            votacaoAberta: aberto,
+            prazoFimVotacao: prazoFim || b.prazoFimVotacao,
+            statusAtual: aberto ? 'votacao' : (b.statusAtual === 'votacao' ? 'orcamento' : b.statusAtual),
+            timeline: [...timeline, novoPasso]
+          };
+          return benfeitoriaAtualizada;
+        }
+        return b;
+      }));
+
+      if (dispararMensagem && aberto && tituloBenfeitoria) {
+        const prazoFormatado = prazoFim ? new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'o prazo estipulado';
+        enviarNotificacaoPrivada(
+          'todos', 
+          `A administração abriu a votação eletrônica dos orçamentos da melhoria "${tituloBenfeitoria}". Acesse a aba Benfeitorias e registre seu voto até ${prazoFormatado}.`,
+          `🗳️ Votação Aberta: ${tituloBenfeitoria}`
+        );
+      }
+
+      if (benfeitoriaAtualizada && condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao alternar votação:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const votarOrcamentoBenfeitoria = async (
+    benfeitoriaId: string, 
+    orcamentoIdEscolhido: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      const moradorId = currentUser.id || currentUser.unidade || 'anon';
+      const moradorNome = currentUser.nome || 'Morador';
+      let unidade = currentUser.unidade || 'Unidade';
+      if (unidade && !unidade.toLowerCase().startsWith('apt') && !unidade.toLowerCase().startsWith('casa') && !unidade.toLowerCase().startsWith('cobertura') && unidade !== 'Administração') {
+        unidade = `Apt ${unidade}`;
+      }
+
+      const novoVoto: VotoOrcamentoBenfeitoria = {
+        moradorId,
+        moradorNome,
+        unidade,
+        orcamentoIdEscolhido,
+        dataVoto: `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+      };
+
+      setBenfeitorias(prev => prev.map(b => {
+        if (b.id === benfeitoriaId) {
+          const votosAtuais = b.votos || [];
+          const jaVotouIdx = votosAtuais.findIndex(v => v.moradorId === moradorId || (v.unidade && v.unidade === unidade));
+          let novosVotos: VotoOrcamentoBenfeitoria[];
+          if (jaVotouIdx >= 0) {
+            novosVotos = votosAtuais.map((v, i) => i === jaVotouIdx ? novoVoto : v);
+          } else {
+            novosVotos = [...votosAtuais, novoVoto];
+          }
+
+          benfeitoriaAtualizada = {
+            ...b,
+            votos: novosVotos
+          };
+          return benfeitoriaAtualizada;
+        }
+        return b;
+      }));
+
+      if (benfeitoriaAtualizada && condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao registrar voto:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const definirContratacaoBenfeitoria = async (
+    benfeitoriaId: string, 
+    contratacao: EmpresaContratadaInfo
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      setBenfeitorias(prev => prev.map(b => {
+        if (b.id === benfeitoriaId) {
+          const timeline = b.timeline || [];
+          const novoPasso: PassoTimelineBenfeitoria = {
+            id: `passo-${Date.now()}`,
+            data: new Date().toLocaleDateString('pt-BR'),
+            status: 'contratada',
+            titulo: `Empresa Contratada: ${contratacao.empresaNome}`,
+            descricao: `Início em ${contratacao.dataInicio} e término previsto para ${contratacao.dataTerminoPrevista}. Valor contratado: R$ ${contratacao.valorContratado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
+            criadoPor: currentUser.nome || 'Administração'
+          };
+          benfeitoriaAtualizada = {
+            ...b,
+            empresaEleita: contratacao,
+            statusAtual: 'contratada',
+            timeline: [...timeline, novoPasso]
+          };
+          return benfeitoriaAtualizada;
+        }
+        return b;
+      }));
+
+      if (benfeitoriaAtualizada && condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao definir contratação:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const adicionarDiarioObraBenfeitoria = async (
+    benfeitoriaId: string, 
+    item: Omit<DiarioObraItem, 'id'>
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      const novoItem: DiarioObraItem = {
+        id: `diario-${Date.now()}`,
+        ...item,
+        autorNome: item.autorNome || currentUser.nome || 'Administração'
+      };
+
+      setBenfeitorias(prev => prev.map(b => {
+        if (b.id === benfeitoriaId) {
+          const diarioObras = [...(b.diarioObras || []), novoItem];
+          const timeline = b.timeline || [];
+          const novoPasso: PassoTimelineBenfeitoria = {
+            id: `passo-${Date.now()}`,
+            data: item.data || new Date().toLocaleDateString('pt-BR'),
+            status: 'execucao',
+            titulo: 'Atualização de Execução da Obra',
+            descricao: item.descricao,
+            fotos: item.fotos,
+            criadoPor: currentUser.nome || 'Administração'
+          };
+          benfeitoriaAtualizada = {
+            ...b,
+            statusAtual: 'execucao',
+            diarioObras,
+            timeline: [...timeline, novoPasso]
+          };
+          return benfeitoriaAtualizada;
+        }
+        return b;
+      }));
+
+      if (benfeitoriaAtualizada && condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao adicionar diário de obra:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const toggleAvaliacaoBenfeitoria = async (
+    benfeitoriaId: string, 
+    aberto: boolean, 
+    prazoFim?: string, 
+    dispararMensagem?: boolean
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      let tituloBenfeitoria = '';
+
+      setBenfeitorias(prev => prev.map(b => {
+        if (b.id === benfeitoriaId) {
+          tituloBenfeitoria = b.titulo;
+          const timeline = b.timeline || [];
+          const novoPasso: PassoTimelineBenfeitoria = {
+            id: `passo-${Date.now()}`,
+            data: new Date().toLocaleDateString('pt-BR'),
+            status: aberto ? 'avaliacao' : 'execucao',
+            titulo: aberto ? 'Avaliação dos Condôminos Aberta' : 'Avaliação Encerrada',
+            descricao: aberto 
+              ? `Obra entregue para avaliação dos condôminos${prazoFim ? ` até ${new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.` 
+              : 'Período de avaliação finalizado.',
+            criadoPor: currentUser.nome || 'Administração'
+          };
+          benfeitoriaAtualizada = {
+            ...b,
+            avaliacaoAberta: aberto,
+            prazoFimAvaliacao: prazoFim || b.prazoFimAvaliacao,
+            statusAtual: aberto ? 'avaliacao' : (b.statusAtual === 'avaliacao' ? 'execucao' : b.statusAtual),
+            timeline: [...timeline, novoPasso]
+          };
+          return benfeitoriaAtualizada;
+        }
+        return b;
+      }));
+
+      if (dispararMensagem && aberto && tituloBenfeitoria) {
+        const prazoFormatado = prazoFim ? new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'breve';
+        enviarNotificacaoPrivada(
+          'todos', 
+          `A melhoria/obra "${tituloBenfeitoria}" foi concluída pela empresa contratada! Por favor, acesse a aba Benfeitorias e avalie a qualidade do serviço de 1 a 5 estrelas até ${prazoFormatado}.`,
+          `⭐ Avalie a Obra Entregue: ${tituloBenfeitoria}`
+        );
+      }
+
+      if (benfeitoriaAtualizada && condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao alternar avaliação:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const avaliarBenfeitoria = async (
+    benfeitoriaId: string, 
+    nota: number, 
+    comentario?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      const moradorId = currentUser.id || currentUser.unidade || 'anon';
+      const moradorNome = currentUser.nome || 'Morador';
+      let unidade = currentUser.unidade || 'Unidade';
+      if (unidade && !unidade.toLowerCase().startsWith('apt') && !unidade.toLowerCase().startsWith('casa') && !unidade.toLowerCase().startsWith('cobertura') && unidade !== 'Administração') {
+        unidade = `Apt ${unidade}`;
+      }
+
+      const novaAvaliacao: AvaliacaoMoradorBenfeitoria = {
+        moradorId,
+        moradorNome,
+        unidade,
+        nota,
+        comentario,
+        dataAvaliacao: `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+      };
+
+      setBenfeitorias(prev => prev.map(b => {
+        if (b.id === benfeitoriaId) {
+          const avaliacoesAtuais = b.avaliacoes || [];
+          const jaAvaliouIdx = avaliacoesAtuais.findIndex(a => a.moradorId === moradorId || (a.unidade && a.unidade === unidade));
+          let novasAvaliacoes: AvaliacaoMoradorBenfeitoria[];
+          if (jaAvaliouIdx >= 0) {
+            novasAvaliacoes = avaliacoesAtuais.map((a, i) => i === jaAvaliouIdx ? novaAvaliacao : a);
+          } else {
+            novasAvaliacoes = [...avaliacoesAtuais, novaAvaliacao];
+          }
+
+          const somaNotas = novasAvaliacoes.reduce((acc, curr) => acc + curr.nota, 0);
+          const notaMedia = novasAvaliacoes.length > 0 ? Number((somaNotas / novasAvaliacoes.length).toFixed(1)) : nota;
+
+          benfeitoriaAtualizada = {
+            ...b,
+            avaliacoes: novasAvaliacoes,
+            notaMediaFinal: notaMedia
+          };
+          return benfeitoriaAtualizada;
+        }
+        return b;
+      }));
+
+      if (benfeitoriaAtualizada && condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao avaliar benfeitoria:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const cancelarBenfeitoria = async (
+    benfeitoriaId: string, 
+    justificativa: { motivo: string; fotos: string[]; dataCancelamento: string }
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      setBenfeitorias(prev => prev.map(b => {
+        if (b.id === benfeitoriaId) {
+          const timeline = b.timeline || [];
+          const cancelInfo: CancelamentoInfo = {
+            ...justificativa,
+            autorNome: currentUser.nome || 'Administração'
+          };
+          const novoPasso: PassoTimelineBenfeitoria = {
+            id: `passo-${Date.now()}`,
+            data: justificativa.dataCancelamento || new Date().toLocaleDateString('pt-BR'),
+            status: 'cancelada',
+            titulo: 'Obra / Contrato Cancelado (Quebra de Contrato)',
+            descricao: justificativa.motivo,
+            fotos: justificativa.fotos,
+            criadoPor: currentUser.nome || 'Administração'
+          };
+          benfeitoriaAtualizada = {
+            ...b,
+            statusAtual: 'cancelada',
+            cancelamentoInfo: cancelInfo,
+            timeline: [...timeline, novoPasso]
+          };
+          return benfeitoriaAtualizada;
+        }
+        return b;
+      }));
+
+      if (benfeitoriaAtualizada && condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao cancelar benfeitoria:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const concluirBenfeitoriaFinal = async (
+    benfeitoriaId: string, 
+    dadosEntrega?: { fotosDepois?: string[]; relatoFinal?: string; dataEntrega?: string }
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      const dataHoje = dadosEntrega?.dataEntrega || new Date().toLocaleDateString('pt-BR');
+
+      setBenfeitorias(prev => prev.map(b => {
+        if (b.id === benfeitoriaId) {
+          const timeline = b.timeline || [];
+          const novoPasso: PassoTimelineBenfeitoria = {
+            id: `passo-${Date.now()}`,
+            data: dataHoje,
+            status: 'entregue',
+            titulo: 'Benfeitoria Entregue & Concluída Oficialmente',
+            descricao: dadosEntrega?.relatoFinal || b.descricao || 'Obra finalizada com sucesso e prestação de contas concluída.',
+            fotos: dadosEntrega?.fotosDepois && dadosEntrega.fotosDepois.length > 0 ? dadosEntrega.fotosDepois : b.fotos,
+            criadoPor: currentUser.nome || 'Administração'
+          };
+          benfeitoriaAtualizada = {
+            ...b,
+            statusAtual: 'entregue',
+            dataEntrega: dataHoje,
+            fotos: dadosEntrega?.fotosDepois && dadosEntrega.fotosDepois.length > 0 ? dadosEntrega.fotosDepois : b.fotos,
+            timeline: [...timeline, novoPasso]
+          };
+          return benfeitoriaAtualizada;
+        }
+        return b;
+      }));
+
+      if (benfeitoriaAtualizada && condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao concluir benfeitoria:', err);
+      return { success: false, error: err.message };
     }
   };
 
@@ -5558,6 +6049,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adicionarBenfeitoria,
       editarBenfeitoria,
       excluirBenfeitoria,
+      adicionarPassoTimelineBenfeitoria,
+      salvarOrcamentosBenfeitoria,
+      toggleVotacaoBenfeitoria,
+      votarOrcamentoBenfeitoria,
+      definirContratacaoBenfeitoria,
+      adicionarDiarioObraBenfeitoria,
+      toggleAvaliacaoBenfeitoria,
+      avaliarBenfeitoria,
+      cancelarBenfeitoria,
+      concluirBenfeitoriaFinal,
       servicosContratados,
       adicionarServicoContratado,
       editarServicoContratado,

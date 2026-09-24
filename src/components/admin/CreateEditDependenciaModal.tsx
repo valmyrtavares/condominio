@@ -20,6 +20,7 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
+import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 
 const TIPOS_SUGERIDOS: TipoDependencia[] = [
   'Lazer & Convivência',
@@ -145,16 +146,15 @@ export const CreateEditDependenciaModal: React.FC<CreateEditDependenciaModalProp
 
   if (!isOpen) return null;
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setFoto(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const result = await otimizarImagemArquivo(file, { maxBytes: 120 * 1024 });
+        setFoto(result);
+      } catch (err) {
+        console.error('Erro ao otimizar foto:', err);
+      }
     }
   };
 

@@ -26,6 +26,7 @@ import {
   Star,
   ChevronDown
 } from 'lucide-react';
+import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 
 interface EditFuncionarioModalProps {
   isOpen: boolean;
@@ -111,14 +112,15 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
 
   if (!isOpen || !funcionario) return null;
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFoto(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const result = await otimizarImagemArquivo(file, { maxBytes: 120 * 1024 });
+        setFoto(result);
+      } catch (err) {
+        console.error('Erro ao otimizar foto:', err);
+      }
     }
   };
 

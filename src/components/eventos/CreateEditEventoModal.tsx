@@ -14,6 +14,7 @@ import {
   Check,
   PartyPopper
 } from 'lucide-react';
+import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 
 interface CreateEditEventoModalProps {
   isOpen: boolean;
@@ -94,16 +95,16 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
+      try {
+        const result = await otimizarImagemArquivo(file, { maxBytes: 120 * 1024 });
         setImagem(result);
         setImagemCustom(result);
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Erro ao otimizar foto do evento:', err);
+      }
     }
   };
 

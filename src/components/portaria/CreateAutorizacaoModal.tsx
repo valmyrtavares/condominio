@@ -16,6 +16,7 @@ import {
   FileText,
   Sparkles
 } from 'lucide-react';
+import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 
 const FOTOS_PREDEFINIDAS = [
   'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?auto=format&fit=crop&w=300&q=80',
@@ -82,14 +83,15 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFotoVisitante(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const result = await otimizarImagemArquivo(file, { maxBytes: 120 * 1024 });
+        setFotoVisitante(result);
+      } catch (err) {
+        console.error('Erro ao otimizar foto do visitante:', err);
+      }
     }
   };
 

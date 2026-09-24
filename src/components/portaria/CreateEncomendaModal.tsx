@@ -15,6 +15,7 @@ import {
   FileText,
   Clock
 } from 'lucide-react';
+import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 
 const FOTOS_PACOTES_EXEMPLO = [
   'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80',
@@ -88,14 +89,15 @@ export const CreateEncomendaModal: React.FC<CreateEncomendaModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFotoPacote(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const result = await otimizarImagemArquivo(file, { maxBytes: 120 * 1024 });
+        setFotoPacote(result);
+      } catch (err) {
+        console.error('Erro ao otimizar foto do pacote:', err);
+      }
     }
   };
 

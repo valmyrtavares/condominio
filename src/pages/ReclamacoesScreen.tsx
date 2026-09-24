@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { StatusBadge } from '../components/layout/StatusBadge';
 import { CategoriaReclamacao, StatusReclamacao, Reclamacao } from '../types';
+import { otimizarImagemArquivo } from '../utils/imageOptimizer';
 
 export const ReclamacoesScreen: React.FC = () => {
   const { 
@@ -99,18 +100,26 @@ export const ReclamacoesScreen: React.FC = () => {
   };
 
   // Submit new Complaint
-  const handleSubmitReclamacao = (e: React.FormEvent) => {
+  const handleSubmitReclamacao = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!titulo.trim() || !descricao.trim()) return;
 
     if (anexoFile) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        const isVideo = anexoFile.type.startsWith('video');
-        adicionarReclamacao(titulo, descricao, categoria, result, isVideo ? 'video' : 'imagem');
-      };
-      reader.readAsDataURL(anexoFile);
+      const isVideo = anexoFile.type.startsWith('video');
+      if (isVideo) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          adicionarReclamacao(titulo, descricao, categoria, reader.result as string, 'video');
+        };
+        reader.readAsDataURL(anexoFile);
+      } else {
+        try {
+          const result = await otimizarImagemArquivo(anexoFile, { maxBytes: 120 * 1024 });
+          adicionarReclamacao(titulo, descricao, categoria, result, 'imagem');
+        } catch (err) {
+          console.error('Erro ao otimizar anexo:', err);
+        }
+      }
     } else {
       adicionarReclamacao(titulo, descricao, categoria);
     }

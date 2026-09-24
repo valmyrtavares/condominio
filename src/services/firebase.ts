@@ -102,6 +102,23 @@ export const salvarCondominioNoFirestore = async (condo: any) => {
       atualizadoEm: new Date().toISOString()
     };
 
+    // Proteção contra imagens DataURL gigantes que excedem o limite de 1MB do Firestore
+    if (
+      camposAtualizados.fotoFachada && 
+      typeof camposAtualizados.fotoFachada === 'string' && 
+      camposAtualizados.fotoFachada.startsWith('data:image')
+    ) {
+      try {
+        camposAtualizados.fotoFachada = await otimizarImagemDataUrl(camposAtualizados.fotoFachada, {
+          maxLargura: 1200,
+          maxAltura: 800,
+          qualidade: 0.8
+        });
+      } catch (imgErr) {
+        console.warn('Falha na otimização da fotoFachada ao salvar no Firestore:', imgErr);
+      }
+    }
+
     if (limpo.tipoCondominio === 'casas') {
       // Condomínio de Casas: PROIBIDO ter andares, padrão de primeiro andar ou blocos de prédio
       camposAtualizados.padraoPrimeiroAndar = deleteField();

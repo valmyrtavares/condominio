@@ -28,6 +28,7 @@ import {
 import { StatusBadge } from '../components/layout/StatusBadge';
 import { BudgetComparator } from '../components/reparos/BudgetComparator';
 import { TimelineView } from '../components/reparos/TimelineView';
+import { otimizarImagemArquivo } from '../utils/imageOptimizer';
 
 export const ReparosScreen: React.FC = () => {
   const { 
@@ -123,18 +124,26 @@ export const ReparosScreen: React.FC = () => {
     'Cancelado'
   ];
 
-  const handleSubmitReparo = (e: React.FormEvent) => {
+  const handleSubmitReparo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!titulo.trim() || !descricao.trim()) return;
 
     if (anexoFile) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        const isVideo = anexoFile.type.startsWith('video');
-        adicionarReparo(titulo, descricao, porte, categoria, result, isVideo ? 'video' : 'imagem');
-      };
-      reader.readAsDataURL(anexoFile);
+      const isVideo = anexoFile.type.startsWith('video');
+      if (isVideo) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          adicionarReparo(titulo, descricao, porte, categoria, reader.result as string, 'video');
+        };
+        reader.readAsDataURL(anexoFile);
+      } else {
+        try {
+          const result = await otimizarImagemArquivo(anexoFile, { maxBytes: 120 * 1024 });
+          adicionarReparo(titulo, descricao, porte, categoria, result, 'imagem');
+        } catch (err) {
+          console.error('Erro ao otimizar foto:', err);
+        }
+      }
     } else {
       adicionarReparo(titulo, descricao, porte, categoria);
     }

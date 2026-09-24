@@ -310,11 +310,87 @@ export type TipoBenfeitoria =
   | 'Equilíbrio Financeiro & Economia' 
   | 'Área Comum & Convivência';
 
+export type StatusFaseBenfeitoria = 
+  | 'proposta'         // 1. Proposta de melhoria
+  | 'orcamento'        // 2. Buscando orçamento (3 orçamentos)
+  | 'votacao'          // 3. Votação Eletrônica
+  | 'contratada'       // 4. Empresa contratada
+  | 'execucao'         // 5. Em execução
+  | 'avaliacao'        // 6. Avaliação dos condôminos
+  | 'entregue'         // 7. Entregue
+  | 'cancelada';       // 8. Cancelado (quebra de contrato)
+
+export interface OrcamentoBenfeitoria {
+  id: string; // '1' | '2' | '3'
+  empresaNome: string;
+  cnpj?: string;
+  site?: string;
+  contato?: string;
+  prazoEntrega: string; // Data ISO (YYYY-MM-DD) do prazo/término
+  valorTotal: number;
+  formaPagamento: string;
+  jaPrestouServico: boolean;
+  avaliacaoMediaAnterior?: number; // 1 a 5 estrelas
+  propostaPdfOuFoto?: string;
+}
+
+export interface VotoOrcamentoBenfeitoria {
+  moradorId: string;
+  moradorNome: string;
+  unidade: string;
+  orcamentoIdEscolhido: string; // '1' | '2' | '3'
+  dataVoto: string;
+}
+
+export interface AvaliacaoMoradorBenfeitoria {
+  moradorId: string;
+  moradorNome: string;
+  unidade: string;
+  nota: number; // 1 a 5 estrelas
+  comentario?: string;
+  dataAvaliacao: string;
+}
+
+export interface DiarioObraItem {
+  id: string;
+  data: string;
+  descricao: string;
+  fotos: string[];
+  autorNome?: string;
+}
+
+export interface CancelamentoInfo {
+  motivo: string;
+  fotos: string[];
+  dataCancelamento: string;
+  autorNome?: string;
+}
+
+export interface EmpresaContratadaInfo {
+  empresaNome: string;
+  dataInicio: string;
+  dataTerminoPrevista: string;
+  valorContratado: number;
+  valorPago: number;
+}
+
+export interface PassoTimelineBenfeitoria {
+  id: string;
+  data: string;
+  status: StatusFaseBenfeitoria;
+  titulo: string;
+  descricao: string;
+  fotos?: string[];
+  criadoPor?: string;
+}
+
 export interface Benfeitoria {
   id: string;
   titulo: string;
   subtitulo: string;
   tipo: TipoBenfeitoria;
+  statusAtual?: StatusFaseBenfeitoria; // Default se não informado: 'entregue' para legadas
+  dataCriacao?: string;
   dataEntrega: string;
   descricao: string;
   impactoGestao: string;
@@ -325,6 +401,28 @@ export interface Benfeitoria {
   responsavel: string;
   condominioId: string;
   regrasUso?: string;
+
+  // Linha do tempo / Passos dentro do projeto
+  timeline?: PassoTimelineBenfeitoria[];
+
+  // Status 2 & 3: Orçamentos e Votação
+  orcamentos?: OrcamentoBenfeitoria[];
+  votacaoAberta?: boolean; // Chave switch ON/OFF
+  prazoFimVotacao?: string; // Data limite para votar
+  votos?: VotoOrcamentoBenfeitoria[];
+
+  // Status 4 & 5: Contratação e Execução
+  empresaEleita?: EmpresaContratadaInfo;
+  diarioObras?: DiarioObraItem[];
+
+  // Status 6: Avaliação dos Condôminos
+  avaliacaoAberta?: boolean; // Chave switch ON/OFF
+  prazoFimAvaliacao?: string;
+  avaliacoes?: AvaliacaoMoradorBenfeitoria[];
+  notaMediaFinal?: number;
+
+  // Status 8: Cancelamento
+  cancelamentoInfo?: CancelamentoInfo;
 }
 
 export type StatusVaga = 'Em uso' | 'Para Alugar' | 'Vazia';

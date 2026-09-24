@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
+import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 
 interface CreateEditServiceModalProps {
   isOpen: boolean;
@@ -95,16 +96,15 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (reader.result) {
-          setImagem(reader.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const result = await otimizarImagemArquivo(file, { maxBytes: 120 * 1024 });
+        setImagem(result);
+      } catch (err) {
+        console.error('Erro ao otimizar imagem de serviço:', err);
+      }
     }
   };
 
