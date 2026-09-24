@@ -43,9 +43,13 @@ export const ResidentMessagesModal: React.FC<ResidentMessagesModalProps> = ({
   const isSindicoOrAdmin = currentUser?.role === 'sindico' || currentUser?.role === 'subsindico';
   const canAccess = Boolean(isMyUnit || isSindicoOrAdmin);
 
-  const unitNotifs = notificacoesPrivadas.filter(
-    n => normalizeUnit(n.unidadeNumero) === normalizeUnit(unitNumber)
-  );
+  const unitNotifs = notificacoesPrivadas.filter(n => {
+    if (!n || !n.unidadeNumero) return false;
+    const targetNorm = normalizeUnit(n.unidadeNumero);
+    const unitNorm = normalizeUnit(unitNumber);
+    const isGeneral = targetNorm === 'todos' || targetNorm === 'geral' || targetNorm === 'todas';
+    return isGeneral || targetNorm === unitNorm || targetNorm.includes(unitNorm) || unitNorm.includes(targetNorm);
+  });
 
   // When modal is opened by authorized user, mark all unread notifications as read so admin is immediately notified of delivery/reading
   useEffect(() => {

@@ -37,12 +37,32 @@ export const Header: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotifPopupOpen, setIsNotifPopupOpen] = useState(false);
 
-  const normalizeUnit = (str?: string) => str ? str.toLowerCase().replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim() : '';
+  const normalizeUnit = (str?: string) => str ? str.toLowerCase().replace(/^(apt|apto|unidade|apartamento|cobertura|casa)\s*/i, '').trim() : '';
   const userUnit = normalizeUnit(currentUser?.unidade);
+  const userRawNumber = currentUser?.unidade ? currentUser.unidade.replace(/[^0-9]/g, '') : '';
 
-  const unitNotifs = notificacoesPrivadas.filter(
-    n => userUnit && normalizeUnit(n.unidadeNumero) === userUnit
-  );
+  const unitNotifs = notificacoesPrivadas.filter(n => {
+    if (!n || !n.unidadeNumero) return false;
+    const targetNorm = normalizeUnit(n.unidadeNumero);
+    const targetRaw = n.unidadeNumero.replace(/[^0-9]/g, '');
+
+    const isGeneral = targetNorm === 'todos' || targetNorm === 'geral' || targetNorm === 'todas' || targetNorm === 'condominio';
+    if (isGeneral) return true;
+
+    if (!userUnit || currentUser?.role === 'sindico' || currentUser?.role === 'subsindico') {
+      return true;
+    }
+
+    if (userUnit && (targetNorm === userUnit || targetNorm.startsWith(userUnit) || userUnit.startsWith(targetNorm))) {
+      return true;
+    }
+
+    if (userRawNumber && targetRaw && userRawNumber === targetRaw) {
+      return true;
+    }
+
+    return false;
+  });
   const unreadCount = unitNotifs.filter(n => !n.lida).length;
 
   const isHome = currentScreen === 'home';
