@@ -35,7 +35,13 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
   onClose,
   defaultMonth
 }) => {
-  const { mesesPrestacao, adicionarMesPrestacao, adicionarDespesa, adicionarReceita } = useCondo();
+  const { 
+    mesesPrestacao, 
+    adicionarMesPrestacao, 
+    adicionarDespesa, 
+    adicionarReceita,
+    importarLancamentosEmLote 
+  } = useCondo();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -118,17 +124,19 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
 
     const targetMonth = selectedMonth;
 
-    if (tipoImportacao === 'despesas') {
+    if (importarLancamentosEmLote) {
+      importarLancamentosEmLote(targetMonth, tipoImportacao, parsedItems);
+    } else if (tipoImportacao === 'despesas') {
       parsedItems.forEach(item => {
         adicionarDespesa(targetMonth, item as Omit<DespesaItem, 'id'>);
       });
-      setImportSuccessMessage(`✨ Sucesso! ${parsedItems.length} saídas importadas com sucesso para ${targetMonth}. Total: ${formatCurrency(totalValorCalculado)}`);
     } else {
       parsedItems.forEach(item => {
         adicionarReceita(targetMonth, item as Omit<ReceitaItem, 'id'>);
       });
-      setImportSuccessMessage(`✨ Sucesso! ${parsedItems.length} entradas importadas com sucesso para ${targetMonth}. Total: ${formatCurrency(totalValorCalculado)}`);
     }
+
+    setImportSuccessMessage(`✨ Sucesso! ${parsedItems.length} ${tipoImportacao === 'despesas' ? 'saídas' : 'entradas'} importadas com sucesso no Cloud Firestore para ${targetMonth}. Total: ${formatCurrency(totalValorCalculado)}`);
 
     setTimeout(() => {
       setUploadedFile(null);

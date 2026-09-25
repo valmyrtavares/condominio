@@ -444,6 +444,7 @@ interface CondoContextType {
   adicionarReceita: (mesAno: string, receita: Omit<ReceitaItem, 'id'>) => void;
   editarReceita: (mesAno: string, id: string, receita: Partial<ReceitaItem>) => void;
   excluirReceita: (mesAno: string, id: string) => void;
+  importarLancamentosEmLote: (mesAno: string, tipo: 'despesas' | 'receitas', itens: (Omit<DespesaItem, 'id'> | Omit<ReceitaItem, 'id'>)[]) => void;
   adicionarCategoriaDespesa: (categoria: string) => void;
   adicionarCategoriaReceita: (categoria: string) => void;
   funcionarios: Funcionario[];
@@ -2237,6 +2238,27 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setReservas(Array.isArray(dados) ? (dados as ReservaDependencia[]) : []);
     });
 
+    const unPrestacaoContas = ouvirSubcolecaoFirestore(condoTenantId, 'prestacao_contas', (dados) => {
+      if (Array.isArray(dados)) {
+        const mapa: Record<string, PrestacaoContas> = {};
+        dados.forEach((item: any) => {
+          if (item && item.mesAno) {
+            mapa[item.mesAno] = {
+              id: item.id || `pc-${item.mesAno.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+              mesAno: item.mesAno,
+              receitasTotal: Number(item.receitasTotal) || 0,
+              despesasTotal: Number(item.despesasTotal) || 0,
+              saldo: Number(item.saldo) || 0,
+              despesas: Array.isArray(item.despesas) ? item.despesas : [],
+              receitas: Array.isArray(item.receitas) ? item.receitas : [],
+              condominioId: condoTenantId
+            };
+          }
+        });
+        setMesesPrestacao(mapa);
+      }
+    });
+
     return () => {
       unRegras();
       unImoveis();
@@ -2254,6 +2276,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unBenfeitorias();
       unVagas();
       unReservas();
+      unPrestacaoContas();
     };
   }, [condoTenantId]);
 
@@ -2668,24 +2691,36 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setEventos(prev => prev.map(e => e.id === id ? { ...e, ativo: true, motivoSuspensao: undefined } : e));
   };
 
-  // Prestação de Contas Mês a Mês & Categorias com persistência
-  const [mesesPrestacao, setMesesPrestacao] = useState<Record<string, PrestacaoContas>>(() => {
-    const saved = localStorage.getItem(`condo_meses_prestacao_${condoTenantId}`);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
-    }
-    return {};
-  });
+  // Prestação de Contas Mês a Mês & Categorias exclusivamente no Cloud Firestore
+  const [mesesPrestacao, setMesesPrestacao] = useState<Record<string, PrestacaoContas>>({});
 
+  // Migração automática de dados legados do localStorage para o Firestore
   useEffect(() => {
     if (!condoTenantId) return;
     try {
-      localStorage.setItem(`condo_meses_prestacao_${condoTenantId}`, JSON.stringify(mesesPrestacao));
-      localStorage.removeItem('condo_meses_prestacao');
-    } catch {}
-  }, [mesesPrestacao, condoTenantId]);
+      const savedKey = `condo_meses_prestacao_${condoTenantId}`;
+      const saved = localStorage.getItem(savedKey) || localStorage.getItem('condo_meses_prestacao');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          Object.values(parsed).forEach((mesObj: any) => {
+            if (mesObj && mesObj.mesAno) {
+              const docId = mesObj.id || `pc-${mesObj.mesAno.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+              salvarDocumentoSubcolecaoFirestore(condoTenantId, 'prestacao_contas', {
+                ...mesObj,
+                id: docId,
+                condominioId: condoTenantId
+              }).catch(console.error);
+            }
+          });
+        }
+        localStorage.removeItem(savedKey);
+        localStorage.removeItem('condo_meses_prestacao');
+      }
+    } catch (e) {
+      console.warn('Erro ao migrar prestacao_contas do localStorage para Firestore:', e);
+    }
+  }, [condoTenantId]);
 
   const [categoriasDespesa, setCategoriasDespesa] = useState<string[]>(() => {
     const saved = localStorage.getItem('condo_categorias_despesa');
@@ -2764,25 +2799,31 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const adicionarMesPrestacao = (mesAno: string) => {
     const trimmed = mesAno.trim();
     if (!trimmed) return;
+    const docId = `pc-${trimmed.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+    const novoMes: PrestacaoContas = {
+      id: docId,
+      mesAno: trimmed,
+      receitasTotal: 0,
+      despesasTotal: 0,
+      saldo: 0,
+      despesas: [],
+      receitas: [],
+      condominioId: condoTenantId
+    };
+
     setMesesPrestacao(prev => {
       if (prev[trimmed]) return prev;
       return {
         ...prev,
-        [trimmed]: {
-          id: `pc-${trimmed.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-          mesAno: trimmed,
-          receitasTotal: 0,
-          despesasTotal: 0,
-          saldo: 0,
-          despesas: [],
-          receitas: [],
-          condominioId: condoTenantId
-        }
+        [trimmed]: novoMes
       };
     });
+
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'prestacao_contas', novoMes).catch(console.error);
   };
 
   const adicionarDespesa = (mesAno: string, despesa: Omit<DespesaItem, 'id'>) => {
+    let mesAtualizado: PrestacaoContas | null = null;
     setMesesPrestacao(prev => {
       const current = prev[mesAno] || {
         id: `pc-${mesAno.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
@@ -2797,26 +2838,34 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const novaDespesa: DespesaItem = {
         ...despesa,
-        id: `desp-${Date.now()}`
+        id: `desp-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`
       };
 
       const novasDespesas = [novaDespesa, ...current.despesas];
       const despesasTotal = novasDespesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
       const receitasTotal = current.receitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
 
+      mesAtualizado = {
+        ...current,
+        despesas: novasDespesas,
+        despesasTotal,
+        saldo: receitasTotal - despesasTotal,
+        condominioId: condoTenantId
+      };
+
       return {
         ...prev,
-        [mesAno]: {
-          ...current,
-          despesas: novasDespesas,
-          despesasTotal,
-          saldo: receitasTotal - despesasTotal
-        }
+        [mesAno]: mesAtualizado
       };
     });
+
+    if (mesAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'prestacao_contas', mesAtualizado).catch(console.error);
+    }
   };
 
   const editarDespesa = (mesAno: string, id: string, dados: Partial<DespesaItem>) => {
+    let mesAtualizado: PrestacaoContas | null = null;
     setMesesPrestacao(prev => {
       const current = prev[mesAno];
       if (!current) return prev;
@@ -2825,19 +2874,26 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const despesasTotal = novasDespesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
       const receitasTotal = current.receitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
 
+      mesAtualizado = {
+        ...current,
+        despesas: novasDespesas,
+        despesasTotal,
+        saldo: receitasTotal - despesasTotal
+      };
+
       return {
         ...prev,
-        [mesAno]: {
-          ...current,
-          despesas: novasDespesas,
-          despesasTotal,
-          saldo: receitasTotal - despesasTotal
-        }
+        [mesAno]: mesAtualizado
       };
     });
+
+    if (mesAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'prestacao_contas', mesAtualizado).catch(console.error);
+    }
   };
 
   const excluirDespesa = (mesAno: string, id: string) => {
+    let mesAtualizado: PrestacaoContas | null = null;
     setMesesPrestacao(prev => {
       const current = prev[mesAno];
       if (!current) return prev;
@@ -2846,19 +2902,26 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const despesasTotal = novasDespesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
       const receitasTotal = current.receitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
 
+      mesAtualizado = {
+        ...current,
+        despesas: novasDespesas,
+        despesasTotal,
+        saldo: receitasTotal - despesasTotal
+      };
+
       return {
         ...prev,
-        [mesAno]: {
-          ...current,
-          despesas: novasDespesas,
-          despesasTotal,
-          saldo: receitasTotal - despesasTotal
-        }
+        [mesAno]: mesAtualizado
       };
     });
+
+    if (mesAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'prestacao_contas', mesAtualizado).catch(console.error);
+    }
   };
 
   const adicionarReceita = (mesAno: string, receita: Omit<ReceitaItem, 'id'>) => {
+    let mesAtualizado: PrestacaoContas | null = null;
     setMesesPrestacao(prev => {
       const current = prev[mesAno] || {
         id: `pc-${mesAno.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
@@ -2873,26 +2936,34 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const novaReceita: ReceitaItem = {
         ...receita,
-        id: `rec-${Date.now()}`
+        id: `rec-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`
       };
 
       const novasReceitas = [novaReceita, ...current.receitas];
       const receitasTotal = novasReceitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
       const despesasTotal = current.despesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
 
+      mesAtualizado = {
+        ...current,
+        receitas: novasReceitas,
+        receitasTotal,
+        saldo: receitasTotal - despesasTotal,
+        condominioId: condoTenantId
+      };
+
       return {
         ...prev,
-        [mesAno]: {
-          ...current,
-          receitas: novasReceitas,
-          receitasTotal,
-          saldo: receitasTotal - despesasTotal
-        }
+        [mesAno]: mesAtualizado
       };
     });
+
+    if (mesAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'prestacao_contas', mesAtualizado).catch(console.error);
+    }
   };
 
   const editarReceita = (mesAno: string, id: string, dados: Partial<ReceitaItem>) => {
+    let mesAtualizado: PrestacaoContas | null = null;
     setMesesPrestacao(prev => {
       const current = prev[mesAno];
       if (!current) return prev;
@@ -2901,19 +2972,26 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const receitasTotal = novasReceitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
       const despesasTotal = current.despesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
 
+      mesAtualizado = {
+        ...current,
+        receitas: novasReceitas,
+        receitasTotal,
+        saldo: receitasTotal - despesasTotal
+      };
+
       return {
         ...prev,
-        [mesAno]: {
-          ...current,
-          receitas: novasReceitas,
-          receitasTotal,
-          saldo: receitasTotal - despesasTotal
-        }
+        [mesAno]: mesAtualizado
       };
     });
+
+    if (mesAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'prestacao_contas', mesAtualizado).catch(console.error);
+    }
   };
 
   const excluirReceita = (mesAno: string, id: string) => {
+    let mesAtualizado: PrestacaoContas | null = null;
     setMesesPrestacao(prev => {
       const current = prev[mesAno];
       if (!current) return prev;
@@ -2922,16 +3000,89 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const receitasTotal = novasReceitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
       const despesasTotal = current.despesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
 
+      mesAtualizado = {
+        ...current,
+        receitas: novasReceitas,
+        receitasTotal,
+        saldo: receitasTotal - despesasTotal
+      };
+
       return {
         ...prev,
-        [mesAno]: {
-          ...current,
-          receitas: novasReceitas,
-          receitasTotal,
-          saldo: receitasTotal - despesasTotal
-        }
+        [mesAno]: mesAtualizado
       };
     });
+
+    if (mesAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'prestacao_contas', mesAtualizado).catch(console.error);
+    }
+  };
+
+  const importarLancamentosEmLote = (
+    mesAno: string, 
+    tipo: 'despesas' | 'receitas', 
+    itens: (Omit<DespesaItem, 'id'> | Omit<ReceitaItem, 'id'>)[]
+  ) => {
+    if (!itens || itens.length === 0) return;
+    let mesAtualizado: PrestacaoContas | null = null;
+
+    setMesesPrestacao(prev => {
+      const current = prev[mesAno] || {
+        id: `pc-${mesAno.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        mesAno: mesAno,
+        receitasTotal: 0,
+        despesasTotal: 0,
+        saldo: 0,
+        despesas: [],
+        receitas: [],
+        condominioId: condoTenantId
+      };
+
+      if (tipo === 'despesas') {
+        const novasDespesasComId: DespesaItem[] = (itens as Omit<DespesaItem, 'id'>[]).map((d, idx) => ({
+          ...d,
+          id: `desp-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`
+        }));
+
+        const despesasConcatenadas = [...novasDespesasComId, ...current.despesas];
+        const despesasTotal = despesasConcatenadas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
+        const receitasTotal = current.receitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+
+        mesAtualizado = {
+          ...current,
+          despesas: despesasConcatenadas,
+          despesasTotal,
+          saldo: receitasTotal - despesasTotal,
+          condominioId: condoTenantId
+        };
+      } else {
+        const novasReceitasComId: ReceitaItem[] = (itens as Omit<ReceitaItem, 'id'>[]).map((r, idx) => ({
+          ...r,
+          id: `rec-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`
+        }));
+
+        const receitasConcatenadas = [...novasReceitasComId, ...current.receitas];
+        const receitasTotal = receitasConcatenadas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+        const despesasTotal = current.despesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
+
+        mesAtualizado = {
+          ...current,
+          receitas: receitasConcatenadas,
+          receitasTotal,
+          saldo: receitasTotal - despesasTotal,
+          condominioId: condoTenantId
+        };
+      }
+
+      return {
+        ...prev,
+        [mesAno]: mesAtualizado
+      };
+    });
+
+    if (mesAtualizado) {
+      salvarDocumentoSubcolecaoFirestore(condoTenantId, 'prestacao_contas', mesAtualizado).catch(console.error);
+    }
   };
 
   const adicionarCategoriaDespesa = (categoria: string) => {
@@ -6011,6 +6162,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adicionarReceita,
       editarReceita,
       excluirReceita,
+      importarLancamentosEmLote,
       adicionarCategoriaDespesa,
       adicionarCategoriaReceita,
       funcionarios,
