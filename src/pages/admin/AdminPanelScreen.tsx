@@ -33,7 +33,8 @@ import {
   StatusMudanca,
   RegrasMudancaConfig,
   Benfeitoria,
-  TipoBenfeitoria
+  TipoBenfeitoria,
+  StatusFaseBenfeitoria
 } from '../../types';
 import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 import { 
@@ -116,7 +117,9 @@ import {
   Tag,
   BookOpen,
   ChevronRight,
-  Truck
+  Truck,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import { PrivateNotifyModal } from '../../components/admin/PrivateNotifyModal';
 import { SuspendServiceModal } from '../../components/admin/SuspendServiceModal';
@@ -131,6 +134,12 @@ import { CreateEditReceitaModal } from '../../components/financeiro/CreateEditRe
 import { CreateMonthModal } from '../../components/financeiro/CreateMonthModal';
 import { CreateCategoryModal } from '../../components/financeiro/CreateCategoryModal';
 import { ReceiptPdfModal } from '../../components/financeiro/ReceiptPdfModal';
+import { ImportExcelFinanceModal } from '../../components/financeiro/ImportExcelFinanceModal';
+import { 
+  exportarMesFinanceiroExcel, 
+  downloadModeloSaidasExcel, 
+  downloadModeloEntradasExcel 
+} from '../../utils/excelFinanceUtils';
 import { CreateEditRegraModal } from '../../components/admin/CreateEditRegraModal';
 import { CreateEditUnidadeDisponivelModal } from '../../components/admin/CreateEditUnidadeDisponivelModal';
 import { CreateEditServicoContratadoModal } from '../../components/admin/CreateEditServicoContratadoModal';
@@ -971,8 +980,23 @@ export const AdminPanelScreen: React.FC = () => {
   const [benfeitoriaToEditInAdmin, setBenfeitoriaToEditInAdmin] = useState<Benfeitoria | null>(null);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [benfeitoriaForTimelineModal, setBenfeitoriaForTimelineModal] = useState<Benfeitoria | null>(null);
+  const [timelineModalInitialTab, setTimelineModalInitialTab] = useState<'timeline' | 'novo_passo' | 'votos_avaliacoes'>('timeline');
   const [searchBenfeitoriaAdmin, setSearchBenfeitoriaAdmin] = useState('');
   const [filtroTipoBenfeitoriaAdmin, setFiltroTipoBenfeitoriaAdmin] = useState('Todas');
+
+  const getNextFaseLabel = (status?: StatusFaseBenfeitoria) => {
+    switch (status) {
+      case 'proposta': return '2. Buscando Orçamento';
+      case 'orcamento': return '3. Votação Eletrônica';
+      case 'votacao': return '4. Empresa Contratada';
+      case 'contratada': return '5. Em Execução';
+      case 'execucao': return '6. Avaliação Condôminos';
+      case 'avaliacao': return '7. Entregue & Publicada';
+      case 'entregue': return 'Novo Evento';
+      case 'cancelada': return 'Atualizar Cancelamento';
+      default: return 'Próxima Fase';
+    }
+  };
 
   // 15. Gestão de Portaria & Acessos State
   const [abaPortariaAdmin, setAbaPortariaAdmin] = useState<'acessos' | 'encomendas'>('acessos');
@@ -1044,6 +1068,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
   const [tipoCategoriaModal, setTipoCategoriaModal] = useState<'despesa' | 'receita'>('despesa');
   const [viewPdfModalItem, setViewPdfModalItem] = useState<{ item: DespesaItem | ReceitaItem; tipo: 'despesa' | 'receita' } | null>(null);
+  const [isImportExcelModalOpen, setIsImportExcelModalOpen] = useState(false);
 
   // Reclamações & Ocorrências Moderation State
   const [searchReclamacao, setSearchReclamacao] = useState('');
@@ -1411,15 +1436,57 @@ export const AdminPanelScreen: React.FC = () => {
   };
 
   const filteredUnidades = useMemo(() => {
-    const term = searchTerm.toLowerCase().trim();
-    const list = !term
-      ? unidades
-      : unidades.filter(u => 
-          (u.numero && u.numero.toLowerCase().includes(term)) ||
-          (u.vagaGaragem && u.vagaGaragem.toLowerCase().includes(term)) ||
-          (u.rua && u.rua.toLowerCase().includes(term)) ||
-          (u.bloco && u.bloco.toLowerCase().includes(term))
+    const rawTerm = searchTerm.trim().toLowerCase();
+    if (!rawTerm) {
+      return isCasas ? unidades : sortUnidades(unidades);
+    }
+
+    const keywords = rawTerm.split(/\s+/).filter(Boolean);
+
+    const list = unidades.filter(u => {
+      const numStr = (u.numero || '').toLowerCase();
+      const numOnly = numStr.replace(/[^0-9]/g, '');
+      const cleanNum = numStr.replace(/^(apt|apto|unidade|apartamento|cobertura|casa)\s*/i, '').trim();
+
+      const ruaStr = (u.rua || '').toLowerCase();
+      const vagaStr = (u.vagaGaragem || '').toLowerCase();
+      const blocoStr = (u.bloco || '').toLowerCase();
+      const andarStr = u.andar ? String(u.andar).toLowerCase() : '';
+      const celulaStr = (u.nomeCelula || '').toLowerCase();
+      const emailRespStr = (u.emailResponsavel || '').toLowerCase();
+      const nomeMoradorStr = ((u as any).nomeMorador || '').toLowerCase();
+
+      const moradoresText = (u.moradores || []).map(m => 
+        [m.nome, m.email, m.profissao, (m as any).sobrenome, (m as any).telefone, (m as any).cpf].filter(Boolean).join(' ').toLowerCase()
+      ).join(' ');
+
+      const fullUnitSearchBlob = [
+        numStr,
+        cleanNum,
+        numOnly ? `casa ${numOnly}` : '',
+        numOnly ? `casa${numOnly}` : '',
+        numOnly ? `apt ${numOnly}` : '',
+        numOnly ? `apto ${numOnly}` : '',
+        ruaStr,
+        vagaStr,
+        blocoStr,
+        andarStr,
+        celulaStr,
+        emailRespStr,
+        nomeMoradorStr,
+        moradoresText
+      ].join(' ');
+
+      return keywords.every(kw => {
+        const cleanKw = kw.replace(/^(apt|apto|unidade|apartamento|cobertura|casa)\s*/i, '').trim();
+        return (
+          fullUnitSearchBlob.includes(kw) ||
+          (cleanKw !== '' && fullUnitSearchBlob.includes(cleanKw)) ||
+          (numOnly !== '' && kw === numOnly)
         );
+      });
+    });
+
     return isCasas ? list : sortUnidades(list);
   }, [unidades, searchTerm, isCasas]);
 
@@ -1875,10 +1942,10 @@ export const AdminPanelScreen: React.FC = () => {
                   </div>
 
                   {/* Campo de Filtro */}
-                  <div className="relative w-full sm:w-56">
+                  <div className="relative w-full sm:w-64">
                     <input
                       type="text"
-                      placeholder={isCasas ? "Filtrar por casa ou rua..." : "Filtrar por apto ou vaga..."}
+                      placeholder={isCasas ? "Filtrar por casa, rua ou morador..." : "Filtrar por apto, rua, vaga ou morador..."}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-900 placeholder-slate-500 focus:outline-none font-semibold shadow-2xs"
@@ -5939,6 +6006,35 @@ export const AdminPanelScreen: React.FC = () => {
                       <span>Nova Categoria</span>
                     </button>
 
+                    {/* Central de Planilhas Excel (Importação & Download de Modelos) */}
+                    <button
+                      type="button"
+                      onClick={() => setIsImportExcelModalOpen(true)}
+                      className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+                      title="Central de Planilhas: Baixe modelos e envie arquivos Excel de Saídas e Entradas em lote"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 text-slate-950" />
+                      <span>📥 Central de Planilhas Excel (Importar / Modelo)</span>
+                    </button>
+
+                    {/* 3. Exportar Relatório do Sistema */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        exportarMesFinanceiroExcel(
+                          selectedMesFinanceiro,
+                          tabFinanceiro === 'saidas' ? 'saidas' : 'entradas',
+                          mesAtualContas.despesas || [],
+                          mesAtualContas.receitas || []
+                        );
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
+                      title="Baixar relatório dos dados que já estão cadastrados no sistema"
+                    >
+                      <Download className="w-3.5 h-3.5 text-amber-400" />
+                      <span>📤 Backup / Exportar</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -9385,17 +9481,33 @@ export const AdminPanelScreen: React.FC = () => {
 
                           {/* Botões de Ação */}
                           <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                            {/* Botão Destaque: Avançar para Próxima Fase */}
                             <button
                               type="button"
                               onClick={() => {
                                 setBenfeitoriaForTimelineModal(item);
+                                setTimelineModalInitialTab('novo_passo');
                                 setIsTimelineModalOpen(true);
                               }}
-                              className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                              title="Gerenciar Fases & Linha do Tempo"
+                              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer ring-2 ring-amber-300"
+                              title={`Avançar para fase: ${getNextFaseLabel(item.statusAtual)}`}
                             >
-                              <Clock className="w-3.5 h-3.5" />
-                              <span>Fases & Timeline</span>
+                              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                              <span>Avançar Fase ({getNextFaseLabel(item.statusAtual)})</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBenfeitoriaForTimelineModal(item);
+                                setTimelineModalInitialTab('timeline');
+                                setIsTimelineModalOpen(true);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-amber-100 border border-slate-300 text-slate-900 text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                              title="Ver Linha do Tempo e Histórico"
+                            >
+                              <Clock className="w-3.5 h-3.5 text-slate-700" />
+                              <span>Ver Timeline</span>
                             </button>
 
                             <button
@@ -10351,6 +10463,14 @@ export const AdminPanelScreen: React.FC = () => {
           setBenfeitoriaForTimelineModal(null);
         }}
         benfeitoria={benfeitoriaForTimelineModal}
+        initialTab={timelineModalInitialTab}
+      />
+
+      {/* Modal de Importação em Lote via Excel */}
+      <ImportExcelFinanceModal
+        isOpen={isImportExcelModalOpen}
+        onClose={() => setIsImportExcelModalOpen(false)}
+        defaultMonth={selectedMesFinanceiro}
       />
 
       {/* Modal de Segurança, Resgate de Moradores e Backup Isolado por Condomínio */}

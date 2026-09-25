@@ -76,6 +76,7 @@ export interface NotificacaoPrivada {
   dataHora: string;
   lida: boolean;
   lidaEm?: string;
+  lidasPorUnidades?: string[];
 }
 
 export interface AdminRole {

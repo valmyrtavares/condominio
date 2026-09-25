@@ -35,7 +35,22 @@ interface BenfeitoriaTimelineModalProps {
   isOpen: boolean;
   onClose: () => void;
   benfeitoria: Benfeitoria | null;
+  initialTab?: 'timeline' | 'novo_passo' | 'votos_avaliacoes';
 }
+
+const getProximaFaseSugerida = (statusAtual?: StatusFaseBenfeitoria): StatusFaseBenfeitoria => {
+  switch (statusAtual) {
+    case 'proposta': return 'orcamento';
+    case 'orcamento': return 'votacao';
+    case 'votacao': return 'contratada';
+    case 'contratada': return 'execucao';
+    case 'execucao': return 'avaliacao';
+    case 'avaliacao': return 'entregue';
+    case 'entregue': return 'entregue';
+    case 'cancelada': return 'cancelada';
+    default: return 'orcamento';
+  }
+};
 
 const STATUS_CONFIG: Record<
   StatusFaseBenfeitoria,
@@ -94,7 +109,8 @@ const STATUS_CONFIG: Record<
 export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> = ({
   isOpen,
   onClose,
-  benfeitoria
+  benfeitoria,
+  initialTab = 'timeline'
 }) => {
   const {
     adicionarPassoTimelineBenfeitoria,
@@ -108,10 +124,15 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
     currentUser
   } = useCondo();
 
-  const [activeTab, setActiveTab] = useState<'timeline' | 'novo_passo' | 'votos_avaliacoes'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'novo_passo' | 'votos_avaliacoes'>(initialTab);
+  const [selectedStatus, setSelectedStatus] = useState<StatusFaseBenfeitoria>(() => getProximaFaseSugerida(benfeitoria?.statusAtual));
 
-  // Form de novo passo
-  const [selectedStatus, setSelectedStatus] = useState<StatusFaseBenfeitoria>('orcamento');
+  React.useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+      setSelectedStatus(getProximaFaseSugerida(benfeitoria?.statusAtual));
+    }
+  }, [isOpen, initialTab, benfeitoria?.id, benfeitoria?.statusAtual]);
   const [stepTitulo, setStepTitulo] = useState('');
   const [stepDescricao, setStepDescricao] = useState('');
   const [stepData, setStepData] = useState(() => new Date().toLocaleDateString('pt-BR'));

@@ -3569,16 +3569,32 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const marcarNotificacaoComoLida = (notificacaoId: string) => {
+  const marcarNotificacaoComoLida = (notificacaoId: string, unidadeNumero?: string) => {
     const agora = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    const targetUnit = (unidadeNumero || currentUser?.unidade || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento|cobertura|casa)\s*/i, '').trim();
     let notifAtualizada: NotificacaoPrivada | null = null;
+    
     setNotificacoesPrivadas(prev => prev.map(n => {
       if (n.id === notificacaoId) {
-        notifAtualizada = { ...n, lida: true, lidaEm: n.lidaEm || agora };
+        const nClean = (n.unidadeNumero || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento|cobertura|casa)\s*/i, '').trim();
+        const isGeneral = nClean === 'todos' || nClean === 'geral' || nClean === 'todas' || nClean === 'condominio';
+
+        const lidasArr = Array.isArray(n.lidasPorUnidades) ? [...n.lidasPorUnidades] : [];
+        if (targetUnit && !lidasArr.includes(targetUnit)) {
+          lidasArr.push(targetUnit);
+        }
+
+        notifAtualizada = {
+          ...n,
+          lida: isGeneral ? (n.lida || lidasArr.length > 0) : true,
+          lidaEm: n.lidaEm || agora,
+          lidasPorUnidades: lidasArr
+        };
         return notifAtualizada;
       }
       return n;
     }));
+
     if (notifAtualizada && condoTenantId) {
       salvarNotificacaoPrivadaNoFirestore(condoTenantId, notifAtualizada).catch(console.error);
     }
@@ -3586,14 +3602,27 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const marcarTodasNotificacoesUnidadeComoLidas = (unidadeNumero: string) => {
     const agora = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-    const cleanUnit = (unidadeNumero || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim();
+    const cleanUnit = (unidadeNumero || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento|cobertura|casa)\s*/i, '').trim();
     if (!cleanUnit) return;
 
     const alteradas: NotificacaoPrivada[] = [];
     setNotificacoesPrivadas(prev => prev.map(n => {
-      const nClean = (n.unidadeNumero || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento)\s*/i, '').trim();
-      if (nClean === cleanUnit && !n.lida) {
-        const item = { ...n, lida: true, lidaEm: agora };
+      const nClean = (n.unidadeNumero || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento|cobertura|casa)\s*/i, '').trim();
+      const isGeneral = nClean === 'todos' || nClean === 'geral' || nClean === 'todas' || nClean === 'condominio';
+
+      const lidasArr = Array.isArray(n.lidasPorUnidades) ? [...n.lidasPorUnidades] : [];
+      const jaLidaParaEstaUnidade = isGeneral ? lidasArr.includes(cleanUnit) : n.lida;
+
+      if ((nClean === cleanUnit || isGeneral) && !jaLidaParaEstaUnidade) {
+        if (!lidasArr.includes(cleanUnit)) {
+          lidasArr.push(cleanUnit);
+        }
+        const item: NotificacaoPrivada = {
+          ...n,
+          lida: true,
+          lidaEm: n.lidaEm || agora,
+          lidasPorUnidades: lidasArr
+        };
         alteradas.push(item);
         return item;
       }

@@ -174,8 +174,13 @@ export const ResidentMessagesModal: React.FC<ResidentMessagesModalProps> = ({
           </span>
           <button
             type="button"
-            onClick={onClose}
-            className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-sm active:scale-95 transition-all"
+            onClick={() => {
+              if (unitNumber) {
+                marcarTodasNotificacoesUnidadeComoLidas(unitNumber);
+              }
+              onClose();
+            }}
+            className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-sm active:scale-95 transition-all cursor-pointer"
           >
             Entendido
           </button>

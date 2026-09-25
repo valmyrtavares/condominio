@@ -63,7 +63,14 @@ export const Header: React.FC = () => {
 
     return false;
   });
-  const unreadCount = unitNotifs.filter(n => !n.lida).length;
+  const unreadCount = unitNotifs.filter(n => {
+    const nClean = normalizeUnit(n.unidadeNumero);
+    const isGeneral = nClean === 'todos' || nClean === 'geral' || nClean === 'todas' || nClean === 'condominio';
+    if (isGeneral && userUnit) {
+      return !n.lidasPorUnidades?.includes(userUnit);
+    }
+    return !n.lida;
+  }).length;
 
   const isHome = currentScreen === 'home';
 
@@ -272,8 +279,13 @@ export const Header: React.FC = () => {
 
             <div className="flex justify-end pt-2 border-t border-slate-100">
               <button
-                onClick={() => setIsNotifPopupOpen(false)}
-                className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-xs"
+                onClick={() => {
+                  if (currentUser?.unidade) {
+                    marcarTodasNotificacoesUnidadeComoLidas(currentUser.unidade);
+                  }
+                  setIsNotifPopupOpen(false);
+                }}
+                className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-xs cursor-pointer"
               >
                 Entendido
               </button>
