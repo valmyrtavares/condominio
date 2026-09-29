@@ -654,6 +654,8 @@ interface CondoContextType {
   adicionarDiarioObraBenfeitoria: (benfeitoriaId: string, item: Omit<DiarioObraItem, 'id'>) => Promise<{ success: boolean; error?: string }>;
   apoiarDiarioObraBenfeitoria: (benfeitoriaId: string, diarioItemId: string) => Promise<{ success: boolean; error?: string }>;
   adicionarComentarioDiarioObraBenfeitoria: (benfeitoriaId: string, diarioItemId: string, texto: string) => Promise<{ success: boolean; error?: string }>;
+  excluirDiarioObraBenfeitoria: (benfeitoriaId: string, diarioItemId: string) => Promise<{ success: boolean; error?: string }>;
+  excluirComentarioDiarioObraBenfeitoria: (benfeitoriaId: string, diarioItemId: string, comentarioId: string) => Promise<{ success: boolean; error?: string }>;
   toggleAvaliacaoBenfeitoria: (benfeitoriaId: string, aberto: boolean, prazoFim?: string, dispararMensagem?: boolean) => Promise<{ success: boolean; error?: string }>;
   avaliarBenfeitoria: (benfeitoriaId: string, nota: number, comentario?: string) => Promise<{ success: boolean; error?: string }>;
   cancelarBenfeitoria: (benfeitoriaId: string, justificativa: { motivo: string; fotos: string[]; dataCancelamento: string }) => Promise<{ success: boolean; error?: string }>;
@@ -6103,6 +6105,72 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const excluirDiarioObraBenfeitoria = async (
+    benfeitoriaId: string,
+    diarioItemId: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
+
+      const diarioAtual = alvo.diarioObras || [];
+      const diarioObras = diarioAtual.filter(item => item.id !== diarioItemId);
+
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        diarioObras
+      };
+
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao excluir registro do diário de obra:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const excluirComentarioDiarioObraBenfeitoria = async (
+    benfeitoriaId: string,
+    diarioItemId: string,
+    comentarioId: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
+
+      const diarioAtual = alvo.diarioObras || [];
+      const diarioObras = diarioAtual.map(item => {
+        if (item.id === diarioItemId) {
+          const comentariosAtuais = Array.isArray(item.comentarios) ? item.comentarios : [];
+          return {
+            ...item,
+            comentarios: comentariosAtuais.filter(c => c.id !== comentarioId)
+          };
+        }
+        return item;
+      });
+
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        diarioObras
+      };
+
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao excluir comentário do diário de obra:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
   const toggleAvaliacaoBenfeitoria = async (
     benfeitoriaId: string, 
     aberto: boolean, 
@@ -6558,6 +6626,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adicionarDiarioObraBenfeitoria,
       apoiarDiarioObraBenfeitoria,
       adicionarComentarioDiarioObraBenfeitoria,
+      excluirDiarioObraBenfeitoria,
+      excluirComentarioDiarioObraBenfeitoria,
       toggleAvaliacaoBenfeitoria,
       avaliarBenfeitoria,
       cancelarBenfeitoria,

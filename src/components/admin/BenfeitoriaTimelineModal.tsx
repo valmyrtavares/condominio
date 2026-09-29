@@ -5,7 +5,8 @@ import {
   Benfeitoria,
   StatusFaseBenfeitoria,
   OrcamentoBenfeitoria,
-  PassoTimelineBenfeitoria
+  PassoTimelineBenfeitoria,
+  ApoiadorDetalhe
 } from '../../types';
 import {
   X,
@@ -27,7 +28,11 @@ import {
   ShieldCheck,
   Check,
   ExternalLink,
-  Award
+  Award,
+  ThumbsUp,
+  MessageSquare,
+  User,
+  Trash2
 } from 'lucide-react';
 import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 
@@ -113,20 +118,27 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
   initialTab = 'timeline'
 }) => {
   const {
+    benfeitorias,
     adicionarPassoTimelineBenfeitoria,
     editarBenfeitoria,
     salvarOrcamentosBenfeitoria,
     toggleVotacaoBenfeitoria,
     definirContratacaoBenfeitoria,
     adicionarDiarioObraBenfeitoria,
+    apoiarDiarioObraBenfeitoria,
+    adicionarComentarioDiarioObraBenfeitoria,
+    excluirDiarioObraBenfeitoria,
+    excluirComentarioDiarioObraBenfeitoria,
     toggleAvaliacaoBenfeitoria,
     cancelarBenfeitoria,
     concluirBenfeitoriaFinal,
     currentUser
   } = useCondo();
 
+  const activeBenfeitoria = (benfeitoria?.id ? benfeitorias.find(b => b.id === benfeitoria.id) : null) || benfeitoria;
+
   const [activeTab, setActiveTab] = useState<'timeline' | 'novo_passo' | 'votos_avaliacoes'>(initialTab);
-  const [selectedStatus, setSelectedStatus] = useState<StatusFaseBenfeitoria>(() => getProximaFaseSugerida(benfeitoria?.statusAtual));
+  const [selectedStatus, setSelectedStatus] = useState<StatusFaseBenfeitoria>(() => getProximaFaseSugerida(activeBenfeitoria?.statusAtual));
 
   const [stepTitulo, setStepTitulo] = useState('');
   const [stepDescricao, setStepDescricao] = useState('');
@@ -193,6 +205,11 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
   // Estado para expandir detalhes de votação por orçamento no painel admin (para não poluir a tela)
   const [expandedOrcamentoVotos, setExpandedOrcamentoVotos] = useState<string | null>(null);
 
+  // Estados para Diário de Obra (Comentários e Apoiadores)
+  const [expandedDiarioComments, setExpandedDiarioComments] = useState<Record<string, boolean>>({});
+  const [expandedDiarioApoiadores, setExpandedDiarioApoiadores] = useState<Record<string, boolean>>({});
+  const [diarioCommentsInput, setDiarioCommentsInput] = useState<Record<string, string>>({});
+
   // Sincronização completa de todos os campos sempre que a benfeitoria abrir ou atualizar
   React.useEffect(() => {
     if (isOpen && benfeitoria) {
@@ -245,10 +262,11 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
     }
   }, [isOpen, initialTab, benfeitoria]);
 
-  if (!isOpen || !benfeitoria) return null;
+  if (!isOpen || !activeBenfeitoria) return null;
 
-  const statusAtual = benfeitoria.statusAtual || 'proposta';
-  const timeline = benfeitoria.timeline || [];
+  const statusAtual = activeBenfeitoria.statusAtual || 'proposta';
+  const timeline = activeBenfeitoria.timeline || [];
+  const diarioObrasList = activeBenfeitoria.diarioObras || [];
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
     const file = e.target.files?.[0];
@@ -284,15 +302,15 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
           setIsSubmitting(false);
           return;
         }
-        await editarBenfeitoria(benfeitoria.id, {
+        await editarBenfeitoria(activeBenfeitoria.id, {
           titulo: propostaTitulo.trim(),
-          subtitulo: propostaSubtitulo.trim() || benfeitoria.subtitulo,
+          subtitulo: propostaSubtitulo.trim() || activeBenfeitoria.subtitulo,
           descricao: propostaDescricao.trim(),
           impactoGestao: propostaImpacto.trim(),
           investimento: propostaInvestimento ? parseFloat(propostaInvestimento) : undefined,
           economiaMensal: propostaEconomia ? parseFloat(propostaEconomia) : undefined,
           regrasUso: propostaRegras.trim() || undefined,
-          fotos: propostaFoto ? [propostaFoto] : benfeitoria.fotos
+          fotos: propostaFoto ? [propostaFoto] : activeBenfeitoria.fotos
         });
       } else if (selectedStatus === 'orcamento') {
         // Valida e salva os 3 orçamentos
@@ -305,10 +323,10 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
           setIsSubmitting(false);
           return;
         }
-        await salvarOrcamentosBenfeitoria(benfeitoria.id, orcamentosList);
+        await salvarOrcamentosBenfeitoria(activeBenfeitoria.id, orcamentosList);
       } else if (selectedStatus === 'votacao') {
         await toggleVotacaoBenfeitoria(
-          benfeitoria.id,
+          activeBenfeitoria.id,
           votacaoAbertaLocal,
           prazoFimVotacaoLocal,
           dispararMsgVotacao
@@ -322,7 +340,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
           setIsSubmitting(false);
           return;
         }
-        await definirContratacaoBenfeitoria(benfeitoria.id, {
+        await definirContratacaoBenfeitoria(activeBenfeitoria.id, {
           empresaNome: contratadaNome.trim(),
           dataInicio: contratadaInicio,
           dataTerminoPrevista: contratadaTermino,
@@ -338,7 +356,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
           setIsSubmitting(false);
           return;
         }
-        await adicionarDiarioObraBenfeitoria(benfeitoria.id, {
+        await adicionarDiarioObraBenfeitoria(activeBenfeitoria.id, {
           data: stepData || new Date().toLocaleDateString('pt-BR'),
           descricao: diarioDescricao.trim(),
           fotos: diarioFoto ? [diarioFoto] : []
@@ -347,13 +365,13 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
         setDiarioFoto('');
       } else if (selectedStatus === 'avaliacao') {
         await toggleAvaliacaoBenfeitoria(
-          benfeitoria.id,
+          activeBenfeitoria.id,
           avaliacaoAbertaLocal,
           prazoFimAvaliacaoLocal,
           dispararMsgAvaliacao
         );
       } else if (selectedStatus === 'entregue') {
-        await concluirBenfeitoriaFinal(benfeitoria.id, {
+        await concluirBenfeitoriaFinal(activeBenfeitoria.id, {
           fotosDepois: entregaFotoDepois ? [entregaFotoDepois] : undefined,
           relatoFinal: entregaRelato.trim() || undefined,
           dataEntrega: stepData || new Date().toLocaleDateString('pt-BR')
@@ -367,7 +385,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
           setIsSubmitting(false);
           return;
         }
-        await cancelarBenfeitoria(benfeitoria.id, {
+        await cancelarBenfeitoria(activeBenfeitoria.id, {
           motivo: motivoCancelamento.trim(),
           fotos: fotoCancelamento ? [fotoCancelamento] : [],
           dataCancelamento: stepData || new Date().toLocaleDateString('pt-BR')
@@ -375,7 +393,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
       } else {
         // Passo genérico
         const cfg = STATUS_CONFIG[selectedStatus as StatusFaseBenfeitoria] || STATUS_CONFIG.proposta;
-        await adicionarPassoTimelineBenfeitoria(benfeitoria.id, {
+        await adicionarPassoTimelineBenfeitoria(activeBenfeitoria.id, {
           data: stepData || new Date().toLocaleDateString('pt-BR'),
           status: selectedStatus as StatusFaseBenfeitoria,
           titulo: stepTitulo.trim() || cfg.label,
@@ -408,11 +426,11 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
                 Gestão de Ciclo de Vida
               </span>
               <span className="text-xs font-semibold text-amber-100">
-                • {benfeitoria.tipo}
+                • {activeBenfeitoria.tipo}
               </span>
             </div>
             <h3 className="text-lg sm:text-xl font-black tracking-tight leading-tight">
-              {benfeitoria.titulo}
+              {activeBenfeitoria.titulo}
             </h3>
             <p className="text-xs text-amber-100 line-clamp-1">
               Fase Atual: <strong className="text-white underline">{STATUS_CONFIG[statusAtual]?.label}</strong>
@@ -608,7 +626,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
                           {/* Botão de Consulta / Edição da Fase */}
                           <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                             <span className="text-[11px] text-slate-500 font-medium">
-                              {step.status === 'orcamento' && benfeitoria.orcamentos?.length ? `${benfeitoria.orcamentos.length} orçamentos vinculados` : 'Etapa registrada'}
+                              {step.status === 'orcamento' && activeBenfeitoria.orcamentos?.length ? `${activeBenfeitoria.orcamentos.length} orçamentos vinculados` : 'Etapa registrada'}
                             </span>
                             <button
                               type="button"
@@ -976,7 +994,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
                       className="text-xs font-extrabold text-amber-800 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-xl border border-amber-300 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
                     >
                       <Users className="w-4 h-4" />
-                      <span>Ir para Apuração dos Votos ({benfeitoria.votos?.length || 0})</span>
+                      <span>Ir para Apuração dos Votos ({activeBenfeitoria.votos?.length || 0})</span>
                     </button>
                   </div>
 
@@ -1082,44 +1100,332 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
 
               {/* STATUS 5: EM EXECUÇÃO */}
               {selectedStatus === 'execucao' && (
-                <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 space-y-4">
-                  <h4 className="text-sm font-black text-orange-950 flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-orange-600" />
-                    Diário de Bordo & Atualização da Execução
-                  </h4>
+                <div className="space-y-4">
+                  {/* Formulário de Novo Registro no Diário */}
+                  <div className="bg-orange-50/90 border border-orange-200 rounded-2xl p-4 space-y-4 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-black text-orange-950 flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-orange-600" />
+                        Novo Registro no Diário de Bordo & Execução da Obra
+                      </h4>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-200 text-orange-950 border border-orange-300">
+                        Fase 5 • Em Andamento
+                      </span>
+                    </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">
-                      Comentário / Relato do Andamento da Obra *
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={diarioDescricao}
-                      onChange={(e) => setDiarioDescricao(e.target.value)}
-                      placeholder="Descreva o avanço da obra nesta etapa (ex: lixamento finalizado, início da primeira demão de tinta...)"
-                      className="w-full text-xs font-medium p-3 rounded-xl border border-slate-300 focus:border-orange-500 outline-hidden bg-white"
-                    />
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">
+                        Comentário / Relato do Andamento da Obra *
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={diarioDescricao}
+                        onChange={(e) => setDiarioDescricao(e.target.value)}
+                        placeholder="Descreva o avanço da obra nesta etapa (ex: lixamento finalizado, início da primeira demão de tinta...)"
+                        className="w-full text-xs font-medium p-3 rounded-xl border border-slate-300 focus:border-orange-500 outline-hidden bg-white shadow-2xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Foto do Andamento da Obra</label>
+                      <div className="flex items-center gap-3">
+                        <label className="px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:border-orange-500 text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-2 shadow-2xs transition-colors">
+                          <Upload className="w-4 h-4 text-orange-600" />
+                          <span>{diarioFoto ? 'Trocar Foto' : 'Selecionar Foto'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleFileUpload(e, setDiarioFoto)}
+                            className="sr-only"
+                          />
+                        </label>
+                        {diarioFoto && (
+                          <div className="relative group w-14 h-14 rounded-xl overflow-hidden border border-orange-300 bg-slate-900 flex items-center justify-center shadow-2xs">
+                            <img src={diarioFoto} alt="Preview" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setDiarioFoto('')}
+                              className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] font-bold transition-opacity"
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Foto do Andamento da Obra</label>
-                    <div className="flex items-center gap-3">
-                      <label className="px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:border-orange-500 text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-2 shadow-2xs">
-                        <Upload className="w-4 h-4 text-orange-600" />
-                        <span>Selecionar Foto</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleFileUpload(e, setDiarioFoto)}
-                          className="sr-only"
-                        />
-                      </label>
-                      {diarioFoto && (
-                        <div className="w-12 h-12 rounded-lg overflow-hidden border border-orange-300 bg-slate-900 flex items-center justify-center">
-                          <img src={diarioFoto} alt="Preview" className="w-full h-full object-cover" />
-                        </div>
-                      )}
+                  {/* Histórico Completo do Diário de Obras (com Apoios e Manifestações dos Moradores) */}
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center justify-between border-b border-orange-200 pb-2">
+                      <span className="text-xs font-black uppercase text-orange-950 flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-orange-600" />
+                        Histórico de Registros Publicados da Obra ({diarioObrasList.length})
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500">
+                        Visível para todos os moradores no app
+                      </span>
                     </div>
+
+                    {diarioObrasList.length === 0 ? (
+                      <div className="text-center py-8 bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-4">
+                        <Clock className="w-8 h-8 text-slate-400 mx-auto mb-2 opacity-60" />
+                        <h5 className="text-xs font-black text-slate-800">Nenhum registro no diário publicado ainda</h5>
+                        <p className="text-[11px] text-slate-500 max-w-sm mx-auto mt-0.5">
+                          Preencha o relato acima e clique em "Salvar Fase & Adicionar à Timeline" para publicar a primeira atualização da obra.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {diarioObrasList.map((diario) => {
+                          const userIdentifier = currentUser.id || currentUser.unidade || currentUser.email || 'usr-anon';
+                          const isApoiadoPorMim = (diario.apoiadores || []).includes(userIdentifier) || 
+                            (diario.apoiadoresDetalhes || []).some(a => a.id === userIdentifier);
+
+                          const apoiadoresLista: ApoiadorDetalhe[] = Array.isArray(diario.apoiadoresDetalhes) && diario.apoiadoresDetalhes.length > 0
+                            ? diario.apoiadoresDetalhes
+                            : (diario.apoiadores || []).map(id => ({ id, nome: 'Morador', unidade: id, foto: '' }));
+
+                          const comentariosLista = Array.isArray(diario.comentarios) ? diario.comentarios : [];
+                          const isCommentsOpen = expandedDiarioComments[diario.id] !== false; // default aberto
+                          const isApoiadoresOpen = Boolean(expandedDiarioApoiadores[diario.id]);
+
+                          return (
+                            <div
+                              key={diario.id}
+                              className="bg-white p-4 rounded-2xl border border-orange-200 shadow-xs space-y-3 hover:border-orange-300 transition-colors"
+                            >
+                              {/* Header do Registro */}
+                              <div className="flex items-center justify-between text-xs font-bold">
+                                <div className="flex items-center gap-1.5 text-orange-950">
+                                  <Calendar className="w-3.5 h-3.5 text-orange-600" />
+                                  <span>{diario.data}</span>
+                                  {diario.autorNome && (
+                                    <span className="text-slate-500 font-semibold">• por {diario.autorNome}</span>
+                                  )}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (window.confirm('Tem certeza que deseja excluir esta atualização do diário de obra?')) {
+                                      await excluirDiarioObraBenfeitoria(activeBenfeitoria.id, diario.id);
+                                    }
+                                  }}
+                                  className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                                  title="Excluir este registro do diário"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+
+                              {/* Descrição do Andamento */}
+                              <p className="text-xs text-slate-800 font-medium leading-relaxed whitespace-pre-line">
+                                {diario.descricao}
+                              </p>
+
+                              {/* Fotos Anexadas */}
+                              {diario.fotos && diario.fotos.length > 0 && (
+                                <div className="flex flex-wrap gap-2 pt-0.5">
+                                  {diario.fotos.map((f, i) => (
+                                    <div
+                                      key={i}
+                                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden border border-orange-200 bg-slate-950 flex items-center justify-center p-1 shadow-2xs cursor-pointer"
+                                      onClick={() => window.open(f, '_blank')}
+                                      title="Clique para ampliar a foto"
+                                    >
+                                      <img src={f} alt="Diário" className="w-full h-full object-contain" />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Barra de Apoio e Toggle de Comentários */}
+                              <div className="pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
+                                
+                                {/* Botão de Apoio + Thumbnails */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => apoiarDiarioObraBenfeitoria(activeBenfeitoria.id, diario.id)}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all shadow-2xs active:scale-95 cursor-pointer ${
+                                      isApoiadoPorMim
+                                        ? 'bg-amber-500 text-slate-950 border border-amber-600 shadow-amber-500/20'
+                                        : 'bg-white hover:bg-amber-50 text-amber-950 border border-amber-300'
+                                    }`}
+                                    title={isApoiadoPorMim ? "Você apoiou esta atualização" : "Apoiar esta atualização da obra"}
+                                  >
+                                    <ThumbsUp className={`w-3.5 h-3.5 ${isApoiadoPorMim ? 'fill-slate-950 stroke-[2.5]' : ''}`} />
+                                    <span>{isApoiadoPorMim ? 'Apoiado' : 'Apoiar'}</span>
+                                    <span className="ml-0.5 px-1.5 py-0.2 bg-black/10 rounded-full text-[10px]">
+                                      {diario.apoiosCount || apoiadoresLista.length || 0}
+                                    </span>
+                                  </button>
+
+                                  {/* Thumbnails dos Apoiadores Empilhados */}
+                                  {apoiadoresLista.length > 0 && (
+                                    <div className="flex items-center">
+                                      <div className="flex -space-x-2 overflow-hidden py-0.5 pl-1">
+                                        {apoiadoresLista.slice(0, 4).map((apoiador, idx) => (
+                                          apoiador.foto ? (
+                                            <img
+                                              key={apoiador.id || idx}
+                                              src={apoiador.foto}
+                                              alt={apoiador.nome}
+                                              title={`${apoiador.nome} (${apoiador.unidade || 'Morador'})`}
+                                              className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover shadow-2xs"
+                                            />
+                                          ) : (
+                                            <div
+                                              key={apoiador.id || idx}
+                                              title={`${apoiador.nome} (${apoiador.unidade || 'Morador'})`}
+                                              className="inline-flex h-6 w-6 rounded-full ring-2 ring-white bg-amber-500 text-slate-950 font-black text-[9px] items-center justify-center shadow-2xs"
+                                            >
+                                              {apoiador.nome ? apoiador.nome.substring(0, 2).toUpperCase() : 'MO'}
+                                            </div>
+                                          )
+                                        ))}
+                                      </div>
+
+                                      {apoiadoresLista.length > 4 && (
+                                        <span className="text-[10px] font-extrabold text-slate-500 ml-1.5">
+                                          +{apoiadoresLista.length - 4}
+                                        </span>
+                                      )}
+
+                                      <button
+                                        type="button"
+                                        onClick={() => setExpandedDiarioApoiadores(prev => ({ ...prev, [diario.id]: !prev[diario.id] }))}
+                                        className="text-[11px] font-bold text-amber-900 hover:underline ml-2 cursor-pointer"
+                                      >
+                                        {isApoiadoresOpen ? 'Recolher' : 'Ver quem apoiou'}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Botão de Toggle Comentários */}
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedDiarioComments(prev => ({ ...prev, [diario.id]: !isCommentsOpen }))}
+                                  className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-950 bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200 cursor-pointer transition-colors"
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5 text-slate-600" />
+                                  <span>Manifestações ({comentariosLista.length})</span>
+                                  {isCommentsOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                </button>
+                              </div>
+
+                              {/* Lista Expandida de Apoiadores */}
+                              {isApoiadoresOpen && apoiadoresLista.length > 0 && (
+                                <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 space-y-1.5 animate-in fade-in duration-150">
+                                  <span className="text-[10px] font-black uppercase text-amber-950 block">
+                                    Moradores que apoiaram este registro da obra:
+                                  </span>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {apoiadoresLista.map((ap, idx) => (
+                                      <span
+                                        key={ap.id || idx}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white border border-amber-200 text-[11px] font-semibold text-slate-900 shadow-2xs"
+                                      >
+                                        <ThumbsUp className="w-2.5 h-2.5 text-amber-600 fill-amber-500" />
+                                        <strong>{ap.nome}</strong>
+                                        <span className="text-slate-500 text-[10px]">({ap.unidade || 'Morador'})</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Seção de Manifestações / Comentários */}
+                              {isCommentsOpen && (
+                                <div className="pt-2 space-y-2.5 border-t border-slate-100 animate-in fade-in duration-150">
+                                  {comentariosLista.length > 0 && (
+                                    <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                                      {comentariosLista.map((com) => (
+                                        <div
+                                          key={com.id}
+                                          className={`p-2.5 rounded-xl text-xs space-y-1 ${
+                                            com.oficial ? 'bg-amber-500/15 border border-amber-300' : 'bg-slate-50 border border-slate-200'
+                                          }`}
+                                        >
+                                          <div className="flex items-center justify-between text-[10px] flex-wrap gap-1">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                              {com.autorFoto ? (
+                                                <img src={com.autorFoto} alt={com.autorNome} className="w-4 h-4 rounded-full object-cover" />
+                                              ) : (
+                                                <User className="w-3.5 h-3.5 text-slate-500" />
+                                              )}
+                                              <strong className={com.oficial ? 'text-amber-950 font-black' : 'text-slate-900 font-bold'}>
+                                                {com.autorNome}
+                                              </strong>
+                                              {com.autorUnidade && (
+                                                <span className="text-slate-500">({com.autorUnidade})</span>
+                                              )}
+                                              {com.oficial && (
+                                                <span className="px-1.5 py-0.2 rounded bg-amber-200 text-amber-950 font-black text-[9px] uppercase border border-amber-300">
+                                                  Oficial
+                                                </span>
+                                              )}
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-slate-400 font-mono text-[9px]">{com.data}</span>
+                                              <button
+                                                type="button"
+                                                onClick={async () => {
+                                                  if (window.confirm('Excluir este comentário?')) {
+                                                    await excluirComentarioDiarioObraBenfeitoria(activeBenfeitoria.id, diario.id, com.id);
+                                                  }
+                                                }}
+                                                className="text-slate-400 hover:text-rose-600 p-0.5 transition-colors cursor-pointer"
+                                                title="Moderar / Excluir comentário"
+                                              >
+                                                <Trash2 className="w-3 h-3" />
+                                              </button>
+                                            </div>
+                                          </div>
+                                          <p className="text-slate-800 text-[11px] leading-relaxed pl-5 font-medium">{com.texto}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Formulário para Inserir Comentário / Resposta Oficial */}
+                                  <form
+                                    onSubmit={(e) => {
+                                      e.preventDefault();
+                                      const txt = diarioCommentsInput[diario.id]?.trim();
+                                      if (txt) {
+                                        adicionarComentarioDiarioObraBenfeitoria(activeBenfeitoria.id, diario.id, txt);
+                                        setDiarioCommentsInput(prev => ({ ...prev, [diario.id]: '' }));
+                                      }
+                                    }}
+                                    className="flex gap-1.5 pt-0.5"
+                                  >
+                                    <input
+                                      type="text"
+                                      placeholder="Escrever posicionamento ou resposta oficial da administração..."
+                                      value={diarioCommentsInput[diario.id] || ''}
+                                      onChange={(e) => setDiarioCommentsInput(prev => ({ ...prev, [diario.id]: e.target.value }))}
+                                      className="flex-1 bg-white border border-slate-200 focus:border-amber-500 rounded-xl px-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none font-medium shadow-2xs"
+                                    />
+                                    <button
+                                      type="submit"
+                                      disabled={!diarioCommentsInput[diario.id]?.trim()}
+                                      className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-black text-xs flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                                    >
+                                      <Send className="w-3 h-3" />
+                                      <span>Responder</span>
+                                    </button>
+                                  </form>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1162,7 +1468,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
                       className="text-xs font-extrabold text-purple-900 bg-purple-100 hover:bg-purple-200 px-3 py-1.5 rounded-xl border border-purple-300 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
                     >
                       <Star className="w-4 h-4 text-purple-600 fill-purple-600" />
-                      <span>Ir para Apuração de Avaliações ({benfeitoria.avaliacoes?.length || 0})</span>
+                      <span>Ir para Apuração de Avaliações ({activeBenfeitoria.avaliacoes?.length || 0})</span>
                     </button>
                   </div>
 
@@ -1330,28 +1636,28 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
                       Apuração dos Votos por Orçamento
                     </h4>
                     <p className="text-[11px] text-slate-500 font-semibold">
-                      Total de Votos Registrados: <strong>{benfeitoria.votos?.length || 0}</strong>
+                      Total de Votos Registrados: <strong>{activeBenfeitoria.votos?.length || 0}</strong>
                     </p>
                   </div>
 
                   <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase border ${
-                    benfeitoria.votacaoAberta ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-300'
+                    activeBenfeitoria.votacaoAberta ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-300'
                   }`}>
-                    {benfeitoria.votacaoAberta ? 'Votação Aberta' : 'Votação Encerrada'}
+                    {activeBenfeitoria.votacaoAberta ? 'Votação Aberta' : 'Votação Encerrada'}
                   </span>
                 </div>
 
-                {(!benfeitoria.orcamentos || benfeitoria.orcamentos.length === 0) ? (
+                {(!activeBenfeitoria.orcamentos || activeBenfeitoria.orcamentos.length === 0) ? (
                   <p className="text-xs text-slate-500 italic py-2">
                     Nenhum orçamento comparativo cadastrado nesta benfeitoria ainda.
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {benfeitoria.orcamentos.map((orc) => {
-                      const votosDesteOrc = (benfeitoria.votos || []).filter(v => v.orcamentoIdEscolhido === orc.id);
+                    {activeBenfeitoria.orcamentos.map((orc) => {
+                      const votosDesteOrc = (activeBenfeitoria.votos || []).filter(v => v.orcamentoIdEscolhido === orc.id);
                       const isExpanded = expandedOrcamentoVotos === orc.id;
-                      const percentual = benfeitoria.votos && benfeitoria.votos.length > 0
-                        ? Math.round((votosDesteOrc.length / benfeitoria.votos.length) * 100)
+                      const percentual = activeBenfeitoria.votos && activeBenfeitoria.votos.length > 0
+                        ? Math.round((votosDesteOrc.length / activeBenfeitoria.votos.length) * 100)
                         : 0;
 
                       return (
@@ -1436,26 +1742,26 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
                     <p className="text-[11px] text-slate-500 font-semibold">
                       Média Geral:{' '}
                       <strong className="text-purple-950 font-black text-sm">
-                        {benfeitoria.notaMediaFinal ? `${benfeitoria.notaMediaFinal} ★` : 'Ainda sem avaliações'}
+                        {activeBenfeitoria.notaMediaFinal ? `${activeBenfeitoria.notaMediaFinal} ★` : 'Ainda sem avaliações'}
                       </strong>{' '}
-                      ({benfeitoria.avaliacoes?.length || 0} avaliações)
+                      ({activeBenfeitoria.avaliacoes?.length || 0} avaliações)
                     </p>
                   </div>
 
                   <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase border ${
-                    benfeitoria.avaliacaoAberta ? 'bg-purple-100 text-purple-950 border-purple-300' : 'bg-slate-100 text-slate-600 border-slate-300'
+                    activeBenfeitoria.avaliacaoAberta ? 'bg-purple-100 text-purple-950 border-purple-300' : 'bg-slate-100 text-slate-600 border-slate-300'
                   }`}>
-                    {benfeitoria.avaliacaoAberta ? 'Avaliação Aberta' : 'Avaliação Encerrada'}
+                    {activeBenfeitoria.avaliacaoAberta ? 'Avaliação Aberta' : 'Avaliação Encerrada'}
                   </span>
                 </div>
 
-                {(!benfeitoria.avaliacoes || benfeitoria.avaliacoes.length === 0) ? (
+                {(!activeBenfeitoria.avaliacoes || activeBenfeitoria.avaliacoes.length === 0) ? (
                   <p className="text-xs text-slate-500 italic py-2">
                     Nenhum morador enviou avaliação de estrelas para esta obra até o momento.
                   </p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-1">
-                    {benfeitoria.avaliacoes.map((av, idx) => (
+                    {activeBenfeitoria.avaliacoes.map((av, idx) => (
                       <div key={idx} className="bg-purple-50/50 border border-purple-200 rounded-xl p-3 space-y-1.5">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black text-slate-900">
