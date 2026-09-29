@@ -1062,7 +1062,7 @@ export const BenfeitoriasScreen: React.FC = () => {
                     )}
 
                     {/* FASE 6: AVALIAÇÃO DOS CONDÔMINOS (1 a 5 Estrelas) */}
-                    {(item.avaliacaoAberta || (item.avaliacoes && item.avaliacoes.length > 0)) && (
+                    {(statusAtual === 'avaliacao' || item.avaliacaoAberta || (item.avaliacoes && item.avaliacoes.length > 0) || statusAtual === 'entregue') && (
                       <div className="bg-purple-50/80 border border-purple-200 p-4 sm:p-5 rounded-2xl space-y-3 shadow-xs">
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-purple-200 pb-2">
                           <div className="space-y-0.5">
@@ -1073,21 +1073,32 @@ export const BenfeitoriasScreen: React.FC = () => {
                             <p className="text-[11px] text-purple-900 font-semibold">
                               Nota Média Geral:{' '}
                               <strong className="text-purple-950 text-sm font-black">
-                                {item.notaMediaFinal ? `${item.notaMediaFinal} ★` : 'Em apuração'}
+                                {item.notaMediaFinal ? `${item.notaMediaFinal} ★` : (item.avaliacoes && item.avaliacoes.length > 0 ? `${(item.avaliacoes.reduce((a, c) => a + c.nota, 0) / item.avaliacoes.length).toFixed(1)} ★` : 'Em apuração')}
                               </strong>{' '}
-                              ({item.avaliacoes?.length || 0} avaliações registradas)
+                              ({item.avaliacoes?.length || 0} {item.avaliacoes?.length === 1 ? 'avaliação registrada' : 'avaliações registradas'})
                             </p>
                           </div>
 
-                          {item.avaliacaoAberta && (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-purple-600 text-white shadow-xs">
-                              ⭐ Avaliação Aberta
+                          {(statusAtual === 'avaliacao' || item.avaliacaoAberta) ? (
+                            <div className="flex items-center gap-2">
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-purple-600 text-white shadow-xs animate-pulse">
+                                ⭐ Avaliação Aberta
+                              </span>
+                              {item.prazoFimAvaliacao && (
+                                <span className="text-[10px] font-bold text-purple-900">
+                                  até {formatPrazoEntrega(item.prazoFimAvaliacao)}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-200 text-slate-700">
+                              Avaliação Concluída
                             </span>
                           )}
                         </div>
 
-                        {/* Widget de Envio da Nota pelo Condômino */}
-                        {item.avaliacaoAberta && (
+                        {/* Widget de Envio da Nota pelo Condômino (Aberto) */}
+                        {(statusAtual === 'avaliacao' || item.avaliacaoAberta) && (
                           <div className="bg-white p-4 rounded-xl border border-purple-200 space-y-3 shadow-2xs">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <span className="text-xs font-black text-slate-900">
@@ -1145,6 +1156,39 @@ export const BenfeitoriasScreen: React.FC = () => {
                             </div>
                           </div>
                         )}
+
+                        {/* Se avaliação encerrada mas o morador avaliou */}
+                        {!(statusAtual === 'avaliacao' || item.avaliacaoAberta) && minhaAvaliacao && (
+                          <div className="bg-white/90 p-3 rounded-xl border border-purple-100 text-xs flex items-center justify-between">
+                            <span className="font-semibold text-slate-700">Seu voto registrado:</span>
+                            <div className="flex items-center gap-1 font-black text-purple-900">
+                              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                              <span>{minhaAvaliacao.nota} estrelas</span>
+                              {minhaAvaliacao.comentario && (
+                                <span className="text-slate-500 font-normal italic ml-2">"{minhaAvaliacao.comentario}"</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* FASE 7: PUBLICAÇÃO OFICIAL DA ENTREGA CONCLUÍDA */}
+                    {statusAtual === 'entregue' && (
+                      <div className="bg-emerald-50/90 border border-emerald-200 p-4 sm:p-5 rounded-2xl space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
+                          <span className="text-xs font-black uppercase text-emerald-950 flex items-center gap-1.5">
+                            <Award className="w-4 h-4 text-emerald-600" />
+                            Obra Entregue & Concluída Oficialmente
+                          </span>
+                          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                            Entregue em {item.dataEntrega || item.dataCriacao}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-800 font-semibold leading-relaxed">
+                          {item.descricao}
+                        </p>
                       </div>
                     )}
 

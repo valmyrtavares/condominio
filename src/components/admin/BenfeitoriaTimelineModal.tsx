@@ -238,7 +238,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
       }
 
       // Fase 3: Votação
-      setVotacaoAbertaLocal(Boolean(benfeitoria.votacaoAberta));
+      setVotacaoAbertaLocal(benfeitoria.votacaoAberta !== undefined ? Boolean(benfeitoria.votacaoAberta) : true);
       setPrazoFimVotacaoLocal(benfeitoria.prazoFimVotacao || '');
 
       // Fase 4: Contratação
@@ -249,7 +249,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
       setContratadaValorPago(benfeitoria.empresaEleita?.valorPago ? String(benfeitoria.empresaEleita.valorPago) : '0');
 
       // Fase 6: Avaliação
-      setAvaliacaoAbertaLocal(Boolean(benfeitoria.avaliacaoAberta));
+      setAvaliacaoAbertaLocal(benfeitoria.avaliacaoAberta !== undefined ? Boolean(benfeitoria.avaliacaoAberta) : true);
       setPrazoFimAvaliacaoLocal(benfeitoria.prazoFimAvaliacao || '');
 
       // Fase 7: Entregue
@@ -282,6 +282,11 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
 
   const irParaFase = (fase: StatusFaseBenfeitoria) => {
     setSelectedStatus(fase);
+    if (fase === 'avaliacao') {
+      setAvaliacaoAbertaLocal(prev => (activeBenfeitoria?.avaliacaoAberta !== undefined ? Boolean(activeBenfeitoria.avaliacaoAberta) : true));
+    } else if (fase === 'votacao') {
+      setVotacaoAbertaLocal(prev => (activeBenfeitoria?.votacaoAberta !== undefined ? Boolean(activeBenfeitoria.votacaoAberta) : true));
+    }
     setActiveTab('novo_passo');
     setFeedbackMsg(null);
   };

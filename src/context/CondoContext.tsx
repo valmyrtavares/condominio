@@ -5793,16 +5793,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const novoPasso: PassoTimelineBenfeitoria = {
         id: `passo-${Date.now()}`,
         data: new Date().toLocaleDateString('pt-BR'),
-        status: aberto ? 'votacao' : 'orcamento',
-        titulo: aberto ? 'Votação Eletrônica Aberta' : 'Votação Eletrônica Encerrada',
+        status: 'votacao',
+        titulo: aberto ? 'Votação Eletrônica Aberta' : 'Votação Eletrônica (Fase 3)',
         descricao: aberto 
           ? `Votação aberta para escolha do orçamento${prazoFim ? ` até ${new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.` 
-          : 'Período de votação finalizado pela administração.',
+          : 'Período de votação registrado pela administração.',
         criadoPor: currentUser.nome || 'Administração'
       };
 
       const lastStep = timeline[timeline.length - 1];
-      const novaTimeline = (lastStep && lastStep.status === (aberto ? 'votacao' : 'orcamento') && lastStep.titulo.includes('Votação'))
+      const novaTimeline = (lastStep && lastStep.status === 'votacao' && lastStep.titulo.includes('Votação'))
         ? timeline.map((p, idx) => idx === timeline.length - 1 ? novoPasso : p)
         : [...timeline, novoPasso];
 
@@ -5810,7 +5810,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ...alvo,
         votacaoAberta: aberto,
         prazoFimVotacao: prazoFim || alvo.prazoFimVotacao,
-        statusAtual: aberto ? 'votacao' : (alvo.statusAtual === 'votacao' ? 'orcamento' : alvo.statusAtual),
+        statusAtual: 'votacao',
         timeline: novaTimeline
       };
 
@@ -6185,16 +6185,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const novoPasso: PassoTimelineBenfeitoria = {
         id: `passo-${Date.now()}`,
         data: new Date().toLocaleDateString('pt-BR'),
-        status: aberto ? 'avaliacao' : 'execucao',
-        titulo: aberto ? 'Avaliação dos Condôminos Aberta' : 'Avaliação Encerrada',
+        status: 'avaliacao',
+        titulo: aberto ? 'Avaliação dos Condôminos Aberta' : 'Avaliação dos Condôminos (Fase 6)',
         descricao: aberto 
           ? `Obra entregue para avaliação dos condôminos${prazoFim ? ` até ${new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.` 
-          : 'Período de avaliação finalizado.',
+          : 'Fase de avaliação dos condôminos registrada pela administração.',
         criadoPor: currentUser.nome || 'Administração'
       };
 
       const lastStep = timeline[timeline.length - 1];
-      const novaTimeline = (lastStep && lastStep.status === (aberto ? 'avaliacao' : 'execucao') && lastStep.titulo.includes('Avaliação'))
+      const novaTimeline = (lastStep && lastStep.status === 'avaliacao' && lastStep.titulo.includes('Avaliação'))
         ? timeline.map((p, idx) => idx === timeline.length - 1 ? novoPasso : p)
         : [...timeline, novoPasso];
 
@@ -6202,7 +6202,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ...alvo,
         avaliacaoAberta: aberto,
         prazoFimAvaliacao: prazoFim || alvo.prazoFimAvaliacao,
-        statusAtual: aberto ? 'avaliacao' : (alvo.statusAtual === 'avaliacao' ? 'execucao' : alvo.statusAtual),
+        statusAtual: 'avaliacao',
         timeline: novaTimeline
       };
 
@@ -6308,6 +6308,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const benfeitoriaAtualizada: Benfeitoria = {
         ...alvo,
         statusAtual: 'cancelada',
+        votacaoAberta: false,
+        avaliacaoAberta: false,
         cancelamentoInfo: cancelInfo,
         timeline: [...timeline, novoPasso]
       };
@@ -6334,21 +6336,24 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const dataHoje = dadosEntrega?.dataEntrega || new Date().toLocaleDateString('pt-BR');
       const timeline = alvo.timeline || [];
+      const fotosFinais = dadosEntrega?.fotosDepois && dadosEntrega.fotosDepois.length > 0 ? dadosEntrega.fotosDepois : (alvo.fotos || []);
       const novoPasso: PassoTimelineBenfeitoria = {
         id: `passo-${Date.now()}`,
         data: dataHoje,
         status: 'entregue',
         titulo: 'Benfeitoria Entregue & Concluída Oficialmente',
         descricao: dadosEntrega?.relatoFinal || alvo.descricao || 'Obra finalizada com sucesso e prestação de contas concluída.',
-        fotos: dadosEntrega?.fotosDepois && dadosEntrega.fotosDepois.length > 0 ? dadosEntrega.fotosDepois : alvo.fotos,
+        fotos: fotosFinais,
         criadoPor: currentUser.nome || 'Administração'
       };
 
       const benfeitoriaAtualizada: Benfeitoria = {
         ...alvo,
         statusAtual: 'entregue',
+        avaliacaoAberta: false,
         dataEntrega: dataHoje,
-        fotos: dadosEntrega?.fotosDepois && dadosEntrega.fotosDepois.length > 0 ? dadosEntrega.fotosDepois : alvo.fotos,
+        descricao: dadosEntrega?.relatoFinal ? dadosEntrega.relatoFinal : alvo.descricao,
+        fotos: fotosFinais,
         timeline: [...timeline, novoPasso]
       };
 
