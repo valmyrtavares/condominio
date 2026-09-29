@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   FileSpreadsheet, 
@@ -23,6 +24,12 @@ import {
   parsearExcelFinanceiro,
   formatCurrency 
 } from '../../utils/excelFinanceUtils';
+
+const MESES_NOMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+const ANOS_LISTA = ['2025', '2026', '2027', '2028', '2029', '2030'];
 
 interface ImportExcelFinanceModalProps {
   isOpen: boolean;
@@ -49,11 +56,14 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
     ? Object.keys(mesesPrestacao) 
     : ['Setembro / 2026', 'Outubro / 2026'];
 
-  const [selectedMonth, setSelectedMonth] = useState<string>(defaultMonth || availableMonths[0] || 'Setembro / 2026');
-  const [newMonthInput, setNewMonthInput] = useState<string>('');
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [monthError, setMonthError] = useState<string | null>(null);
+  const [newMonthName, setNewMonthName] = useState<string>(MESES_NOMES[new Date().getMonth()] || 'Janeiro');
+  const [newYearName, setNewYearName] = useState<string>('2026');
   const [isCreatingNewMonth, setIsCreatingNewMonth] = useState<boolean>(false);
 
   const [tipoImportacao, setTipoImportacao] = useState<'despesas' | 'receitas'>('despesas');
+  const [autoDetectNotice, setAutoDetectNotice] = useState<string | null>(null);
 
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isParsing, setIsParsing] = useState<boolean>(false);
@@ -63,14 +73,23 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
 
   const [importSuccessMessage, setImportSuccessMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedMonth('');
+      setMonthError(null);
+      setImportSuccessMessage(null);
+      setIsCreatingNewMonth(false);
+      setAutoDetectNotice(null);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleCreateMonth = () => {
-    if (!newMonthInput.trim()) return;
-    const formattedMonth = newMonthInput.trim();
+    const formattedMonth = `${newMonthName} / ${newYearName}`;
     adicionarMesPrestacao(formattedMonth);
     setSelectedMonth(formattedMonth);
-    setNewMonthInput('');
+    setMonthError(null);
     setIsCreatingNewMonth(false);
   };
 
@@ -92,11 +111,27 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
   };
 
   const processFile = async (file: File) => {
+    // Detecção automática de tipo pelo nome do arquivo (ex: Modelo_Prestacao_Contas_ENTRADAS.xlsx)
+    const nameLower = file.name.toLowerCase();
+    let typeToUse: 'despesas' | 'receitas' = tipoImportacao;
+
+    if (nameLower.includes('entrada') || nameLower.includes('receita')) {
+      typeToUse = 'receitas';
+      setTipoImportacao('receitas');
+      setAutoDetectNotice('Tipo ajustado automaticamente para Entradas (Receitas) com base no nome do arquivo.');
+    } else if (nameLower.includes('saida') || nameLower.includes('saída') || nameLower.includes('despesa')) {
+      typeToUse = 'despesas';
+      setTipoImportacao('despesas');
+      setAutoDetectNotice('Tipo ajustado automaticamente para Saídas (Despesas) com base no nome do arquivo.');
+    } else {
+      setAutoDetectNotice(null);
+    }
+
     setUploadedFile(file);
     setIsParsing(true);
     setImportSuccessMessage(null);
     try {
-      const res = await parsearExcelFinanceiro(file, tipoImportacao);
+      const res = await parsearExcelFinanceiro(file, typeToUse);
       setParsedItems(res.validos);
       setParseErrors(res.erros);
       setTotalValorCalculado(res.totalValor);
@@ -110,6 +145,24 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
     }
   };
 
+  const handleTypeChange = async (novoTipo: 'despesas' | 'receitas') => {
+    setTipoImportacao(novoTipo);
+    setAutoDetectNotice(null);
+    if (uploadedFile) {
+      setIsParsing(true);
+      try {
+        const res = await parsearExcelFinanceiro(uploadedFile, novoTipo);
+        setParsedItems(res.validos);
+        setParseErrors(res.erros);
+        setTotalValorCalculado(res.totalValor);
+      } catch (err: any) {
+        alert(`Erro ao recarregar planilha: ${err.message || err}`);
+      } finally {
+        setIsParsing(false);
+      }
+    }
+  };
+
   const removeItemFromPreview = (index: number) => {
     const newItems = [...parsedItems];
     const removed = newItems.splice(index, 1)[0];
@@ -120,6 +173,12 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
   };
 
   const handleConfirmImport = () => {
+    if (!selectedMonth || selectedMonth.trim() === '') {
+      setMonthError('Por favor, selecione o Mês e Ano de referência da planilha antes de confirmar.');
+      alert('⚠️ ATENÇÃO AO ADMINISTRADOR:\n\nVocê precisa indicar o Mês de Referência (Mês / Ano) que essa planilha representa antes de realizar a importação.\n\nPor favor, escolha o mês no campo indicado em vermelho.');
+      return;
+    }
+
     if (parsedItems.length === 0) return;
 
     const targetMonth = selectedMonth;
@@ -136,7 +195,7 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
       });
     }
 
-    setImportSuccessMessage(`✨ Sucesso! ${parsedItems.length} ${tipoImportacao === 'despesas' ? 'saídas' : 'entradas'} importadas com sucesso no Cloud Firestore para ${targetMonth}. Total: ${formatCurrency(totalValorCalculado)}`);
+    setImportSuccessMessage(`✨ Sucesso! ${parsedItems.length} ${tipoImportacao === 'despesas' ? 'saídas' : 'entradas'} importadas para ${targetMonth}. A planilha anterior dessa mesma categoria foi sobrescrita com sucesso. Total: ${formatCurrency(totalValorCalculado)}`);
 
     setTimeout(() => {
       setUploadedFile(null);
@@ -154,8 +213,8 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
     setImportSuccessMessage(null);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200">
       
       {/* Input de arquivo Oculto Controlado via Ref (Evita sobreposição de cliques) */}
       <input
@@ -166,7 +225,7 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
         className="hidden"
       />
 
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[92vh] my-auto relative z-10">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[85vh] my-auto relative z-10">
         
         {/* Top Header */}
         <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 px-6 py-4 text-white flex items-center justify-between border-b border-emerald-900/50">
@@ -209,7 +268,7 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
                 Esta interface foi desenvolvida para visualização limpa, amigável e direta pelos <strong>moradores e conselheiros</strong>.
               </p>
               <p className="font-medium text-amber-900">
-                <strong>Não é necessário lançar pagamentos individuais de cada morador</strong> (ex: 100 boletos separados). Lance o <strong>valor total consolidado arrecadado no mês</strong> (ex: <em>"Arrecadação Taxa Condominial Ordinária - R$ 45.000,00"</em>). Assim a prestação de contas fica simples e objetiva!
+                <strong>Substituição Automática:</strong> Ao enviar uma nova planilha de <strong>{tipoImportacao === 'despesas' ? 'Saídas' : 'Entradas'}</strong> para o mês selecionado, os lançamentos anteriores dessa mesma fonte/categoria serão <strong>sobrescritos e substituídos</strong> pela nova planilha enviada.
               </p>
             </div>
           </div>
@@ -218,19 +277,38 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             {/* Seletor de Mês */}
-            <div className="space-y-1.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-              <label className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-emerald-600" />
-                Mês de Referência do Envio *
-              </label>
+            <div className={`space-y-1.5 p-3.5 rounded-2xl border transition-all ${
+              monthError 
+                ? 'bg-rose-50/90 border-rose-400 ring-2 ring-rose-500/30' 
+                : 'bg-slate-50 border-slate-200'
+            }`}>
+              <div className="flex items-center justify-between gap-1">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <Calendar className={`w-4 h-4 ${monthError ? 'text-rose-600' : 'text-emerald-600'}`} />
+                  Mês de Referência do Envio *
+                </label>
+                {monthError && (
+                  <span className="text-[10px] font-black uppercase tracking-wider text-rose-600 flex items-center gap-1 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-200 animate-pulse">
+                    <AlertCircle className="w-3 h-3" /> Campo Obrigatório
+                  </span>
+                )}
+              </div>
 
               {!isCreatingNewMonth ? (
                 <div className="flex items-center gap-2">
                   <select
                     value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-2xs"
+                    onChange={(e) => {
+                      setSelectedMonth(e.target.value);
+                      if (e.target.value) setMonthError(null);
+                    }}
+                    className={`flex-1 bg-white border rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 focus:outline-none cursor-pointer shadow-2xs ${
+                      monthError 
+                        ? 'border-rose-500 text-rose-950 ring-2 ring-rose-500/20' 
+                        : 'border-slate-300 focus:ring-2 focus:ring-emerald-500'
+                    }`}
                   >
+                    <option value="">-- Selecione o Mês / Ano (Obrigatório) --</option>
                     {availableMonths.map((m) => (
                       <option key={m} value={m}>{m}</option>
                     ))}
@@ -244,18 +322,29 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="Ex: Outubro / 2026"
-                    value={newMonthInput}
-                    onChange={(e) => setNewMonthInput(e.target.value)}
-                    className="flex-1 bg-white border border-emerald-500 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 focus:outline-none shadow-2xs"
-                  />
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                  <select
+                    value={newMonthName}
+                    onChange={(e) => setNewMonthName(e.target.value)}
+                    className="flex-1 min-w-[110px] bg-white border border-emerald-500 rounded-xl px-2.5 py-2 text-xs font-extrabold text-slate-900 focus:outline-none cursor-pointer shadow-2xs"
+                  >
+                    {MESES_NOMES.map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={newYearName}
+                    onChange={(e) => setNewYearName(e.target.value)}
+                    className="w-24 bg-white border border-emerald-500 rounded-xl px-2 py-2 text-xs font-extrabold text-slate-900 focus:outline-none cursor-pointer shadow-2xs"
+                  >
+                    {ANOS_LISTA.map((a) => (
+                      <option key={a} value={a}>{a}</option>
+                    ))}
+                  </select>
                   <button
                     type="button"
                     onClick={handleCreateMonth}
-                    className="px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition-all shrink-0 cursor-pointer"
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs"
                   >
                     Salvar
                   </button>
@@ -268,21 +357,32 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
                   </button>
                 </div>
               )}
+
+              {monthError && (
+                <p className="text-[11px] font-extrabold text-rose-700 mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {monthError}
+                </p>
+              )}
             </div>
 
             {/* Alternar Saídas vs Entradas */}
             <div className="space-y-1.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-              <label className="text-xs font-black uppercase tracking-wider text-slate-700 block">
-                Tipo de Planilha Enviada *
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-700 block">
+                  Tipo de Planilha Enviada *
+                </label>
+                {autoDetectNotice && (
+                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300 animate-pulse flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-emerald-600" /> Auto-Detectado
+                  </span>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setTipoImportacao('despesas');
-                    resetModal();
-                  }}
+                  onClick={() => handleTypeChange('despesas')}
                   className={`py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
                     tipoImportacao === 'despesas'
                       ? 'bg-rose-600 text-white border-rose-700 shadow-sm scale-[1.02]'
@@ -295,10 +395,7 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setTipoImportacao('receitas');
-                    resetModal();
-                  }}
+                  onClick={() => handleTypeChange('receitas')}
                   className={`py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
                     tipoImportacao === 'receitas'
                       ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm scale-[1.02]'
@@ -309,6 +406,13 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
                   <span>Entradas (Receitas)</span>
                 </button>
               </div>
+
+              {autoDetectNotice && (
+                <p className="text-[10px] font-bold text-emerald-800 mt-1 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  {autoDetectNotice}
+                </p>
+              )}
             </div>
 
           </div>
@@ -525,19 +629,25 @@ export const ImportExcelFinanceModal: React.FC<ImportExcelFinanceModalProps> = (
               type="button"
               onClick={handleConfirmImport}
               className={`px-6 py-2.5 rounded-xl text-white font-black text-xs uppercase shadow-md flex items-center gap-2 transition-all cursor-pointer active:scale-95 ${
-                tipoImportacao === 'despesas'
-                  ? 'bg-rose-600 hover:bg-rose-500'
-                  : 'bg-emerald-600 hover:bg-emerald-500'
+                !selectedMonth
+                  ? 'bg-amber-600 hover:bg-amber-500 ring-2 ring-amber-400/50'
+                  : tipoImportacao === 'despesas'
+                    ? 'bg-rose-600 hover:bg-rose-500'
+                    : 'bg-emerald-600 hover:bg-emerald-500'
               }`}
             >
               <Sparkles className="w-4 h-4" />
-              <span>Importar {parsedItems.length} {tipoImportacao === 'despesas' ? 'Saídas' : 'Entradas'} para {selectedMonth}</span>
+              <span>
+                Importar {parsedItems.length} {tipoImportacao === 'despesas' ? 'Saídas' : 'Entradas'}
+                {selectedMonth ? ` para ${selectedMonth}` : ' (Indique o Mês)'}
+              </span>
             </button>
           )}
         </div>
 
       </div>
 
-    </div>
+    </div>,
+    document.body
   );
 };

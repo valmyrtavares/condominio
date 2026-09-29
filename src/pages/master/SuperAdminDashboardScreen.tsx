@@ -26,13 +26,16 @@ import {
   Bell,
   AlertTriangle,
   DollarSign,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Archive
 } from 'lucide-react';
 import { CreateEditCondominioModal } from '../../components/master/CreateEditCondominioModal';
 import { CondominioOcorrenciasModal } from '../../components/master/CondominioOcorrenciasModal';
 import { NotificarCondominioModal } from '../../components/master/NotificarCondominioModal';
 import { SuspenderCondominioModal } from '../../components/master/SuspenderCondominioModal';
 import { BackupRestoreCondoModal } from '../../components/admin/BackupRestoreCondoModal';
+import { ConfirmDeleteCondoModal } from '../../components/master/ConfirmDeleteCondoModal';
+import { LixeiraCondominiosModal } from '../../components/master/LixeiraCondominiosModal';
 import { executarSeedCompletoFirestore } from '../../services/firebase';
 
 export const SuperAdminDashboardScreen: React.FC = () => {
@@ -69,6 +72,8 @@ export const SuperAdminDashboardScreen: React.FC = () => {
   const [notificarCondo, setNotificarCondo] = useState<CondominioProfile | null>(null);
   const [suspenderCondo, setSuspenderCondo] = useState<CondominioProfile | null>(null);
   const [condoParaBackup, setCondoParaBackup] = useState<CondominioProfile | null>(null);
+  const [condoParaExcluir, setCondoParaExcluir] = useState<CondominioProfile | null>(null);
+  const [isLixeiraModalOpen, setIsLixeiraModalOpen] = useState(false);
 
   const [isSyncingFirestore, setIsSyncingFirestore] = useState(false);
   const [syncStatusMsg, setSyncStatusMsg] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
@@ -185,6 +190,15 @@ export const SuperAdminDashboardScreen: React.FC = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+          <button 
+            type="button" 
+            onClick={() => setIsLixeiraModalOpen(true)} 
+            className="px-4 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-black text-xs rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer border border-slate-700 shadow-xs"
+            title="Acessar o Cofre de Lixeira e Restauração de Condomínios Excluídos"
+          >
+            <Archive className="w-4 h-4 text-indigo-400" />
+            <span>Cofre / Lixeira</span>
+          </button>
           <button type="button" onClick={handleSyncFirestore} disabled={isSyncingFirestore} className="px-5 py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-xs rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer border border-indigo-400/40">
             <Cloud className={`w-4 h-4 ${isSyncingFirestore ? 'animate-spin' : ''}`} />
             <span>{isSyncingFirestore ? 'Sincronizando...' : '🔄 Sincronizar Nuvem'}</span>
@@ -464,9 +478,9 @@ export const SuperAdminDashboardScreen: React.FC = () => {
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button 
-                          onClick={() => { if(confirm(`Tem certeza que deseja excluir o condomínio "${condo.nome}"?`)) excluirCondominio(condo.id); }} 
+                          onClick={() => setCondoParaExcluir(condo)} 
                           className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/20 rounded-lg transition-colors cursor-pointer"
-                          title="Excluir Condomínio"
+                          title="Exclusão Segura com Snapshot e Cofre"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -485,6 +499,8 @@ export const SuperAdminDashboardScreen: React.FC = () => {
       <NotificarCondominioModal isOpen={Boolean(notificarCondo)} onClose={() => setNotificarCondo(null)} condominio={notificarCondo} />
       <SuspenderCondominioModal isOpen={Boolean(suspenderCondo)} onClose={() => setSuspenderCondo(null)} condominio={suspenderCondo} onConfirm={handleConfirmSuspender} />
       <BackupRestoreCondoModal isOpen={Boolean(condoParaBackup)} onClose={() => setCondoParaBackup(null)} />
+      <ConfirmDeleteCondoModal isOpen={Boolean(condoParaExcluir)} condo={condoParaExcluir} onClose={() => setCondoParaExcluir(null)} />
+      <LixeiraCondominiosModal isOpen={isLixeiraModalOpen} onClose={() => setIsLixeiraModalOpen(false)} />
     </div>
   );
 };

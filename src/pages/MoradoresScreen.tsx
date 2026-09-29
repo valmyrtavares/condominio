@@ -27,6 +27,7 @@ export const MoradoresScreen: React.FC = () => {
   });
 
   const [selectedRua, setSelectedRua] = useState<string>('');
+  const [selectedBloco, setSelectedBloco] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
@@ -46,6 +47,28 @@ export const MoradoresScreen: React.FC = () => {
     });
     return Array.from(setRuas);
   }, [currentCondo?.ruas, unidades]);
+
+  // Lista de blocos/torres do condomínio de apartamentos
+  const listaBlocos = React.useMemo(() => {
+    const list: string[] = [];
+    if (currentCondo?.configuracaoBlocos && Array.isArray(currentCondo.configuracaoBlocos)) {
+      currentCondo.configuracaoBlocos.forEach(b => {
+        const nome = (b.nome || '').trim();
+        if (nome && !list.includes(nome)) list.push(nome);
+      });
+    }
+    unidades.forEach(u => {
+      const b = (u.bloco || '').trim();
+      if (b && !list.includes(b)) list.push(b);
+    });
+    if (list.length === 0 && (currentCondo?.totalBlocos || 1) > 1) {
+      const totalBlocos = currentCondo?.totalBlocos || 1;
+      for (let i = 1; i <= totalBlocos; i++) {
+        list.push(`Bloco ${i}`);
+      }
+    }
+    return list;
+  }, [currentCondo?.configuracaoBlocos, currentCondo?.totalBlocos, unidades]);
 
   // Formata o nome de exibição da unidade (ex: "Casa 223" para casas ou "Apt 223" para apartamentos)
   const formatUnitLabel = (numOrId: string) => {
@@ -82,12 +105,17 @@ export const MoradoresScreen: React.FC = () => {
     const matchesSearch = 
       u.numero.toLowerCase().includes(searchTerm.toLowerCase()) || 
       u.moradores.some(m => m.nome.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (isCasas && u.rua && u.rua.toLowerCase().includes(searchTerm.toLowerCase()));
+      (isCasas && u.rua && u.rua.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (!isCasas && u.bloco && u.bloco.toLowerCase().includes(searchTerm.toLowerCase()));
 
     if (!matchesSearch) return false;
 
     if (isCasas && selectedRua) {
       return (u.rua || '').trim().toLowerCase() === selectedRua.trim().toLowerCase();
+    }
+
+    if (!isCasas && selectedBloco) {
+      return (u.bloco || '').trim().toLowerCase() === selectedBloco.trim().toLowerCase();
     }
 
     return true;
@@ -99,6 +127,16 @@ export const MoradoresScreen: React.FC = () => {
       const firstInRua = unidades.find(u => (u.rua || '').trim().toLowerCase() === rua.trim().toLowerCase());
       if (firstInRua) {
         setSelectedUnidadeId(firstInRua.id);
+      }
+    }
+  };
+
+  const handleSelectBloco = (bloco: string) => {
+    setSelectedBloco(bloco);
+    if (bloco) {
+      const firstInBloco = unidades.find(u => (u.bloco || '').trim().toLowerCase() === bloco.trim().toLowerCase());
+      if (firstInBloco) {
+        setSelectedUnidadeId(firstInBloco.id);
       }
     }
   };
@@ -133,7 +171,7 @@ export const MoradoresScreen: React.FC = () => {
         <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
         <input
           type="text"
-          placeholder={isCasas ? "Buscar por casa, rua ou morador..." : "Buscar por unidade ou morador..."}
+          placeholder={isCasas ? "Buscar por casa, rua ou morador..." : (listaBlocos.length > 1 ? "Buscar por apartamento, bloco ou morador..." : "Buscar por unidade ou morador...")}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-white border border-slate-300 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-md transition-colors font-semibold"
@@ -147,6 +185,7 @@ export const MoradoresScreen: React.FC = () => {
             {isCasas ? 'Casas' : 'Unidades'}
           </span>
 
+          {/* Filtro de Rua para Condomínio de Casas */}
           {isCasas && listaRuas.length > 0 && (
             <div className="flex items-center gap-2">
               <label htmlFor="select-rua-condo" className="text-[11px] font-bold text-white/90 drop-shadow hidden sm:inline">
@@ -164,6 +203,31 @@ export const MoradoresScreen: React.FC = () => {
                   return (
                     <option key={rua} value={rua}>
                       {rua} {countNaRua > 0 ? `(${countNaRua})` : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
+
+          {/* Filtro de Bloco / Torre para Condomínio de Apartamentos */}
+          {!isCasas && listaBlocos.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label htmlFor="select-bloco-condo" className="text-[11px] font-bold text-white/90 drop-shadow hidden sm:inline">
+                Torre / Bloco:
+              </label>
+              <select
+                id="select-bloco-condo"
+                value={selectedBloco}
+                onChange={(e) => handleSelectBloco(e.target.value)}
+                className="bg-white text-slate-900 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold shadow-md focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer min-w-[150px] sm:min-w-[190px]"
+              >
+                <option value="">Todos os blocos ({unidades.length})</option>
+                {listaBlocos.map((bloco) => {
+                  const countNoBloco = unidades.filter(u => (u.bloco || '').trim().toLowerCase() === bloco.trim().toLowerCase()).length;
+                  return (
+                    <option key={bloco} value={bloco}>
+                      {bloco} {countNoBloco > 0 ? `(${countNoBloco})` : ''}
                     </option>
                   );
                 })}

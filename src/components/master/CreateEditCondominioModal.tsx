@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useCondo } from '../../context/CondoContext';
-import { CondominioProfile, ModeloInicialCondominio, StatusCondominio, TipoCondominio } from '../../types';
+import { useCondo, formatarNumeroAptoPorAndar } from '../../context/CondoContext';
+import { CondominioProfile, ModeloInicialCondominio, StatusCondominio, TipoCondominio, ConfiguracaoBloco } from '../../types';
 import { otimizarImagemArquivo, otimizarImagemDataUrl } from '../../utils/imageOptimizer';
 import { 
   Building2, 
@@ -20,6 +20,8 @@ import {
   Globe, 
   HelpCircle,
   Plus, 
+  Minus,
+  Trash2,
   ListOrdered,
   Compass,
   Search,
@@ -345,13 +347,19 @@ export const CreateEditCondominioModal: React.FC<{
   // Tipo de condomínio (Radio: Apartamentos ou Casas)
   const [tipoCondominio, setTipoCondominio] = useState<TipoCondominio>('apartamentos');
   
-  // Campos para Condomínio de Apartamentos
-  const [totalUnidades, setTotalUnidades] = useState<number>(32);
-  const [totalBlocos, setTotalBlocos] = useState<number>(1);
-  const [totalAndares, setTotalAndares] = useState<number | ''>('');
-  const [padraoPrimeiroAndar, setPadraoPrimeiroAndar] = useState<string>('');
+  // Campos para Condomínio de Apartamentos (Blocos e Torres Dinâmicos)
+  const [blocosConfig, setBlocosConfig] = useState<ConfiguracaoBloco[]>([
+    {
+      id: 'bloco-1',
+      nome: '',
+      totalAndares: 7,
+      padraoApartamentos: '12 13 14 15',
+      totalUnidadesBloco: 28
+    }
+  ]);
 
   // Campos para Condomínio de Casas
+  const [totalUnidades, setTotalUnidades] = useState<number>(32);
   const [ruas, setRuas] = useState<string[]>([]);
   const [novaRuaInput, setNovaRuaInput] = useState<string>('');
   const [unidadesCasas, setUnidadesCasas] = useState<CasaItem[]>([]);
@@ -370,6 +378,53 @@ export const CreateEditCondominioModal: React.FC<{
 
   const isEditing = Boolean(condominioToEdit);
 
+  // Total de unidades de apartamentos calculado como a soma de todos os blocos configurados
+  const totalUnidadesApartamentos = useMemo(() => {
+    return blocosConfig.reduce((acc, b) => acc + (Number(b.totalUnidadesBloco) || 0), 0);
+  }, [blocosConfig]);
+
+  // Adicionar novo bloco/torre dinâmico
+  const handleAdicionarBloco = useCallback(() => {
+    const nextNum = blocosConfig.length + 1;
+    const novoBloco: ConfiguracaoBloco = {
+      id: `bloco-${Date.now()}-${nextNum}`,
+      nome: `Bloco ${nextNum}`,
+      totalAndares: 7,
+      padraoApartamentos: '12 13 14 15',
+      totalUnidadesBloco: 28
+    };
+    setBlocosConfig(prev => [...prev, novoBloco]);
+  }, [blocosConfig.length]);
+
+  // Remover bloco/torre
+  const handleRemoverBloco = useCallback((index: number) => {
+    if (blocosConfig.length <= 1) return;
+    setBlocosConfig(prev => prev.filter((_, idx) => idx !== index));
+  }, [blocosConfig.length]);
+
+  // Atualizar campo específico de um bloco
+  const handleUpdateBloco = useCallback((
+    index: number, 
+    field: keyof ConfiguracaoBloco, 
+    value: any
+  ) => {
+    setBlocosConfig(prev => {
+      const clone = [...prev];
+      const item = { ...clone[index], [field]: value };
+
+      if (field === 'totalAndares' || field === 'padraoApartamentos') {
+        const andares = field === 'totalAndares' ? (Number(value) || 1) : (Number(item.totalAndares) || 1);
+        const padrao = field === 'padraoApartamentos' ? String(value) : String(item.padraoApartamentos || '');
+        const items = padrao.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean);
+        const countPorAndar = items.length > 0 ? items.length : 4;
+        item.totalUnidadesBloco = andares * countPorAndar;
+      }
+
+      clone[index] = item;
+      return clone;
+    });
+  }, []);
+
   useEffect(() => {
     if (condominioToEdit) {
       setNome(condominioToEdit.nome);
@@ -383,9 +438,29 @@ export const CreateEditCondominioModal: React.FC<{
       
       const qty = condominioToEdit.totalUnidades || 32;
       setTotalUnidades(qty);
-      setTotalBlocos(condominioToEdit.totalBlocos || 1);
-      setTotalAndares(condominioToEdit.totalAndares || '');
-      setPadraoPrimeiroAndar(condominioToEdit.padraoPrimeiroAndar || '');
+
+      // Carrega blocos salvos ou monta bloco inicial a partir dos dados existentes
+      if (condominioToEdit.configuracaoBlocos && condominioToEdit.configuracaoBlocos.length > 0) {
+        setBlocosConfig(condominioToEdit.configuracaoBlocos);
+      } else {
+        const numBlocos = condominioToEdit.totalBlocos || 1;
+        const andares = condominioToEdit.totalAndares || 7;
+        const padrao = condominioToEdit.padraoPrimeiroAndar || '12 13 14 15';
+        const total = condominioToEdit.totalUnidades || (andares * 4);
+        const unitsPerBloco = Math.ceil(total / numBlocos);
+
+        const blocosIniciais: ConfiguracaoBloco[] = [];
+        for (let i = 0; i < numBlocos; i++) {
+          blocosIniciais.push({
+            id: `bloco-init-${i + 1}`,
+            nome: numBlocos > 1 ? `Bloco ${i + 1}` : '',
+            totalAndares: andares,
+            padraoApartamentos: padrao,
+            totalUnidadesBloco: unitsPerBloco
+          });
+        }
+        setBlocosConfig(blocosIniciais);
+      }
       
       const ruasSalvas = condominioToEdit.ruas || [];
       setRuas(ruasSalvas);
@@ -426,10 +501,16 @@ export const CreateEditCondominioModal: React.FC<{
       setCidade('');
       setEstado('');
       setTipoCondominio('apartamentos');
+      setBlocosConfig([
+        {
+          id: 'bloco-1',
+          nome: '',
+          totalAndares: 7,
+          padraoApartamentos: '12 13 14 15',
+          totalUnidadesBloco: 28
+        }
+      ]);
       setTotalUnidades(32);
-      setTotalBlocos(1);
-      setTotalAndares('');
-      setPadraoPrimeiroAndar('');
       setRuas([]);
       setNovaRuaInput('');
       setUnidadesCasas(Array.from({ length: 32 }, (_, i) => ({ numero: String(i + 1), rua: '' })));
@@ -596,7 +677,11 @@ export const CreateEditCondominioModal: React.FC<{
         }
       }
 
-      const numAndares = typeof totalAndares === 'number' && totalAndares > 0 ? totalAndares : undefined;
+      const totalFinal = tipoCondominio === 'casas' 
+        ? (Number(totalUnidades) || 16) 
+        : (totalUnidadesApartamentos || 28);
+      const maxAndares = Math.max(...blocosConfig.map(b => Number(b.totalAndares) || 1));
+      const primeiroPadrao = blocosConfig[0]?.padraoApartamentos || undefined;
 
       if (isEditing && condominioToEdit) {
         editarCondominio(
@@ -609,10 +694,11 @@ export const CreateEditCondominioModal: React.FC<{
             endereco: endereco.trim(),
             cidade: cidade.trim(),
             estado: estado.trim(),
-            totalUnidades: Number(totalUnidades) || 16,
-            totalBlocos: tipoCondominio === 'casas' ? undefined : (Number(totalBlocos) || 1),
-            totalAndares: tipoCondominio === 'casas' ? undefined : numAndares,
-            padraoPrimeiroAndar: tipoCondominio === 'casas' ? undefined : (padraoPrimeiroAndar.trim() || undefined),
+            totalUnidades: totalFinal,
+            totalBlocos: tipoCondominio === 'casas' ? undefined : blocosConfig.length,
+            configuracaoBlocos: tipoCondominio === 'apartamentos' ? blocosConfig : undefined,
+            totalAndares: tipoCondominio === 'casas' ? undefined : maxAndares,
+            padraoPrimeiroAndar: tipoCondominio === 'casas' ? undefined : primeiroPadrao,
             fotoFachada: fotoFinal,
             senhaAdminGeral: senhaAdminGeral.trim(),
             nomeSindico: nomeSindico.trim() || undefined,
@@ -632,10 +718,11 @@ export const CreateEditCondominioModal: React.FC<{
             endereco: endereco.trim() || 'Endereço não informado',
             cidade: cidade.trim() || 'São Paulo',
             estado: estado.trim() || 'SP',
-            totalUnidades: Number(totalUnidades) || 16,
-            totalBlocos: tipoCondominio === 'casas' ? undefined : (Number(totalBlocos) || 1),
-            totalAndares: tipoCondominio === 'casas' ? undefined : numAndares,
-            padraoPrimeiroAndar: tipoCondominio === 'casas' ? undefined : (padraoPrimeiroAndar.trim() || undefined),
+            totalUnidades: totalFinal,
+            totalBlocos: tipoCondominio === 'casas' ? undefined : blocosConfig.length,
+            configuracaoBlocos: tipoCondominio === 'apartamentos' ? blocosConfig : undefined,
+            totalAndares: tipoCondominio === 'casas' ? undefined : maxAndares,
+            padraoPrimeiroAndar: tipoCondominio === 'casas' ? undefined : primeiroPadrao,
             fotoFachada: fotoFinal || FOTOS_FACHADAS_SUGERIDAS[0],
             senhaAdminGeral: senhaAdminGeral.trim() || 'admin',
             nomeSindico: nomeSindico.trim() || undefined,
@@ -840,82 +927,192 @@ export const CreateEditCondominioModal: React.FC<{
           </div>
 
           {/* ========================================================================= */}
-          {/* CONDICIONAL: SE FOR CONDOMÍNIO DE APARTAMENTOS */}
+          {/* CONDICIONAL: SE FOR CONDOMÍNIO DE APARTAMENTOS (BLOCOS DINÂMICOS) */}
           {/* ========================================================================= */}
           {tipoCondominio === 'apartamentos' && (
-            <div className="space-y-3 bg-slate-950/40 p-4 rounded-2xl border border-slate-800 animate-in fade-in duration-200">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold uppercase text-slate-300 flex items-center gap-1">
-                    <Layers className="w-3.5 h-3.5 text-amber-400" /> Total de Unidades:
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={1000}
-                    value={totalUnidades}
-                    onChange={(e) => setTotalUnidades(parseInt(e.target.value) || 1)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold"
-                  />
+            <div className="space-y-4 bg-slate-950/40 p-4 rounded-2xl border border-slate-800 animate-in fade-in duration-200">
+              
+              {/* Header com Totais e Ações Gerais */}
+              <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs font-black uppercase text-white tracking-wider">
+                    Configuração de Blocos e Torres
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-extrabold">
+                    {blocosConfig.length} {blocosConfig.length === 1 ? 'Bloco' : 'Blocos'}
+                  </span>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold uppercase text-slate-300">
-                    Total de Blocos:
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={totalBlocos}
-                    onChange={(e) => setTotalBlocos(parseInt(e.target.value) || 1)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold uppercase text-slate-300 flex items-center gap-1">
-                    <Building2 className="w-3.5 h-3.5 text-amber-400" /> Total de Andares:
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={100}
-                    placeholder="Ex: 12 (opcional)"
-                    value={totalAndares}
-                    onChange={(e) => setTotalAndares(e.target.value ? parseInt(e.target.value) : '')}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold"
-                  />
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-slate-400">Total Geral:</span>
+                  <span className="px-2.5 py-1 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-md">
+                    {totalUnidadesApartamentos} Apartamentos
+                  </span>
                 </div>
               </div>
 
-              {/* Padrão do 1º Andar (Aparece se totalAndares for informado) */}
-              {typeof totalAndares === 'number' && totalAndares > 0 && (
-                <div className="space-y-1.5 pt-2 border-t border-slate-800/80 animate-in fade-in duration-200">
-                  <label className="text-[11px] font-extrabold uppercase text-amber-400 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" /> Padrão de Apartamentos do 1º Andar:
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 11, 12, 13  OU  01 02 04 05 07 08"
-                    value={padraoPrimeiroAndar}
-                    onChange={(e) => setPadraoPrimeiroAndar(e.target.value)}
-                    className="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3.5 py-2 text-amber-300 font-mono font-bold text-sm"
-                  />
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-[11px] text-slate-300 leading-relaxed space-y-1">
-                    <p className="font-bold text-amber-300 flex items-center gap-1">
-                      <HelpCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                      Gerador automático de numeração por andares ativado!
-                    </p>
-                    <p>
-                      Se o 1º andar tiver os APs <code className="bg-slate-900 px-1 py-0.5 rounded text-amber-300">11 12 13</code>, os andares seguintes gerarão automaticamente <code className="bg-slate-900 px-1 py-0.5 rounded text-amber-300">21 22 23</code> (2º andar), <code className="bg-slate-900 px-1 py-0.5 rounded text-amber-300">31 32 33</code> (3º andar)... até o total de <strong>{totalUnidades} APs</strong>.
-                    </p>
-                    <p className="text-slate-400">
-                      O último andar será truncado com o saldo exato restante. As senhas padrão serão réplicas dos APs e as vagas ficarão em branco.
-                    </p>
-                  </div>
-                </div>
-              )}
+              {/* Lista Dinâmica de Blocos */}
+              <div className="space-y-3.5">
+                {blocosConfig.map((bloco, idx) => {
+                  const nomeExibicao = (bloco.nome || '').trim() || `Bloco ${idx + 1}`;
+                  const itemsPadrao = (bloco.padraoApartamentos || '')
+                    .split(/[\s,;]+/)
+                    .map(s => s.trim())
+                    .filter(Boolean);
+                  const padraoItensList = itemsPadrao.length > 0 ? itemsPadrao : ['01', '02', '03', '04'];
+                  
+                  // Projeção rápida de exemplo dos andares
+                  const andar1Exemplo = padraoItensList.map(item => formatarNumeroAptoPorAndar(item, 1)).join(', ');
+                  const andar2Exemplo = padraoItensList.map(item => formatarNumeroAptoPorAndar(item, 2)).join(', ');
+                  const andarUltimoExemplo = padraoItensList.map(item => formatarNumeroAptoPorAndar(item, Math.max(1, bloco.totalAndares))).join(', ');
+
+                  return (
+                    <div 
+                      key={bloco.id || idx}
+                      className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 space-y-3 shadow-md transition-all relative group"
+                    >
+                      {/* Topo do Bloco com Controles + e - */}
+                      <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-800/80">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-xs">
+                            {idx + 1}
+                          </div>
+                          <span className="text-xs font-black text-amber-400">
+                            {nomeExibicao}
+                          </span>
+                          <span className="text-[10px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800">
+                            {bloco.totalAndares} andares • {bloco.totalUnidadesBloco} APs
+                          </span>
+                        </div>
+
+                        {/* Botões + e - */}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={handleAdicionarBloco}
+                            className="p-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500 hover:text-slate-950 text-amber-400 border border-amber-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                            title="Adicionar outro bloco com configuração independente"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span className="text-[10px]">Novo Bloco</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoverBloco(idx)}
+                            disabled={blocosConfig.length <= 1}
+                            className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500 hover:text-white text-red-400 border border-red-500/30 text-xs font-bold transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={blocosConfig.length <= 1 ? "Mínimo de 1 bloco necessário" : "Excluir este bloco"}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Grade de 4 Campos por Bloco */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {/* 1. Nome do Bloco */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase text-slate-300">
+                            Nome do Bloco / Torre:
+                          </label>
+                          <input
+                            type="text"
+                            placeholder={`Ex: Bloco ${idx + 1} (opcional)`}
+                            value={bloco.nome}
+                            onChange={(e) => handleUpdateBloco(idx, 'nome', e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-xs focus:border-amber-400 focus:outline-none"
+                          />
+                          <span className="text-[9px] text-slate-500 block leading-tight">
+                            Se vazio, usa "{`Bloco ${idx + 1}`}".
+                          </span>
+                        </div>
+
+                        {/* 2. Total de Andares */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase text-slate-300">
+                            Total de Andares *:
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={bloco.totalAndares}
+                            onChange={(e) => handleUpdateBloco(idx, 'totalAndares', parseInt(e.target.value) || 1)}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-xs focus:border-amber-400 focus:outline-none"
+                          />
+                          <span className="text-[9px] text-slate-500 block leading-tight">
+                            Ex: 7 ou 10 andares.
+                          </span>
+                        </div>
+
+                        {/* 3. Padrão de APs por Andar */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase text-amber-400 flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" /> Padrão por Andar *:
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ex: 12 13 14 15 OU 1 3 4 5 7"
+                            value={bloco.padraoApartamentos}
+                            onChange={(e) => handleUpdateBloco(idx, 'padraoApartamentos', e.target.value)}
+                            className="w-full bg-slate-900 border border-amber-500/50 rounded-xl px-3 py-2 text-amber-300 font-mono font-bold text-xs focus:border-amber-400 focus:outline-none"
+                          />
+                          <span className="text-[9px] text-amber-400/80 block leading-tight">
+                            Gera numeração nos andares.
+                          </span>
+                        </div>
+
+                        {/* 4. Total de Unidades deste Bloco */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase text-slate-300">
+                            Unidades do Bloco:
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={1000}
+                            value={bloco.totalUnidadesBloco}
+                            onChange={(e) => handleUpdateBloco(idx, 'totalUnidadesBloco', parseInt(e.target.value) || 1)}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-xs focus:border-amber-400 focus:outline-none"
+                          />
+                          <span className="text-[9px] text-slate-500 block leading-tight">
+                            {bloco.totalAndares} andares × {padraoItensList.length} APs = {bloco.totalUnidadesBloco}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Preview em Tempo Real dos Andares deste Bloco */}
+                      <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-[10px] text-slate-300 space-y-1">
+                        <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+                          <HelpCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span>Prévia de numeração ({nomeExibicao}):</span>
+                        </div>
+                        <p className="text-slate-400">
+                          1º andar: <span className="font-mono font-bold text-amber-300">{andar1Exemplo}</span>
+                          {bloco.totalAndares > 1 && (
+                            <> • 2º andar: <span className="font-mono font-bold text-amber-300">{andar2Exemplo}</span></>
+                          )}
+                          {bloco.totalAndares > 2 && (
+                            <> ... {bloco.totalAndares}º andar: <span className="font-mono font-bold text-amber-300">{andarUltimoExemplo}</span></>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Botão de Rodapé para Adicionar Bloco */}
+              <button
+                type="button"
+                onClick={handleAdicionarBloco}
+                className="w-full py-2.5 rounded-2xl border-2 border-dashed border-slate-700 hover:border-amber-400/80 bg-slate-950/40 hover:bg-slate-950 text-slate-400 hover:text-amber-400 font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Adicionar Novo Bloco ou Torre</span>
+              </button>
             </div>
           )}
 

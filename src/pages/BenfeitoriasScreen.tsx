@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCondo } from '../context/CondoContext';
-import { TipoBenfeitoria, StatusFaseBenfeitoria } from '../types';
+import { TipoBenfeitoria, StatusFaseBenfeitoria, ApoiadorDetalhe } from '../types';
 import { 
   Sparkles, 
   ArrowLeft, 
@@ -25,7 +25,10 @@ import {
   Building2,
   AlertTriangle,
   Check,
-  Award
+  Award,
+  ThumbsUp,
+  MessageSquare,
+  User
 } from 'lucide-react';
 import { otimizarImagemArquivo } from '../utils/imageOptimizer';
 
@@ -51,7 +54,9 @@ export const BenfeitoriasScreen: React.FC = () => {
     setCurrentScreen,
     toggleRole,
     votarOrcamentoBenfeitoria,
-    avaliarBenfeitoria
+    avaliarBenfeitoria,
+    apoiarDiarioObraBenfeitoria,
+    adicionarComentarioDiarioObraBenfeitoria
   } = useCondo();
 
   const [expandedId, setExpandedId] = useState<string | null>('initial');
@@ -64,6 +69,11 @@ export const BenfeitoriasScreen: React.FC = () => {
   const [ratingComment, setRatingComment] = useState<{ [benfeitoriaId: string]: string }>({});
   const [submittingRatingId, setSubmittingRatingId] = useState<string | null>(null);
   const [showTimelineId, setShowTimelineId] = useState<string | null>(null);
+
+  // Estados de Comentários e Apoio no Diário de Obra
+  const [diarioCommentsInput, setDiarioCommentsInput] = useState<{ [diarioId: string]: string }>({});
+  const [expandedDiarioComments, setExpandedDiarioComments] = useState<{ [diarioId: string]: boolean }>({});
+  const [expandedDiarioApoiadores, setExpandedDiarioApoiadores] = useState<{ [diarioId: string]: boolean }>({});
 
   // Form State para admin rápido
   const [titulo, setTitulo] = useState('');
@@ -835,27 +845,218 @@ export const BenfeitoriasScreen: React.FC = () => {
                           </span>
                         </div>
 
-                        <div className="space-y-2">
-                          {item.diarioObras.map((diario) => (
-                            <div key={diario.id} className="bg-white p-3 rounded-xl border border-orange-200 shadow-2xs space-y-1.5">
-                              <div className="flex items-center justify-between text-[11px] font-bold text-orange-950">
-                                <span>{diario.data}</span>
-                                {diario.autorNome && <span className="text-slate-400">por {diario.autorNome}</span>}
-                              </div>
-                              <p className="text-xs text-slate-800 font-medium leading-relaxed">
-                                {diario.descricao}
-                              </p>
-                              {diario.fotos && diario.fotos.length > 0 && (
-                                <div className="flex flex-wrap gap-2 pt-1">
-                                  {diario.fotos.map((f, i) => (
-                                    <div key={i} className="w-20 h-20 rounded-lg overflow-hidden border border-orange-200 bg-slate-950 flex items-center justify-center p-1">
-                                      <img src={f} alt="Diário" className="w-full h-full object-contain" />
-                                    </div>
-                                  ))}
+                        <div className="space-y-3">
+                          {item.diarioObras.map((diario) => {
+                            const userIdentifier = currentUser.id || currentUser.unidade || currentUser.email || 'usr-anon';
+                            const isApoiadoPorMim = (diario.apoiadores || []).includes(userIdentifier) || 
+                              (diario.apoiadoresDetalhes || []).some(a => a.id === userIdentifier);
+
+                            const apoiadoresLista: ApoiadorDetalhe[] = Array.isArray(diario.apoiadoresDetalhes) && diario.apoiadoresDetalhes.length > 0
+                              ? diario.apoiadoresDetalhes
+                              : (diario.apoiadores || []).map(id => ({ id, nome: 'Morador', unidade: id, foto: '' }));
+
+                            const comentariosLista = Array.isArray(diario.comentarios) ? diario.comentarios : [];
+                            const isCommentsOpen = expandedDiarioComments[diario.id] !== false; // default aberto
+                            const isApoiadoresOpen = Boolean(expandedDiarioApoiadores[diario.id]);
+
+                            return (
+                              <div key={diario.id} className="bg-white p-3.5 sm:p-4 rounded-2xl border border-orange-200 shadow-xs space-y-3">
+                                <div className="flex items-center justify-between text-[11px] font-bold text-orange-950">
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="w-3.5 h-3.5 text-orange-600" />
+                                    {diario.data}
+                                  </span>
+                                  {diario.autorNome && (
+                                    <span className="text-slate-500 font-semibold">• por {diario.autorNome}</span>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                          ))}
+
+                                <p className="text-xs text-slate-800 font-medium leading-relaxed">
+                                  {diario.descricao}
+                                </p>
+
+                                {diario.fotos && diario.fotos.length > 0 && (
+                                  <div className="flex flex-wrap gap-2 pt-0.5">
+                                    {diario.fotos.map((f, i) => (
+                                      <div key={i} className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden border border-orange-200 bg-slate-950 flex items-center justify-center p-1 shadow-2xs">
+                                        <img src={f} alt="Diário" className="w-full h-full object-contain" />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* ========================================================= */}
+                                {/* BARRA DE APOIO COM THUMBNAILS E COMENTÁRIOS */}
+                                {/* ========================================================= */}
+                                <div className="pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
+                                  
+                                  {/* Botão de Apoio + Thumbnails */}
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <button
+                                      type="button"
+                                      onClick={() => apoiarDiarioObraBenfeitoria(item.id, diario.id)}
+                                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all shadow-2xs active:scale-95 cursor-pointer ${
+                                        isApoiadoPorMim
+                                          ? 'bg-amber-500 text-slate-950 border border-amber-600 shadow-amber-500/20 scale-105'
+                                          : 'bg-white hover:bg-amber-50 text-amber-950 border border-amber-300'
+                                      }`}
+                                      title={isApoiadoPorMim ? "Você apoiou esta atualização" : "Apoiar esta atualização da obra"}
+                                    >
+                                      <ThumbsUp className={`w-3.5 h-3.5 ${isApoiadoPorMim ? 'fill-slate-950 stroke-[2.5]' : ''}`} />
+                                      <span>{isApoiadoPorMim ? 'Apoiado' : 'Apoiar'}</span>
+                                      <span className="ml-0.5 px-1.5 py-0.2 bg-black/10 rounded-full text-[10px]">
+                                        {diario.apoiosCount || apoiadoresLista.length || 0}
+                                      </span>
+                                    </button>
+
+                                    {/* Thumbnails dos Apoiadores Empilhados */}
+                                    {apoiadoresLista.length > 0 && (
+                                      <div className="flex items-center">
+                                        <div className="flex -space-x-2 overflow-hidden py-0.5 pl-1">
+                                          {apoiadoresLista.slice(0, 4).map((apoiador, idx) => (
+                                            apoiador.foto ? (
+                                              <img
+                                                key={apoiador.id || idx}
+                                                src={apoiador.foto}
+                                                alt={apoiador.nome}
+                                                title={`${apoiador.nome} (${apoiador.unidade || 'Morador'})`}
+                                                className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover shadow-2xs"
+                                              />
+                                            ) : (
+                                              <div
+                                                key={apoiador.id || idx}
+                                                title={`${apoiador.nome} (${apoiador.unidade || 'Morador'})`}
+                                                className="inline-flex h-6 w-6 rounded-full ring-2 ring-white bg-amber-500 text-slate-950 font-black text-[9px] items-center justify-center shadow-2xs"
+                                              >
+                                                {apoiador.nome ? apoiador.nome.substring(0, 2).toUpperCase() : 'MO'}
+                                              </div>
+                                            )
+                                          ))}
+                                        </div>
+
+                                        {apoiadoresLista.length > 4 && (
+                                          <span className="text-[10px] font-extrabold text-slate-500 ml-1.5">
+                                            +{apoiadoresLista.length - 4}
+                                          </span>
+                                        )}
+
+                                        <button
+                                          type="button"
+                                          onClick={() => setExpandedDiarioApoiadores(prev => ({ ...prev, [diario.id]: !prev[diario.id] }))}
+                                          className="text-[11px] font-bold text-amber-900 hover:underline ml-2 cursor-pointer"
+                                        >
+                                          {isApoiadoresOpen ? 'Recolher' : 'Ver quem apoiou'}
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Botão de Toggle Comentários */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedDiarioComments(prev => ({ ...prev, [diario.id]: !isCommentsOpen }))}
+                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-950 bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200 cursor-pointer transition-colors"
+                                  >
+                                    <MessageSquare className="w-3.5 h-3.5 text-slate-600" />
+                                    <span>Manifestações ({comentariosLista.length})</span>
+                                    {isCommentsOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                  </button>
+                                </div>
+
+                                {/* Lista Expandida de Apoiadores */}
+                                {isApoiadoresOpen && apoiadoresLista.length > 0 && (
+                                  <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 space-y-1.5 animate-in fade-in duration-150">
+                                    <span className="text-[10px] font-black uppercase text-amber-950 block">
+                                      Moradores que apoiaram este registro da obra:
+                                    </span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {apoiadoresLista.map((ap, idx) => (
+                                        <span
+                                          key={ap.id || idx}
+                                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white border border-amber-200 text-[11px] font-semibold text-slate-900 shadow-2xs"
+                                        >
+                                          <ThumbsUp className="w-2.5 h-2.5 text-amber-600 fill-amber-500" />
+                                          <strong>{ap.nome}</strong>
+                                          <span className="text-slate-500 text-[10px]">({ap.unidade || 'Morador'})</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Seção de Comentários / Respostas */}
+                                {isCommentsOpen && (
+                                  <div className="pt-2 space-y-2.5 border-t border-slate-100 animate-in fade-in duration-150">
+                                    {comentariosLista.length > 0 && (
+                                      <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                                        {comentariosLista.map((com) => (
+                                          <div
+                                            key={com.id}
+                                            className={`p-2.5 rounded-xl text-xs space-y-1 ${
+                                              com.oficial ? 'bg-amber-500/15 border border-amber-300' : 'bg-slate-50 border border-slate-200'
+                                            }`}
+                                          >
+                                            <div className="flex items-center justify-between text-[10px] flex-wrap gap-1">
+                                              <div className="flex items-center gap-1.5 flex-wrap">
+                                                {com.autorFoto ? (
+                                                  <img src={com.autorFoto} alt={com.autorNome} className="w-4 h-4 rounded-full object-cover" />
+                                                ) : (
+                                                  <User className="w-3.5 h-3.5 text-slate-500" />
+                                                )}
+                                                <strong className={com.oficial ? 'text-amber-950 font-black' : 'text-slate-900 font-bold'}>
+                                                  {com.autorNome}
+                                                </strong>
+                                                {com.autorUnidade && (
+                                                  <span className="text-slate-500">({com.autorUnidade})</span>
+                                                )}
+                                                {com.oficial && (
+                                                  <span className="px-1.5 py-0.2 rounded bg-amber-200 text-amber-950 font-black text-[9px] uppercase border border-amber-300">
+                                                    Oficial
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <span className="text-slate-400 font-mono text-[9px]">{com.data}</span>
+                                            </div>
+                                            <p className="text-slate-800 text-[11px] leading-relaxed pl-5 font-medium">{com.texto}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* Formulário para Inserir Comentário */}
+                                    <form
+                                      onSubmit={(e) => {
+                                        e.preventDefault();
+                                        const txt = diarioCommentsInput[diario.id]?.trim();
+                                        if (txt) {
+                                          adicionarComentarioDiarioObraBenfeitoria(item.id, diario.id, txt);
+                                          setDiarioCommentsInput(prev => ({ ...prev, [diario.id]: '' }));
+                                        }
+                                      }}
+                                      className="flex gap-1.5 pt-0.5"
+                                    >
+                                      <input
+                                        type="text"
+                                        placeholder={isAdmin ? "Escrever posicionamento ou resposta oficial..." : "Comentar ou tirar dúvida sobre este andamento..."}
+                                        value={diarioCommentsInput[diario.id] || ''}
+                                        onChange={(e) => setDiarioCommentsInput(prev => ({ ...prev, [diario.id]: e.target.value }))}
+                                        className="flex-1 bg-white border border-slate-200 focus:border-amber-500 rounded-xl px-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none font-medium shadow-2xs"
+                                      />
+                                      <button
+                                        type="submit"
+                                        disabled={!diarioCommentsInput[diario.id]?.trim()}
+                                        className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-black text-xs flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                                      >
+                                        <Send className="w-3 h-3" />
+                                        <span>Enviar</span>
+                                      </button>
+                                    </form>
+                                  </div>
+                                )}
+
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

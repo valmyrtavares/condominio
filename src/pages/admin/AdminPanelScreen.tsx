@@ -39,6 +39,7 @@ import {
 import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 import { 
   Building, 
+  Building2,
   Database,
   Plus, 
   Trash2, 
@@ -96,7 +97,6 @@ import {
   Pencil,
   Gavel,
   FileCheck,
-  Building2,
   Scale,
   MessageSquare,
   ThumbsUp,
@@ -119,7 +119,8 @@ import {
   ChevronRight,
   Truck,
   FileSpreadsheet,
-  Download
+  Download,
+  BarChart3
 } from 'lucide-react';
 import { PrivateNotifyModal } from '../../components/admin/PrivateNotifyModal';
 import { SuspendServiceModal } from '../../components/admin/SuspendServiceModal';
@@ -135,6 +136,7 @@ import { CreateMonthModal } from '../../components/financeiro/CreateMonthModal';
 import { CreateCategoryModal } from '../../components/financeiro/CreateCategoryModal';
 import { ReceiptPdfModal } from '../../components/financeiro/ReceiptPdfModal';
 import { ImportExcelFinanceModal } from '../../components/financeiro/ImportExcelFinanceModal';
+import { FinanceGraphModal } from '../../components/financeiro/FinanceGraphModal';
 import { 
   exportarMesFinanceiroExcel, 
   downloadModeloSaidasExcel, 
@@ -288,6 +290,8 @@ interface AdminCasaItemProps {
   onToggleSuspensa?: (id: string) => void;
   onNotificar: (u: Unidade) => void;
   onExcluir: (id: string) => void;
+  onConfirmarMorador?: (u: Unidade) => void;
+  onRecusarMorador?: (u: Unidade) => void;
 }
 
 const AdminCasaTableRow: React.FC<AdminCasaItemProps> = React.memo(({
@@ -299,7 +303,9 @@ const AdminCasaTableRow: React.FC<AdminCasaItemProps> = React.memo(({
   onToggleVazio,
   onToggleSuspensa,
   onNotificar,
-  onExcluir
+  onExcluir,
+  onConfirmarMorador,
+  onRecusarMorador
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localNumero, setLocalNumero] = useState(u.numero || '');
@@ -331,16 +337,25 @@ const AdminCasaTableRow: React.FC<AdminCasaItemProps> = React.memo(({
 
   const isSuspensa = Boolean(u.suspensa || u.statusCadastro === 'Suspenso');
   const isVazio = !isSuspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+  const hasMorador = Boolean(!isSuspensa && !isVazio && ((u.moradores && u.moradores.length > 0) || u.nomeCelula));
+  const isAguardando = hasMorador && (u.statusCadastro === 'AguardandoConfirmacao' || u.moradorConfirmado === false);
+  const isConfirmado = hasMorador && !isAguardando;
+
   const badgeText = isSuspensa 
     ? 'Suspensa' 
     : (isVazio 
         ? 'Sem Moradores' 
-        : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente'));
+        : (isAguardando
+            ? 'Aguardando Aprovação'
+            : (isConfirmado ? 'Cadastrado' : 'Pendente')));
+
   const badgeStyle = isSuspensa
     ? 'bg-rose-100 text-rose-950 border-rose-300 font-black'
     : (isVazio
         ? 'bg-slate-100 text-slate-800 border-slate-300'
-        : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300'));
+        : (isAguardando
+            ? 'bg-amber-400 text-slate-950 border-amber-500 font-black shadow-xs'
+            : (isConfirmado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-slate-100 text-slate-600 border-dashed border-slate-300')));
 
   const moradorResponsavel = (u.moradores && u.moradores.length > 0)
     ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
@@ -349,7 +364,7 @@ const AdminCasaTableRow: React.FC<AdminCasaItemProps> = React.memo(({
   const emailResponsavel = moradorResponsavel?.email || u.emailResponsavel;
 
   return (
-    <tr className={`hover:bg-amber-50/60 transition-colors ${isEditing ? 'bg-amber-100/70 font-semibold' : ''}`}>
+    <tr className={`hover:bg-amber-50/60 transition-colors ${isEditing ? 'bg-amber-100/70 font-semibold' : ''} ${isAguardando ? 'bg-amber-50/90' : ''}`}>
       {/* 1. Coluna UNIDADE */}
       <td className="py-2.5 px-3.5 text-center">
         <span className="text-[11px] font-black text-amber-950 bg-amber-100/90 px-2.5 py-1 rounded-lg border border-amber-300 inline-block min-w-[36px] shadow-2xs">
@@ -414,34 +429,65 @@ const AdminCasaTableRow: React.FC<AdminCasaItemProps> = React.memo(({
         )}
       </td>
 
-      {/* 4. Morador Responsável */}
+      {/* 4. Morador Responsável com botão de confirmação para síndico */}
       <td className="py-2.5 px-3.5">
         {nomeResponsavel ? (
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-950 font-black text-xs shrink-0 overflow-hidden shadow-2xs">
-              {moradorResponsavel?.foto || u.fotoCelula ? (
-                <img 
-                  src={moradorResponsavel?.foto || u.fotoCelula} 
-                  alt={nomeResponsavel} 
-                  className="w-full h-full object-cover" 
-                />
-              ) : (
-                nomeResponsavel.charAt(0).toUpperCase()
-              )}
-            </div>
-            <div className="flex flex-col min-w-0 max-w-[210px]">
-              <span className="font-black text-slate-950 text-xs truncate" title={nomeResponsavel}>
-                {nomeResponsavel}
-              </span>
-              {emailResponsavel ? (
-                <span className="text-[11px] text-slate-600 font-medium truncate font-mono flex items-center gap-1" title={emailResponsavel}>
-                  <Mail className="w-3 h-3 text-amber-800 shrink-0 inline" />
-                  {emailResponsavel}
+          <div className="flex items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className={`w-8 h-8 rounded-full border flex items-center justify-center text-xs shrink-0 overflow-hidden shadow-2xs ${
+                isAguardando ? 'bg-amber-100 border-amber-400 text-amber-950 ring-2 ring-amber-400/30' : 'bg-emerald-100 border-emerald-300 text-emerald-950'
+              }`}>
+                {moradorResponsavel?.foto || u.fotoCelula ? (
+                  <img 
+                    src={moradorResponsavel?.foto || u.fotoCelula} 
+                    alt={nomeResponsavel} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  nomeResponsavel.charAt(0).toUpperCase()
+                )}
+              </div>
+              <div className="flex flex-col min-w-0 max-w-[190px]">
+                <span className="font-black text-slate-950 text-xs truncate" title={nomeResponsavel}>
+                  {nomeResponsavel}
                 </span>
-              ) : (
-                <span className="text-[10px] text-amber-800 font-semibold italic">Sem e-mail cadastrado</span>
-              )}
+                {emailResponsavel ? (
+                  <span className="text-[11px] text-slate-600 font-medium truncate font-mono flex items-center gap-1" title={emailResponsavel}>
+                    <Mail className="w-3 h-3 text-amber-800 shrink-0 inline" />
+                    {emailResponsavel}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-amber-800 font-semibold italic">Sem e-mail cadastrado</span>
+                )}
+                {isAguardando && (
+                  <span className="text-[9px] font-extrabold uppercase text-amber-800 tracking-tight flex items-center gap-0.5 mt-0.5">
+                    <Clock className="w-2.5 h-2.5" /> Novo Cadastro
+                  </span>
+                )}
+              </div>
             </div>
+
+            {isAguardando && (
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onConfirmarMorador?.(u)}
+                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black inline-flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                  title="Confirmar que esta pessoa é moradora desta casa"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Confirmar</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRecusarMorador?.(u)}
+                  className="p-1 bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 rounded-lg text-xs transition-all cursor-pointer"
+                  title="Recusar cadastro de morador desconhecido"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <span className="text-slate-400 italic text-xs font-normal bg-slate-50 border border-dashed border-slate-300 px-2.5 py-1 rounded-lg inline-block">
@@ -568,7 +614,9 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
   onToggleVazio,
   onToggleSuspensa,
   onNotificar,
-  onExcluir
+  onExcluir,
+  onConfirmarMorador,
+  onRecusarMorador
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localNumero, setLocalNumero] = useState(u.numero || '');
@@ -598,16 +646,24 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
 
   const isSuspensa = Boolean(u.suspensa || u.statusCadastro === 'Suspenso');
   const isVazio = !isSuspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+  const hasMorador = Boolean(!isSuspensa && !isVazio && ((u.moradores && u.moradores.length > 0) || u.nomeCelula));
+  const isAguardando = hasMorador && (u.statusCadastro === 'AguardandoConfirmacao' || u.moradorConfirmado === false);
+  const isConfirmado = hasMorador && !isAguardando;
+
   const badgeText = isSuspensa 
     ? 'Suspensa' 
     : (isVazio 
         ? 'Sem Moradores' 
-        : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente'));
+        : (isAguardando
+            ? 'Aguardando Aprovação'
+            : (isConfirmado ? 'Cadastrado' : 'Pendente')));
   const badgeStyle = isSuspensa
     ? 'bg-rose-100 text-rose-950 border-rose-300 font-black'
     : (isVazio
         ? 'bg-slate-200 text-slate-800 border-slate-300'
-        : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300'));
+        : (isAguardando
+            ? 'bg-amber-400 text-slate-950 border-amber-500 font-black shadow-xs'
+            : (isConfirmado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-slate-100 text-slate-600 border-dashed border-slate-300')));
 
   const moradorResponsavel = (u.moradores && u.moradores.length > 0)
     ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
@@ -753,18 +809,47 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
             ) : (
               <span className="text-[10px] text-amber-800 font-semibold italic">Pendente</span>
             )}
+            {isAguardando && (
+              <span className="text-[8.5px] font-extrabold uppercase text-amber-800 tracking-tight flex items-center gap-0.5 mt-0.5">
+                <Clock className="w-2.5 h-2.5" /> Novo Cadastro
+              </span>
+            )}
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onResetSenha(u)}
-          className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer shadow-2xs"
-          title={`Resetar cadastro e senha da Casa ${u.numero} para liberar novo cadastro`}
-        >
-          <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
-          <span>Reset Senha</span>
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          {isAguardando && (
+            <>
+              <button
+                type="button"
+                onClick={() => onConfirmarMorador?.(u)}
+                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                title={`Confirmar que esta pessoa mora na Casa ${u.numero}`}
+              >
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Confirmar</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onRecusarMorador?.(u)}
+                className="p-1 bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 rounded-lg text-[10px] transition-all cursor-pointer"
+                title="Recusar cadastro desconhecido"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={() => onResetSenha(u)}
+            className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer shadow-2xs"
+            title={`Resetar cadastro e senha da Casa ${u.numero} para liberar novo cadastro`}
+          >
+            <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
+            <span>Reset Senha</span>
+          </button>
+        </div>
       </div>
 
       {/* Ações: Check Vazio & Suspensa + Editar + Notificar + Excluir */}
@@ -851,6 +936,8 @@ export const AdminPanelScreen: React.FC = () => {
     adicionarUnidade, 
     editarUnidade, 
     resetarSenhaUnidade,
+    confirmarMoradorUnidade,
+    recusarMoradorUnidade,
     excluirUnidade, 
     toggleUnidadeSemMoradores,
     toggleUnidadeSuspensa,
@@ -1069,6 +1156,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [tipoCategoriaModal, setTipoCategoriaModal] = useState<'despesa' | 'receita'>('despesa');
   const [viewPdfModalItem, setViewPdfModalItem] = useState<{ item: DespesaItem | ReceitaItem; tipo: 'despesa' | 'receita' } | null>(null);
   const [isImportExcelModalOpen, setIsImportExcelModalOpen] = useState(false);
+  const [isFinanceGraphModalOpen, setIsFinanceGraphModalOpen] = useState(false);
 
   // Reclamações & Ocorrências Moderation State
   const [searchReclamacao, setSearchReclamacao] = useState('');
@@ -1184,6 +1272,7 @@ export const AdminPanelScreen: React.FC = () => {
 
   // Form Unidades
   const [novoNumero, setNovoNumero] = useState('');
+  const [novoBloco, setNovoBloco] = useState('');
   const [novaVaga, setNovaVaga] = useState('');
   const [novaRua, setNovaRua] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -1193,8 +1282,31 @@ export const AdminPanelScreen: React.FC = () => {
   // Edit inline unidade
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNumero, setEditNumero] = useState('');
+  const [editBloco, setEditBloco] = useState('');
   const [editVaga, setEditVaga] = useState('');
   const [editRua, setEditRua] = useState('');
+
+  // Lista de blocos/torres disponíveis no condomínio
+  const condoBlocos = useMemo(() => {
+    const list: string[] = [];
+    if (currentCondo?.configuracaoBlocos && currentCondo.configuracaoBlocos.length > 0) {
+      currentCondo.configuracaoBlocos.forEach(b => {
+        const nome = (b.nome || '').trim();
+        if (nome && !list.includes(nome)) list.push(nome);
+      });
+    }
+    unidades.forEach(u => {
+      const b = (u.bloco || '').trim();
+      if (b && !list.includes(b)) list.push(b);
+    });
+    if (list.length === 0) {
+      const totalBlocos = currentCondo?.totalBlocos || 1;
+      for (let i = 1; i <= totalBlocos; i++) {
+        list.push(`Bloco ${i}`);
+      }
+    }
+    return list;
+  }, [currentCondo?.configuracaoBlocos, currentCondo?.totalBlocos, unidades]);
 
   // Form Admin & Colaboradores / Funcionários
   const [tipoCadastroColab, setTipoCadastroColab] = useState<'gestao' | 'operacional'>('gestao');
@@ -1274,10 +1386,13 @@ export const AdminPanelScreen: React.FC = () => {
       novoNumero.trim(),
       isCasas ? '' : (novaVaga.trim() || `Vaga ${novoNumero.trim()}`),
       undefined,
-      isCasas ? (novaRua.trim() || currentCondo?.ruas?.[0] || 'Rua Principal') : undefined
+      isCasas ? (novaRua.trim() || currentCondo?.ruas?.[0] || 'Rua Principal') : undefined,
+      undefined,
+      isCasas ? undefined : (novoBloco.trim() || condoBlocos[0] || 'Bloco 1')
     );
 
     setNovoNumero('');
+    setNovoBloco('');
     setNovaVaga('');
     setNovaRua('');
   };
@@ -1294,14 +1409,15 @@ export const AdminPanelScreen: React.FC = () => {
   const handleStartEdit = useCallback((u: Unidade) => {
     setEditingId(u.id);
     setEditNumero(u.numero || '');
+    setEditBloco(u.bloco || (condoBlocos[0] || 'Bloco 1'));
     setEditVaga(u.vagaGaragem || '');
     setEditRua(u.rua || u.bloco || (currentCondo?.ruas?.[0] || ''));
-  }, [currentCondo?.ruas]);
+  }, [currentCondo?.ruas, condoBlocos]);
 
   const handleSaveEdit = useCallback((id: string) => {
-    editarUnidade(id, editVaga, editNumero, undefined, editRua);
+    editarUnidade(id, editVaga, editNumero, undefined, isCasas ? editRua : editBloco);
     setEditingId(null);
-  }, [editarUnidade, editVaga, editNumero, editRua]);
+  }, [editarUnidade, editVaga, editNumero, editRua, editBloco, isCasas]);
 
   const handleResetSenha = (u: Unidade) => {
     const unitLabel = isCasas 
@@ -1318,6 +1434,41 @@ export const AdminPanelScreen: React.FC = () => {
       alert(res.message);
     }
   };
+
+  const handleConfirmarMorador = useCallback(async (u: Unidade) => {
+    const moradorNome = u.moradores?.[0]?.nome || u.nomeCelula || 'este morador';
+    const unitLabel = isCasas 
+      ? (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`) 
+      : (u.numero ? `Apto ${u.numero}` : 'esta unidade');
+
+    const confirmou = window.confirm(
+      `Deseja aprovar e confirmar ${moradorNome} como morador oficial de ${unitLabel}?\n\nApós a confirmação, o morador terá acesso liberado ao aplicativo com todos os recursos do condomínio.`
+    );
+    if (!confirmou) return;
+
+    const adminNome = currentUser?.nome || 'Síndico / Admin';
+    const res = await confirmarMoradorUnidade(u.id, adminNome);
+    if (res.success) {
+      alert(res.message);
+    }
+  }, [confirmarMoradorUnidade, currentUser?.nome, isCasas]);
+
+  const handleRecusarMorador = useCallback(async (u: Unidade) => {
+    const moradorNome = u.moradores?.[0]?.nome || u.nomeCelula || 'este morador';
+    const unitLabel = isCasas 
+      ? (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`) 
+      : (u.numero ? `Apto ${u.numero}` : 'esta unidade');
+
+    const confirmou = window.confirm(
+      `ATENÇÃO: Deseja recusar e remover o cadastro de ${moradorNome} de ${unitLabel}?\n\nO cadastro pendente será cancelado e a unidade voltará a ficar disponível para novos cadastros legítimos.`
+    );
+    if (!confirmou) return;
+
+    const res = await recusarMoradorUnidade(u.id);
+    if (res.success) {
+      alert(res.message);
+    }
+  }, [recusarMoradorUnidade, isCasas]);
 
   const handleCopySenha = (u: Unidade) => {
     const statusText = u.senhaAcesso ? 'Definida pelo morador' : 'Pendente de cadastro';
@@ -1785,22 +1936,40 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
 
               <form onSubmit={handleAddUnidade} className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className={`grid grid-cols-1 ${isCasas ? 'sm:grid-cols-3' : 'sm:grid-cols-2 md:grid-cols-4'} gap-2.5`}>
                   
                   {/* Número / Identificação Completa da Unidade */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                      {isCasas ? 'Número da Casa / Lote:' : 'Número do Apto / Identificação:'}
+                      {isCasas ? 'Número da Casa / Lote:' : 'Número do Apto:'}
                     </label>
                     <input
                       type="text"
-                      placeholder={isCasas ? "Ex: 01, 12, Casa 04..." : "Ex: 101 Bloco A, 001, 102..."}
+                      placeholder={isCasas ? "Ex: 01, 12, Casa 04..." : "Ex: 101, 12, 13..."}
                       value={novoNumero}
                       onChange={(e) => setNovoNumero(e.target.value)}
                       className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
                       required
                     />
                   </div>
+
+                  {/* Torre / Bloco (para condomínio de apartamentos) */}
+                  {!isCasas && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                        Torre / Bloco:
+                      </label>
+                      <select
+                        value={novoBloco || condoBlocos[0] || ''}
+                        onChange={(e) => setNovoBloco(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs cursor-pointer"
+                      >
+                        {condoBlocos.map((blocoNome, i) => (
+                          <option key={i} value={blocoNome}>{blocoNome}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   {/* Vaga de Garagem OU Rua (para condomínio de casas) */}
                   {isCasas ? (
@@ -1812,7 +1981,7 @@ export const AdminPanelScreen: React.FC = () => {
                         <select
                           value={novaRua}
                           onChange={(e) => setNovaRua(e.target.value)}
-                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs cursor-pointer"
                         >
                           <option value="">Selecione a Rua / Alameda...</option>
                           {currentCondo.ruas.map((r, i) => (
@@ -1982,6 +2151,7 @@ export const AdminPanelScreen: React.FC = () => {
                           ) : (
                             <>
                               <th className="py-3 px-3.5 min-w-[130px]">Nome da Unidade</th>
+                              <th className="py-3 px-3.5 min-w-[130px]">Torre / Bloco</th>
                               <th className="py-3 px-3.5 min-w-[90px]">Andar</th>
                             </>
                           )}
@@ -1998,7 +2168,7 @@ export const AdminPanelScreen: React.FC = () => {
                       <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
                         {filteredUnidades.length === 0 ? (
                           <tr>
-                            <td colSpan={8} className="py-8 text-center text-slate-500 font-semibold">
+                            <td colSpan={9} className="py-8 text-center text-slate-500 font-semibold">
                               Nenhuma {isCasas ? 'casa' : 'unidade'} encontrada. Use o botão no topo para gerar automaticamente.
                             </td>
                           </tr>
@@ -2018,6 +2188,8 @@ export const AdminPanelScreen: React.FC = () => {
                                   onToggleSuspensa={toggleUnidadeSuspensa}
                                   onNotificar={handleNotificar}
                                   onExcluir={excluirUnidade}
+                                  onConfirmarMorador={handleConfirmarMorador}
+                                  onRecusarMorador={handleRecusarMorador}
                                 />
                               );
                             }
@@ -2025,16 +2197,24 @@ export const AdminPanelScreen: React.FC = () => {
                             const isEditing = editingId === u.id;
                             const isSuspensa = Boolean(u.suspensa || u.statusCadastro === 'Suspenso');
                             const isVazio = !isSuspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+                            const hasMorador = Boolean(!isSuspensa && !isVazio && ((u.moradores && u.moradores.length > 0) || u.nomeCelula));
+                            const isAguardando = hasMorador && (u.statusCadastro === 'AguardandoConfirmacao' || u.moradorConfirmado === false);
+                            const isConfirmado = hasMorador && !isAguardando;
+
                             const badgeText = isSuspensa
                               ? 'Suspensa'
                               : (isVazio 
                                   ? 'Sem Moradores' 
-                                  : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente'));
+                                  : (isAguardando
+                                      ? 'Aguardando Aprovação'
+                                      : (isConfirmado ? 'Cadastrado' : 'Pendente')));
                             const badgeStyle = isSuspensa
                               ? 'bg-rose-100 text-rose-950 border-rose-300 font-black'
                               : (isVazio
                                   ? 'bg-slate-100 text-slate-800 border-slate-300'
-                                  : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300'));
+                                  : (isAguardando
+                                      ? 'bg-amber-400 text-slate-950 border-amber-500 font-black shadow-xs'
+                                      : (isConfirmado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-slate-100 text-slate-600 border-dashed border-slate-300')));
 
                             const moradorResponsavel = (u.moradores && u.moradores.length > 0)
                               ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
@@ -2053,7 +2233,7 @@ export const AdminPanelScreen: React.FC = () => {
                             return (
                               <tr 
                                 key={u.id} 
-                                className={`hover:bg-amber-50/60 transition-colors ${isEditing ? 'bg-amber-100/70 font-semibold' : ''}`}
+                                className={`hover:bg-amber-50/60 transition-colors ${isEditing ? 'bg-amber-100/70 font-semibold' : ''} ${isAguardando ? 'bg-amber-50/90' : ''}`}
                               >
                                 {/* 1. Nome da Unidade */}
                                 <td className="py-2.5 px-3.5">
@@ -2078,41 +2258,92 @@ export const AdminPanelScreen: React.FC = () => {
                                   )}
                                 </td>
 
-                                {/* 2. Coluna ANDAR (para apartamentos) */}
+                                {/* 2. Coluna TORRE / BLOCO (para apartamentos com select dinâmico) */}
+                                <td className="py-2.5 px-3.5">
+                                  {isEditing ? (
+                                    <select
+                                      value={editBloco}
+                                      onChange={(e) => setEditBloco(e.target.value)}
+                                      className="w-full min-w-[110px] bg-white border border-amber-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 shadow-2xs focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                                    >
+                                      {condoBlocos.map((blocoNome, i) => (
+                                        <option key={i} value={blocoNome}>{blocoNome}</option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <span className="text-[11px] font-black text-slate-900 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded-md inline-flex items-center gap-1 whitespace-nowrap shadow-2xs">
+                                      <Building2 className="w-3 h-3 text-amber-700 shrink-0" />
+                                      {u.bloco || 'Bloco Único'}
+                                    </span>
+                                  )}
+                                </td>
+
+                                {/* 3. Coluna ANDAR (para apartamentos) */}
                                 <td className="py-2.5 px-3.5">
                                   <span className="text-[11px] font-black text-amber-950 bg-amber-100/90 border border-amber-300/80 px-2 py-0.5 rounded-md inline-block whitespace-nowrap shadow-2xs">
                                     {u.andar ? `${u.andar}º Andar` : '1º Andar'}
                                   </span>
                                 </td>
 
-                                {/* 3. Morador Responsável */}
+                                {/* 4. Morador Responsável com botão de aprovação */}
                                 <td className="py-2.5 px-3.5">
                                   {nomeResponsavel ? (
-                                    <div className="flex items-center gap-2.5">
-                                      <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-950 font-black text-xs shrink-0 overflow-hidden shadow-2xs">
-                                        {moradorResponsavel?.foto || u.fotoCelula ? (
-                                          <img 
-                                            src={moradorResponsavel?.foto || u.fotoCelula} 
-                                            alt={nomeResponsavel} 
-                                            className="w-full h-full object-cover" 
-                                          />
-                                        ) : (
-                                          nomeResponsavel.charAt(0).toUpperCase()
-                                        )}
-                                      </div>
-                                      <div className="flex flex-col min-w-0 max-w-[210px]">
-                                        <span className="font-black text-slate-950 text-xs truncate" title={nomeResponsavel}>
-                                          {nomeResponsavel}
-                                        </span>
-                                        {emailResponsavel ? (
-                                          <span className="text-[11px] text-slate-600 font-medium truncate font-mono flex items-center gap-1" title={emailResponsavel}>
-                                            <Mail className="w-3 h-3 text-amber-800 shrink-0 inline" />
-                                            {emailResponsavel}
+                                    <div className="flex items-center justify-between gap-2.5">
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className={`w-8 h-8 rounded-full border flex items-center justify-center text-xs shrink-0 overflow-hidden shadow-2xs ${
+                                          isAguardando ? 'bg-amber-100 border-amber-400 text-amber-950 ring-2 ring-amber-400/30' : 'bg-emerald-100 border-emerald-300 text-emerald-950'
+                                        }`}>
+                                          {moradorResponsavel?.foto || u.fotoCelula ? (
+                                            <img 
+                                              src={moradorResponsavel?.foto || u.fotoCelula} 
+                                              alt={nomeResponsavel} 
+                                              className="w-full h-full object-cover" 
+                                            />
+                                          ) : (
+                                            nomeResponsavel.charAt(0).toUpperCase()
+                                          )}
+                                        </div>
+                                        <div className="flex flex-col min-w-0 max-w-[210px]">
+                                          <span className="font-black text-slate-950 text-xs truncate" title={nomeResponsavel}>
+                                            {nomeResponsavel}
                                           </span>
-                                        ) : (
-                                          <span className="text-[10px] text-amber-800 font-semibold italic">Sem e-mail cadastrado</span>
-                                        )}
+                                          {emailResponsavel ? (
+                                            <span className="text-[11px] text-slate-600 font-medium truncate font-mono flex items-center gap-1" title={emailResponsavel}>
+                                              <Mail className="w-3 h-3 text-amber-800 shrink-0 inline" />
+                                              {emailResponsavel}
+                                            </span>
+                                          ) : (
+                                            <span className="text-[10px] text-amber-800 font-semibold italic">Sem e-mail cadastrado</span>
+                                          )}
+                                          {isAguardando && (
+                                            <span className="text-[9px] font-extrabold uppercase text-amber-800 tracking-tight flex items-center gap-0.5 mt-0.5">
+                                              <Clock className="w-2.5 h-2.5" /> Novo Cadastro
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
+
+                                      {isAguardando && (
+                                        <div className="flex items-center gap-1 shrink-0">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleConfirmarMorador(u)}
+                                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black inline-flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                                            title="Confirmar que esta pessoa é moradora desta unidade"
+                                          >
+                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                            <span>Confirmar</span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleRecusarMorador(u)}
+                                            className="p-1 bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 rounded-lg text-xs transition-all cursor-pointer"
+                                            title="Recusar cadastro de morador desconhecido"
+                                          >
+                                            <X className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      )}
                                     </div>
                                   ) : (
                                     <span className="text-slate-400 italic text-xs font-normal bg-slate-50 border border-dashed border-slate-300 px-2.5 py-1 rounded-lg inline-block">
@@ -2121,7 +2352,7 @@ export const AdminPanelScreen: React.FC = () => {
                                   )}
                                 </td>
 
-                                {/* 4. Vaga da Garagem */}
+                                {/* 5. Vaga da Garagem */}
                                 <td className="py-2.5 px-3.5">
                                   {isEditing ? (
                                     <input
@@ -2146,7 +2377,7 @@ export const AdminPanelScreen: React.FC = () => {
                                   )}
                                 </td>
 
-                                {/* 5. Reset de Senha Seguro */}
+                                {/* 6. Reset de Senha Seguro */}
                                 <td className="py-2.5 px-3.5 text-center">
                                   <button
                                     type="button"
@@ -2159,7 +2390,7 @@ export const AdminPanelScreen: React.FC = () => {
                                   </button>
                                 </td>
 
-                                {/* 6. Coluna Vazio & Suspensa */}
+                                {/* 7. Coluna Vazio & Suspensa */}
                                 <td className="py-2.5 px-2.5 text-center">
                                   <div className="inline-flex items-center justify-center gap-2">
                                     <label className="inline-flex items-center gap-1 cursor-pointer select-none" title="Marcar como vazio">
@@ -2187,14 +2418,14 @@ export const AdminPanelScreen: React.FC = () => {
                                   </div>
                                 </td>
 
-                                {/* 7. Status */}
+                                {/* 8. Status */}
                                 <td className="py-2.5 px-3.5 text-center">
                                   <span className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full border inline-block ${badgeStyle}`}>
                                     {badgeText}
                                   </span>
                                 </td>
 
-                                {/* 8. Ações & Salvar */}
+                                {/* 9. Ações & Salvar */}
                                 <td className="py-2.5 px-3.5 text-right">
                                   <div className="flex items-center justify-end gap-1.5">
                                     {isEditing ? (
@@ -2280,6 +2511,8 @@ export const AdminPanelScreen: React.FC = () => {
                           onToggleSuspensa={toggleUnidadeSuspensa}
                           onNotificar={handleNotificar}
                           onExcluir={excluirUnidade}
+                          onConfirmarMorador={handleConfirmarMorador}
+                          onRecusarMorador={handleRecusarMorador}
                         />
                       );
                     }
@@ -2304,6 +2537,18 @@ export const AdminPanelScreen: React.FC = () => {
                               placeholder="Número / Identificação"
                               className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
                             />
+                            <div className="space-y-0.5">
+                              <label className="text-[9px] font-black uppercase text-slate-700">Torre / Bloco</label>
+                              <select
+                                value={editBloco}
+                                onChange={(e) => setEditBloco(e.target.value)}
+                                className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 cursor-pointer"
+                              >
+                                {condoBlocos.map((blocoNome, i) => (
+                                  <option key={i} value={blocoNome}>{blocoNome}</option>
+                                ))}
+                              </select>
+                            </div>
                             <input
                               type="text"
                               value={editVaga}
@@ -2342,13 +2587,26 @@ export const AdminPanelScreen: React.FC = () => {
                       return `Apto ${num}`;
                     };
 
-                    const isVazio = Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
-                    const badgeText = isVazio 
-                      ? 'Sem Moradores' 
-                      : (u.moradores && u.moradores.length > 0 ? 'Cadastrado' : 'Pendente');
-                    const badgeStyle = isVazio
-                      ? 'bg-slate-200 text-slate-800 border-slate-300'
-                      : (u.moradores && u.moradores.length > 0 ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300');
+                    const isSuspensa = Boolean(u.suspensa || u.statusCadastro === 'Suspenso');
+                    const isVazio = !isSuspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+                    const hasMorador = Boolean(!isSuspensa && !isVazio && ((u.moradores && u.moradores.length > 0) || u.nomeCelula));
+                    const isAguardando = hasMorador && (u.statusCadastro === 'AguardandoConfirmacao' || u.moradorConfirmado === false);
+                    const isConfirmado = hasMorador && !isAguardando;
+
+                    const badgeText = isSuspensa 
+                      ? 'Suspensa' 
+                      : (isVazio 
+                          ? 'Sem Moradores' 
+                          : (isAguardando
+                              ? 'Aguardando Aprovação'
+                              : (isConfirmado ? 'Cadastrado' : 'Pendente')));
+                    const badgeStyle = isSuspensa
+                      ? 'bg-rose-100 text-rose-950 border-rose-300 font-black'
+                      : (isVazio
+                          ? 'bg-slate-200 text-slate-800 border-slate-300'
+                          : (isAguardando
+                              ? 'bg-amber-400 text-slate-950 border-amber-500 font-black shadow-xs'
+                              : (isConfirmado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300')));
 
                     const moradorResponsavel = (u.moradores && u.moradores.length > 0)
                       ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
@@ -2366,9 +2624,15 @@ export const AdminPanelScreen: React.FC = () => {
                         {/* Topo do Card de Unidade */}
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0 flex-1">
-                            <h4 className="font-black text-sm sm:text-base text-slate-950 leading-tight truncate">
-                              {formatUnitTitle(u.numero)}
-                            </h4>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className="font-black text-sm sm:text-base text-slate-950 leading-tight truncate">
+                                {formatUnitTitle(u.numero)}
+                              </h4>
+                              <span className="text-[10px] font-bold text-amber-950 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5">
+                                <Building2 className="w-2.5 h-2.5 text-amber-700 shrink-0" />
+                                {u.bloco || 'Bloco Único'}
+                              </span>
+                            </div>
                             <span className="text-[10px] sm:text-[11px] font-bold text-slate-600 flex items-center gap-1 mt-0.5 truncate">
                               <Car className="w-3 h-3 text-amber-800 shrink-0" />
                               Vaga: {u.vagaGaragem || 'Sem vaga'}
@@ -2380,10 +2644,12 @@ export const AdminPanelScreen: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* Morador Responsável e Botão de Reset de Senha (Sem exibição de senha aberta) */}
+                        {/* Morador Responsável e Botão de Reset de Senha */}
                         <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-950 font-black text-xs shrink-0 overflow-hidden shadow-2xs">
+                            <div className={`w-8 h-8 rounded-full border flex items-center justify-center font-black text-xs shrink-0 overflow-hidden shadow-2xs ${
+                              isAguardando ? 'bg-amber-100 border-amber-400 text-amber-950 ring-2 ring-amber-400/30' : 'bg-amber-100 border-amber-300 text-amber-950'
+                            }`}>
                               {moradorResponsavel?.foto || u.fotoCelula ? (
                                 <img 
                                   src={moradorResponsavel?.foto || u.fotoCelula} 
@@ -2406,18 +2672,47 @@ export const AdminPanelScreen: React.FC = () => {
                               ) : (
                                 <span className="text-[10px] text-amber-800 font-semibold italic">Pendente</span>
                               )}
+                              {isAguardando && (
+                                <span className="text-[8.5px] font-extrabold uppercase text-amber-800 tracking-tight flex items-center gap-0.5 mt-0.5">
+                                  <Clock className="w-2.5 h-2.5" /> Novo Cadastro
+                                </span>
+                              )}
                             </div>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => handleResetSenha(u)}
-                            className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer shadow-2xs"
-                            title={`Resetar cadastro e senha do Apto ${u.numero} para liberar novo cadastro`}
-                          >
-                            <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
-                            <span>Reset Senha</span>
-                          </button>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {isAguardando && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleConfirmarMorador(u)}
+                                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                                  title={`Confirmar morador do Apto ${u.numero}`}
+                                >
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>Confirmar</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRecusarMorador(u)}
+                                  className="p-1 bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 rounded-lg text-[10px] transition-all cursor-pointer"
+                                  title="Recusar cadastro desconhecido"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleResetSenha(u)}
+                              className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                              title={`Resetar cadastro e senha do Apto ${u.numero} para liberar novo cadastro`}
+                            >
+                              <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
+                              <span>Reset Senha</span>
+                            </button>
+                          </div>
                         </div>
 
                         {/* Ações: Check Vazio (canto esquerdo) + Editar + Notificar + Excluir (canto direito) */}
@@ -6014,7 +6309,18 @@ export const AdminPanelScreen: React.FC = () => {
                       title="Central de Planilhas: Baixe modelos e envie arquivos Excel de Saídas e Entradas em lote"
                     >
                       <FileSpreadsheet className="w-4 h-4 text-slate-950" />
-                      <span>📥 Central de Planilhas Excel (Importar / Modelo)</span>
+                      <span>📥 Importar Planilhas</span>
+                    </button>
+
+                    {/* Gráfico de Saúde Financeira dos Últimos 12 Meses */}
+                    <button
+                      type="button"
+                      onClick={() => setIsFinanceGraphModalOpen(true)}
+                      className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+                      title="Visualizar gráfico comparativo de saúde financeira dos últimos 12 meses"
+                    >
+                      <BarChart3 className="w-4 h-4 text-white" />
+                      <span>📊 Gráfico</span>
                     </button>
 
                     {/* 3. Exportar Relatório do Sistema */}
@@ -6187,43 +6493,6 @@ export const AdminPanelScreen: React.FC = () => {
                       >
                         Recolher Todos
                       </button>
-                    </div>
-
-                  </div>
-
-                  {/* Linha de Busca e Filtro de Categoria */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-slate-100">
-                    
-                    <div className="relative sm:col-span-2">
-                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                      <input
-                        type="text"
-                        placeholder="Buscar por descrição, fornecedor, pagador, comentário ou valor..."
-                        value={searchFinanceiro}
-                        onChange={(e) => setSearchFinanceiro(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-emerald-500 shadow-2xs"
-                      />
-                      {searchFinanceiro && (
-                        <button
-                          type="button"
-                          onClick={() => setSearchFinanceiro('')}
-                          className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-
-                    <div>
-                      <select
-                        value={filtroCatFinanceiro}
-                        onChange={(e) => setFiltroCatFinanceiro(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-emerald-500 shadow-2xs cursor-pointer"
-                      >
-                        {todasCategorias.map(cat => (
-                          <option key={cat} value={cat}>Categoria: {cat}</option>
-                        ))}
-                      </select>
                     </div>
 
                   </div>
@@ -10471,6 +10740,12 @@ export const AdminPanelScreen: React.FC = () => {
         isOpen={isImportExcelModalOpen}
         onClose={() => setIsImportExcelModalOpen(false)}
         defaultMonth={selectedMesFinanceiro}
+      />
+
+      {/* Modal de Gráfico de Saúde Financeira dos Últimos 12 Meses */}
+      <FinanceGraphModal
+        isOpen={isFinanceGraphModalOpen}
+        onClose={() => setIsFinanceGraphModalOpen(false)}
       />
 
       {/* Modal de Segurança, Resgate de Moradores e Backup Isolado por Condomínio */}

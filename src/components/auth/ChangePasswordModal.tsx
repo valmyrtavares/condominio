@@ -159,7 +159,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               type="submit"
               className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
             >
-              <ShieldCheck className="w-4 h-4" /> Salvar Nova Senha e Entrar
+              <ShieldCheck className="w-4 h-4" /> Salvar Nova Senha e Concluir
             </button>
           </div>
 

@@ -58,7 +58,10 @@ export interface Unidade {
   senhaAcesso?: string;
   senhaPadraoAlterada?: boolean;
   emailResponsavel?: string;
-  statusCadastro?: 'Pendente' | 'Cadastrado' | 'Vazio' | 'Suspenso';
+  statusCadastro?: 'Pendente' | 'AguardandoConfirmacao' | 'Cadastrado' | 'Vazio' | 'Suspenso';
+  moradorConfirmado?: boolean;
+  dataConfirmacao?: string;
+  confirmadoPor?: string;
   semMoradores?: boolean;
   suspensa?: boolean;
   motivoSuspensao?: string;
@@ -358,6 +361,10 @@ export interface DiarioObraItem {
   descricao: string;
   fotos: string[];
   autorNome?: string;
+  apoiosCount?: number;
+  apoiadores?: string[];
+  apoiadoresDetalhes?: ApoiadorDetalhe[];
+  comentarios?: Comentario[];
 }
 
 export interface CancelamentoInfo {
@@ -880,11 +887,20 @@ export interface NotificacaoMasterCondo {
   lida: boolean;
 }
 
+export interface ConfiguracaoBloco {
+  id: string;
+  nome: string;               // ex: "Bloco 1", "Torre A" (default: "Bloco 1")
+  totalAndares: number;       // ex: 7 ou 10
+  padraoApartamentos: string; // ex: "12 13 14 15" ou "1 3 4 5 7"
+  totalUnidadesBloco: number; // ex: 28 ou 50
+}
+
 export interface CondominioProfile {
   id: string;                    // ex: "condo-jardim-paulista", "condo-aurora"
   slug: string;                  // ex: "jardim-paulista", "edificio-aurora"
   nome: string;                  // ex: "Residencial Jardim Paulista"
   tipoCondominio?: TipoCondominio; // 'apartamentos' | 'casas'
+  configuracaoBlocos?: ConfiguracaoBloco[]; // Lista dinâmica de blocos/torres para apartamentos
   ruas?: string[];               // Lista de ruas cadastradas para condomínios de casas
   endereco: string;              // ex: "Av. Paulista, 1500 - Bela Vista, SP"
   cidade?: string;

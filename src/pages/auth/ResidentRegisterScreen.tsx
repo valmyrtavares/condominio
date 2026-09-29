@@ -15,7 +15,10 @@ import {
   Briefcase,
   Mail,
   AlertCircle,
-  Loader2
+  Loader2,
+  Clock,
+  ShieldCheck,
+  ArrowRight
 } from 'lucide-react';
 
 interface MoradorInput {
@@ -28,6 +31,7 @@ interface MoradorInput {
 export const ResidentRegisterScreen: React.FC = () => {
   const { 
     pendingRegistrationUnit, 
+    setPendingRegistrationUnit,
     concluirCadastroMorador, 
     setCurrentScreen,
     currentCondo
@@ -43,12 +47,15 @@ export const ResidentRegisterScreen: React.FC = () => {
   const [sucesso, setSucesso] = useState(false);
   const [isSalvando, setIsSalvando] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [isAguardandoModalOpen, setIsAguardandoModalOpen] = useState(false);
 
   const isCasas = currentCondo?.tipoCondominio === 'casas';
   const unidadeNumero = pendingRegistrationUnit?.numero || '';
   const blocoNome = isCasas ? (pendingRegistrationUnit?.rua || '') : (pendingRegistrationUnit?.bloco || 'Bloco A');
 
   React.useEffect(() => {
+    if (isAguardandoModalOpen) return;
+
     if (!pendingRegistrationUnit) {
       setCurrentScreen('resident-login');
       return;
@@ -69,7 +76,7 @@ export const ResidentRegisterScreen: React.FC = () => {
     if (isAlreadyRegistered || isSuspensa) {
       setCurrentScreen('resident-login');
     }
-  }, [pendingRegistrationUnit, setCurrentScreen]);
+  }, [pendingRegistrationUnit, setCurrentScreen, isAguardandoModalOpen]);
 
   const handleAddMorador = () => {
     setMoradores(prev => [
@@ -160,6 +167,7 @@ export const ResidentRegisterScreen: React.FC = () => {
 
       if (res.success) {
         setSucesso(true);
+        setIsAguardandoModalOpen(true);
       } else {
         setErro(res.error || 'Erro ao persistir cadastro no banco.');
       }
@@ -385,6 +393,96 @@ export const ResidentRegisterScreen: React.FC = () => {
         email={moradores[0]?.email || ''}
         onSaveNewPassword={handleSaveWithNewPassword}
       />
+
+      {/* Modal de Confirmação e Espera pela Aprovação da Administração */}
+      {isAguardandoModalOpen && (
+        <div className="modal-overlay-safe">
+          {/* Backdrop overlay com blur */}
+          <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200" />
+
+          {/* Modal Content Box */}
+          <div className="modal-content-safe relative w-full max-w-md bg-white/95 border-2 border-white rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl z-20 space-y-5 animate-in zoom-in-95 duration-200 text-slate-900">
+            
+            {/* Header com Ícone e Título */}
+            <div className="text-center space-y-3">
+              <div className="relative w-16 h-16 mx-auto">
+                <div className="w-16 h-16 rounded-3xl bg-amber-500/20 border-2 border-amber-400/60 flex items-center justify-center text-amber-950 shadow-inner">
+                  <Clock className="w-8 h-8 text-amber-800 animate-pulse" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md border-2 border-white">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <span className="inline-block text-[10px] uppercase font-black tracking-wider bg-amber-100 text-amber-900 border border-amber-300 px-3 py-0.5 rounded-full shadow-2xs">
+                  Cadastro Salvo com Sucesso
+                </span>
+                <h2 className="text-xl font-black text-slate-950 tracking-tight">
+                  Aguardando Confirmação
+                </h2>
+                <p className="text-xs text-slate-600 font-medium">
+                  {isCasas ? `Casa ${unidadeNumero}` : `Unidade ${unidadeNumero}`} {blocoNome ? `• ${blocoNome}` : ''}
+                </p>
+              </div>
+            </div>
+
+            {/* Dados do Morador Cadastrado */}
+            <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-2xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-950 font-black text-sm shrink-0 shadow-2xs overflow-hidden">
+                  {fotoPreview ? (
+                    <img src={fotoPreview} alt={moradores[0]?.nome || ''} className="w-full h-full object-cover" />
+                  ) : (
+                    (moradores[0]?.nome ? moradores[0].nome.charAt(0).toUpperCase() : '?')
+                  )}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="font-black text-slate-950 text-sm truncate">
+                    {moradores[0]?.nome || 'Morador Principal'}
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-medium truncate font-mono flex items-center gap-1">
+                    <Mail className="w-3 h-3 text-amber-800 shrink-0 inline" />
+                    {moradores[0]?.email}
+                  </span>
+                </div>
+              </div>
+
+              {/* Mensagem de Segurança sobre aprovação da administração */}
+              <div className="pt-2 border-t border-slate-200 text-xs text-slate-700 leading-relaxed">
+                <div className="flex items-start gap-2 text-xs bg-amber-50/90 border border-amber-200/90 p-3 rounded-xl text-amber-950">
+                  <ShieldCheck className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-extrabold text-slate-950 mb-0.5">
+                      Segurança do Condomínio
+                    </p>
+                    <p className="text-[11px] text-slate-700 leading-normal">
+                      Para sua proteção e de todos os condôminos, o seu acesso completo ao aplicativo será liberado assim que a <strong>administração do condomínio</strong> confirmar o seu cadastro.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Botão de Fechar / Ir para o Login */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingRegistrationUnit(null);
+                  setIsAguardandoModalOpen(false);
+                  setCurrentScreen('resident-login');
+                }}
+                className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Entendido • Ir para o Login</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };

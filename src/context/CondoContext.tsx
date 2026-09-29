@@ -4,6 +4,7 @@ import {
   Reclamacao, 
   Reparo, 
   ApoiadorDetalhe,
+  Comentario,
   Orcamento,
   PrestacaoContas, 
   DespesaItem,
@@ -61,6 +62,7 @@ import {
   EncomendaEntrega,
   StatusEncomenda,
   CondominioProfile,
+  ConfiguracaoBloco,
   StatusCondominio,
   ModeloInicialCondominio,
   AdminModuloKey
@@ -92,7 +94,13 @@ import {
   recuperarMoradoresDoCondominioNoFirestore,
   padronizarSenhasTodasUnidadesNoFirestore,
   exportarBackupCondominioFirestore,
-  restaurarBackupCondominioFirestore
+  restaurarBackupCondominioFirestore,
+  salvarNaLixeiraCondominioFirestore,
+  listarCondominiosLixeiraFirestore,
+  excluirPermanenteLixeiraFirestore,
+  CondominioLixeiraItem,
+  confirmarMoradorUnidadeNoFirestore,
+  recusarMoradorUnidadeNoFirestore
 } from '../services/firebase';
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -181,7 +189,7 @@ export const isMockReclamacao = (rec: { id?: string; autorNome?: string; autorUn
  * Formata o número do apartamento baseado no item base do 1º andar e no número do andar atual.
  * Exemplo A: "11" -> Andar 1 = "11", Andar 2 = "21", Andar 3 = "31"...
  * Exemplo B: "13" -> Andar 1 = "13", Andar 2 = "23", Andar 3 = "33"...
- * Exemplo C: "01" -> Andar 1 = "01", Andar 2 = "11", Andar 3 = "21"...
+ * Exemplo C: "1" -> Andar 1 = "11", Andar 2 = "21" ... Andar 10 = "101"
  * Exemplo D: "101" -> Andar 1 = "101", Andar 2 = "201", Andar 3 = "301"...
  */
 export function formatarNumeroAptoPorAndar(itemBase: string, floorIndex: number): string {
@@ -189,33 +197,30 @@ export function formatarNumeroAptoPorAndar(itemBase: string, floorIndex: number)
   if (!clean) return `${floorIndex}01`;
 
   if (/^\d+$/.test(clean)) {
-    // Caso 1: Números de 2 dígitos começando com 1 (ex: "11", "12", "13", "15", "17", "19")
+    // Caso 1: Números de 1 dígito (ex: "1", "3", "4", "5", "7") -> Andar 1 = "11", Andar 2 = "21" ... Andar 10 = "101"
+    if (clean.length === 1) {
+      return `${floorIndex}${clean}`;
+    }
+
+    // Caso 2: Números de 2 dígitos começando com 1 (ex: "11", "12", "13", "15", "17", "19")
     if (clean.length === 2 && clean.startsWith('1')) {
       const sufixo = clean.slice(1);
       return `${floorIndex}${sufixo}`;
     }
 
-    // Caso 2: Números de 3 dígitos começando com 1 (ex: "101", "102", "104")
+    // Caso 3: Números de 3 dígitos começando com 1 (ex: "101", "102", "104")
     if (clean.length === 3 && clean.startsWith('1')) {
       const sufixo = clean.slice(1);
       return `${floorIndex}${sufixo}`;
     }
 
-    // Caso 3: Números de 2 dígitos começando com 0 (ex: "01", "02", "04", "05")
+    // Caso 4: Números de 2 dígitos começando com 0 (ex: "01", "02", "04", "05")
     if (clean.length === 2 && clean.startsWith('0')) {
       const sufixo = clean.slice(1);
       if (floorIndex === 1) {
         return clean;
       }
       return `${floorIndex - 1}${sufixo}`;
-    }
-
-    // Caso 4: Números de 1 dígito (ex: "1", "2", "3")
-    if (clean.length === 1) {
-      if (floorIndex === 1) {
-        return `0${clean}`;
-      }
-      return `${floorIndex - 1}${clean}`;
     }
 
     // Caso 5: Outros números de 2 dígitos (ex: "21", "22")
@@ -243,10 +248,23 @@ export function normalizeUnitNumber(str?: string): string {
 }
 
 /**
- * Ordena unidades de forma numérica e natural (ex: 26, 31, 33, 101, 102)
+ * Ordena unidades de forma natural: agrupando por bloco, depois por andar e numeração.
  */
 export function sortUnidades(lista: Unidade[]): Unidade[] {
   return [...lista].sort((a, b) => {
+    // 1. Agrupa por bloco caso existam múltiplos blocos
+    const blocoA = (a.bloco || '').trim();
+    const blocoB = (b.bloco || '').trim();
+    if (blocoA && blocoB && blocoA.toLowerCase() !== blocoB.toLowerCase()) {
+      return blocoA.localeCompare(blocoB, 'pt-BR', { numeric: true, sensitivity: 'base' });
+    }
+
+    // 2. Ordena por andar (se presente)
+    if (a.andar !== undefined && b.andar !== undefined && a.andar !== b.andar) {
+      return a.andar - b.andar;
+    }
+
+    // 3. Ordena numericamente pelo número da unidade
     const matchA = (a.numero || '').match(/\d+/);
     const matchB = (b.numero || '').match(/\d+/);
     const numA = matchA ? parseInt(matchA[0], 10) : NaN;
@@ -301,20 +319,80 @@ export function deduplicateAndSortUnidades(lista: Unidade[], isCasas: boolean = 
 }
 
 /**
- * Função utilitária para gerar unidades a partir da quantidade total de unidades,
- * número de andares e padrão de apartamentos do 1º andar.
+ * Gera unidades para múltiplos blocos/torres com configurações assimétricas e independentes.
  */
+export function gerarUnidadesPorConfiguracaoBlocos(
+  configuracaoBlocos: ConfiguracaoBloco[],
+  condoId: string = 'condo'
+): Unidade[] {
+  if (!Array.isArray(configuracaoBlocos) || configuracaoBlocos.length === 0) {
+    return [];
+  }
+
+  const unidades: Unidade[] = [];
+
+  configuracaoBlocos.forEach((blocoConfig, blocoIdx) => {
+    const nomeBloco = (blocoConfig.nome || '').trim() || (configuracaoBlocos.length > 1 ? `Bloco ${blocoIdx + 1}` : 'Bloco 1');
+    const totalAndares = Math.max(1, Number(blocoConfig.totalAndares) || 1);
+    const rawItems = (blocoConfig.padraoApartamentos || '')
+      .split(/[\s,;]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const patternItems = rawItems.length > 0 ? rawItems : ['01', '02', '03', '04'];
+    const totalUnidadesBloco = (blocoConfig.totalUnidadesBloco && blocoConfig.totalUnidadesBloco > 0)
+      ? blocoConfig.totalUnidadesBloco
+      : totalAndares * patternItems.length;
+
+    let unitCounter = 0;
+    const blocoSlug = nomeBloco.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    for (let floor = 1; floor <= totalAndares; floor++) {
+      for (let pos = 0; pos < patternItems.length; pos++) {
+        if (unitCounter >= totalUnidadesBloco) break;
+
+        const itemBase = patternItems[pos];
+        const numeroApto = formatarNumeroAptoPorAndar(itemBase, floor);
+        unitCounter++;
+
+        unidades.push({
+          id: `unit-${condoId}-${blocoSlug || 'b' + (blocoIdx + 1)}-${floor}-${numeroApto}-${unitCounter}`,
+          condominioId: condoId,
+          numero: numeroApto,
+          andar: floor,
+          bloco: nomeBloco,
+          tipo: 'Apartamento',
+          vagaGaragem: numeroApto,
+          senhaAcesso: numeroApto,
+          senhaPadraoAlterada: false,
+          statusCadastro: 'Pendente',
+          semMoradores: false,
+          moradores: []
+        });
+      }
+      if (unitCounter >= totalUnidadesBloco) break;
+    }
+  });
+
+  return unidades;
+}
+
 /**
  * Função utilitária para gerar unidades a partir da quantidade total de unidades,
- * número de andares e padrão de apartamentos do 1º andar.
+ * número de andares, padrão de apartamentos ou blocos configurados.
  */
 export function gerarUnidadesPorPadraoEAndar(
   totalUnidades: number,
   totalAndares?: number,
   padraoPrimeiroAndar?: string,
   condoId: string = 'condo',
-  totalBlocos: number = 1
+  totalBlocos: number = 1,
+  configuracaoBlocos?: ConfiguracaoBloco[]
 ): Unidade[] {
+  if (configuracaoBlocos && configuracaoBlocos.length > 0) {
+    return gerarUnidadesPorConfiguracaoBlocos(configuracaoBlocos, condoId);
+  }
+
   const unidades: Unidade[] = [];
   const blocos = totalBlocos > 0 ? totalBlocos : 1;
   const rawItems = (padraoPrimeiroAndar || '')
@@ -342,6 +420,7 @@ export function gerarUnidadesPorPadraoEAndar(
 
       unidades.push({
         id: `unit-${condoId}-${floorIndex}-${numeroApto}-${unitCounter}`,
+        condominioId: condoId,
         numero: numeroApto,
         andar: floorIndex,
         bloco: blocos > 1 ? `Bloco ${blocoLetra}` : 'Bloco A',
@@ -518,9 +597,11 @@ interface CondoContextType {
   excluirAdminUser: (id: string) => void;
   adicionarAdminRole: (nome: string, tipoAcesso: 'total' | 'morador_destaque', descricao?: string) => void;
   excluirAdminRole: (id: string) => void;
-  adicionarUnidade: (numero: string, vagaGaragem?: string, senhaAcesso?: string, rua?: string) => void;
+  adicionarUnidade: (numero: string, vagaGaragem?: string, senhaAcesso?: string, rua?: string, andar?: number, bloco?: string) => void;
   editarUnidade: (id: string, vagaGaragem: string, numero?: string, senhaAcesso?: string, rua?: string, indexPos?: number) => void;
   resetarSenhaUnidade: (idOuNumero: string) => { success: boolean; message: string };
+  confirmarMoradorUnidade: (unidadeId: string, confirmadoPorNome?: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  recusarMoradorUnidade: (unidadeId: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   excluirUnidade: (id: string) => void;
   toggleUnidadeSemMoradores: (id: string) => void;
   toggleUnidadeSuspensa: (id: string, motivo?: string) => void;
@@ -571,6 +652,8 @@ interface CondoContextType {
   votarOrcamentoBenfeitoria: (benfeitoriaId: string, orcamentoId: string) => Promise<{ success: boolean; error?: string }>;
   definirContratacaoBenfeitoria: (benfeitoriaId: string, contratacao: EmpresaContratadaInfo) => Promise<{ success: boolean; error?: string }>;
   adicionarDiarioObraBenfeitoria: (benfeitoriaId: string, item: Omit<DiarioObraItem, 'id'>) => Promise<{ success: boolean; error?: string }>;
+  apoiarDiarioObraBenfeitoria: (benfeitoriaId: string, diarioItemId: string) => Promise<{ success: boolean; error?: string }>;
+  adicionarComentarioDiarioObraBenfeitoria: (benfeitoriaId: string, diarioItemId: string, texto: string) => Promise<{ success: boolean; error?: string }>;
   toggleAvaliacaoBenfeitoria: (benfeitoriaId: string, aberto: boolean, prazoFim?: string, dispararMensagem?: boolean) => Promise<{ success: boolean; error?: string }>;
   avaliarBenfeitoria: (benfeitoriaId: string, nota: number, comentario?: string) => Promise<{ success: boolean; error?: string }>;
   cancelarBenfeitoria: (benfeitoriaId: string, justificativa: { motivo: string; fotos: string[]; dataCancelamento: string }) => Promise<{ success: boolean; error?: string }>;
@@ -618,6 +701,9 @@ interface CondoContextType {
   padronizarSenhasTodasUnidades: (condoId?: string, novaSenha?: string) => Promise<{ success: boolean; totalAlteradas?: number; error?: string }>;
   exportarBackupCondominio: (condoId?: string) => Promise<{ success: boolean; backup?: any; error?: string }>;
   restaurarBackupCondominio: (condoId: string, dadosBackup: any) => Promise<{ success: boolean; error?: string }>;
+  salvarNaLixeiraCondominio: (condoId: string, backupData: any, metadata: { nomeCondo: string; excluidoPor?: string; totalUnidades?: number; tipoCondominio?: string }) => Promise<{ success: boolean; lixeiraId?: string; error?: string }>;
+  listarCondominiosLixeira: () => Promise<CondominioLixeiraItem[]>;
+  excluirPermanenteLixeira: (lixeiraId: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const CondoContext = createContext<CondoContextType | undefined>(undefined);
@@ -1582,13 +1668,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       limparESubstituirSubcolecaoFirestore(id, 'unidades', novasUnidadesCasas).catch(console.error);
     } else if (novo.modeloInicial === 'limpo') {
       const totalUnits = novo.totalUnidades || 75;
-      const novasUnidadesLimpo = gerarUnidadesPorPadraoEAndar(
-        totalUnits,
-        novo.totalAndares,
-        novo.padraoPrimeiroAndar,
-        id,
-        novo.totalBlocos || 1
-      );
+      const novasUnidadesLimpo = (novo.configuracaoBlocos && novo.configuracaoBlocos.length > 0)
+        ? gerarUnidadesPorConfiguracaoBlocos(novo.configuracaoBlocos, id)
+        : gerarUnidadesPorPadraoEAndar(
+            totalUnits,
+            novo.totalAndares,
+            novo.padraoPrimeiroAndar,
+            id,
+            novo.totalBlocos || 1
+          );
       try {
         localStorage.setItem(`condo_unidades_list_${id}`, JSON.stringify(novasUnidadesLimpo));
       } catch {}
@@ -1636,6 +1724,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         
         // Estrita separação e integridade de campos:
         if (atualizado.tipoCondominio === 'casas') {
+          delete (atualizado as any).configuracaoBlocos;
           delete (atualizado as any).padraoPrimeiroAndar;
           delete (atualizado as any).totalAndares;
           delete (atualizado as any).totalBlocos;
@@ -1709,31 +1798,34 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
           limparESubstituirSubcolecaoFirestore(targetId, 'unidades', novasUnidades).catch(console.error);
         } else if (
+          dados.configuracaoBlocos !== undefined ||
           dados.padraoPrimeiroAndar !== undefined || 
           dados.totalAndares !== undefined || 
           dados.totalUnidades !== undefined
         ) {
           const totalUnits = atualizado.totalUnidades || 75;
-          const templateUnidades = gerarUnidadesPorPadraoEAndar(
-            totalUnits,
-            atualizado.totalAndares,
-            atualizado.padraoPrimeiroAndar,
-            targetId,
-            atualizado.totalBlocos || 1
-          );
+          const templateUnidades = (atualizado.configuracaoBlocos && atualizado.configuracaoBlocos.length > 0)
+            ? gerarUnidadesPorConfiguracaoBlocos(atualizado.configuracaoBlocos, targetId)
+            : gerarUnidadesPorPadraoEAndar(
+                totalUnits,
+                atualizado.totalAndares,
+                atualizado.padraoPrimeiroAndar,
+                targetId,
+                atualizado.totalBlocos || 1
+              );
 
           const mapaExistentes = new Map<string, Unidade>();
           unidades.forEach(u => {
             const pertenceAEsteCondo = u.id.startsWith(`unit-${id}`) || u.id.startsWith(`unit-${targetId}`) || (u as any).condoId === id || u.condominioId === id;
             if (!pertenceAEsteCondo) return;
-            const k = normalizeUnitNumber(u.numero);
+            const k = `${(u.bloco || '').trim().toLowerCase()}_${normalizeUnitNumber(u.numero)}`;
             if (k && !mapaExistentes.has(k)) {
               mapaExistentes.set(k, u);
             }
           });
 
           const novasUnidades = templateUnidades.map(tmpl => {
-            const k = normalizeUnitNumber(tmpl.numero);
+            const k = `${(tmpl.bloco || '').trim().toLowerCase()}_${normalizeUnitNumber(tmpl.numero)}`;
             const existente = mapaExistentes.get(k);
             if (existente) {
               return {
@@ -3044,13 +3136,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           id: `desp-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`
         }));
 
-        const despesasConcatenadas = [...novasDespesasComId, ...current.despesas];
-        const despesasTotal = despesasConcatenadas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
+        // Sobrescreve as despesas/saídas anteriores do mês pela nova planilha enviada
+        const despesasSubstituidas = novasDespesasComId;
+        const despesasTotal = despesasSubstituidas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
         const receitasTotal = current.receitas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
 
         mesAtualizado = {
           ...current,
-          despesas: despesasConcatenadas,
+          despesas: despesasSubstituidas,
           despesasTotal,
           saldo: receitasTotal - despesasTotal,
           condominioId: condoTenantId
@@ -3061,13 +3154,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           id: `rec-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`
         }));
 
-        const receitasConcatenadas = [...novasReceitasComId, ...current.receitas];
-        const receitasTotal = receitasConcatenadas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+        // Sobrescreve as receitas/entradas anteriores do mês pela nova planilha enviada
+        const receitasSubstituidas = novasReceitasComId;
+        const receitasTotal = receitasSubstituidas.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
         const despesasTotal = current.despesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
 
         mesAtualizado = {
           ...current,
-          receitas: receitasConcatenadas,
+          receitas: receitasSubstituidas,
           receitasTotal,
           saldo: receitasTotal - despesasTotal,
           condominioId: condoTenantId
@@ -3373,7 +3467,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 
   // Métodos de Gestão de Unidades do Admin
-  const adicionarUnidade = (numero: string, vagaGaragem: string = '', senhaAcesso?: string, rua?: string) => {
+  const adicionarUnidade = (
+    numero: string, 
+    vagaGaragem: string = '', 
+    senhaAcesso?: string, 
+    rua?: string,
+    andar?: number,
+    bloco?: string
+  ) => {
     const numLimpo = numero.trim();
     if (!numLimpo) return;
 
@@ -3381,13 +3482,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const vagaLimpa = vagaGaragem.trim();
     const senhaInicial = (senhaAcesso && senhaAcesso.trim()) ? senhaAcesso.trim() : numLimpo;
     const ruaFinal = rua ? rua.trim() : (isCasas ? (currentCondo?.ruas?.[0] || 'Rua Principal') : undefined);
+    const blocoFinal = bloco ? bloco.trim() : (ruaFinal || (currentCondo?.configuracaoBlocos?.[0]?.nome || 'Bloco 1'));
 
     const nova: Unidade = {
-      id: `und-${numLimpo.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`,
+      id: `und-${blocoFinal.replace(/\s+/g, '-').toLowerCase()}-${numLimpo.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`,
+      condominioId: condoTenantId,
       numero: numLimpo,
-      bloco: ruaFinal || 'Bloco A',
+      bloco: blocoFinal,
       rua: ruaFinal,
-      andar: isCasas ? 0 : 1,
+      andar: isCasas ? 0 : (andar || 1),
       tipo: isCasas ? 'Casa' : 'Apartamento',
       senhaAcesso: senhaInicial,
       senhaPadraoAlterada: false,
@@ -3400,8 +3503,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     salvarUnidadeNoFirestore(condoTenantId, nova).catch(console.error);
 
     setUnidades(prev => {
-      const semDuplicado = prev.filter(u => u.numero.toLowerCase() !== numLimpo.toLowerCase());
-      const atualizadas = sortUnidades([...semDuplicado, nova]);
+      const semDuplicado = prev.filter(u => !(u.numero.toLowerCase() === numLimpo.toLowerCase() && (u.bloco || '').toLowerCase() === blocoFinal.toLowerCase()));
+      const atualizadas = isCasas ? [...semDuplicado, nova] : sortUnidades([...semDuplicado, nova]);
       try {
         localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(atualizadas));
       } catch {}
@@ -3414,7 +3517,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     vagaGaragem: string, 
     numero?: string, 
     _senhaIgnorada?: string, 
-    rua?: string,
+    ruaOuBloco?: string,
     indexPos?: number
   ) => {
     const isCasas = currentCondo?.tipoCondominio === 'casas';
@@ -3444,15 +3547,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const alvo = prev[targetIdx];
       const numFinal = (numero !== undefined && numero.trim()) ? numero.trim() : (alvo.numero || '');
-      const ruaFinal = rua !== undefined ? rua.trim() : (alvo.rua || alvo.bloco || '');
+      const blocoOuRuaFinal = ruaOuBloco !== undefined ? ruaOuBloco.trim() : (alvo.rua || alvo.bloco || 'Bloco 1');
 
       const unidadeSalva: Unidade = {
         ...alvo,
         id: alvo.id || `unit-${condoTenantId}-${targetIdx + 1}`,
+        condominioId: condoTenantId,
         numero: numFinal,
         vagaGaragem: vagaGaragem !== undefined ? vagaGaragem.trim() : (alvo.vagaGaragem || ''),
-        rua: ruaFinal,
-        bloco: ruaFinal || alvo.bloco || 'Bloco A'
+        rua: isCasas ? blocoOuRuaFinal : alvo.rua,
+        bloco: blocoOuRuaFinal || alvo.bloco || 'Bloco 1'
       };
 
       // Substitui EXATAMENTE no mesmo índice da lista (ordem dos lotes preservada 100%!)
@@ -4292,7 +4396,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // 2. Verifica se a residência já possui morador cadastrado
     const isCadastrado = Boolean(
-      (unidadeEncontrada.statusCadastro === 'Cadastrado' || unidadeEncontrada.senhaPadraoAlterada) &&
+      (unidadeEncontrada.statusCadastro === 'Cadastrado' || unidadeEncontrada.statusCadastro === 'AguardandoConfirmacao' || unidadeEncontrada.senhaPadraoAlterada) &&
       unidadeEncontrada.moradores && 
       unidadeEncontrada.moradores.length > 0 &&
       !unidadeEncontrada.semMoradores
@@ -4310,7 +4414,15 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
     }
 
-    // 3. Se a residência JÁ tem morador cadastrado: exige a senha pessoal criada no cadastro
+    // 2.1 Verifica se o morador está aguardando aprovação/confirmação da administração
+    if (unidadeEncontrada.statusCadastro === 'AguardandoConfirmacao' || unidadeEncontrada.moradorConfirmado === false) {
+      return { 
+        success: false, 
+        message: 'Seu cadastro foi recebido com sucesso e está aguardando a confirmação da administração para liberação do acesso.' 
+      };
+    }
+
+    // 3. Se a residência JÁ tem morador cadastrado e confirmado: exige a senha pessoal criada no cadastro
     if (!senhaLimpa) {
       return { 
         success: false, 
@@ -4345,6 +4457,78 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return { success: true, needsRegistration: false };
   };
 
+  const confirmarMoradorUnidade = async (unidadeId: string, confirmadoPorNome?: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+    try {
+      const canonicalCondoId = currentCondo?.id || condoTenantId || '';
+      const alvo = unidades.find(u => u.id === unidadeId);
+      if (!alvo) return { success: false, error: 'Unidade não encontrada' };
+
+      const responsavelConfirmacao = confirmadoPorNome || currentUser?.nome || 'Síndico Geral';
+
+      const unidadeAtualizada: Unidade = {
+        ...alvo,
+        moradorConfirmado: true,
+        statusCadastro: 'Cadastrado',
+        dataConfirmacao: new Date().toLocaleDateString('pt-BR'),
+        confirmadoPor: responsavelConfirmacao
+      };
+
+      setUnidades(prev => {
+        const atualizadas = prev.map(u => u.id === unidadeId ? unidadeAtualizada : u);
+        try {
+          localStorage.setItem(`condo_unidades_list_${canonicalCondoId}`, JSON.stringify(atualizadas));
+        } catch {}
+        return atualizadas;
+      });
+
+      if (canonicalCondoId) {
+        await confirmarMoradorUnidadeNoFirestore(canonicalCondoId, unidadeId, responsavelConfirmacao);
+      }
+
+      const nomeMorador = alvo.moradores && alvo.moradores.length > 0 ? alvo.moradores[0].nome : (alvo.nomeCelula || 'Morador');
+      return { success: true, message: `Morador ${nomeMorador} da unidade ${alvo.numero} confirmado com sucesso!` };
+    } catch (err: any) {
+      console.error('Erro ao confirmar morador:', err);
+      return { success: false, error: err.message || 'Erro ao confirmar morador' };
+    }
+  };
+
+  const recusarMoradorUnidade = async (unidadeId: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+    try {
+      const canonicalCondoId = currentCondo?.id || condoTenantId || '';
+      const alvo = unidades.find(u => u.id === unidadeId);
+      if (!alvo) return { success: false, error: 'Unidade não encontrada' };
+
+      const unidadeAtualizada: Unidade = {
+        ...alvo,
+        moradores: [],
+        statusCadastro: 'Pendente',
+        moradorConfirmado: false,
+        emailResponsavel: '',
+        nomeCelula: '',
+        fotoCelula: '',
+        senhaPadraoAlterada: false
+      };
+
+      setUnidades(prev => {
+        const atualizadas = prev.map(u => u.id === unidadeId ? unidadeAtualizada : u);
+        try {
+          localStorage.setItem(`condo_unidades_list_${canonicalCondoId}`, JSON.stringify(atualizadas));
+        } catch {}
+        return atualizadas;
+      });
+
+      if (canonicalCondoId) {
+        await recusarMoradorUnidadeNoFirestore(canonicalCondoId, unidadeId);
+      }
+
+      return { success: true, message: `Cadastro da unidade ${alvo.numero} recusado e liberado para novo morador.` };
+    } catch (err: any) {
+      console.error('Erro ao recusar morador:', err);
+      return { success: false, error: err.message || 'Erro ao recusar morador' };
+    }
+  };
+
   const concluirCadastroMorador = async (
     unidadeNumero: string,
     moradoresData: { nome: string; email?: string; profissao?: string }[],
@@ -4365,7 +4549,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const canonicalCondoId = currentCondo?.id || condoTenantId || condominios[0]?.id || '';
     const canonicalUnitId = targetUnit?.id || `unit-${canonicalCondoId}-1-${numeroOficial}-1`;
 
-    // Chama o serviço de autenticação e gravação no Firebase Auth + Firestore
+    // Chama o serviço de autenticação e gravação no Firebase Auth + Firestore com moradorConfirmado: false
     const res = await cadastrarMoradorAuth({
       condoId: canonicalCondoId,
       unidadeId: canonicalUnitId,
@@ -4389,7 +4573,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return { success: false, error: res.error || 'Erro ao persistir morador no banco.' };
     }
 
-    const unidadeAtualizada = res.unidadeAtualizada as Unidade;
+    const unidadeAtualizada = {
+      ...(res.unidadeAtualizada as Unidade),
+      moradorConfirmado: false,
+      statusCadastro: 'AguardandoConfirmacao' as const
+    };
     const principalUser = res.usuarioPrincipal as User;
 
     setUnidades(prev => {
@@ -4414,22 +4602,6 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       } catch {}
     }
-
-    const authData = {
-      unidade: numeroOficial,
-      bloco: bloco
-    };
-
-    setIsResidentLoggedIn(true);
-    setResidentAuthData(authData);
-    try {
-      localStorage.setItem('condo_resident_auth', JSON.stringify(authData));
-    } catch {}
-
-    setCurrentUser(principalUser);
-    setPendingRegistrationUnit(null);
-    setCurrentScreen('home');
-    setIsDrawerOpen(true);
 
     return { success: true };
   };
@@ -5502,16 +5674,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const editarBenfeitoria = async (id: string, payload: Partial<Benfeitoria>): Promise<{ success: boolean; error?: string }> => {
     try {
-      let benfeitoriaAtualizada: Benfeitoria | null = null;
-      setBenfeitorias(prev => prev.map(b => {
-        if (b.id === id) {
-          benfeitoriaAtualizada = { ...b, ...payload };
-          return benfeitoriaAtualizada;
-        }
-        return b;
-      }));
+      const alvo = benfeitorias.find(b => b.id === id);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
 
-      if (benfeitoriaAtualizada && condoTenantId) {
+      const benfeitoriaAtualizada: Benfeitoria = { ...alvo, ...payload };
+      setBenfeitorias(prev => prev.map(b => b.id === id ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
         await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
       }
       return { success: true };
@@ -5537,27 +5706,25 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     passo: Omit<PassoTimelineBenfeitoria, 'id'>
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
+
       const novoPasso: PassoTimelineBenfeitoria = {
         id: `passo-${Date.now()}`,
         ...passo,
         criadoPor: passo.criadoPor || currentUser.nome || 'Administração'
       };
 
-      setBenfeitorias(prev => prev.map(b => {
-        if (b.id === benfeitoriaId) {
-          const timeline = [...(b.timeline || []), novoPasso];
-          benfeitoriaAtualizada = {
-            ...b,
-            statusAtual: passo.status,
-            timeline
-          };
-          return benfeitoriaAtualizada;
-        }
-        return b;
-      }));
+      const timeline = [...(alvo.timeline || []), novoPasso];
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        statusAtual: passo.status,
+        timeline
+      };
 
-      if (benfeitoriaAtualizada && condoTenantId) {
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
         await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
       }
       return { success: true };
@@ -5572,30 +5739,35 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     orcamentos: OrcamentoBenfeitoria[]
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      let benfeitoriaAtualizada: Benfeitoria | null = null;
-      setBenfeitorias(prev => prev.map(b => {
-        if (b.id === benfeitoriaId) {
-          const timeline = b.timeline || [];
-          const novoPasso: PassoTimelineBenfeitoria = {
-            id: `passo-${Date.now()}`,
-            data: new Date().toLocaleDateString('pt-BR'),
-            status: 'orcamento',
-            titulo: '3 Orçamentos Disponibilizados',
-            descricao: `${orcamentos.length} orçamentos comparativos cadastrados para análise.`,
-            criadoPor: currentUser.nome || 'Administração'
-          };
-          benfeitoriaAtualizada = {
-            ...b,
-            orcamentos,
-            statusAtual: b.statusAtual === 'proposta' ? 'orcamento' : b.statusAtual,
-            timeline: [...timeline, novoPasso]
-          };
-          return benfeitoriaAtualizada;
-        }
-        return b;
-      }));
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
 
-      if (benfeitoriaAtualizada && condoTenantId) {
+      const timeline = alvo.timeline || [];
+      const novoPasso: PassoTimelineBenfeitoria = {
+        id: `passo-${Date.now()}`,
+        data: new Date().toLocaleDateString('pt-BR'),
+        status: 'orcamento',
+        titulo: '3 Orçamentos Disponibilizados',
+        descricao: `${orcamentos.length} orçamentos comparativos cadastrados para análise.`,
+        criadoPor: currentUser.nome || 'Administração'
+      };
+
+      // Se já existir passo de orçamento recente, atualiza para não poluir; senão adiciona
+      const lastStep = timeline[timeline.length - 1];
+      const novaTimeline = (lastStep && lastStep.status === 'orcamento')
+        ? timeline.map((p, idx) => idx === timeline.length - 1 ? novoPasso : p)
+        : [...timeline, novoPasso];
+
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        orcamentos,
+        statusAtual: alvo.statusAtual === 'proposta' ? 'orcamento' : alvo.statusAtual,
+        timeline: novaTimeline
+      };
+
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
         await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
       }
       return { success: true };
@@ -5612,45 +5784,46 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     dispararMensagem?: boolean
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      let benfeitoriaAtualizada: Benfeitoria | null = null;
-      let tituloBenfeitoria = '';
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
 
-      setBenfeitorias(prev => prev.map(b => {
-        if (b.id === benfeitoriaId) {
-          tituloBenfeitoria = b.titulo;
-          const timeline = b.timeline || [];
-          const novoPasso: PassoTimelineBenfeitoria = {
-            id: `passo-${Date.now()}`,
-            data: new Date().toLocaleDateString('pt-BR'),
-            status: aberto ? 'votacao' : 'orcamento',
-            titulo: aberto ? 'Votação Eletrônica Aberta' : 'Votação Eletrônica Encerrada',
-            descricao: aberto 
-              ? `Votação aberta para escolha do orçamento${prazoFim ? ` até ${new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.` 
-              : 'Período de votação finalizado pela administração.',
-            criadoPor: currentUser.nome || 'Administração'
-          };
-          benfeitoriaAtualizada = {
-            ...b,
-            votacaoAberta: aberto,
-            prazoFimVotacao: prazoFim || b.prazoFimVotacao,
-            statusAtual: aberto ? 'votacao' : (b.statusAtual === 'votacao' ? 'orcamento' : b.statusAtual),
-            timeline: [...timeline, novoPasso]
-          };
-          return benfeitoriaAtualizada;
-        }
-        return b;
-      }));
+      const timeline = alvo.timeline || [];
+      const novoPasso: PassoTimelineBenfeitoria = {
+        id: `passo-${Date.now()}`,
+        data: new Date().toLocaleDateString('pt-BR'),
+        status: aberto ? 'votacao' : 'orcamento',
+        titulo: aberto ? 'Votação Eletrônica Aberta' : 'Votação Eletrônica Encerrada',
+        descricao: aberto 
+          ? `Votação aberta para escolha do orçamento${prazoFim ? ` até ${new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.` 
+          : 'Período de votação finalizado pela administração.',
+        criadoPor: currentUser.nome || 'Administração'
+      };
 
-      if (dispararMensagem && aberto && tituloBenfeitoria) {
+      const lastStep = timeline[timeline.length - 1];
+      const novaTimeline = (lastStep && lastStep.status === (aberto ? 'votacao' : 'orcamento') && lastStep.titulo.includes('Votação'))
+        ? timeline.map((p, idx) => idx === timeline.length - 1 ? novoPasso : p)
+        : [...timeline, novoPasso];
+
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        votacaoAberta: aberto,
+        prazoFimVotacao: prazoFim || alvo.prazoFimVotacao,
+        statusAtual: aberto ? 'votacao' : (alvo.statusAtual === 'votacao' ? 'orcamento' : alvo.statusAtual),
+        timeline: novaTimeline
+      };
+
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (dispararMensagem && aberto && alvo.titulo) {
         const prazoFormatado = prazoFim ? new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'o prazo estipulado';
         enviarNotificacaoPrivada(
           'todos', 
-          `A administração abriu a votação eletrônica dos orçamentos da melhoria "${tituloBenfeitoria}". Acesse a aba Benfeitorias e registre seu voto até ${prazoFormatado}.`,
-          `🗳️ Votação Aberta: ${tituloBenfeitoria}`
+          `A administração abriu a votação eletrônica dos orçamentos da melhoria "${alvo.titulo}". Acesse a aba Benfeitorias e registre seu voto até ${prazoFormatado}.`,
+          `🗳️ Votação Aberta: ${alvo.titulo}`
         );
       }
 
-      if (benfeitoriaAtualizada && condoTenantId) {
+      if (condoTenantId) {
         await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
       }
       return { success: true };
@@ -5665,7 +5838,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     orcamentoIdEscolhido: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
+
       const moradorId = currentUser.id || currentUser.unidade || 'anon';
       const moradorNome = currentUser.nome || 'Morador';
       let unidade = currentUser.unidade || 'Unidade';
@@ -5681,27 +5856,23 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         dataVoto: `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
       };
 
-      setBenfeitorias(prev => prev.map(b => {
-        if (b.id === benfeitoriaId) {
-          const votosAtuais = b.votos || [];
-          const jaVotouIdx = votosAtuais.findIndex(v => v.moradorId === moradorId || (v.unidade && v.unidade === unidade));
-          let novosVotos: VotoOrcamentoBenfeitoria[];
-          if (jaVotouIdx >= 0) {
-            novosVotos = votosAtuais.map((v, i) => i === jaVotouIdx ? novoVoto : v);
-          } else {
-            novosVotos = [...votosAtuais, novoVoto];
-          }
+      const votosAtuais = alvo.votos || [];
+      const jaVotouIdx = votosAtuais.findIndex(v => v.moradorId === moradorId || (v.unidade && v.unidade === unidade));
+      let novosVotos: VotoOrcamentoBenfeitoria[];
+      if (jaVotouIdx >= 0) {
+        novosVotos = votosAtuais.map((v, i) => i === jaVotouIdx ? novoVoto : v);
+      } else {
+        novosVotos = [...votosAtuais, novoVoto];
+      }
 
-          benfeitoriaAtualizada = {
-            ...b,
-            votos: novosVotos
-          };
-          return benfeitoriaAtualizada;
-        }
-        return b;
-      }));
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        votos: novosVotos
+      };
 
-      if (benfeitoriaAtualizada && condoTenantId) {
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
         await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
       }
       return { success: true };
@@ -5716,30 +5887,35 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     contratacao: EmpresaContratadaInfo
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      let benfeitoriaAtualizada: Benfeitoria | null = null;
-      setBenfeitorias(prev => prev.map(b => {
-        if (b.id === benfeitoriaId) {
-          const timeline = b.timeline || [];
-          const novoPasso: PassoTimelineBenfeitoria = {
-            id: `passo-${Date.now()}`,
-            data: new Date().toLocaleDateString('pt-BR'),
-            status: 'contratada',
-            titulo: `Empresa Contratada: ${contratacao.empresaNome}`,
-            descricao: `Início em ${contratacao.dataInicio} e término previsto para ${contratacao.dataTerminoPrevista}. Valor contratado: R$ ${contratacao.valorContratado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
-            criadoPor: currentUser.nome || 'Administração'
-          };
-          benfeitoriaAtualizada = {
-            ...b,
-            empresaEleita: contratacao,
-            statusAtual: 'contratada',
-            timeline: [...timeline, novoPasso]
-          };
-          return benfeitoriaAtualizada;
-        }
-        return b;
-      }));
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
 
-      if (benfeitoriaAtualizada && condoTenantId) {
+      const timeline = alvo.timeline || [];
+      const novoPasso: PassoTimelineBenfeitoria = {
+        id: `passo-${Date.now()}`,
+        data: new Date().toLocaleDateString('pt-BR'),
+        status: 'contratada',
+        titulo: `Empresa Contratada: ${contratacao.empresaNome}`,
+        descricao: `Início em ${contratacao.dataInicio} e término previsto para ${contratacao.dataTerminoPrevista}. Valor contratado: R$ ${contratacao.valorContratado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
+        criadoPor: currentUser.nome || 'Administração'
+      };
+
+      const lastStep = timeline[timeline.length - 1];
+      const novaTimeline = (lastStep && lastStep.status === 'contratada')
+        ? timeline.map((p, idx) => idx === timeline.length - 1 ? novoPasso : p)
+        : [...timeline, novoPasso];
+
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        empresaEleita: contratacao,
+        statusAtual: 'contratada',
+        investimento: contratacao.valorContratado,
+        timeline: novaTimeline
+      };
+
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
         await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
       }
       return { success: true };
@@ -5754,43 +5930,175 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     item: Omit<DiarioObraItem, 'id'>
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
+
       const novoItem: DiarioObraItem = {
         id: `diario-${Date.now()}`,
         ...item,
         autorNome: item.autorNome || currentUser.nome || 'Administração'
       };
 
-      setBenfeitorias(prev => prev.map(b => {
-        if (b.id === benfeitoriaId) {
-          const diarioObras = [...(b.diarioObras || []), novoItem];
-          const timeline = b.timeline || [];
-          const novoPasso: PassoTimelineBenfeitoria = {
-            id: `passo-${Date.now()}`,
-            data: item.data || new Date().toLocaleDateString('pt-BR'),
-            status: 'execucao',
-            titulo: 'Atualização de Execução da Obra',
-            descricao: item.descricao,
-            fotos: item.fotos,
-            criadoPor: currentUser.nome || 'Administração'
-          };
-          benfeitoriaAtualizada = {
-            ...b,
-            statusAtual: 'execucao',
-            diarioObras,
-            timeline: [...timeline, novoPasso]
-          };
-          return benfeitoriaAtualizada;
-        }
-        return b;
-      }));
+      const diarioObras = [...(alvo.diarioObras || []), novoItem];
+      const timeline = alvo.timeline || [];
+      const novoPasso: PassoTimelineBenfeitoria = {
+        id: `passo-${Date.now()}`,
+        data: item.data || new Date().toLocaleDateString('pt-BR'),
+        status: 'execucao',
+        titulo: 'Atualização de Execução da Obra',
+        descricao: item.descricao,
+        fotos: item.fotos,
+        criadoPor: currentUser.nome || 'Administração'
+      };
 
-      if (benfeitoriaAtualizada && condoTenantId) {
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        statusAtual: 'execucao',
+        diarioObras,
+        timeline: [...timeline, novoPasso]
+      };
+
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
         await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
       }
       return { success: true };
     } catch (err: any) {
       console.error('🔥 Erro ao adicionar diário de obra:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const apoiarDiarioObraBenfeitoria = async (
+    benfeitoriaId: string,
+    diarioItemId: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
+
+      const userIdentifier = currentUser.id || currentUser.unidade || currentUser.email || 'usr-anon';
+      let userUnidadeFormatada = '';
+      if (currentUser.unidade) {
+        const uNum = currentUser.unidade.toLowerCase().startsWith('apt') || currentUser.unidade.toLowerCase().startsWith('cobertura') || currentUser.unidade.toLowerCase().startsWith('casa')
+          ? currentUser.unidade
+          : `Apt ${currentUser.unidade}`;
+        userUnidadeFormatada = currentUser.bloco ? `${uNum} - ${currentUser.bloco}` : uNum;
+      } else {
+        userUnidadeFormatada = currentUser.role === 'sindico' || currentUser.role === 'subsindico' ? 'Administração' : 'Morador';
+      }
+
+      const apoiadorInfo: ApoiadorDetalhe = {
+        id: userIdentifier,
+        nome: currentUser.nome || 'Morador',
+        unidade: userUnidadeFormatada,
+        bloco: currentUser.bloco || '',
+        foto: currentUser.foto || '',
+        email: currentUser.email || '',
+        data: `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+      };
+
+      const diarioAtual = alvo.diarioObras || [];
+      const diarioObras = diarioAtual.map(item => {
+        if (item.id === diarioItemId) {
+          const apoiadores = Array.isArray(item.apoiadores) ? item.apoiadores : [];
+          const apoiadoresDetalhes = Array.isArray(item.apoiadoresDetalhes) ? item.apoiadoresDetalhes : [];
+          const jaApoiou = apoiadores.includes(userIdentifier) || apoiadoresDetalhes.some(a => a.id === userIdentifier);
+
+          const novosApoiadores = jaApoiou
+            ? apoiadores.filter(u => u !== userIdentifier)
+            : [...apoiadores, userIdentifier];
+
+          const novosDetalhes = jaApoiou
+            ? apoiadoresDetalhes.filter(a => a.id !== userIdentifier)
+            : [...apoiadoresDetalhes, apoiadorInfo];
+
+          return {
+            ...item,
+            apoiosCount: novosApoiadores.length,
+            apoiadoPeloUsuario: !jaApoiou,
+            apoiadores: novosApoiadores,
+            apoiadoresDetalhes: novosDetalhes
+          };
+        }
+        return item;
+      });
+
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        diarioObras
+      };
+
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao apoiar diário de obra:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const adicionarComentarioDiarioObraBenfeitoria = async (
+    benfeitoriaId: string,
+    diarioItemId: string,
+    texto: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (!texto.trim()) return { success: false, error: 'Comentário vazio' };
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
+
+      let unidadeFormatada = '';
+      if (currentUser.unidade) {
+        const uNum = currentUser.unidade.toLowerCase().startsWith('apt') || currentUser.unidade.toLowerCase().startsWith('cobertura') || currentUser.unidade.toLowerCase().startsWith('casa')
+          ? currentUser.unidade
+          : `Apt ${currentUser.unidade}`;
+        unidadeFormatada = currentUser.bloco ? `${uNum} - ${currentUser.bloco}` : uNum;
+      } else {
+        unidadeFormatada = currentUser.role === 'sindico' || currentUser.role === 'subsindico' ? 'Administração' : 'Morador';
+      }
+
+      const novoComentario: Comentario = {
+        id: `com-diario-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        autorId: currentUser.id || 'usr-anon',
+        autorNome: currentUser.nome || 'Morador',
+        autorRole: currentUser.role,
+        autorUnidade: unidadeFormatada,
+        autorFoto: currentUser.foto || '',
+        texto: texto.trim(),
+        data: `Hoje às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
+        oficial: currentUser.role === 'sindico' || currentUser.role === 'subsindico'
+      };
+
+      const diarioAtual = alvo.diarioObras || [];
+      const diarioObras = diarioAtual.map(item => {
+        if (item.id === diarioItemId) {
+          const comentariosAtuais = Array.isArray(item.comentarios) ? item.comentarios : [];
+          return {
+            ...item,
+            comentarios: [...comentariosAtuais, novoComentario]
+          };
+        }
+        return item;
+      });
+
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        diarioObras
+      };
+
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('🔥 Erro ao comentar no diário de obra:', err);
       return { success: false, error: err.message };
     }
   };
@@ -5802,45 +6110,46 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     dispararMensagem?: boolean
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      let benfeitoriaAtualizada: Benfeitoria | null = null;
-      let tituloBenfeitoria = '';
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
 
-      setBenfeitorias(prev => prev.map(b => {
-        if (b.id === benfeitoriaId) {
-          tituloBenfeitoria = b.titulo;
-          const timeline = b.timeline || [];
-          const novoPasso: PassoTimelineBenfeitoria = {
-            id: `passo-${Date.now()}`,
-            data: new Date().toLocaleDateString('pt-BR'),
-            status: aberto ? 'avaliacao' : 'execucao',
-            titulo: aberto ? 'Avaliação dos Condôminos Aberta' : 'Avaliação Encerrada',
-            descricao: aberto 
-              ? `Obra entregue para avaliação dos condôminos${prazoFim ? ` até ${new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.` 
-              : 'Período de avaliação finalizado.',
-            criadoPor: currentUser.nome || 'Administração'
-          };
-          benfeitoriaAtualizada = {
-            ...b,
-            avaliacaoAberta: aberto,
-            prazoFimAvaliacao: prazoFim || b.prazoFimAvaliacao,
-            statusAtual: aberto ? 'avaliacao' : (b.statusAtual === 'avaliacao' ? 'execucao' : b.statusAtual),
-            timeline: [...timeline, novoPasso]
-          };
-          return benfeitoriaAtualizada;
-        }
-        return b;
-      }));
+      const timeline = alvo.timeline || [];
+      const novoPasso: PassoTimelineBenfeitoria = {
+        id: `passo-${Date.now()}`,
+        data: new Date().toLocaleDateString('pt-BR'),
+        status: aberto ? 'avaliacao' : 'execucao',
+        titulo: aberto ? 'Avaliação dos Condôminos Aberta' : 'Avaliação Encerrada',
+        descricao: aberto 
+          ? `Obra entregue para avaliação dos condôminos${prazoFim ? ` até ${new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.` 
+          : 'Período de avaliação finalizado.',
+        criadoPor: currentUser.nome || 'Administração'
+      };
 
-      if (dispararMensagem && aberto && tituloBenfeitoria) {
+      const lastStep = timeline[timeline.length - 1];
+      const novaTimeline = (lastStep && lastStep.status === (aberto ? 'avaliacao' : 'execucao') && lastStep.titulo.includes('Avaliação'))
+        ? timeline.map((p, idx) => idx === timeline.length - 1 ? novoPasso : p)
+        : [...timeline, novoPasso];
+
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        avaliacaoAberta: aberto,
+        prazoFimAvaliacao: prazoFim || alvo.prazoFimAvaliacao,
+        statusAtual: aberto ? 'avaliacao' : (alvo.statusAtual === 'avaliacao' ? 'execucao' : alvo.statusAtual),
+        timeline: novaTimeline
+      };
+
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (dispararMensagem && aberto && alvo.titulo) {
         const prazoFormatado = prazoFim ? new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'breve';
         enviarNotificacaoPrivada(
           'todos', 
-          `A melhoria/obra "${tituloBenfeitoria}" foi concluída pela empresa contratada! Por favor, acesse a aba Benfeitorias e avalie a qualidade do serviço de 1 a 5 estrelas até ${prazoFormatado}.`,
-          `⭐ Avalie a Obra Entregue: ${tituloBenfeitoria}`
+          `A melhoria/obra "${alvo.titulo}" foi concluída pela empresa contratada! Por favor, acesse a aba Benfeitorias e avalie a qualidade do serviço de 1 a 5 estrelas até ${prazoFormatado}.`,
+          `⭐ Avalie a Obra Entregue: ${alvo.titulo}`
         );
       }
 
-      if (benfeitoriaAtualizada && condoTenantId) {
+      if (condoTenantId) {
         await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
       }
       return { success: true };
@@ -5856,7 +6165,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     comentario?: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
+
       const moradorId = currentUser.id || currentUser.unidade || 'anon';
       const moradorNome = currentUser.nome || 'Morador';
       let unidade = currentUser.unidade || 'Unidade';
@@ -5873,31 +6184,27 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         dataAvaliacao: `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
       };
 
-      setBenfeitorias(prev => prev.map(b => {
-        if (b.id === benfeitoriaId) {
-          const avaliacoesAtuais = b.avaliacoes || [];
-          const jaAvaliouIdx = avaliacoesAtuais.findIndex(a => a.moradorId === moradorId || (a.unidade && a.unidade === unidade));
-          let novasAvaliacoes: AvaliacaoMoradorBenfeitoria[];
-          if (jaAvaliouIdx >= 0) {
-            novasAvaliacoes = avaliacoesAtuais.map((a, i) => i === jaAvaliouIdx ? novaAvaliacao : a);
-          } else {
-            novasAvaliacoes = [...avaliacoesAtuais, novaAvaliacao];
-          }
+      const avaliacoesAtuais = alvo.avaliacoes || [];
+      const jaAvaliouIdx = avaliacoesAtuais.findIndex(a => a.moradorId === moradorId || (a.unidade && a.unidade === unidade));
+      let novasAvaliacoes: AvaliacaoMoradorBenfeitoria[];
+      if (jaAvaliouIdx >= 0) {
+        novasAvaliacoes = avaliacoesAtuais.map((a, i) => i === jaAvaliouIdx ? novaAvaliacao : a);
+      } else {
+        novasAvaliacoes = [...avaliacoesAtuais, novaAvaliacao];
+      }
 
-          const somaNotas = novasAvaliacoes.reduce((acc, curr) => acc + curr.nota, 0);
-          const notaMedia = novasAvaliacoes.length > 0 ? Number((somaNotas / novasAvaliacoes.length).toFixed(1)) : nota;
+      const somaNotas = novasAvaliacoes.reduce((acc, curr) => acc + curr.nota, 0);
+      const notaMedia = novasAvaliacoes.length > 0 ? Number((somaNotas / novasAvaliacoes.length).toFixed(1)) : nota;
 
-          benfeitoriaAtualizada = {
-            ...b,
-            avaliacoes: novasAvaliacoes,
-            notaMediaFinal: notaMedia
-          };
-          return benfeitoriaAtualizada;
-        }
-        return b;
-      }));
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        avaliacoes: novasAvaliacoes,
+        notaMediaFinal: notaMedia
+      };
 
-      if (benfeitoriaAtualizada && condoTenantId) {
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
         await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
       }
       return { success: true };
@@ -5912,35 +6219,34 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     justificativa: { motivo: string; fotos: string[]; dataCancelamento: string }
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      let benfeitoriaAtualizada: Benfeitoria | null = null;
-      setBenfeitorias(prev => prev.map(b => {
-        if (b.id === benfeitoriaId) {
-          const timeline = b.timeline || [];
-          const cancelInfo: CancelamentoInfo = {
-            ...justificativa,
-            autorNome: currentUser.nome || 'Administração'
-          };
-          const novoPasso: PassoTimelineBenfeitoria = {
-            id: `passo-${Date.now()}`,
-            data: justificativa.dataCancelamento || new Date().toLocaleDateString('pt-BR'),
-            status: 'cancelada',
-            titulo: 'Obra / Contrato Cancelado (Quebra de Contrato)',
-            descricao: justificativa.motivo,
-            fotos: justificativa.fotos,
-            criadoPor: currentUser.nome || 'Administração'
-          };
-          benfeitoriaAtualizada = {
-            ...b,
-            statusAtual: 'cancelada',
-            cancelamentoInfo: cancelInfo,
-            timeline: [...timeline, novoPasso]
-          };
-          return benfeitoriaAtualizada;
-        }
-        return b;
-      }));
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
 
-      if (benfeitoriaAtualizada && condoTenantId) {
+      const timeline = alvo.timeline || [];
+      const cancelInfo: CancelamentoInfo = {
+        ...justificativa,
+        autorNome: currentUser.nome || 'Administração'
+      };
+      const novoPasso: PassoTimelineBenfeitoria = {
+        id: `passo-${Date.now()}`,
+        data: justificativa.dataCancelamento || new Date().toLocaleDateString('pt-BR'),
+        status: 'cancelada',
+        titulo: 'Obra / Contrato Cancelado (Quebra de Contrato)',
+        descricao: justificativa.motivo,
+        fotos: justificativa.fotos,
+        criadoPor: currentUser.nome || 'Administração'
+      };
+
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        statusAtual: 'cancelada',
+        cancelamentoInfo: cancelInfo,
+        timeline: [...timeline, novoPasso]
+      };
+
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
         await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
       }
       return { success: true };
@@ -5955,34 +6261,32 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     dadosEntrega?: { fotosDepois?: string[]; relatoFinal?: string; dataEntrega?: string }
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      let benfeitoriaAtualizada: Benfeitoria | null = null;
+      const alvo = benfeitorias.find(b => b.id === benfeitoriaId);
+      if (!alvo) return { success: false, error: 'Benfeitoria não encontrada' };
+
       const dataHoje = dadosEntrega?.dataEntrega || new Date().toLocaleDateString('pt-BR');
+      const timeline = alvo.timeline || [];
+      const novoPasso: PassoTimelineBenfeitoria = {
+        id: `passo-${Date.now()}`,
+        data: dataHoje,
+        status: 'entregue',
+        titulo: 'Benfeitoria Entregue & Concluída Oficialmente',
+        descricao: dadosEntrega?.relatoFinal || alvo.descricao || 'Obra finalizada com sucesso e prestação de contas concluída.',
+        fotos: dadosEntrega?.fotosDepois && dadosEntrega.fotosDepois.length > 0 ? dadosEntrega.fotosDepois : alvo.fotos,
+        criadoPor: currentUser.nome || 'Administração'
+      };
 
-      setBenfeitorias(prev => prev.map(b => {
-        if (b.id === benfeitoriaId) {
-          const timeline = b.timeline || [];
-          const novoPasso: PassoTimelineBenfeitoria = {
-            id: `passo-${Date.now()}`,
-            data: dataHoje,
-            status: 'entregue',
-            titulo: 'Benfeitoria Entregue & Concluída Oficialmente',
-            descricao: dadosEntrega?.relatoFinal || b.descricao || 'Obra finalizada com sucesso e prestação de contas concluída.',
-            fotos: dadosEntrega?.fotosDepois && dadosEntrega.fotosDepois.length > 0 ? dadosEntrega.fotosDepois : b.fotos,
-            criadoPor: currentUser.nome || 'Administração'
-          };
-          benfeitoriaAtualizada = {
-            ...b,
-            statusAtual: 'entregue',
-            dataEntrega: dataHoje,
-            fotos: dadosEntrega?.fotosDepois && dadosEntrega.fotosDepois.length > 0 ? dadosEntrega.fotosDepois : b.fotos,
-            timeline: [...timeline, novoPasso]
-          };
-          return benfeitoriaAtualizada;
-        }
-        return b;
-      }));
+      const benfeitoriaAtualizada: Benfeitoria = {
+        ...alvo,
+        statusAtual: 'entregue',
+        dataEntrega: dataHoje,
+        fotos: dadosEntrega?.fotosDepois && dadosEntrega.fotosDepois.length > 0 ? dadosEntrega.fotosDepois : alvo.fotos,
+        timeline: [...timeline, novoPasso]
+      };
 
-      if (benfeitoriaAtualizada && condoTenantId) {
+      setBenfeitorias(prev => prev.map(b => b.id === benfeitoriaId ? benfeitoriaAtualizada : b));
+
+      if (condoTenantId) {
         await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(benfeitoriaAtualizada)));
       }
       return { success: true };
@@ -6125,6 +6429,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return res;
   };
 
+  const salvarNaLixeiraCondominio = async (
+    condoId: string, 
+    backupData: any, 
+    metadata: { nomeCondo: string; excluidoPor?: string; totalUnidades?: number; tipoCondominio?: string }
+  ) => {
+    return await salvarNaLixeiraCondominioFirestore(condoId, backupData, metadata);
+  };
+
+  const listarCondominiosLixeira = async () => {
+    return await listarCondominiosLixeiraFirestore();
+  };
+
+  const excluirPermanenteLixeira = async (lixeiraId: string) => {
+    return await excluirPermanenteLixeiraFirestore(lixeiraId);
+  };
+
   return (
     <CondoContext.Provider value={{
       currentUser,
@@ -6236,6 +6556,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       votarOrcamentoBenfeitoria,
       definirContratacaoBenfeitoria,
       adicionarDiarioObraBenfeitoria,
+      apoiarDiarioObraBenfeitoria,
+      adicionarComentarioDiarioObraBenfeitoria,
       toggleAvaliacaoBenfeitoria,
       avaliarBenfeitoria,
       cancelarBenfeitoria,
@@ -6314,7 +6636,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       recuperarMoradoresDoCondominio,
       padronizarSenhasTodasUnidades,
       exportarBackupCondominio,
-      restaurarBackupCondominio
+      restaurarBackupCondominio,
+      salvarNaLixeiraCondominio,
+      listarCondominiosLixeira,
+      excluirPermanenteLixeira,
+      confirmarMoradorUnidade,
+      recusarMoradorUnidade
     }}>
       {children}
     </CondoContext.Provider>

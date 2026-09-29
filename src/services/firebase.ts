@@ -892,7 +892,9 @@ export const cadastrarMoradorAuth = async (params: CadastroMoradorAuthParams) =>
       bloco: String(bloco),
       tipo: 'Apartamento',
       condoId: String(condoId),
-      statusCadastro: 'Cadastrado',
+      statusCadastro: 'AguardandoConfirmacao',
+      moradorConfirmado: false,
+      dataCadastroMorador: new Date().toISOString(),
       semMoradores: false,
       moradores: todosMoradores,
       titularUid: String(authUid),
@@ -907,7 +909,7 @@ export const cadastrarMoradorAuth = async (params: CadastroMoradorAuthParams) =>
     const docRef = doc(db, 'condominios', condoId, 'unidades', unidadeId);
     await setDoc(docRef, sanitizarParaFirestore(unidadePayload), { merge: true });
 
-    console.log(`✅ Morador ${moradorPrincipal.nome} cadastrado com sucesso na unidade ${unidadeNumero} (${condoId}/${unidadeId})`);
+    console.log(`✅ Morador ${moradorPrincipal.nome} cadastrado (aguardando confirmação) na unidade ${unidadeNumero} (${condoId}/${unidadeId})`);
 
     return {
       success: true,
@@ -921,6 +923,58 @@ export const cadastrarMoradorAuth = async (params: CadastroMoradorAuthParams) =>
       success: false,
       error: error.message || 'Erro ao realizar cadastro do morador'
     };
+  }
+};
+
+/**
+ * Confirma e aprova oficialmente a entrada de um morador na unidade pelo síndico
+ */
+export const confirmarMoradorUnidadeNoFirestore = async (
+  condoId: string, 
+  unidadeId: string, 
+  confirmadoPorNome = 'Síndico'
+) => {
+  try {
+    if (!condoId || !unidadeId) return { success: false, error: 'ID inválido' };
+    const docRef = doc(db, 'condominios', condoId, 'unidades', unidadeId);
+    const dados = {
+      moradorConfirmado: true,
+      statusCadastro: 'Cadastrado',
+      dataConfirmacao: new Date().toISOString(),
+      confirmadoPor: confirmadoPorNome,
+      atualizadoEm: new Date().toISOString()
+    };
+    await setDoc(docRef, sanitizarParaFirestore(dados), { merge: true });
+    return { success: true };
+  } catch (error: any) {
+    console.error('🔥 Erro ao confirmar morador no Firestore:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Recusa/desvincula um morador não reconhecido pelo síndico e libera a unidade
+ */
+export const recusarMoradorUnidadeNoFirestore = async (condoId: string, unidadeId: string) => {
+  try {
+    if (!condoId || !unidadeId) return { success: false, error: 'ID inválido' };
+    const docRef = doc(db, 'condominios', condoId, 'unidades', unidadeId);
+    const dados = {
+      moradores: [],
+      statusCadastro: 'Pendente',
+      moradorConfirmado: false,
+      emailResponsavel: '',
+      nomeCelula: '',
+      fotoCelula: '',
+      titularUid: '',
+      senhaPadraoAlterada: false,
+      atualizadoEm: new Date().toISOString()
+    };
+    await setDoc(docRef, sanitizarParaFirestore(dados), { merge: true });
+    return { success: true };
+  } catch (error: any) {
+    console.error('🔥 Erro ao recusar morador no Firestore:', error);
+    return { success: false, error: error.message };
   }
 };
 
@@ -1196,7 +1250,7 @@ export const padronizarSenhasTodasUnidadesNoFirestore = async (condoId: string, 
 };
 
 /**
- * Exporta todos os dados de um único condomínio (backup JSON isolado por tenant)
+ * Exporta todos os dados de um único condomínio (backup JSON completo com 100% das subcoleções e usuários)
  */
 export const exportarBackupCondominioFirestore = async (condoId: string) => {
   try {
@@ -1207,25 +1261,54 @@ export const exportarBackupCondominioFirestore = async (condoId: string) => {
     const condoDocSnap = await getDoc(condoDocRef);
     const condoData = condoDocSnap.exists() ? { id: condoDocSnap.id, ...condoDocSnap.data() } : null;
 
-    // 2. Subcoleções
+    // 2. Subcoleções completas do sistema
     const subcolecoes = [
       'unidades',
       'servicos_moradores',
       'reclamacoes',
+      'reparos',
       'eventos',
+      'assembleias',
       'notificacoes_privadas',
       'regras',
+      'regras_condominio',
       'dependencias',
-      'funcionarios'
+      'reservas',
+      'funcionarios',
+      'despesas',
+      'receitas',
+      'meses_prestacao',
+      'categorias_despesa',
+      'categorias_receita',
+      'unidades_disponiveis',
+      'servicos_contratados',
+      'itens_enjoei',
+      'mudancas',
+      'regras_mudanca',
+      'autorizacoes_acesso',
+      'encomendas_entregas',
+      'benfeitorias',
+      'vagas_garagem',
+      'diario_sindico'
     ];
 
     const subcolecoesData: Record<string, any[]> = {};
     for (const sub of subcolecoes) {
-      const colRef = collection(db, 'condominios', condoId, sub);
-      const snap = await getDocs(colRef);
-      const lista: any[] = [];
-      snap.forEach(d => lista.push({ id: d.id, ...d.data() }));
-      subcolecoesData[sub] = lista;
+      try {
+        const colRef = collection(db, 'condominios', condoId, sub);
+        const snap = await getDocs(colRef);
+        const lista: any[] = [];
+        snap.forEach(d => {
+          if (d.id !== '_init') {
+            lista.push({ id: d.id, ...d.data() });
+          }
+        });
+        if (lista.length > 0) {
+          subcolecoesData[sub] = lista;
+        }
+      } catch (subErr) {
+        console.warn(`Aviso ao exportar subcoleção ${sub} do condomínio ${condoId}:`, subErr);
+      }
     }
 
     // 3. Usuários do condomínio
@@ -1240,7 +1323,7 @@ export const exportarBackupCondominioFirestore = async (condoId: string) => {
     });
 
     const backupCompleto = {
-      versao: '2.0',
+      versao: '2.1',
       dataExportacao: new Date().toISOString(),
       condoId,
       condominio: condoData,
@@ -1280,7 +1363,7 @@ export const restaurarBackupCondominioFirestore = async (condoId: string, backup
       for (const [subNome, itens] of Object.entries(backupData.subcolecoes)) {
         if (Array.isArray(itens)) {
           for (const item of itens) {
-            if (!item.id) continue;
+            if (!item.id || item.id === '_init') continue;
             const docRef = doc(db, 'condominios', condoId, subNome, String(item.id));
             await setDoc(docRef, sanitizarParaFirestore({
               ...item,
@@ -1306,6 +1389,85 @@ export const restaurarBackupCondominioFirestore = async (condoId: string, backup
     return { success: true };
   } catch (error: any) {
     console.error('🔥 Erro ao restaurar backup do condomínio:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// =========================================================================
+// COFRE / LIXEIRA DE CONDOMÍNIOS EXCLUÍDOS (DISASTER RECOVERY)
+// =========================================================================
+
+export interface CondominioLixeiraItem {
+  id: string;
+  condoIdOriginal: string;
+  nomeCondominio: string;
+  excluidoEm: string;
+  excluidoPor: string;
+  totalUnidadesOriginal?: number;
+  tipoCondominio?: string;
+  snapshotBackup: any;
+}
+
+/**
+ * Salva uma cópia de descarte e snapshot completo na lixeira/cofre do Firestore
+ */
+export const salvarNaLixeiraCondominioFirestore = async (
+  condoId: string, 
+  backupData: any, 
+  metadata: { nomeCondo: string; excluidoPor?: string; totalUnidades?: number; tipoCondominio?: string }
+) => {
+  try {
+    const lixeiraId = `lixeira-${condoId}-${Date.now()}`;
+    const lixeiraRef = doc(db, 'condominios_lixeira', lixeiraId);
+    
+    const registroLixeira: CondominioLixeiraItem = {
+      id: lixeiraId,
+      condoIdOriginal: condoId,
+      nomeCondominio: metadata.nomeCondo || backupData?.condominio?.nome || condoId,
+      excluidoEm: new Date().toISOString(),
+      excluidoPor: metadata.excluidoPor || 'Super Administrador (Master)',
+      totalUnidadesOriginal: metadata.totalUnidades || backupData?.condominio?.totalUnidades || 0,
+      tipoCondominio: metadata.tipoCondominio || backupData?.condominio?.tipoCondominio || 'apartamentos',
+      snapshotBackup: backupData
+    };
+
+    await setDoc(lixeiraRef, sanitizarParaFirestore(registroLixeira));
+    return { success: true, lixeiraId };
+  } catch (error: any) {
+    console.error('🔥 Erro ao salvar condomínio na lixeira do Firestore:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Lista todos os condomínios guardados no cofre de lixeira
+ */
+export const listarCondominiosLixeiraFirestore = async (): Promise<CondominioLixeiraItem[]> => {
+  try {
+    const colRef = collection(db, 'condominios_lixeira');
+    const snap = await getDocs(colRef);
+    const lista: CondominioLixeiraItem[] = [];
+    snap.forEach(d => {
+      lista.push({ id: d.id, ...d.data() } as CondominioLixeiraItem);
+    });
+    return lista.sort((a, b) => new Date(b.excluidoEm).getTime() - new Date(a.excluidoEm).getTime());
+  } catch (error: any) {
+    console.error('🔥 Erro ao listar condomínios da lixeira:', error);
+    return [];
+  }
+};
+
+/**
+ * Exclui definitivamente um registro do cofre de lixeira
+ */
+export const excluirPermanenteLixeiraFirestore = async (lixeiraId: string) => {
+  try {
+    if (!lixeiraId) return { success: false, error: 'ID da lixeira vazio' };
+    const lixeiraRef = doc(db, 'condominios_lixeira', lixeiraId);
+    await deleteDoc(lixeiraRef);
+    return { success: true };
+  } catch (error: any) {
+    console.error('🔥 Erro ao excluir registro permanente da lixeira:', error);
     return { success: false, error: error.message };
   }
 };

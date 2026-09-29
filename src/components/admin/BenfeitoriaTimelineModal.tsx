@@ -114,6 +114,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
 }) => {
   const {
     adicionarPassoTimelineBenfeitoria,
+    editarBenfeitoria,
     salvarOrcamentosBenfeitoria,
     toggleVotacaoBenfeitoria,
     definirContratacaoBenfeitoria,
@@ -127,12 +128,6 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
   const [activeTab, setActiveTab] = useState<'timeline' | 'novo_passo' | 'votos_avaliacoes'>(initialTab);
   const [selectedStatus, setSelectedStatus] = useState<StatusFaseBenfeitoria>(() => getProximaFaseSugerida(benfeitoria?.statusAtual));
 
-  React.useEffect(() => {
-    if (isOpen) {
-      setActiveTab(initialTab);
-      setSelectedStatus(getProximaFaseSugerida(benfeitoria?.statusAtual));
-    }
-  }, [isOpen, initialTab, benfeitoria?.id, benfeitoria?.statusAtual]);
   const [stepTitulo, setStepTitulo] = useState('');
   const [stepDescricao, setStepDescricao] = useState('');
   const [stepData, setStepData] = useState(() => new Date().toLocaleDateString('pt-BR'));
@@ -140,42 +135,25 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ tipo: 'success' | 'error'; texto: string } | null>(null);
 
+  // Status 1: Proposta
+  const [propostaTitulo, setPropostaTitulo] = useState(benfeitoria?.titulo || '');
+  const [propostaSubtitulo, setPropostaSubtitulo] = useState(benfeitoria?.subtitulo || '');
+  const [propostaDescricao, setPropostaDescricao] = useState(benfeitoria?.descricao || '');
+  const [propostaImpacto, setPropostaImpacto] = useState(benfeitoria?.impactoGestao || '');
+  const [propostaInvestimento, setPropostaInvestimento] = useState(benfeitoria?.investimento ? String(benfeitoria.investimento) : '');
+  const [propostaEconomia, setPropostaEconomia] = useState(benfeitoria?.economiaMensal ? String(benfeitoria.economiaMensal) : '');
+  const [propostaRegras, setPropostaRegras] = useState(benfeitoria?.regrasUso || '');
+  const [propostaFoto, setPropostaFoto] = useState(benfeitoria?.fotos?.[0] || '');
+
   // Status 2: Três Orçamentos
   const [orcamentosList, setOrcamentosList] = useState<OrcamentoBenfeitoria[]>(() => {
     if (benfeitoria?.orcamentos && benfeitoria.orcamentos.length === 3) {
       return benfeitoria.orcamentos;
     }
     return [
-      {
-        id: '1',
-        empresaNome: '',
-        site: '',
-        prazoEntrega: '',
-        valorTotal: 0,
-        formaPagamento: '',
-        jaPrestouServico: false,
-        avaliacaoMediaAnterior: 5
-      },
-      {
-        id: '2',
-        empresaNome: '',
-        site: '',
-        prazoEntrega: '',
-        valorTotal: 0,
-        formaPagamento: '',
-        jaPrestouServico: false,
-        avaliacaoMediaAnterior: 5
-      },
-      {
-        id: '3',
-        empresaNome: '',
-        site: '',
-        prazoEntrega: '',
-        valorTotal: 0,
-        formaPagamento: '',
-        jaPrestouServico: false,
-        avaliacaoMediaAnterior: 5
-      }
+      { id: '1', empresaNome: '', site: '', prazoEntrega: '', valorTotal: 0, formaPagamento: '', jaPrestouServico: false, avaliacaoMediaAnterior: 5 },
+      { id: '2', empresaNome: '', site: '', prazoEntrega: '', valorTotal: 0, formaPagamento: '', jaPrestouServico: false, avaliacaoMediaAnterior: 5 },
+      { id: '3', empresaNome: '', site: '', prazoEntrega: '', valorTotal: 0, formaPagamento: '', jaPrestouServico: false, avaliacaoMediaAnterior: 5 }
     ];
   });
 
@@ -215,6 +193,58 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
   // Estado para expandir detalhes de votação por orçamento no painel admin (para não poluir a tela)
   const [expandedOrcamentoVotos, setExpandedOrcamentoVotos] = useState<string | null>(null);
 
+  // Sincronização completa de todos os campos sempre que a benfeitoria abrir ou atualizar
+  React.useEffect(() => {
+    if (isOpen && benfeitoria) {
+      setActiveTab(initialTab);
+      setSelectedStatus(getProximaFaseSugerida(benfeitoria.statusAtual));
+
+      // Fase 1: Proposta
+      setPropostaTitulo(benfeitoria.titulo || '');
+      setPropostaSubtitulo(benfeitoria.subtitulo || '');
+      setPropostaDescricao(benfeitoria.descricao || '');
+      setPropostaImpacto(benfeitoria.impactoGestao || '');
+      setPropostaInvestimento(benfeitoria.investimento ? String(benfeitoria.investimento) : '');
+      setPropostaEconomia(benfeitoria.economiaMensal ? String(benfeitoria.economiaMensal) : '');
+      setPropostaRegras(benfeitoria.regrasUso || '');
+      setPropostaFoto(benfeitoria.fotos?.[0] || '');
+
+      // Fase 2: Orçamentos
+      if (benfeitoria.orcamentos && benfeitoria.orcamentos.length === 3) {
+        setOrcamentosList(benfeitoria.orcamentos);
+      } else {
+        setOrcamentosList([
+          { id: '1', empresaNome: '', site: '', prazoEntrega: '', valorTotal: 0, formaPagamento: '', jaPrestouServico: false, avaliacaoMediaAnterior: 5 },
+          { id: '2', empresaNome: '', site: '', prazoEntrega: '', valorTotal: 0, formaPagamento: '', jaPrestouServico: false, avaliacaoMediaAnterior: 5 },
+          { id: '3', empresaNome: '', site: '', prazoEntrega: '', valorTotal: 0, formaPagamento: '', jaPrestouServico: false, avaliacaoMediaAnterior: 5 }
+        ]);
+      }
+
+      // Fase 3: Votação
+      setVotacaoAbertaLocal(Boolean(benfeitoria.votacaoAberta));
+      setPrazoFimVotacaoLocal(benfeitoria.prazoFimVotacao || '');
+
+      // Fase 4: Contratação
+      setContratadaNome(benfeitoria.empresaEleita?.empresaNome || '');
+      setContratadaInicio(benfeitoria.empresaEleita?.dataInicio || '');
+      setContratadaTermino(benfeitoria.empresaEleita?.dataTerminoPrevista || '');
+      setContratadaValor(benfeitoria.empresaEleita?.valorContratado ? String(benfeitoria.empresaEleita.valorContratado) : '');
+      setContratadaValorPago(benfeitoria.empresaEleita?.valorPago ? String(benfeitoria.empresaEleita.valorPago) : '0');
+
+      // Fase 6: Avaliação
+      setAvaliacaoAbertaLocal(Boolean(benfeitoria.avaliacaoAberta));
+      setPrazoFimAvaliacaoLocal(benfeitoria.prazoFimAvaliacao || '');
+
+      // Fase 7: Entregue
+      setEntregaRelato(benfeitoria.descricao || '');
+      setEntregaFotoDepois(benfeitoria.fotos?.[0] || '');
+
+      // Fase 8: Cancelamento
+      setMotivoCancelamento(benfeitoria.cancelamentoInfo?.motivo || '');
+      setFotoCancelamento(benfeitoria.cancelamentoInfo?.fotos?.[0] || '');
+    }
+  }, [isOpen, initialTab, benfeitoria]);
+
   if (!isOpen || !benfeitoria) return null;
 
   const statusAtual = benfeitoria.statusAtual || 'proposta';
@@ -232,6 +262,12 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
     }
   };
 
+  const irParaFase = (fase: StatusFaseBenfeitoria) => {
+    setSelectedStatus(fase);
+    setActiveTab('novo_passo');
+    setFeedbackMsg(null);
+  };
+
   // Salvar novo passo / transição de status
   const handleCriarPasso = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,7 +275,26 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
     setFeedbackMsg(null);
 
     try {
-      if (selectedStatus === 'orcamento') {
+      if (selectedStatus === 'proposta') {
+        if (!propostaTitulo.trim() || !propostaDescricao.trim() || !propostaImpacto.trim()) {
+          setFeedbackMsg({
+            tipo: 'error',
+            texto: 'Por favor, preencha o Título, Descrição e Impacto na Gestão da proposta.'
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        await editarBenfeitoria(benfeitoria.id, {
+          titulo: propostaTitulo.trim(),
+          subtitulo: propostaSubtitulo.trim() || benfeitoria.subtitulo,
+          descricao: propostaDescricao.trim(),
+          impactoGestao: propostaImpacto.trim(),
+          investimento: propostaInvestimento ? parseFloat(propostaInvestimento) : undefined,
+          economiaMensal: propostaEconomia ? parseFloat(propostaEconomia) : undefined,
+          regrasUso: propostaRegras.trim() || undefined,
+          fotos: propostaFoto ? [propostaFoto] : benfeitoria.fotos
+        });
+      } else if (selectedStatus === 'orcamento') {
         // Valida e salva os 3 orçamentos
         const invalid = orcamentosList.some(o => !o.empresaNome.trim() || !o.prazoEntrega || o.valorTotal <= 0);
         if (invalid) {
@@ -318,17 +373,18 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
           dataCancelamento: stepData || new Date().toLocaleDateString('pt-BR')
         });
       } else {
-        // Passo genérico / proposta
+        // Passo genérico
+        const cfg = STATUS_CONFIG[selectedStatus as StatusFaseBenfeitoria] || STATUS_CONFIG.proposta;
         await adicionarPassoTimelineBenfeitoria(benfeitoria.id, {
           data: stepData || new Date().toLocaleDateString('pt-BR'),
-          status: selectedStatus,
-          titulo: stepTitulo.trim() || STATUS_CONFIG[selectedStatus].label,
-          descricao: stepDescricao.trim() || STATUS_CONFIG[selectedStatus].desc,
+          status: selectedStatus as StatusFaseBenfeitoria,
+          titulo: stepTitulo.trim() || cfg.label,
+          descricao: stepDescricao.trim() || cfg.desc,
           fotos: stepFoto ? [stepFoto] : []
         });
       }
 
-      setFeedbackMsg({ tipo: 'success', texto: 'Fase / Passo registrado com sucesso!' });
+      setFeedbackMsg({ tipo: 'success', texto: 'Fase / Dados salvos e sincronizados com sucesso!' });
       setTimeout(() => {
         setActiveTab('timeline');
         setFeedbackMsg(null);
@@ -372,39 +428,62 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
           </button>
         </div>
 
-        {/* Stepper Visual de Fases (1 a 7 + 8) */}
+        {/* Stepper Visual Interativo de Fases (1 a 7 + 8) */}
         <div className="bg-amber-50/70 border-b border-amber-200 p-3 sm:p-4 overflow-x-auto">
           <div className="flex items-center justify-between min-w-[620px] gap-2">
             {(['proposta', 'orcamento', 'votacao', 'contratada', 'execucao', 'avaliacao', 'entregue'] as StatusFaseBenfeitoria[]).map((st, idx) => {
               const isPastOrCurrent = statusAtual === st || (STATUS_CONFIG[statusAtual]?.stepNumber >= idx + 1 && statusAtual !== 'cancelada');
               const isCurrent = statusAtual === st;
+              const isSelectedInEditor = activeTab === 'novo_passo' && selectedStatus === st;
+
               return (
-                <div key={st} className="flex-1 flex flex-col items-center text-center relative group">
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => irParaFase(st)}
+                  className="flex-1 flex flex-col items-center text-center relative group cursor-pointer hover:opacity-85 transition-all outline-none"
+                  title={`Clique para abrir/editar a Fase ${idx + 1}: ${STATUS_CONFIG[st].label}`}
+                >
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs transition-all shadow-xs ${
-                      isCurrent
-                        ? 'bg-amber-600 text-white ring-4 ring-amber-300 scale-110'
+                      isSelectedInEditor
+                        ? 'bg-amber-600 text-white ring-4 ring-amber-400 scale-115'
+                        : isCurrent
+                        ? 'bg-amber-500 text-white ring-2 ring-amber-300 scale-105'
                         : isPastOrCurrent
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-200 text-slate-500'
+                        ? 'bg-emerald-600 text-white hover:ring-2 hover:ring-emerald-300'
+                        : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
                     }`}
                   >
                     {isPastOrCurrent && !isCurrent ? <Check className="w-4 h-4 stroke-[3]" /> : idx + 1}
                   </div>
-                  <span className={`text-[10px] mt-1 font-bold line-clamp-1 max-w-[85px] ${isCurrent ? 'text-amber-950 font-black' : isPastOrCurrent ? 'text-slate-800' : 'text-slate-400'}`}>
+                  <span className={`text-[10px] mt-1 font-bold line-clamp-1 max-w-[85px] ${
+                    isSelectedInEditor
+                      ? 'text-amber-950 font-black underline decoration-2'
+                      : isCurrent
+                      ? 'text-amber-950 font-black'
+                      : isPastOrCurrent
+                      ? 'text-slate-800'
+                      : 'text-slate-400'
+                  }`}>
                     {STATUS_CONFIG[st].label.split('. ')[1]}
                   </span>
-                </div>
+                </button>
               );
             })}
 
             {statusAtual === 'cancelada' && (
-              <div className="flex flex-col items-center text-center">
+              <button
+                type="button"
+                onClick={() => irParaFase('cancelada')}
+                className="flex flex-col items-center text-center cursor-pointer hover:opacity-85"
+                title="Clique para ver os detalhes do cancelamento"
+              >
                 <div className="w-8 h-8 rounded-full bg-rose-600 text-white flex items-center justify-center font-black text-xs ring-4 ring-rose-300 animate-pulse">
                   <X className="w-4 h-4 stroke-[3]" />
                 </div>
                 <span className="text-[10px] mt-1 font-black text-rose-700">Cancelado</span>
-              </div>
+              </button>
             )}
           </div>
         </div>
@@ -434,7 +513,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
             }`}
           >
             <Plus className="w-4 h-4" />
-            <span>Adicionar Passo / Alterar Fase</span>
+            <span>Consultar / Editar Fase ({STATUS_CONFIG[selectedStatus]?.stepNumber || '•'})</span>
           </button>
 
           <button
@@ -479,7 +558,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
                   <Clock className="w-10 h-10 text-slate-400 mx-auto mb-2" />
                   <h4 className="text-sm font-black text-slate-900">Nenhum evento registrado na timeline</h4>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                    Adicione o primeiro passo ou altere a fase da benfeitoria na aba "Adicionar Passo / Alterar Fase".
+                    Adicione o primeiro passo ou altere a fase da benfeitoria na aba "Consultar / Editar Fase".
                   </p>
                 </div>
               ) : (
@@ -493,8 +572,8 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
                           <div className="w-2.5 h-2.5 rounded-full bg-amber-600" />
                         </div>
 
-                        {/* Card do Passo */}
-                        <div className="bg-white border border-slate-200 hover:border-amber-300 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all space-y-2">
+                        {/* Card do Passo com Botão de Ação Direta */}
+                        <div className="bg-white border border-slate-200 hover:border-amber-400 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all space-y-2.5">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${cfg.badgeColor}`}>
                               {cfg.label}
@@ -517,7 +596,7 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
                           </p>
 
                           {step.fotos && step.fotos.length > 0 && (
-                            <div className="flex flex-wrap gap-2 pt-2">
+                            <div className="flex flex-wrap gap-2 pt-1">
                               {step.fotos.map((img, i) => (
                                 <div key={i} className="w-24 h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-950 flex items-center justify-center p-1">
                                   <img src={img} alt="Foto do passo" className="w-full h-full object-contain" />
@@ -525,6 +604,21 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
                               ))}
                             </div>
                           )}
+
+                          {/* Botão de Consulta / Edição da Fase */}
+                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                            <span className="text-[11px] text-slate-500 font-medium">
+                              {step.status === 'orcamento' && benfeitoria.orcamentos?.length ? `${benfeitoria.orcamentos.length} orçamentos vinculados` : 'Etapa registrada'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => irParaFase(step.status)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-black transition-all cursor-pointer shadow-2xs active:scale-95"
+                            >
+                              <span>Consultar / Editar Fase {STATUS_CONFIG[step.status]?.stepNumber || ''}</span>
+                              <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -582,6 +676,112 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
               </div>
 
               {/* CAMPOS ESPECÍFICOS POR STATUS */}
+
+              {/* STATUS 1: PROPOSTA DE MELHORIA */}
+              {selectedStatus === 'proposta' && (
+                <div className="bg-rose-50/70 border border-rose-200 rounded-2xl p-4 space-y-4 pt-2">
+                  <div className="flex items-center justify-between border-b border-rose-200 pb-2">
+                    <h4 className="text-sm font-black text-rose-950 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-rose-600" />
+                      Fase 1: Dados da Proposta de Melhoria
+                    </h4>
+                    <span className="text-[10px] font-bold text-rose-900 bg-rose-100 px-2.5 py-0.5 rounded-full border border-rose-200">
+                      Edição & Consulta da Ideia Inicial
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-700">Título da Benfeitoria *</label>
+                      <input
+                        type="text"
+                        value={propostaTitulo}
+                        onChange={(e) => setPropostaTitulo(e.target.value)}
+                        placeholder="Ex: Reforma da Fachada"
+                        className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-300 focus:border-rose-500 outline-hidden bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-700">Subtítulo / Chamada Rápida</label>
+                      <input
+                        type="text"
+                        value={propostaSubtitulo}
+                        onChange={(e) => setPropostaSubtitulo(e.target.value)}
+                        placeholder="Ex: Pintura completa e impermeabilização"
+                        className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-300 focus:border-rose-500 outline-hidden bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-700">Descrição Detalhada & Escopo *</label>
+                      <textarea
+                        rows={3}
+                        value={propostaDescricao}
+                        onChange={(e) => setPropostaDescricao(e.target.value)}
+                        placeholder="Descreva a finalidade, problemas atuais e benefícios..."
+                        className="w-full text-xs font-medium p-3 rounded-xl border border-slate-300 focus:border-rose-500 outline-hidden bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-700">Impacto na Gestão & Contas *</label>
+                      <input
+                        type="text"
+                        value={propostaImpacto}
+                        onChange={(e) => setPropostaImpacto(e.target.value)}
+                        placeholder="Ex: Realizado com fundo de reserva, sem chamada extra"
+                        className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-300 focus:border-rose-500 outline-hidden bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Estimativa de Investimento (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={propostaInvestimento}
+                        onChange={(e) => setPropostaInvestimento(e.target.value)}
+                        placeholder="0,00"
+                        className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-300 focus:border-rose-500 outline-hidden bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Economia Mensal Estimada (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={propostaEconomia}
+                        onChange={(e) => setPropostaEconomia(e.target.value)}
+                        placeholder="0,00"
+                        className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-300 focus:border-rose-500 outline-hidden bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-700">Foto Ilustrativa / Estado Inicial</label>
+                      <div className="flex items-center gap-3">
+                        <label className="px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:border-rose-500 text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-2 shadow-2xs">
+                          <Upload className="w-4 h-4 text-rose-600" />
+                          <span>Selecionar Foto</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleFileUpload(e, setPropostaFoto)}
+                            className="sr-only"
+                          />
+                        </label>
+                        {propostaFoto && (
+                          <div className="w-12 h-12 rounded-lg overflow-hidden border border-rose-300 bg-slate-900 flex items-center justify-center">
+                            <img src={propostaFoto} alt="Preview Proposta" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* STATUS 2: TRÊS ORÇAMENTOS */}
               {selectedStatus === 'orcamento' && (
@@ -769,6 +969,17 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
                     </label>
                   </div>
 
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('votos_avaliacoes')}
+                      className="text-xs font-extrabold text-amber-800 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-xl border border-amber-300 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Users className="w-4 h-4" />
+                      <span>Ir para Apuração dos Votos ({benfeitoria.votos?.length || 0})</span>
+                    </button>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-700">Data Limite da Votação</label>
@@ -942,6 +1153,17 @@ export const BenfeitoriaTimelineModal: React.FC<BenfeitoriaTimelineModalProps> =
                         <div className={`w-4 h-4 rounded-full bg-white transition-transform absolute top-0.5 ${avaliacaoAbertaLocal ? 'left-4.5' : 'left-0.5'}`} />
                       </div>
                     </label>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('votos_avaliacoes')}
+                      className="text-xs font-extrabold text-purple-900 bg-purple-100 hover:bg-purple-200 px-3 py-1.5 rounded-xl border border-purple-300 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Star className="w-4 h-4 text-purple-600 fill-purple-600" />
+                      <span>Ir para Apuração de Avaliações ({benfeitoria.avaliacoes?.length || 0})</span>
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
