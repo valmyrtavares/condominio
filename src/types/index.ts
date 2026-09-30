@@ -490,16 +490,36 @@ export type EmpresaFornecedor = ServicoContratado;
 
 export type TipoDependencia = 'Lazer & Convivência' | 'Esporte & Saúde' | 'Infantil' | 'Infraestrutura & Acesso';
 
+export type StatusReserva = 
+  | 'Pendente de Aprovação' 
+  | 'Confirmada' 
+  | 'Pendente de Pagamento' 
+  | 'Recusada' 
+  | 'Cancelada' 
+  | 'Concluída';
+
 export interface ReservaDependencia {
   id: string;
   dependenciaId: string;
+  dependenciaNome?: string;
+  dependenciaFoto?: string;
   moradorId: string;
   moradorNome: string;
+  moradorFoto?: string;
   unidade: string;
+  bloco?: string;
+  contato?: string;
   dataReserva: string;
   periodo: 'Manhã (09h-14h)' | 'Tarde/Noite (16h-23h)' | 'Dia Inteiro';
-  status: 'Confirmada' | 'Pendente de Pagamento' | 'Cancelada';
+  status: StatusReserva;
   valorTaxa?: number;
+  pago?: boolean;
+  observacoes?: string;
+  respostaAdmin?: string;
+  motivoRecusa?: string;
+  comprovanteUrl?: string;
+  solicitadoEm?: string;
+  atualizadoEm?: string;
   condominioId?: string;
 }
 

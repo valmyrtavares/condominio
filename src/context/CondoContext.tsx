@@ -34,6 +34,7 @@ import {
   StatusServicoContratado,
   Dependencia,
   ReservaDependencia,
+  StatusReserva,
   Assembleia,
   AtaAssembleia,
   StatusAssembleia,
@@ -661,8 +662,9 @@ interface CondoContextType {
   avaliarBenfeitoria: (benfeitoriaId: string, nota: number, comentario?: string) => Promise<{ success: boolean; error?: string }>;
   cancelarBenfeitoria: (benfeitoriaId: string, justificativa: { motivo: string; fotos: string[]; dataCancelamento: string }) => Promise<{ success: boolean; error?: string }>;
   concluirBenfeitoriaFinal: (benfeitoriaId: string, dadosEntrega?: { fotosDepois?: string[]; relatoFinal?: string; dataEntrega?: string }) => Promise<{ success: boolean; error?: string }>;
-  solicitarReserva: (dependenciaId: string, dataReserva: string, periodo: ReservaDependencia['periodo']) => void;
-  cancelarReserva: (reservaId: string) => void;
+  solicitarReserva: (dependenciaId: string, dataReserva: string, periodo: ReservaDependencia['periodo'], observacoes?: string, comprovanteUrl?: string) => Promise<{ success: boolean; error?: string }>;
+  atualizarStatusReserva: (reservaId: string, novoStatus: StatusReserva, respostaAdmin?: string, motivoRecusa?: string, pago?: boolean) => Promise<{ success: boolean; error?: string }>;
+  cancelarReserva: (reservaId: string) => Promise<{ success: boolean; error?: string }>;
   atualizarStatusReclamacao: (id: string, novoStatus: StatusReclamacao) => void;
   toggleOcultarComentario: (reclamacaoId: string, comentarioId: string, motivo?: string) => void;
   excluirComentario: (reclamacaoId: string, comentarioId: string) => void;
@@ -6451,32 +6453,108 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     salvarDocumentoSubcolecaoFirestore(condoTenantId, 'vagas_garagem', atualizada).catch(console.error);
   };
 
-  const solicitarReserva = (
+  const solicitarReserva = async (
     dependenciaId: string, 
     dataReserva: string, 
-    periodo: ReservaDependencia['periodo']
-  ) => {
+    periodo: ReservaDependencia['periodo'],
+    observacoes?: string,
+    comprovanteUrl?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!condoTenantId) return { success: false, error: 'Condomínio não identificado.' };
+    
+    // Validação de conflito de datas e horários
+    const reservasAtivasEspaco = reservas.filter(r => 
+      r.dependenciaId === dependenciaId && 
+      r.dataReserva === dataReserva && 
+      r.status !== 'Recusada' && 
+      r.status !== 'Cancelada'
+    );
+
+    const temConflito = reservasAtivasEspaco.some(r => {
+      if (r.periodo === 'Dia Inteiro' || periodo === 'Dia Inteiro') return true;
+      return r.periodo === periodo;
+    });
+
+    if (temConflito) {
+      const conflito = reservasAtivasEspaco[0];
+      return { 
+        success: false, 
+        error: `Este espaço já possui uma reserva (${conflito.periodo} - ${conflito.unidade}) para o dia ${dataReserva}. Escolha outra data ou turno disponível.` 
+      };
+    }
+
     const dep = dependencias.find(d => d.id === dependenciaId);
+    const temTaxa = Boolean(dep?.taxaReserva && dep.taxaReserva > 0);
+    const agora = new Date().toLocaleString('pt-BR');
+
     const novaReserva: ReservaDependencia = {
       id: `res-${Date.now()}`,
       dependenciaId,
+      dependenciaNome: dep?.nome || 'Espaço do Condomínio',
+      dependenciaFoto: dep?.foto || undefined,
       moradorId: currentUser.id,
       moradorNome: currentUser.nome,
-      unidade: `${currentUser.unidade} - ${currentUser.bloco}`,
+      moradorFoto: currentUser.foto || undefined,
+      unidade: currentUser.unidade ? (currentUser.unidade.toLowerCase().startsWith('apt') || currentUser.unidade.toLowerCase().startsWith('casa') ? currentUser.unidade : `Apt ${currentUser.unidade}`) : 'Unidade',
+      bloco: currentUser.bloco || undefined,
+      contato: currentUser.email || undefined,
       dataReserva,
       periodo,
-      status: 'Confirmada',
-      valorTaxa: dep?.taxaReserva,
+      status: temTaxa ? 'Pendente de Aprovação' : (dep?.requerReserva ? 'Pendente de Aprovação' : 'Confirmada'),
+      valorTaxa: dep?.taxaReserva || 0,
+      pago: !temTaxa,
+      observacoes: observacoes?.trim() || undefined,
+      comprovanteUrl: comprovanteUrl || undefined,
+      solicitadoEm: agora,
+      atualizadoEm: agora,
       condominioId: condoTenantId
     };
 
-    setReservas(prev => [novaReserva, ...prev]);
-    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reservas', novaReserva).catch(console.error);
+    setReservas(prev => [novaReserva, ...prev.filter(r => r.id !== novaReserva.id)]);
+    await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reservas', novaReserva);
+    return { success: true };
   };
 
-  const cancelarReserva = (reservaId: string) => {
+  const atualizarStatusReserva = async (
+    reservaId: string, 
+    novoStatus: StatusReserva, 
+    respostaAdmin?: string, 
+    motivoRecusa?: string, 
+    pago?: boolean
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!condoTenantId) return { success: false, error: 'Condomínio não identificado.' };
+    const agora = new Date().toLocaleString('pt-BR');
+
+    const resExistente = reservas.find(r => r.id === reservaId);
+    if (!resExistente) {
+      console.warn('⚠️ Reserva não encontrada no estado local para atualizar:', reservaId);
+      return { success: false, error: 'Reserva não encontrada.' };
+    }
+
+    const atualizada: ReservaDependencia = {
+      ...resExistente,
+      status: novoStatus,
+      respostaAdmin: respostaAdmin !== undefined ? respostaAdmin : resExistente.respostaAdmin,
+      motivoRecusa: motivoRecusa !== undefined ? motivoRecusa : resExistente.motivoRecusa,
+      pago: pago !== undefined ? pago : (novoStatus === 'Confirmada' && resExistente.valorTaxa && resExistente.valorTaxa > 0 ? true : resExistente.pago),
+      atualizadoEm: agora,
+      condominioId: condoTenantId
+    };
+
+    setReservas(prev => prev.map(res => res.id === reservaId ? atualizada : res));
+    const saveResult = await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reservas', atualizada);
+    if (!saveResult.success) {
+      console.error('🔥 Erro ao salvar status da reserva no Firestore:', saveResult.error);
+      return { success: false, error: saveResult.error };
+    }
+    return { success: true };
+  };
+
+  const cancelarReserva = async (reservaId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!condoTenantId) return { success: false, error: 'Condomínio não identificado.' };
     setReservas(prev => prev.filter(r => r.id !== reservaId));
-    excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reservas', reservaId).catch(console.error);
+    await excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reservas', reservaId);
+    return { success: true };
   };
 
   const atualizarStatusReclamacao = (id: string, novoStatus: StatusReclamacao) => {
@@ -6702,6 +6780,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       editarServicoContratado,
       excluirServicoContratado,
       solicitarReserva,
+      atualizarStatusReserva,
       cancelarReserva,
       atualizarStatusReclamacao,
       toggleOcultarComentario,

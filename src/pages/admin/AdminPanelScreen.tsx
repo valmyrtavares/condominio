@@ -29,6 +29,8 @@ import {
   ItemEnjoei,
   Dependencia,
   TipoDependencia,
+  ReservaDependencia,
+  StatusReserva,
   MudancaAgendamento,
   StatusMudanca,
   RegrasMudancaConfig,
@@ -1026,6 +1028,9 @@ export const AdminPanelScreen: React.FC = () => {
     adicionarDependencia,
     editarDependencia,
     excluirDependencia,
+    reservas,
+    atualizarStatusReserva,
+    cancelarReserva,
     mudancas,
     regrasMudanca,
     atualizarStatusMudanca,
@@ -1110,12 +1115,26 @@ export const AdminPanelScreen: React.FC = () => {
   const [motivoRecusaMudancaModal, setMotivoRecusaMudancaModal] = useState<MudancaAgendamento | null>(null);
   const [motivoRecusaMudancaTexto, setMotivoRecusaMudancaTexto] = useState('');
 
-  // 13. Gestão de Dependências & Áreas Comuns State
+  // 13. Gestão de Dependências & Áreas Comuns + Reservas State
   const [isCreateEditDependenciaModalOpen, setIsCreateEditDependenciaModalOpen] = useState(false);
   const [dependenciaToEditInAdmin, setDependenciaToEditInAdmin] = useState<Dependencia | null>(null);
+  const [tabDependenciasAdmin, setTabDependenciasAdmin] = useState<'espacos' | 'reservas'>('espacos');
   const [searchDependenciaAdmin, setSearchDependenciaAdmin] = useState('');
   const [filtroTipoDependenciaAdmin, setFiltroTipoDependenciaAdmin] = useState('Todas');
   const [filtroRegimeDependenciaAdmin, setFiltroRegimeDependenciaAdmin] = useState('Todas');
+  
+  // Reservas de Dependências State
+  const [searchReservaAdmin, setSearchReservaAdmin] = useState('');
+  const [filtroStatusReservaAdmin, setFiltroStatusReservaAdmin] = useState('Todas');
+  const [filtroDependenciaReservaAdmin, setFiltroDependenciaReservaAdmin] = useState('Todas');
+  const [respostaAdminModal, setRespostaAdminModal] = useState<{
+    isOpen: boolean;
+    reserva: ReservaDependencia | null;
+    acao: 'aprovar' | 'recusar' | 'responder' | 'pagamento';
+    texto: string;
+    pago?: boolean;
+  } | null>(null);
+  const [viewComprovanteModal, setViewComprovanteModal] = useState<string | null>(null);
 
   // 12. Gestão & Moderação do Enjoei do Condomínio State
   const [isCreateEditDesapegoModalOpen, setIsCreateEditDesapegoModalOpen] = useState(false);
@@ -8160,7 +8179,7 @@ export const AdminPanelScreen: React.FC = () => {
                                 <div className="space-y-1 min-w-0 flex-1">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-950 border border-rose-300">
-                                      {item.tipoTransacao === 'venda' ? `🏷️ Venda R$ ${item.preco}` : item.tipoTransacao === 'troca' ? '🔄 Troca' : item.tipoTransacao === 'doacao' ? '🎁 Doação' : item.tipoTransacao === 'retirada' ? '📦 Retirada' : '🤝 Empréstimo'}
+                                      {item.tipoTransacao === 'venda' ? ('🏷️ Venda R$ ' + item.preco) : item.tipoTransacao === 'troca' ? '🔄 Troca' : item.tipoTransacao === 'doacao' ? '🎁 Doação' : item.tipoTransacao === 'retirada' ? '📦 Retirada' : '🤝 Empréstimo'}
                                     </span>
                                     <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-900 text-amber-300">
                                       {item.categoria}
@@ -8247,7 +8266,7 @@ export const AdminPanelScreen: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (confirm(`Deseja realmente remover o anúncio "${item.titulo}" do Enjoei?`)) {
+                                    if (confirm('Deseja realmente remover o anúncio "' + item.titulo + '" do Enjoei?')) {
                                       excluirItemEnjoei(item.id);
                                     }
                                   }}
@@ -8263,9 +8282,9 @@ export const AdminPanelScreen: React.FC = () => {
                           </div>
                         );
                       })}
-                    </div>
-                  )}
-                </div>
+                      </div>
+                    )}
+                  </div>
 
               </div>
             </div>
@@ -8275,11 +8294,16 @@ export const AdminPanelScreen: React.FC = () => {
       })()}
 
       {/* ========================================================================= */}
-      {/* SEÇÃO 13: ÁREAS COMUNS */}
+      {/* SEÇÃO 13: DEPENDÊNCIAS, ÁREAS COMUNS E RESERVAS DOS MORADORES */}
       {/* ========================================================================= */}
       {(() => {
+        // Cálculos e estatísticas de Espaços e Reservas
         const totalReservaveis = dependencias.filter(d => d.requerReserva).length;
         const totalUsoLivre = dependencias.filter(d => !d.requerReserva).length;
+        
+        const totalReservasPendentes = reservas.filter(r => r.status === 'Pendente de Aprovação' || r.status === 'Pendente de Pagamento').length;
+        const totalReservasConfirmadas = reservas.filter(r => r.status === 'Confirmada').length;
+        const totalReservasRecusadas = reservas.filter(r => r.status === 'Recusada').length;
 
         const tiposDisponiveis = [
           'Todas',
@@ -8302,6 +8326,22 @@ export const AdminPanelScreen: React.FC = () => {
             dep.comodidades.some(c => c.toLowerCase().includes(termo));
 
           return matchTipo && matchRegime && matchBusca;
+        });
+
+        const filteredReservasAdmin = reservas.filter(res => {
+          const matchStatus = filtroStatusReservaAdmin === 'Todas' || res.status === filtroStatusReservaAdmin;
+          const matchDep = filtroDependenciaReservaAdmin === 'Todas' || res.dependenciaId === filtroDependenciaReservaAdmin;
+          const termo = searchReservaAdmin.toLowerCase().trim();
+          const matchBusca = !termo ||
+            res.moradorNome.toLowerCase().includes(termo) ||
+            res.unidade.toLowerCase().includes(termo) ||
+            (res.bloco && res.bloco.toLowerCase().includes(termo)) ||
+            (res.dependenciaNome && res.dependenciaNome.toLowerCase().includes(termo)) ||
+            res.dataReserva.includes(termo) ||
+            res.periodo.toLowerCase().includes(termo) ||
+            (res.observacoes && res.observacoes.toLowerCase().includes(termo));
+
+          return matchStatus && matchDep && matchBusca;
         });
 
         return (
@@ -8329,12 +8369,27 @@ export const AdminPanelScreen: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-black text-slate-950">
-                      13. Áreas comuns
+                      13. Áreas comuns & Reservas
                     </h3>
                     {canAccessDependencias ? (
-                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
-                        {dependencias.length} espaços
-                      </span>
+                      <>
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
+                          {dependencias.length} espaços
+                        </span>
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-950 border border-indigo-200">
+                          {reservas.length} agendamentos
+                        </span>
+                        {totalReservasPendentes > 0 && (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 animate-pulse shadow-2xs">
+                            ⏳ {totalReservasPendentes} pendentes de aprovação
+                          </span>
+                        )}
+                        {totalReservasConfirmadas > 0 && (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-300 text-slate-950 shadow-2xs">
+                            ✓ {totalReservasConfirmadas} confirmadas
+                          </span>
+                        )}
+                      </>
                     ) : (
                       <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
                         <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
@@ -8342,7 +8397,7 @@ export const AdminPanelScreen: React.FC = () => {
                     )}
                   </div>
                   <p className="text-xs text-slate-700 font-medium">
-                    Cadastre, edite fotos, regras de uso, horários, capacidade e taxas de agendamento de cada espaço do condomínio.
+                    Aprove agendamentos, confirme pagamentos de taxas, defina regras e cadastre espaços do condomínio.
                   </p>
                 </div>
               </div>
@@ -8373,243 +8428,656 @@ export const AdminPanelScreen: React.FC = () => {
             >
               <div className="min-h-0 overflow-hidden bg-emerald-50/50 p-4 sm:p-6 space-y-6">
                 
-                {/* Resumo & Botão de Criação */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-amber-300 text-xs font-black shadow-xs">
-                      {dependencias.length} Espaços Totais
-                    </div>
-                    <div className="px-3 py-1.5 rounded-xl bg-purple-100 text-purple-950 border border-purple-300 text-xs font-black">
-                      📅 {totalReservaveis} Reserváveis
-                    </div>
-                    <div className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
-                      ✨ {totalUsoLivre} de Uso Livre
-                    </div>
-                  </div>
+                {/* Alternador de Abas Principais (Reservas vs Espaços) */}
+                <div className="flex items-center gap-2 border-b border-emerald-200 pb-3">
+                  <button
+                    type="button"
+                    onClick={() => setTabDependenciasAdmin('reservas')}
+                    className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
+                      tabDependenciasAdmin === 'reservas'
+                        ? 'bg-slate-950 text-amber-300 ring-2 ring-amber-400/40'
+                        : 'bg-white/80 text-slate-700 hover:bg-white hover:text-slate-950'
+                    }`}
+                  >
+                    <Calendar className="w-4 h-4 text-amber-400" />
+                    <span>Reservas & Agendamentos dos Moradores</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                      tabDependenciasAdmin === 'reservas' ? 'bg-amber-400 text-slate-950' : 'bg-slate-200 text-slate-800'
+                    }`}>
+                      {reservas.length}
+                    </span>
+                    {totalReservasPendentes > 0 && (
+                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                    )}
+                  </button>
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setDependenciaToEditInAdmin(null);
-                      setIsCreateEditDependenciaModalOpen(true);
-                    }}
-                    className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                    onClick={() => setTabDependenciasAdmin('espacos')}
+                    className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
+                      tabDependenciasAdmin === 'espacos'
+                        ? 'bg-slate-950 text-amber-300 ring-2 ring-amber-400/40'
+                        : 'bg-white/80 text-slate-700 hover:bg-white hover:text-slate-950'
+                    }`}
                   >
-                    <Plus className="w-4 h-4 stroke-[3]" />
-                    <span>+ Cadastrar Nova Dependência</span>
+                    <Building2 className="w-4 h-4 text-emerald-400" />
+                    <span>Espaços & Dependências Cadastradas</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                      tabDependenciasAdmin === 'espacos' ? 'bg-amber-400 text-slate-950' : 'bg-slate-200 text-slate-800'
+                    }`}>
+                      {dependencias.length}
+                    </span>
                   </button>
                 </div>
 
-                {/* Filtros e Busca */}
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {/* ========================================================= */}
+                {/* ABA 1: RESERVAS E AGENDAMENTOS DOS MORADORES              */}
+                {/* ========================================================= */}
+                {tabDependenciasAdmin === 'reservas' && (
+                  <div className="space-y-4 animate-in fade-in duration-200">
                     
-                    {/* Busca */}
-                    <div className="relative sm:col-span-1">
-                      <input
-                        type="text"
-                        placeholder="Buscar por nome, comodidade..."
-                        value={searchDependenciaAdmin}
-                        onChange={(e) => setSearchDependenciaAdmin(e.target.value)}
-                        className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
-                      />
-                      <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+                    {/* Resumo com contadores */}
+                    <div className="flex items-center gap-2 flex-wrap bg-white/60 p-3.5 rounded-2xl border border-white/80 shadow-xs">
+                      <div className="px-3 py-1 rounded-xl bg-slate-900 text-amber-300 text-xs font-black">
+                        {reservas.length} Agendamentos no Total
+                      </div>
+                      {totalReservasPendentes > 0 && (
+                        <div className="px-3 py-1 rounded-xl bg-amber-400 text-slate-950 text-xs font-black shadow-xs animate-pulse">
+                          ⏳ {totalReservasPendentes} Pendentes de Análise
+                        </div>
+                      )}
+                      <div className="px-3 py-1 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
+                        ✓ {totalReservasConfirmadas} Confirmadas
+                      </div>
+                      {totalReservasRecusadas > 0 && (
+                        <div className="px-3 py-1 rounded-xl bg-rose-100 text-rose-950 border border-rose-300 text-xs font-black">
+                          ❌ {totalReservasRecusadas} Recusadas
+                        </div>
+                      )}
                     </div>
 
-                    {/* Filtro por Regime */}
-                    <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none sm:col-span-2">
-                      <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
-                        Regime:
-                      </span>
-                      {[
-                        { id: 'Todas', label: 'Todas' },
-                        { id: 'reservavel', label: '📅 Requer Reserva' },
-                        { id: 'livre', label: '✨ Uso Livre' }
-                      ].map(reg => (
-                        <button
-                          key={reg.id}
-                          type="button"
-                          onClick={() => setFiltroRegimeDependenciaAdmin(reg.id)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
-                            filtroRegimeDependenciaAdmin === reg.id
-                              ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
-                              : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
-                          }`}
-                        >
-                          {reg.label}
-                        </button>
-                      ))}
+                    {/* Filtros e Busca */}
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                        
+                        {/* Busca */}
+                        <div className="sm:col-span-5 relative">
+                          <input
+                            type="text"
+                            placeholder="Buscar por morador, unidade, espaço, data..."
+                            value={searchReservaAdmin}
+                            onChange={(e) => setSearchReservaAdmin(e.target.value)}
+                            className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
+                          />
+                          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+                        </div>
+
+                        {/* Filtro por Dependência */}
+                        <div className="sm:col-span-3">
+                          <select
+                            value={filtroDependenciaReservaAdmin}
+                            onChange={(e) => setFiltroDependenciaReservaAdmin(e.target.value)}
+                            className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none shadow-xs cursor-pointer"
+                          >
+                            <option value="Todas">Todos os Espaços</option>
+                            {dependencias.map(d => (
+                              <option key={d.id} value={d.id}>{d.nome}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Filtro por Status da Reserva */}
+                        <div className="sm:col-span-4 flex items-center gap-1 overflow-x-auto scrollbar-none">
+                          {[
+                            { id: 'Todas', label: 'Todas' },
+                            { id: 'Pendente de Aprovação', label: '⏳ Pendentes' },
+                            { id: 'Confirmada', label: '✓ Confirmadas' },
+                            { id: 'Pendente de Pagamento', label: '💳 Pagamento' },
+                            { id: 'Recusada', label: '❌ Recusadas' }
+                          ].map(st => (
+                            <button
+                              key={st.id}
+                              type="button"
+                              onClick={() => setFiltroStatusReservaAdmin(st.id)}
+                              className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                                filtroStatusReservaAdmin === st.id
+                                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
+                                  : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
+                              }`}
+                            >
+                              {st.label}
+                            </button>
+                          ))}
+                        </div>
+
+                      </div>
+                    </div>
+
+                    {/* Lista de Cards das Reservas */}
+                    <div className="space-y-3">
+                      {filteredReservasAdmin.length === 0 ? (
+                        <div className="p-8 text-center bg-white/40 border border-white/60 rounded-2xl text-xs font-bold text-slate-700 space-y-1">
+                          <p>Nenhuma reserva encontrada para os filtros selecionados.</p>
+                          <p className="text-[11px] text-slate-500 font-normal">
+                            Quando os moradores solicitarem agendamento pelo aplicativo, as reservas aparecerão aqui para sua aprovação.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {filteredReservasAdmin.map((res) => {
+                            const dep = dependencias.find(d => d.id === res.dependenciaId);
+                            const nomeEspaco = res.dependenciaNome || dep?.nome || 'Espaço Comum';
+                            const fotoEspaco = res.dependenciaFoto || dep?.foto;
+                            const isPendente = res.status === 'Pendente de Aprovação' || res.status === 'Pendente de Pagamento';
+                            const isConfirmada = res.status === 'Confirmada';
+                            const isRecusada = res.status === 'Recusada';
+
+                            // Identifica se há duplicidade ou conflito de data para o mesmo espaço
+                            const temConflitoReserva = reservas.some(outra => 
+                              outra.id !== res.id &&
+                              outra.dependenciaId === res.dependenciaId &&
+                              outra.dataReserva === res.dataReserva &&
+                              outra.status !== 'Recusada' &&
+                              outra.status !== 'Cancelada' &&
+                              (outra.periodo === 'Dia Inteiro' || res.periodo === 'Dia Inteiro' || outra.periodo === res.periodo)
+                            );
+
+                            return (
+                              <div
+                                key={res.id}
+                                className={`border-2 rounded-3xl p-4 shadow-md transition-all flex flex-col justify-between space-y-3.5 bg-white/85 ${
+                                  temConflitoReserva && isPendente
+                                    ? 'border-rose-400 bg-rose-50/40 ring-2 ring-rose-400/30'
+                                    : isPendente 
+                                      ? 'border-amber-400 bg-amber-50/40 ring-2 ring-amber-400/20' 
+                                      : isConfirmada 
+                                        ? 'border-emerald-300' 
+                                        : isRecusada 
+                                          ? 'border-rose-200 bg-rose-50/30' 
+                                          : 'border-slate-200'
+                                }`}
+                              >
+                                <div className="space-y-3">
+                                  
+                                  {/* Header do Card: Espaço + Badges de Status */}
+                                  <div className="flex items-start justify-between gap-2.5 pb-2.5 border-b border-slate-200">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      {fotoEspaco && (
+                                        <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-200 overflow-hidden shrink-0">
+                                          <img
+                                            src={fotoEspaco}
+                                            alt={nomeEspaco}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                              (e.target as HTMLImageElement).src = '/Salão de festas.jpg';
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                      <div className="min-w-0">
+                                        <span className="text-[10px] font-black uppercase text-amber-800 tracking-tight block">
+                                          {dep?.tipo || 'Área Comum'}
+                                        </span>
+                                        <h4 className="text-sm sm:text-base font-black text-slate-950 truncate" title={nomeEspaco}>
+                                          {nomeEspaco}
+                                        </h4>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 flex-wrap justify-end shrink-0">
+                                      {temConflitoReserva && (
+                                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-600 text-white shadow-xs animate-pulse">
+                                          ⚠️ Conflito de Data
+                                        </span>
+                                      )}
+
+                                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border shadow-2xs ${
+                                        isConfirmada 
+                                          ? 'bg-emerald-100 text-emerald-950 border-emerald-300' 
+                                          : res.status === 'Pendente de Pagamento'
+                                            ? 'bg-purple-100 text-purple-950 border-purple-300'
+                                            : isPendente 
+                                              ? 'bg-amber-400 text-slate-950 border-amber-500 font-black' 
+                                              : isRecusada 
+                                                ? 'bg-rose-100 text-rose-950 border-rose-300' 
+                                                : 'bg-slate-100 text-slate-700 border-slate-300'
+                                      }`}>
+                                        {res.status}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Dados do Morador e Data/Turno */}
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-0.5">
+                                      <span className="text-[9px] uppercase font-bold text-slate-500 block">Morador Solicitante:</span>
+                                      <strong className="text-slate-950 block text-[11px] truncate">
+                                        {res.moradorNome}
+                                      </strong>
+                                      <span className="text-[10px] text-indigo-900 font-bold block">
+                                        {res.unidade} {res.bloco && `(${res.bloco})`}
+                                      </span>
+                                    </div>
+
+                                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-0.5">
+                                      <span className="text-[9px] uppercase font-bold text-slate-500 block">Data & Turno:</span>
+                                      <strong className="text-slate-950 block text-[11px] flex items-center gap-1">
+                                        <Calendar className="w-3 h-3 text-emerald-700 inline" />
+                                        {res.dataReserva}
+                                      </strong>
+                                      <span className="text-[10px] text-slate-700 font-semibold block">
+                                        {res.periodo}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Taxa de Reserva & Comprovante de Pagamento */}
+                                  {res.valorTaxa !== undefined && res.valorTaxa > 0 && (
+                                    <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-between text-xs">
+                                      <div className="space-y-0.5">
+                                        <span className="text-[10px] uppercase font-black text-purple-900 block">
+                                          Taxa do Espaço:
+                                        </span>
+                                        <strong className="text-xs font-black text-purple-950 font-mono">
+                                          R$ {res.valorTaxa.toFixed(2)}
+                                        </strong>
+                                      </div>
+
+                                      <div className="flex items-center gap-1.5">
+                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                                          res.pago 
+                                            ? 'bg-emerald-100 text-emerald-950 border border-emerald-300' 
+                                            : 'bg-amber-200 text-amber-950 border border-amber-300'
+                                        }`}>
+                                          {res.pago ? '✓ Taxa Paga' : '⏳ Pagamento Pendente'}
+                                        </span>
+
+                                        {res.comprovanteUrl && (
+                                          <button
+                                            type="button"
+                                            onClick={() => setViewComprovanteModal(res.comprovanteUrl || null)}
+                                            className="px-2 py-0.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold shadow-xs cursor-pointer flex items-center gap-1"
+                                            title="Visualizar comprovante de pagamento"
+                                          >
+                                            <Paperclip className="w-3 h-3" />
+                                            <span>Comprovante</span>
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Observações do Morador */}
+                                  {res.observacoes && (
+                                    <div className="p-2.5 rounded-xl bg-white/70 border border-slate-200 text-xs">
+                                      <span className="text-[9px] uppercase font-bold text-slate-500 block">
+                                        Observações do Morador:
+                                      </span>
+                                      <p className="text-slate-800 font-medium italic mt-0.5">
+                                        "{res.observacoes}"
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {/* Resposta Oficial / Orientações do Síndico */}
+                                  {res.respostaAdmin && (
+                                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs space-y-0.5">
+                                      <span className="text-[9px] uppercase font-bold text-emerald-900 block flex items-center gap-1">
+                                        <MessageSquare className="w-3 h-3" /> Orientações da Administração:
+                                      </span>
+                                      <p className="text-emerald-950 font-bold">
+                                        {res.respostaAdmin}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {/* Motivo de Recusa */}
+                                  {res.motivoRecusa && (
+                                    <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs space-y-0.5">
+                                      <span className="text-[9px] uppercase font-bold text-rose-900 block">
+                                        Motivo da Recusa:
+                                      </span>
+                                      <p className="text-rose-950 font-bold">
+                                        {res.motivoRecusa}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                </div>
+
+                                {/* Botões de Ação do Síndico */}
+                                <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-200">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    
+                                    {/* Botão Aprovar */}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setRespostaAdminModal({
+                                          isOpen: true,
+                                          reserva: res,
+                                          acao: 'aprovar',
+                                          texto: res.respostaAdmin || 'Reserva aprovada. Chaves disponíveis na portaria no dia do evento mediante termo de vistoria.',
+                                          pago: res.valorTaxa && res.valorTaxa > 0 ? true : res.pago
+                                        });
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+                                    >
+                                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                      <span>{isConfirmada ? 'Editar Aprovação' : 'Aprovar Reserva'}</span>
+                                    </button>
+
+                                    {/* Botão Recusar */}
+                                    {!isRecusada && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setRespostaAdminModal({
+                                            isOpen: true,
+                                            reserva: res,
+                                            acao: 'recusar',
+                                            texto: res.motivoRecusa || 'Conflito de agenda ou necessidade de manutenção preventiva no espaço.',
+                                            pago: false
+                                          });
+                                        }}
+                                        className="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-950 text-xs font-black transition-colors border border-rose-300 cursor-pointer"
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                        <span>Recusar</span>
+                                      </button>
+                                    )}
+
+                                    {/* Botão Mensagem / Orientações */}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setRespostaAdminModal({
+                                          isOpen: true,
+                                          reserva: res,
+                                          acao: 'responder',
+                                          texto: res.respostaAdmin || '',
+                                          pago: res.pago
+                                        });
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-950 text-xs font-bold transition-colors border border-indigo-200 cursor-pointer flex items-center gap-1"
+                                      title="Enviar orientações ou instruções ao morador"
+                                    >
+                                      <MessageSquare className="w-3 h-3 text-indigo-700" />
+                                      <span>Instruções</span>
+                                    </button>
+
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (confirm(`Deseja realmente excluir o agendamento de ${res.moradorNome} para ${nomeEspaco}?`)) {
+                                        cancelarReserva(res.id);
+                                      }
+                                    }}
+                                    className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                    title="Excluir Registro de Reserva"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
                   </div>
+                )}
 
-                  {/* Filtro por Categoria */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                    <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
-                      Categorias:
-                    </span>
-                    {tiposDisponiveis.map(tp => (
-                      <button
-                        key={tp}
-                        type="button"
-                        onClick={() => setFiltroTipoDependenciaAdmin(tp)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${
-                          filtroTipoDependenciaAdmin === tp
-                            ? 'bg-slate-900 text-amber-300 border-slate-900 font-black shadow-xs'
-                            : 'bg-white/50 text-slate-700 border-white/70 hover:bg-white'
-                        }`}
-                      >
-                        {tp}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {/* ========================================================= */}
+                {/* ABA 2: ESPAÇOS & DEPENDÊNCIAS FÍSICAS                     */}
+                {/* ========================================================= */}
+                {tabDependenciasAdmin === 'espacos' && (
+                  <div className="space-y-6 animate-in fade-in duration-200">
+                    
+                    {/* Resumo & Botão de Criação */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-amber-300 text-xs font-black shadow-xs">
+                          {dependencias.length} Espaços Totais
+                        </div>
+                        <div className="px-3 py-1.5 rounded-xl bg-purple-100 text-purple-950 border border-purple-300 text-xs font-black">
+                          📅 {totalReservaveis} Reserváveis
+                        </div>
+                        <div className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
+                          ✨ {totalUsoLivre} de Uso Livre
+                        </div>
+                      </div>
 
-                {/* Grid de Cards das Dependências */}
-                <div className="space-y-3">
-                  {filteredDependenciasAdmin.length === 0 ? (
-                    <div className="p-8 text-center bg-white/40 border border-white/60 rounded-2xl space-y-2">
-                      <p className="text-sm font-bold text-slate-800">Nenhum espaço encontrado com os filtros aplicados.</p>
                       <button
                         type="button"
                         onClick={() => {
-                          setSearchDependenciaAdmin('');
-                          setFiltroTipoDependenciaAdmin('Todas');
-                          setFiltroRegimeDependenciaAdmin('Todas');
+                          setDependenciaToEditInAdmin(null);
+                          setIsCreateEditDependenciaModalOpen(true);
                         }}
-                        className="text-xs text-indigo-800 font-black hover:underline cursor-pointer"
+                        className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0"
                       >
-                        Limpar filtros
+                        <Plus className="w-4 h-4 stroke-[3]" />
+                        <span>+ Cadastrar Nova Dependência</span>
                       </button>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {filteredDependenciasAdmin.map(dep => {
-                        return (
-                          <div
-                            key={dep.id}
-                            className="border-2 border-slate-200 hover:border-amber-300 rounded-3xl p-4 bg-white/80 shadow-md transition-all flex flex-col justify-between space-y-3.5"
+
+                    {/* Filtros e Busca */}
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        
+                        {/* Busca */}
+                        <div className="relative sm:col-span-1">
+                          <input
+                            type="text"
+                            placeholder="Buscar por nome, comodidade..."
+                            value={searchDependenciaAdmin}
+                            onChange={(e) => setSearchDependenciaAdmin(e.target.value)}
+                            className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
+                          />
+                          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+                        </div>
+
+                        {/* Filtro por Regime */}
+                        <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none sm:col-span-2">
+                          <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
+                            Regime:
+                          </span>
+                          {[
+                            { id: 'Todas', label: 'Todas' },
+                            { id: 'reservavel', label: '📅 Requer Reserva' },
+                            { id: 'livre', label: '✨ Uso Livre' }
+                          ].map(reg => (
+                            <button
+                              key={reg.id}
+                              type="button"
+                              onClick={() => setFiltroRegimeDependenciaAdmin(reg.id)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                                filtroRegimeDependenciaAdmin === reg.id
+                                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
+                                  : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
+                              }`}
+                            >
+                              {reg.label}
+                            </button>
+                          ))}
+                        </div>
+
+                      </div>
+
+                      {/* Filtro por Categoria */}
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                        <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
+                          Categorias:
+                        </span>
+                        {tiposDisponiveis.map(tp => (
+                          <button
+                            key={tp}
+                            type="button"
+                            onClick={() => setFiltroTipoDependenciaAdmin(tp)}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                              filtroTipoDependenciaAdmin === tp
+                                ? 'bg-slate-900 text-amber-300 border-slate-900 font-black shadow-xs'
+                                : 'bg-white/50 text-slate-700 border-white/70 hover:bg-white'
+                            }`}
                           >
-                            <div className="space-y-3">
-                              
-                              {/* Imagem + Badges */}
-                              <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 flex items-center justify-center">
-                                <img
-                                  src={dep.foto}
-                                  alt={dep.nome}
-                                  className="w-full h-full object-contain"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = '/Salão de festas.jpg';
-                                  }}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent p-3 flex flex-col justify-between pointer-events-none">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-950/80 text-amber-300 border border-amber-400/40 backdrop-blur-xs">
-                                      {dep.tipo}
-                                    </span>
-                                    <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md ${
-                                      dep.requerReserva
-                                        ? 'bg-purple-600 text-white'
-                                        : 'bg-emerald-600 text-white'
-                                    }`}>
-                                      {dep.requerReserva ? '📅 Requer Reserva' : '✨ Uso Livre'}
-                                    </span>
-                                  </div>
-
-                                  <div>
-                                    <h4 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-md">
-                                      {dep.nome}
-                                    </h4>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Info Metas */}
-                              <div className="grid grid-cols-2 gap-2 text-xs">
-                                <div className="p-2 rounded-xl bg-slate-100/80 border border-slate-200 flex items-center gap-1.5">
-                                  <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                                  <span className="font-bold text-slate-800 truncate text-[11px]">
-                                    {dep.horarioFuncionamento}
-                                  </span>
-                                </div>
-                                <div className="p-2 rounded-xl bg-slate-100/80 border border-slate-200 flex items-center gap-1.5">
-                                  <Users className="w-3.5 h-3.5 text-indigo-700 shrink-0" />
-                                  <span className="font-bold text-slate-800 text-[11px]">
-                                    Até {dep.capacidadePessoas} pessoas
-                                  </span>
-                                </div>
-                              </div>
-
-                              {dep.taxaReserva !== undefined && dep.taxaReserva > 0 && (
-                                <div className="p-2 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-between text-xs">
-                                  <span className="text-[10px] uppercase font-black text-purple-900">
-                                    Taxa de Manutenção/Limpeza:
-                                  </span>
-                                  <span className="font-black text-purple-950 font-mono">
-                                    R$ {dep.taxaReserva.toFixed(2)}
-                                  </span>
-                                </div>
-                              )}
-
-                              <p className="text-xs text-slate-600 font-medium line-clamp-2">
-                                {dep.descricao}
-                              </p>
-
-                              {/* Comodidades & Regras Resumo */}
-                              <div className="space-y-1">
-                                <span className="text-[10px] font-extrabold uppercase text-slate-700 block">
-                                  Comodidades ({dep.comodidades.length}) • Regras ({dep.regrasUso.length})
-                                </span>
-                                <div className="flex flex-wrap gap-1">
-                                  {dep.comodidades.slice(0, 3).map((com, cIdx) => (
-                                    <span key={cIdx} className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
-                                      ✓ {com}
-                                    </span>
-                                  ))}
-                                  {dep.comodidades.length > 3 && (
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500">
-                                      +{dep.comodidades.length - 3} mais
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-
-                            </div>
-
-                            {/* Ações Administrativas */}
-                            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setDependenciaToEditInAdmin(dep);
-                                  setIsCreateEditDependenciaModalOpen(true);
-                                }}
-                                className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-300"
-                              >
-                                <Edit2 className="w-3.5 h-3.5 text-indigo-700" />
-                                <span>Editar</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (confirm(`Deseja realmente remover a dependência "${dep.nome}" do condomínio?`)) {
-                                    excluirDependencia(dep.id);
-                                  }
-                                }}
-                                className="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-rose-200"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                                <span>Excluir</span>
-                              </button>
-                            </div>
-
-                          </div>
-                        );
-                      })}
+                            {tp}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  )}
-                </div>
+
+                    {/* Grid de Cards das Dependências */}
+                    <div className="space-y-3">
+                      {filteredDependenciasAdmin.length === 0 ? (
+                        <div className="p-8 text-center bg-white/40 border border-white/60 rounded-2xl space-y-2">
+                          <p className="text-sm font-bold text-slate-800">Nenhum espaço encontrado com os filtros aplicados.</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSearchDependenciaAdmin('');
+                              setFiltroTipoDependenciaAdmin('Todas');
+                              setFiltroRegimeDependenciaAdmin('Todas');
+                            }}
+                            className="text-xs text-indigo-800 font-black hover:underline cursor-pointer"
+                          >
+                            Limpar filtros
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {filteredDependenciasAdmin.map(dep => {
+                            return (
+                              <div
+                                key={dep.id}
+                                className="border-2 border-slate-200 hover:border-amber-300 rounded-3xl p-4 bg-white/80 shadow-md transition-all flex flex-col justify-between space-y-3.5"
+                              >
+                                <div className="space-y-3">
+                                  
+                                  {/* Imagem + Badges */}
+                                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 flex items-center justify-center">
+                                    <img
+                                      src={dep.foto}
+                                      alt={dep.nome}
+                                      className="w-full h-full object-contain"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src = '/Salão de festas.jpg';
+                                      }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent p-3 flex flex-col justify-between pointer-events-none">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-950/80 text-amber-300 border border-amber-400/40 backdrop-blur-xs">
+                                          {dep.tipo}
+                                        </span>
+                                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md ${
+                                          dep.requerReserva
+                                            ? 'bg-purple-600 text-white'
+                                            : 'bg-emerald-600 text-white'
+                                        }`}>
+                                          {dep.requerReserva ? '📅 Requer Reserva' : '✨ Uso Livre'}
+                                        </span>
+                                      </div>
+
+                                      <div>
+                                        <h4 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-md">
+                                          {dep.nome}
+                                        </h4>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Info Metas */}
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="p-2 rounded-xl bg-slate-100/80 border border-slate-200 flex items-center gap-1.5">
+                                      <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                                      <span className="font-bold text-slate-800 truncate text-[11px]">
+                                        {dep.horarioFuncionamento}
+                                      </span>
+                                    </div>
+                                    <div className="p-2 rounded-xl bg-slate-100/80 border border-slate-200 flex items-center gap-1.5">
+                                      <Users className="w-3.5 h-3.5 text-indigo-700 shrink-0" />
+                                      <span className="font-bold text-slate-800 text-[11px]">
+                                        Até {dep.capacidadePessoas} pessoas
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {dep.taxaReserva !== undefined && dep.taxaReserva > 0 && (
+                                    <div className="p-2 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-between text-xs">
+                                      <span className="text-[10px] uppercase font-black text-purple-900">
+                                        Taxa de Manutenção/Limpeza:
+                                      </span>
+                                      <span className="font-black text-purple-950 font-mono">
+                                        R$ {dep.taxaReserva.toFixed(2)}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  <p className="text-xs text-slate-600 font-medium line-clamp-2">
+                                    {dep.descricao}
+                                  </p>
+
+                                  {/* Comodidades & Regras Resumo */}
+                                  <div className="space-y-1">
+                                    <span className="text-[10px] font-extrabold uppercase text-slate-700 block">
+                                      Comodidades ({dep.comodidades.length}) • Regras ({dep.regrasUso.length})
+                                    </span>
+                                    <div className="flex flex-wrap gap-1">
+                                      {dep.comodidades.slice(0, 3).map((com, cIdx) => (
+                                        <span key={cIdx} className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                                          ✓ {com}
+                                        </span>
+                                      ))}
+                                      {dep.comodidades.length > 3 && (
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500">
+                                          +{dep.comodidades.length - 3} mais
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                </div>
+
+                                {/* Ações Administrativas */}
+                                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setDependenciaToEditInAdmin(dep);
+                                      setIsCreateEditDependenciaModalOpen(true);
+                                    }}
+                                    className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-300"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 text-indigo-700" />
+                                    <span>Editar</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (confirm(`Deseja realmente remover a dependência "${dep.nome}" do condomínio?`)) {
+                                        excluirDependencia(dep.id);
+                                      }
+                                    }}
+                                    className="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-rose-200"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                    <span>Excluir</span>
+                                  </button>
+                                </div>
+
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                )}
 
               </div>
             </div>
@@ -11132,6 +11600,193 @@ export const AdminPanelScreen: React.FC = () => {
         isOpen={isBackupRestoreModalOpen}
         onClose={() => setIsBackupRestoreModalOpen(false)}
       />
+
+      {/* Modal de Aprovação / Recusa / Resposta Oficial de Reservas */}
+      {respostaAdminModal && respostaAdminModal.isOpen && respostaAdminModal.reserva && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="fixed inset-0" onClick={() => setRespostaAdminModal(null)} />
+          
+          <div className="relative w-full max-w-lg bg-white border-2 border-emerald-400 rounded-3xl p-5 sm:p-6 shadow-2xl z-10 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2">
+                <div className={`p-2 rounded-xl text-white ${
+                  respostaAdminModal.acao === 'aprovar' ? 'bg-emerald-600' : respostaAdminModal.acao === 'recusar' ? 'bg-rose-600' : 'bg-indigo-600'
+                }`}>
+                  {respostaAdminModal.acao === 'aprovar' ? <Check className="w-5 h-5 stroke-[3]" /> : respostaAdminModal.acao === 'recusar' ? <X className="w-5 h-5" /> : <MessageSquare className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-950">
+                    {respostaAdminModal.acao === 'aprovar' ? 'Aprovar Reserva de Espaço' : respostaAdminModal.acao === 'recusar' ? 'Recusar Reserva' : 'Enviar Orientações ao Morador'}
+                  </h3>
+                  <p className="text-xs text-slate-600 font-medium">
+                    {respostaAdminModal.reserva.dependenciaNome} • {respostaAdminModal.reserva.moradorNome} ({respostaAdminModal.reserva.unidade})
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setRespostaAdminModal(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-950 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Data do Evento:</span>
+                  <strong className="text-slate-950 text-xs">{respostaAdminModal.reserva.dataReserva}</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Período:</span>
+                  <strong className="text-slate-950 text-xs">{respostaAdminModal.reserva.periodo}</strong>
+                </div>
+                {respostaAdminModal.reserva.valorTaxa !== undefined && respostaAdminModal.reserva.valorTaxa > 0 && (
+                  <div className="col-span-2 pt-1 border-t border-slate-200 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-purple-950">Taxa do Espaço: R$ {respostaAdminModal.reserva.valorTaxa.toFixed(2)}</span>
+                    <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(respostaAdminModal.pago)}
+                        onChange={(e) => setRespostaAdminModal(prev => prev ? { ...prev, pago: e.target.checked } : null)}
+                        className="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                      />
+                      <span>Marcar taxa como Paga</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {respostaAdminModal.acao === 'recusar' ? (
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase text-rose-950 block">
+                    Motivo da Recusa (obrigatório para o morador):
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={respostaAdminModal.texto}
+                    onChange={(e) => setRespostaAdminModal(prev => prev ? { ...prev, texto: e.target.value } : null)}
+                    placeholder="Ex: Conflito de data, manutenção preventiva ou necessidade de regularização prévia..."
+                    className="w-full bg-slate-50 border border-rose-300 rounded-xl p-3 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-rose-500 resize-none shadow-xs"
+                    required
+                  />
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase text-slate-800 block">
+                    Orientações e Instruções da Administração (chaves, horário, vistoria):
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={respostaAdminModal.texto}
+                    onChange={(e) => setRespostaAdminModal(prev => prev ? { ...prev, texto: e.target.value } : null)}
+                    placeholder="Ex: Chaves disponíveis na portaria às 14h mediante assinatura do termo de vistoria..."
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500 resize-none shadow-xs"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => setRespostaAdminModal(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!respostaAdminModal.reserva) return;
+                  const resId = respostaAdminModal.reserva.id;
+
+                  if (respostaAdminModal.acao === 'aprovar') {
+                    await atualizarStatusReserva(
+                      resId, 
+                      'Confirmada', 
+                      respostaAdminModal.texto, 
+                      undefined, 
+                      respostaAdminModal.pago
+                    );
+                  } else if (respostaAdminModal.acao === 'recusar') {
+                    await atualizarStatusReserva(
+                      resId, 
+                      'Recusada', 
+                      undefined, 
+                      respostaAdminModal.texto, 
+                      false
+                    );
+                  } else {
+                    await atualizarStatusReserva(
+                      resId, 
+                      respostaAdminModal.reserva.status, 
+                      respostaAdminModal.texto, 
+                      undefined, 
+                      respostaAdminModal.pago
+                    );
+                  }
+
+                  setRespostaAdminModal(null);
+                }}
+                className={`px-5 py-2.5 rounded-xl text-white text-xs font-black shadow-md transition-all active:scale-95 cursor-pointer ${
+                  respostaAdminModal.acao === 'aprovar' 
+                    ? 'bg-emerald-600 hover:bg-emerald-500' 
+                    : respostaAdminModal.acao === 'recusar' 
+                      ? 'bg-rose-600 hover:bg-rose-500' 
+                      : 'bg-indigo-600 hover:bg-indigo-500'
+                }`}
+              >
+                {respostaAdminModal.acao === 'aprovar' ? 'Confirmar Aprovação' : respostaAdminModal.acao === 'recusar' ? 'Confirmar Recusa' : 'Salvar Orientações'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Lightbox para Visualizar Comprovante de Pagamento */}
+      {viewComprovanteModal && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="fixed inset-0" onClick={() => setViewComprovanteModal(null)} />
+          
+          <div className="relative w-full max-w-2xl bg-white rounded-3xl p-4 sm:p-5 shadow-2xl z-10 space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+              <h3 className="font-black text-sm sm:text-base text-slate-950 flex items-center gap-2">
+                <Paperclip className="w-4 h-4 text-indigo-600" />
+                Comprovante de Pagamento Anexado pelo Morador
+              </h3>
+              <button
+                type="button"
+                onClick={() => setViewComprovanteModal(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-950 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="w-full max-h-[70vh] overflow-auto rounded-2xl bg-slate-950 flex items-center justify-center p-2">
+              <img
+                src={viewComprovanteModal}
+                alt="Comprovante de Pagamento"
+                className="max-w-full max-h-[65vh] object-contain rounded-xl"
+              />
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setViewComprovanteModal(null)}
+                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-black cursor-pointer hover:bg-slate-800"
+              >
+                Fechar Visualização
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
