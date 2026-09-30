@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useCondo } from '../../context/CondoContext';
-import { AutorizacaoAcesso, TipoVisitante } from '../../types';
+import { AutorizacaoAcesso, TipoVisitante, StatusAutorizacaoAcesso } from '../../types';
 import { 
   UserCheck, 
   X, 
@@ -14,7 +14,9 @@ import {
   ShieldCheck, 
   Phone, 
   FileText,
-  Sparkles
+  Sparkles,
+  KeyRound,
+  Building
 } from 'lucide-react';
 import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 
@@ -52,6 +54,11 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
   const [deixarEntrarDireto, setDeixarEntrarDireto] = useState(true);
   const [observacoes, setObservacoes] = useState('');
 
+  // Cenário 4: Guarda e Entrega de Chaves
+  const [deixouChave, setDeixouChave] = useState(false);
+  const [identificacaoChave, setIdentificacaoChave] = useState('');
+  const [localChavePortaria, setLocalChavePortaria] = useState('Quadro de Chaves');
+
   const [erroMsg, setErroMsg] = useState('');
 
   useEffect(() => {
@@ -66,6 +73,9 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
         setHorarioEstimado(autorizacaoToEdit.horarioEstimado || '');
         setDeixarEntrarDireto(autorizacaoToEdit.deixarEntrarDireto ?? true);
         setObservacoes(autorizacaoToEdit.observacoes || '');
+        setDeixouChave(autorizacaoToEdit.deixouChave || false);
+        setIdentificacaoChave(autorizacaoToEdit.identificacaoChave || '');
+        setLocalChavePortaria(autorizacaoToEdit.localChavePortaria || 'Quadro de Chaves');
       } else {
         setNomeVisitante('');
         setTipoVisitante('Visita / Familiar');
@@ -76,10 +86,13 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
         setHorarioEstimado('');
         setDeixarEntrarDireto(true);
         setObservacoes('');
+        setDeixouChave(false);
+        setIdentificacaoChave(`Chave Apto ${currentUser.unidade}`);
+        setLocalChavePortaria('Quadro de Chaves');
       }
       setErroMsg('');
     }
-  }, [isOpen, autorizacaoToEdit, hojeIso]);
+  }, [isOpen, autorizacaoToEdit, hojeIso, currentUser]);
 
   if (!isOpen) return null;
 
@@ -105,6 +118,10 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
       setErroMsg('Por favor, informe o horário estimado de chegada.');
       return;
     }
+    if (deixouChave && !identificacaoChave.trim()) {
+      setErroMsg('Informe a identificação da chave disponibilizada.');
+      return;
+    }
 
     const [ano, mes, dia] = dataPrevistaIso.split('-');
     const dataFormatada = `${dia}/${mes}/${ano}`;
@@ -120,9 +137,13 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
         dataPrevistaIso,
         horarioEstimado: horarioEstimado.trim(),
         deixarEntrarDireto,
+        deixouChave,
+        identificacaoChave: deixouChave ? identificacaoChave.trim() : undefined,
+        localChavePortaria: deixouChave ? localChavePortaria.trim() : undefined,
         observacoes: observacoes.trim() || undefined
       });
     } else {
+      const statusInicial: StatusAutorizacaoAcesso = deixouChave ? 'Chave na Portaria à Disposição' : 'Aguardando Chegada';
       adicionarAutorizacaoAcesso({
         moradorId: currentUser.id,
         moradorNome: currentUser.nome,
@@ -137,6 +158,10 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
         dataPrevistaIso,
         horarioEstimado: horarioEstimado.trim(),
         deixarEntrarDireto,
+        deixouChave,
+        identificacaoChave: deixouChave ? identificacaoChave.trim() : undefined,
+        localChavePortaria: deixouChave ? localChavePortaria.trim() : undefined,
+        status: statusInicial,
         observacoes: observacoes.trim() || undefined
       });
     }
@@ -146,20 +171,20 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
 
   return createPortal(
     <div className="modal-overlay-safe bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="modal-content-safe bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col">
+      <div className="modal-content-safe bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
         
         {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between shrink-0">
+        <div className="p-5 sm:p-6 border-b border-slate-800 bg-slate-950/70 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400">
               <UserCheck className="w-5 h-5" />
             </div>
             <div>
               <span className="text-[11px] font-black uppercase text-indigo-400 tracking-wider block">
-                Portaria & Acessos da Unidade {currentUser.unidade}
+                Portaria • Visitas, Prestadores & Controle de Chaves
               </span>
               <h2 className="text-lg sm:text-xl font-black text-white">
-                {autorizacaoToEdit ? 'Editar Autorização de Entrada' : 'Autorizar Entrada na Portaria'}
+                {autorizacaoToEdit ? 'Editar Autorização / Chave' : (deixouChave ? 'Deixar Chave & Autorizar Entrada' : 'Autorizar Entrada de Visita/Prestador')}
               </h2>
             </div>
           </div>
@@ -182,11 +207,101 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
             </div>
           )}
 
+          {/* CENÁRIO 3 vs CENÁRIO 4: SELETOR DE CHAVE NA PORTARIA */}
+          <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+            <label className="text-[11px] font-black uppercase tracking-wider text-slate-300 block">
+              Tipo de Autorização:
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setDeixouChave(false)}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                  !deixouChave
+                    ? 'bg-indigo-600/30 border-indigo-500 text-white ring-2 ring-indigo-500/30'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800'
+                }`}
+              >
+                <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400 shrink-0">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <strong className="text-xs font-black text-white block">
+                    3. Visita / Prestador Regular
+                  </strong>
+                  <span className="text-[10px] text-slate-400 leading-tight block mt-0.5">
+                    Liberação de acesso para quem vai entrar e subir ao apartamento.
+                  </span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDeixouChave(true)}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                  deixouChave
+                    ? 'bg-amber-600/30 border-amber-500 text-white ring-2 ring-amber-500/30'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800'
+                }`}
+              >
+                <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <div>
+                  <strong className="text-xs font-black text-white block">
+                    4. Deixar Chave na Portaria
+                  </strong>
+                  <span className="text-[10px] text-slate-400 leading-tight block mt-0.5">
+                    Morador deixa chave para prestador, vistoriador ou hóspede retirar.
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Dados da Chave sob Custódia (Cenário 4) */}
+          {deixouChave && (
+            <div className="p-3.5 bg-amber-950/20 border border-amber-500/40 rounded-2xl space-y-3">
+              <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
+                <KeyRound className="w-4 h-4" />
+                <span>Detalhes da Chave sob Custódia da Portaria:</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-300">
+                    Identificação da Chave *:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Chave Apto 17 c/ chaveiro azul, Chave Tetra..."
+                    value={identificacaoChave}
+                    onChange={(e) => setIdentificacaoChave(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-300">
+                    Onde a chave fica na Portaria:
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Quadro de Chaves - Gancho 17, Gaveta 2..."
+                    value={localChavePortaria}
+                    onChange={(e) => setLocalChavePortaria(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Nome e Tipo */}
           <div className="space-y-3">
             <div className="space-y-1">
               <label className="text-[11px] font-extrabold uppercase text-slate-300">
-                Nome de Quem Vai Chegar *
+                Nome de Quem Vai Retirar a Chave / Entrar *
               </label>
               <input
                 type="text"
@@ -356,7 +471,7 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
               />
               <div>
                 <strong className="text-white block font-black text-xs">
-                  ✓ O porteiro pode deixar entrar direto
+                  ✓ O porteiro pode liberar entrada direta
                 </strong>
                 <span className="text-[10px] text-indigo-200">
                   {deixarEntrarDireto 
@@ -374,7 +489,7 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
             </label>
             <textarea
               rows={2}
-              placeholder="Ex: Pode mandar subir no 2º andar / Estará com ferramentas / Avisar se chegar de carro..."
+              placeholder="Ex: Entregar a chave apenas mediante conferência de documento / Pode mandar subir no 2º andar..."
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
               className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl p-2.5 text-white placeholder-slate-500 font-medium resize-none"
@@ -395,7 +510,7 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
               className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 cursor-pointer flex items-center gap-2"
             >
               <Check className="w-4 h-4 stroke-[3]" />
-              <span>Notificar Portaria</span>
+              <span>{autorizacaoToEdit ? 'Salvar Alterações' : 'Salvar & Notificar Portaria'}</span>
             </button>
           </div>
 

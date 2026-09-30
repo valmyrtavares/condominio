@@ -61,6 +61,7 @@ import {
   StatusAutorizacaoAcesso,
   EncomendaEntrega,
   StatusEncomenda,
+  TimelineEventoPortaria,
   CondominioProfile,
   ConfiguracaoBloco,
   StatusCondominio,
@@ -975,21 +976,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const editarRegraCondominio = (id: string, dados: Partial<RegraTopico>) => {
-    let itemAtualizado: RegraTopico | null = null;
-    setRegrasCondominio(prev => prev.map(r => {
-      if (r.id === id) {
-        itemAtualizado = {
-          ...r,
-          ...dados,
-          atualizadoEm: new Date().toISOString().split('T')[0]
-        };
-        return itemAtualizado;
-      }
-      return r;
-    }));
-    if (itemAtualizado) {
+    setRegrasCondominio(prev => {
+      const target = prev.find(r => r.id === id);
+      if (!target) return prev;
+      const itemAtualizado: RegraTopico = {
+        ...target,
+        ...dados,
+        atualizadoEm: new Date().toISOString().split('T')[0]
+      };
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'regras', itemAtualizado).catch(console.error);
-    }
+      return prev.map(r => r.id === id ? itemAtualizado : r);
+    });
   };
 
   const excluirRegraCondominio = (id: string) => {
@@ -1022,20 +1019,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const editarUnidadeDisponivel = (id: string, dados: Partial<UnidadeDisponivel>) => {
-    let itemAtualizado: UnidadeDisponivel | null = null;
-    setUnidadesDisponiveis(prev => prev.map(u => {
-      if (u.id === id) {
-        itemAtualizado = {
-          ...u,
-          ...dados
-        };
-        return itemAtualizado;
-      }
-      return u;
-    }));
-    if (itemAtualizado) {
+    setUnidadesDisponiveis(prev => {
+      const target = prev.find(u => u.id === id);
+      if (!target) return prev;
+      const itemAtualizado: UnidadeDisponivel = {
+        ...target,
+        ...dados
+      };
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'imoveis_disponiveis', itemAtualizado).catch(console.error);
-    }
+      return prev.map(u => u.id === id ? itemAtualizado : u);
+    });
   };
 
   const excluirUnidadeDisponivel = (id: string) => {
@@ -1059,20 +1052,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const editarServicoContratado = (id: string, dados: Partial<ServicoContratado>) => {
-    let itemAtualizado: ServicoContratado | null = null;
-    setServicosContratados(prev => prev.map(s => {
-      if (s.id === id) {
-        itemAtualizado = {
-          ...s,
-          ...dados
-        };
-        return itemAtualizado;
-      }
-      return s;
-    }));
-    if (itemAtualizado) {
+    setServicosContratados(prev => {
+      const target = prev.find(s => s.id === id);
+      if (!target) return prev;
+      const itemAtualizado: ServicoContratado = {
+        ...target,
+        ...dados
+      };
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'servicos_contratados', itemAtualizado).catch(console.error);
-    }
+      return prev.map(s => s.id === id ? itemAtualizado : s);
+    });
   };
 
   const excluirServicoContratado = (id: string) => {
@@ -1098,57 +1087,45 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const editarItemEnjoei = (id: string, dados: Partial<ItemEnjoei>) => {
-    let itemAtualizado: ItemEnjoei | null = null;
-    setItensEnjoei(prev => prev.map(item => {
-      if (item.id === id) {
-        itemAtualizado = {
-          ...item,
-          ...dados
-        };
-        return itemAtualizado;
-      }
-      return item;
-    }));
-    if (itemAtualizado) {
+    setItensEnjoei(prev => {
+      const target = prev.find(item => item.id === id);
+      if (!target) return prev;
+      const itemAtualizado: ItemEnjoei = {
+        ...target,
+        ...dados
+      };
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'enjoei', itemAtualizado).catch(console.error);
-    }
+      return prev.map(item => item.id === id ? itemAtualizado : item);
+    });
   };
 
   const atualizarStatusItemEnjoei = (id: string, status: StatusItemEnjoei) => {
-    let itemAtualizado: ItemEnjoei | null = null;
-    setItensEnjoei(prev => prev.map(item => {
-      if (item.id === id) {
-        itemAtualizado = {
-          ...item,
-          status
-        };
-        return itemAtualizado;
-      }
-      return item;
-    }));
-    if (itemAtualizado) {
+    setItensEnjoei(prev => {
+      const target = prev.find(item => item.id === id);
+      if (!target) return prev;
+      const itemAtualizado: ItemEnjoei = {
+        ...target,
+        status
+      };
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'enjoei', itemAtualizado).catch(console.error);
-    }
+      return prev.map(item => item.id === id ? itemAtualizado : item);
+    });
   };
 
   const suspenderItemEnjoei = (id: string, motivo: string) => {
     const target = itensEnjoei.find(i => i.id === id);
     let itemAtualizado: ItemEnjoei | null = null;
-    setItensEnjoei(prev => prev.map(item => {
-      if (item.id === id) {
-        itemAtualizado = {
-          ...item,
-          status: 'suspenso',
-          motivoSuspensao: motivo.trim() || 'Desacordo com as diretrizes de desapego do condomínio.'
-        };
-        return itemAtualizado;
-      }
-      return item;
-    }));
-
-    if (itemAtualizado) {
+    setItensEnjoei(prev => {
+      const item = prev.find(i => i.id === id);
+      if (!item) return prev;
+      itemAtualizado = {
+        ...item,
+        status: 'suspenso',
+        motivoSuspensao: motivo.trim() || 'Desacordo com as diretrizes de desapego do condomínio.'
+      };
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'enjoei', itemAtualizado).catch(console.error);
-    }
+      return prev.map(i => i.id === id ? (itemAtualizado as ItemEnjoei) : i);
+    });
 
     if (target) {
       const cleanUnit = target.moradorUnidade.replace(/[^0-9]/g, '');
@@ -1163,21 +1140,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const reativarItemEnjoei = (id: string) => {
-    let itemAtualizado: ItemEnjoei | null = null;
-    setItensEnjoei(prev => prev.map(item => {
-      if (item.id === id) {
-        itemAtualizado = {
-          ...item,
-          status: 'disponivel',
-          motivoSuspensao: undefined
-        };
-        return itemAtualizado;
-      }
-      return item;
-    }));
-    if (itemAtualizado) {
+    setItensEnjoei(prev => {
+      const target = prev.find(item => item.id === id);
+      if (!target) return prev;
+      const itemAtualizado: ItemEnjoei = {
+        ...target,
+        status: 'disponivel',
+        motivoSuspensao: undefined
+      };
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'enjoei', itemAtualizado).catch(console.error);
-    }
+      return prev.map(item => item.id === id ? itemAtualizado : item);
+    });
   };
 
   const excluirItemEnjoei = (id: string) => {
@@ -1261,21 +1234,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const atualizarStatusMudanca = (id: string, novoStatus: StatusMudanca, motivoRecusa?: string) => {
     const target = mudancas.find(m => m.id === id);
     let itemAtualizado: MudancaAgendamento | null = null;
-    setMudancas(prev => prev.map(m => {
-      if (m.id === id) {
-        itemAtualizado = {
-          ...m,
-          status: novoStatus,
-          motivoRecusa: motivoRecusa !== undefined ? motivoRecusa : m.motivoRecusa
-        };
-        return itemAtualizado;
-      }
-      return m;
-    }));
-
-    if (itemAtualizado) {
+    setMudancas(prev => {
+      const m = prev.find(item => item.id === id);
+      if (!m) return prev;
+      itemAtualizado = {
+        ...m,
+        status: novoStatus,
+        motivoRecusa: motivoRecusa !== undefined ? motivoRecusa : m.motivoRecusa
+      };
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'mudancas', itemAtualizado).catch(console.error);
-    }
+      return prev.map(item => item.id === id ? (itemAtualizado as MudancaAgendamento) : item);
+    });
 
     if (target) {
       const cleanUnit = target.unidade.replace(/[^0-9]/g, '');
@@ -1298,17 +1267,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const editarMudanca = (id: string, dados: Partial<MudancaAgendamento>) => {
-    let itemAtualizado: MudancaAgendamento | null = null;
-    setMudancas(prev => prev.map(m => {
-      if (m.id === id) {
-        itemAtualizado = { ...m, ...dados };
-        return itemAtualizado;
-      }
-      return m;
-    }));
-    if (itemAtualizado) {
+    setMudancas(prev => {
+      const target = prev.find(m => m.id === id);
+      if (!target) return prev;
+      const itemAtualizado: MudancaAgendamento = { ...target, ...dados };
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'mudancas', itemAtualizado).catch(console.error);
-    }
+      return prev.map(m => m.id === id ? itemAtualizado : m);
+    });
   };
 
   const excluirMudanca = (id: string) => {
@@ -1319,20 +1284,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // ==========================================
   // PORTARIA: AUTORIZAÇÃO DE ACESSOS E VISITAS
   // ==========================================
-  const [autorizacoesAcesso, setAutorizacoesAcesso] = useState<AutorizacaoAcesso[]>(() => {
-    try {
-      const salvo = localStorage.getItem(`condo_acessos_list_${condoTenantId}`);
-      if (salvo) return JSON.parse(salvo);
-    } catch {}
-    return [];
-  });
-
-  useEffect(() => {
-    if (!condoTenantId) return;
-    try {
-      localStorage.setItem(`condo_acessos_list_${condoTenantId}`, JSON.stringify(autorizacoesAcesso));
-    } catch {}
-  }, [autorizacoesAcesso, condoTenantId]);
+  const [autorizacoesAcesso, setAutorizacoesAcesso] = useState<AutorizacaoAcesso[]>([]);
 
   const adicionarAutorizacaoAcesso = (nova: Omit<AutorizacaoAcesso, 'id' | 'condominioId' | 'criadoEm' | 'status'> & { status?: StatusAutorizacaoAcesso }) => {
     const id = `acesso-${Date.now()}`;
@@ -1341,9 +1293,24 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const novaAuth: AutorizacaoAcesso = {
       ...nova,
       id,
-      status: nova.status || 'Aguardando Chegada',
+      status: nova.status || (nova.deixouChave ? 'Chave na Portaria à Disposição' : 'Aguardando Chegada'),
       criadoEm: dataHoraStr,
-      condominioId: condoTenantId
+      condominioId: condoTenantId,
+      timeline: [
+        {
+          id: `tl-acesso-${Date.now()}-1`,
+          dataHora: dataHoraStr,
+          data: agora.toLocaleDateString('pt-BR'),
+          hora: `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`,
+          titulo: nova.deixouChave ? '🔑 Chave Deixada na Portaria à Disposição' : '👤 Autorização de Entrada Cadastrada',
+          descricao: nova.deixouChave 
+            ? `Morador disponibilizou a chave (${nova.identificacaoChave || 'Imóvel'}) na portaria para ${nova.nomeVisitante} (${nova.tipoVisitante}). Local: ${nova.localChavePortaria || 'Portaria'}.`
+            : `Morador autorizou a entrada de "${nova.nomeVisitante}" (${nova.tipoVisitante}) para ${nova.dataPrevista} (${nova.horarioEstimado}).`,
+          autorNome: nova.moradorNome || currentUser.nome || 'Morador',
+          autorTipo: 'morador',
+          statusBadge: nova.status || (nova.deixouChave ? 'Chave na Portaria à Disposição' : 'Aguardando Chegada')
+        }
+      ]
     };
     setAutorizacoesAcesso(prev => [novaAuth, ...prev]);
     salvarDocumentoSubcolecaoFirestore(condoTenantId, 'autorizacoes_acesso', novaAuth).catch(console.error);
@@ -1354,8 +1321,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       dataIso: agora.toISOString().split('T')[0],
       hora: `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`,
       tipo: 'seguranca_acesso',
-      titulo: `Autorização de Entrada: ${nova.nomeVisitante}`,
-      descricao: `Apto ${nova.unidade} autorizou a entrada de "${nova.nomeVisitante}" (${nova.tipoVisitante}) para ${nova.dataPrevista} (${nova.horarioEstimado}).`,
+      titulo: nova.deixouChave ? `Chave sob Custódia: ${nova.nomeVisitante}` : `Autorização de Entrada: ${nova.nomeVisitante}`,
+      descricao: `Apto ${nova.unidade} ${nova.deixouChave ? 'disponibilizou chave para' : 'autorizou entrada de'} "${nova.nomeVisitante}" (${nova.tipoVisitante}) para ${nova.dataPrevista} (${nova.horarioEstimado}).`,
       autorNome: nova.moradorNome,
       autorUnidade: nova.unidade,
       autorTipo: 'morador',
@@ -1366,40 +1333,96 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const atualizarStatusAcesso = (id: string, novoStatus: StatusAutorizacaoAcesso, porteiroNome?: string) => {
     const agora = new Date();
+    const dataStr = agora.toLocaleDateString('pt-BR');
     const horaAtual = `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
-    let itemAtualizado: AutorizacaoAcesso | null = null;
+    const dataHoraStr = `${dataStr} ${horaAtual}`;
+    const responsavel = porteiroNome || currentUser.nome || 'Portaria';
 
-    setAutorizacoesAcesso(prev => prev.map(a => {
-      if (a.id === id) {
-        itemAtualizado = {
-          ...a,
-          status: novoStatus,
-          porteiroResponsavel: porteiroNome || a.porteiroResponsavel || currentUser.nome || 'Portaria',
-          horarioEntradaReal: novoStatus === 'Entrada Liberada / Presente' ? (a.horarioEntradaReal || horaAtual) : a.horarioEntradaReal,
-          horarioSaidaReal: novoStatus === 'Finalizado / Saiu' ? horaAtual : a.horarioSaidaReal
-        };
-        return itemAtualizado;
+    setAutorizacoesAcesso(prev => {
+      const a = prev.find(item => item.id === id);
+      if (!a) return prev;
+
+      let tituloEvento = 'Status Atualizado';
+      let descEvento = `Situação de acesso alterada para ${novoStatus}.`;
+
+      if (novoStatus === 'Entrada Liberada / Presente') {
+        tituloEvento = '✅ Chegada Confirmada e Entrada Liberada';
+        descEvento = `Portaria confirmou a chegada e liberou o acesso de ${a.nomeVisitante} (${a.tipoVisitante}) ao condomínio.`;
+      } else if (novoStatus === 'Finalizado / Saiu') {
+        tituloEvento = '🏁 Saída Registrada / Visita Concluída';
+        descEvento = `Portaria registrou a saída de ${a.nomeVisitante}. Acesso finalizado com sucesso.`;
+      } else if (novoStatus === 'Chave Retirada / No Condomínio') {
+        tituloEvento = '🔑 Chave Retirada e Entrada Autorizada';
+        descEvento = `${a.nomeVisitante} retirou a chave sob custódia na portaria e acessou a unidade.`;
+      } else if (novoStatus === 'Chave Devolvida / Concluído') {
+        tituloEvento = '🔒 Chave Devolvida na Portaria e Saída Concluída';
+        descEvento = `Chave foi devolvida com segurança à portaria por ${a.nomeVisitante}. Acesso e guarda concluídos.`;
+      } else if (novoStatus === 'Cancelado / Expirado') {
+        tituloEvento = '🚫 Autorização Cancelada';
+        descEvento = `Autorização de entrada foi cancelada ou expirada.`;
       }
-      return a;
-    }));
 
-    if (itemAtualizado) {
+      const novoEvento: TimelineEventoPortaria = {
+        id: `tl-acesso-${Date.now()}-${(a.timeline?.length || 0) + 1}`,
+        dataHora: dataHoraStr,
+        data: dataStr,
+        hora: horaAtual,
+        titulo: tituloEvento,
+        descricao: descEvento,
+        autorNome: responsavel,
+        autorTipo: currentUser.role === 'morador' ? 'morador' : 'porteiro',
+        statusBadge: novoStatus
+      };
+
+      const itemAtualizado: AutorizacaoAcesso = {
+        ...a,
+        status: novoStatus,
+        porteiroResponsavel: responsavel,
+        horarioEntradaReal: (novoStatus === 'Entrada Liberada / Presente' || novoStatus === 'Chave Retirada / No Condomínio') ? (a.horarioEntradaReal || horaAtual) : a.horarioEntradaReal,
+        horarioSaidaReal: (novoStatus === 'Finalizado / Saiu' || novoStatus === 'Chave Devolvida / Concluído') ? horaAtual : a.horarioSaidaReal,
+        horarioRetiradaChave: novoStatus === 'Chave Retirada / No Condomínio' ? (a.horarioRetiradaChave || horaAtual) : a.horarioRetiradaChave,
+        horarioDevolucaoChave: novoStatus === 'Chave Devolvida / Concluído' ? horaAtual : a.horarioDevolucaoChave,
+        timeline: [...(a.timeline || []), novoEvento]
+      };
+
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'autorizacoes_acesso', itemAtualizado).catch(console.error);
-    }
+
+      // Notifica o morador quando a visita/prestador chegar ou retirar a chave
+      const cleanUnit = a.unidade.replace(/[^0-9]/g, '');
+      if (cleanUnit) {
+        if (novoStatus === 'Entrada Liberada / Presente') {
+          enviarNotificacaoPrivada(
+            cleanUnit,
+            `🚪 Visita Chegou: ${a.nomeVisitante} (${a.tipoVisitante}) acaba de se apresentar na portaria e teve a entrada liberada.`,
+            'Aviso de Portaria'
+          );
+        } else if (novoStatus === 'Chave Retirada / No Condomínio') {
+          enviarNotificacaoPrivada(
+            cleanUnit,
+            `🔑 Chave Retirada: ${a.nomeVisitante} retirou a chave do seu apartamento na portaria e está no condomínio.`,
+            'Controle de Chaves'
+          );
+        } else if (novoStatus === 'Chave Devolvida / Concluído') {
+          enviarNotificacaoPrivada(
+            cleanUnit,
+            `🔒 Chave Devolvida: A chave do seu apartamento foi devolvida na portaria por ${a.nomeVisitante}.`,
+            'Controle de Chaves'
+          );
+        }
+      }
+
+      return prev.map(item => item.id === id ? itemAtualizado : item);
+    });
   };
 
   const editarAutorizacaoAcesso = (id: string, dados: Partial<AutorizacaoAcesso>) => {
-    let itemAtualizado: AutorizacaoAcesso | null = null;
-    setAutorizacoesAcesso(prev => prev.map(a => {
-      if (a.id === id) {
-        itemAtualizado = { ...a, ...dados };
-        return itemAtualizado;
-      }
-      return a;
-    }));
-    if (itemAtualizado) {
+    setAutorizacoesAcesso(prev => {
+      const a = prev.find(item => item.id === id);
+      if (!a) return prev;
+      const itemAtualizado: AutorizacaoAcesso = { ...a, ...dados };
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'autorizacoes_acesso', itemAtualizado).catch(console.error);
-    }
+      return prev.map(item => item.id === id ? itemAtualizado : item);
+    });
   };
 
   const excluirAutorizacaoAcesso = (id: string) => {
@@ -1410,29 +1433,46 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // ==========================================
   // PORTARIA: ENCOMENDAS & ENTREGAS
   // ==========================================
-  const [encomendasEntregas, setEncomendasEntregas] = useState<EncomendaEntrega[]>(() => {
-    try {
-      const salvo = localStorage.getItem(`condo_encomendas_list_${condoTenantId}`);
-      if (salvo) return JSON.parse(salvo);
-    } catch {}
-    return [];
-  });
-
-  useEffect(() => {
-    if (!condoTenantId) return;
-    try {
-      localStorage.setItem(`condo_encomendas_list_${condoTenantId}`, JSON.stringify(encomendasEntregas));
-    } catch {}
-  }, [encomendasEntregas, condoTenantId]);
+  const [encomendasEntregas, setEncomendasEntregas] = useState<EncomendaEntrega[]>([]);
 
   const adicionarEncomenda = (nova: Omit<EncomendaEntrega, 'id' | 'condominioId' | 'status' | 'dataRecebimento' | 'horaRecebimento'> & { dataRecebimento?: string; horaRecebimento?: string; status?: StatusEncomenda; moradorId?: string }) => {
     const id = `enc-${Date.now()}`;
     const agora = new Date();
     const dataStr = nova.dataRecebimento || agora.toLocaleDateString('pt-BR');
     const horaStr = nova.horaRecebimento || `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
+    const dataHoraStr = `${dataStr} ${horaStr}`;
     
-    // Se quem está cadastrando for morador e não definiu status, o status inicial é 'Aguardando Chegada na Portaria' (aviso de pacote que vai chegar)
-    const statusDefault: StatusEncomenda = nova.status || (currentUser.role === 'morador' ? 'Aguardando Chegada na Portaria' : 'Aguardando Retirada');
+    // Define o status padrão conforme o fluxo e quem está cadastrando
+    const isSaida = nova.fluxoTipo === 'saida_embrulho';
+    let statusDefault: StatusEncomenda;
+    if (nova.status) {
+      statusDefault = nova.status;
+    } else if (isSaida) {
+      statusDefault = currentUser.role === 'morador' ? 'Embrulho Deixado pelo Morador' : 'Aguardando Coleta na Portaria';
+    } else {
+      statusDefault = currentUser.role === 'morador' ? 'Aguardando Chegada na Portaria' : 'Aguardando Retirada';
+    }
+
+    let tituloEvento = 'Registro de Encomenda Criado';
+    let descEvento = 'Item registrado no sistema da portaria.';
+
+    if (isSaida) {
+      if (statusDefault === 'Embrulho Deixado pelo Morador') {
+        tituloEvento = '📤 Embrulho Deixado pelo Morador';
+        descEvento = `Morador cadastrou e deixou pacote/documento na portaria para retirada de ${nova.destinatarioExterno || nova.destinatarioNome}.`;
+      } else {
+        tituloEvento = '📦 Embrulho sob Custódia da Portaria';
+        descEvento = `Portaria confirmou recebimento do embrulho do morador para despacho. Guardado em: ${nova.localArmazenamento || 'Portaria'}.`;
+      }
+    } else {
+      if (statusDefault === 'Aguardando Chegada na Portaria') {
+        tituloEvento = '⏳ Aviso de Encomenda a Caminho';
+        descEvento = `Morador avisou que aguarda a entrega de um(a) ${nova.tipo} (${nova.empresaTransporte}).`;
+      } else {
+        tituloEvento = '📦 Pacote Recebido na Portaria';
+        descEvento = `Porteiro registrou o recebimento físico do pacote. Guardado em: ${nova.localArmazenamento || 'Portaria'}.`;
+      }
+    }
 
     const novaEnc: EncomendaEntrega = {
       ...nova,
@@ -1440,8 +1480,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       dataRecebimento: dataStr,
       horaRecebimento: horaStr,
       status: statusDefault,
-      condominioId: condoTenantId
+      condominioId: condoTenantId,
+      timeline: [
+        {
+          id: `tl-enc-${Date.now()}-1`,
+          dataHora: dataHoraStr,
+          data: dataStr,
+          hora: horaStr,
+          titulo: tituloEvento,
+          descricao: descEvento,
+          autorNome: currentUser.role === 'morador' ? (nova.destinatarioNome || currentUser.nome) : (nova.porteiroRecebedor || currentUser.nome || 'Portaria'),
+          autorTipo: currentUser.role === 'morador' ? 'morador' : 'porteiro',
+          statusBadge: statusDefault
+        }
+      ]
     };
+
     setEncomendasEntregas(prev => [novaEnc, ...prev]);
     salvarDocumentoSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', novaEnc).catch(console.error);
 
@@ -1465,48 +1519,94 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       porteiroRecebedor?: string; 
       localArmazenamento?: string; 
       retiradoPorNome?: string; 
-      fotoPacote?: string 
+      fotoPacote?: string;
+      destinatarioExterno?: string;
+      despachadoPor?: string;
     }
   ) => {
     const agora = new Date();
     const dataStr = agora.toLocaleDateString('pt-BR');
     const horaStr = `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
-    let itemAtualizado: EncomendaEntrega | null = null;
+    const dataHoraStr = `${dataStr} ${horaStr}`;
+    const responsavel = dados?.porteiroRecebedor || dados?.despachadoPor || currentUser.nome || 'Portaria';
 
-    setEncomendasEntregas(prev => prev.map(enc => {
-      if (enc.id === id) {
-        itemAtualizado = {
-          ...enc,
-          status: novoStatus,
-          porteiroRecebedor: dados?.porteiroRecebedor || (novoStatus === 'Aguardando Retirada' ? (currentUser.nome || 'Portaria') : enc.porteiroRecebedor),
-          localArmazenamento: dados?.localArmazenamento !== undefined ? dados.localArmazenamento : enc.localArmazenamento,
-          fotoPacote: dados?.fotoPacote !== undefined ? dados.fotoPacote : enc.fotoPacote,
-          dataRecebimento: (novoStatus === 'Aguardando Retirada' && enc.status === 'Aguardando Chegada na Portaria') ? dataStr : enc.dataRecebimento,
-          horaRecebimento: (novoStatus === 'Aguardando Retirada' && enc.status === 'Aguardando Chegada na Portaria') ? horaStr : enc.horaRecebimento,
-          dataRetirada: novoStatus === 'Entregue ao Morador' ? (enc.dataRetirada || dataStr) : (novoStatus === 'Aguardando Retirada' ? undefined : enc.dataRetirada),
-          horaRetirada: novoStatus === 'Entregue ao Morador' ? (enc.horaRetirada || horaStr) : (novoStatus === 'Aguardando Retirada' ? undefined : enc.horaRetirada),
-          retiradoPorNome: novoStatus === 'Entregue ao Morador' ? (dados?.retiradoPorNome || enc.retiradoPorNome || enc.destinatarioNome) : (novoStatus === 'Aguardando Retirada' ? undefined : enc.retiradoPorNome)
-        };
-        return itemAtualizado;
+    setEncomendasEntregas(prev => {
+      const enc = prev.find(item => item.id === id);
+      if (!enc) return prev;
+
+      let tituloEvento = 'Status Atualizado';
+      let descEvento = `Situação alterada para ${novoStatus}.`;
+
+      if (novoStatus === 'Aguardando Retirada') {
+        tituloEvento = '📦 Pacote Recebido na Portaria';
+        descEvento = `Porteiro ${responsavel} confirmou a chegada física do pacote. Guardado em: ${dados?.localArmazenamento || enc.localArmazenamento || 'Portaria'}.`;
+      } else if (novoStatus === 'Entregue ao Morador') {
+        const quemRetirou = dados?.retiradoPorNome || enc.retiradoPorNome || enc.destinatarioNome || 'Morador';
+        tituloEvento = '✅ Encomenda Entregue ao Morador';
+        descEvento = `Pacote entregue com sucesso e retirado na portaria por ${quemRetirou}.`;
+      } else if (novoStatus === 'Aguardando Coleta na Portaria') {
+        tituloEvento = '📦 Embrulho sob Custódia da Portaria';
+        descEvento = `Portaria confirmou e guardou o embrulho em: ${dados?.localArmazenamento || enc.localArmazenamento || 'Portaria'}. Aguardando retirada de terceiro.`;
+      } else if (novoStatus === 'Despachado / Retirado por Terceiro') {
+        const quemDespachou = dados?.retiradoPorNome || dados?.destinatarioExterno || enc.destinatarioExterno || 'Destinatário/Transportadora';
+        tituloEvento = '🚀 Embrulho Despachado por Terceiro';
+        descEvento = `Embrulho foi entregue e retirado com sucesso na portaria por ${quemDespachou}.`;
+      } else if (novoStatus === 'Devolvido') {
+        tituloEvento = '↩️ Encomenda Devolvida ao Remetente';
+        descEvento = `Encomenda foi recusada ou devolvida à transportadora/remetente.`;
       }
-      return enc;
-    }));
 
-    if (itemAtualizado) {
+      const novoEvento: TimelineEventoPortaria = {
+        id: `tl-enc-${Date.now()}-${(enc.timeline?.length || 0) + 1}`,
+        dataHora: dataHoraStr,
+        data: dataStr,
+        hora: horaStr,
+        titulo: tituloEvento,
+        descricao: descEvento,
+        autorNome: responsavel,
+        autorTipo: currentUser.role === 'morador' ? 'morador' : 'porteiro',
+        statusBadge: novoStatus
+      };
+
+      const itemAtualizado: EncomendaEntrega = {
+        ...enc,
+        status: novoStatus,
+        porteiroRecebedor: dados?.porteiroRecebedor || (novoStatus === 'Aguardando Retirada' ? responsavel : (novoStatus === 'Aguardando Chegada na Portaria' ? 'Pendente de Chegada' : enc.porteiroRecebedor)),
+        localArmazenamento: dados?.localArmazenamento !== undefined ? dados.localArmazenamento : (enc.localArmazenamento || (novoStatus === 'Aguardando Retirada' || novoStatus === 'Aguardando Coleta na Portaria' ? 'Portaria' : undefined)),
+        fotoPacote: dados?.fotoPacote !== undefined ? dados.fotoPacote : enc.fotoPacote,
+        dataRecebimento: (novoStatus === 'Aguardando Retirada' && enc.status === 'Aguardando Chegada na Portaria') ? dataStr : (enc.dataRecebimento || dataStr),
+        horaRecebimento: (novoStatus === 'Aguardando Retirada' && enc.status === 'Aguardando Chegada na Portaria') ? horaStr : (enc.horaRecebimento || horaStr),
+        dataRetirada: novoStatus === 'Entregue ao Morador' ? (enc.dataRetirada || dataStr) : (novoStatus === 'Aguardando Retirada' ? undefined : enc.dataRetirada),
+        horaRetirada: novoStatus === 'Entregue ao Morador' ? (enc.horaRetirada || horaStr) : (novoStatus === 'Aguardando Retirada' ? undefined : enc.horaRetirada),
+        retiradoPorNome: novoStatus === 'Entregue ao Morador' ? (dados?.retiradoPorNome || enc.retiradoPorNome || enc.destinatarioNome || 'Morador') : (novoStatus === 'Despachado / Retirado por Terceiro' ? (dados?.retiradoPorNome || enc.destinatarioExterno || 'Destinatário') : enc.retiradoPorNome),
+        dataDespacho: novoStatus === 'Despachado / Retirado por Terceiro' ? (enc.dataDespacho || dataStr) : enc.dataDespacho,
+        horaDespacho: novoStatus === 'Despachado / Retirado por Terceiro' ? (enc.horaDespacho || horaStr) : enc.horaDespacho,
+        despachadoPor: novoStatus === 'Despachado / Retirado por Terceiro' ? responsavel : enc.despachadoPor,
+        timeline: [...(enc.timeline || []), novoEvento]
+      };
+
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', itemAtualizado).catch(console.error);
 
-      // Notifica o morador quando o porteiro confirmar a chegada física do pacote
-      if (novoStatus === 'Aguardando Retirada') {
-        const cleanUnit = (itemAtualizado as EncomendaEntrega).unidade.replace(/[^0-9]/g, '');
-        if (cleanUnit) {
+      // Notifica o morador quando o porteiro confirmar a chegada física do pacote ou quando o embrulho for despachado
+      const cleanUnit = itemAtualizado.unidade.replace(/[^0-9]/g, '');
+      if (cleanUnit) {
+        if (novoStatus === 'Aguardando Retirada') {
           enviarNotificacaoPrivada(
             cleanUnit,
-            `📦 Encomenda Chegou na Portaria: O seu pacote (${(itemAtualizado as EncomendaEntrega).tipo} - ${(itemAtualizado as EncomendaEntrega).empresaTransporte}) foi recebido pelo porteiro e está disponível para retirada.`,
+            `📦 Encomenda Chegou na Portaria: O seu pacote (${itemAtualizado.tipo} - ${itemAtualizado.empresaTransporte}) foi recebido pelo porteiro e está disponível para retirada.`,
             'Aviso de Entrega'
+          );
+        } else if (novoStatus === 'Despachado / Retirado por Terceiro') {
+          enviarNotificacaoPrivada(
+            cleanUnit,
+            `🚀 Embrulho Despachado: O embrulho deixado na portaria para ${itemAtualizado.destinatarioExterno || 'terceiro'} foi retirado com sucesso.`,
+            'Despacho de Encomenda'
           );
         }
       }
-    }
+
+      return prev.map(item => item.id === id ? itemAtualizado : item);
+    });
   };
 
   const darBaixaEncomenda = (id: string, retiradoPorNome?: string) => {
@@ -1514,17 +1614,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const editarEncomenda = (id: string, dados: Partial<EncomendaEntrega>) => {
-    let itemAtualizado: EncomendaEntrega | null = null;
-    setEncomendasEntregas(prev => prev.map(enc => {
-      if (enc.id === id) {
-        itemAtualizado = { ...enc, ...dados };
-        return itemAtualizado;
-      }
-      return enc;
-    }));
-    if (itemAtualizado) {
+    setEncomendasEntregas(prev => {
+      const enc = prev.find(item => item.id === id);
+      if (!enc) return prev;
+      const itemAtualizado: EncomendaEntrega = { ...enc, ...dados };
       salvarDocumentoSubcolecaoFirestore(condoTenantId, 'encomendas_entregas', itemAtualizado).catch(console.error);
-    }
+      return prev.map(item => item.id === id ? itemAtualizado : item);
+    });
   };
 
   const excluirEncomenda = (id: string) => {

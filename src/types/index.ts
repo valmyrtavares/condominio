@@ -818,8 +818,28 @@ export interface RegrasMudancaConfig {
 // ==========================================
 // PORTARIA, ACESSOS & ENTREGAS
 // ==========================================
+export interface TimelineEventoPortaria {
+  id: string;
+  dataHora: string;  // "30/09/2026 12:30"
+  data: string;      // "30/09/2026"
+  hora: string;      // "12:30"
+  titulo: string;    // "Aviso Registrado", "Chegou na Portaria", "Entregue", etc.
+  descricao: string; // Detalhes da ação realizada
+  autorNome: string; // Nome do morador ou porteiro
+  autorTipo: 'morador' | 'porteiro' | 'admin' | 'sistema';
+  statusBadge?: string;
+}
+
 export type TipoVisitante = 'Visita / Familiar' | 'Prestador de Serviço' | 'Delivery / Entregador' | 'Corretor / Vistoriador' | 'Outro';
-export type StatusAutorizacaoAcesso = 'Aguardando Chegada' | 'Entrada Liberada / Presente' | 'Finalizado / Saiu' | 'Cancelado / Expirado';
+
+export type StatusAutorizacaoAcesso = 
+  | 'Aguardando Chegada' 
+  | 'Entrada Liberada / Presente' 
+  | 'Finalizado / Saiu' 
+  | 'Cancelado / Expirado'
+  | 'Chave na Portaria à Disposição'
+  | 'Chave Retirada / No Condomínio'
+  | 'Chave Devolvida / Concluído';
 
 export interface AutorizacaoAcesso {
   id: string;
@@ -841,15 +861,36 @@ export interface AutorizacaoAcesso {
   horarioEntradaReal?: string;
   horarioSaidaReal?: string;
   porteiroResponsavel?: string;
+  
+  // Suporte a Guarda e Entrega de Chaves (Cenário 4)
+  deixouChave?: boolean;
+  identificacaoChave?: string; // Ex: "Chave Apto 17 c/ Chaveiro Azul"
+  localChavePortaria?: string; // Ex: "Quadro de Chaves - Gancho 17"
+  horarioRetiradaChave?: string;
+  horarioDevolucaoChave?: string;
+
+  // Timeline com histórico de todos os eventos com horários
+  timeline?: TimelineEventoPortaria[];
   criadoEm: string;
   condominioId: string;
 }
 
+export type TipoOperacaoEncomenda = 'entrada_encomenda' | 'saida_embrulho';
+
 export type TipoEncomenda = 'Pacote / Caixa' | 'Envelope / Documento' | 'Delivery / Alimentação' | 'Medicamento' | 'Volume Grande' | 'Outro';
-export type StatusEncomenda = 'Aguardando Chegada na Portaria' | 'Aguardando Retirada' | 'Entregue ao Morador' | 'Devolvido';
+
+export type StatusEncomenda = 
+  | 'Aguardando Chegada na Portaria' 
+  | 'Aguardando Retirada' 
+  | 'Entregue ao Morador' 
+  | 'Devolvido'
+  | 'Embrulho Deixado pelo Morador'
+  | 'Aguardando Coleta na Portaria'
+  | 'Despachado / Retirado por Terceiro';
 
 export interface EncomendaEntrega {
   id: string;
+  fluxoTipo?: TipoOperacaoEncomenda; // 'entrada_encomenda' | 'saida_embrulho'
   unidade: string;
   bloco?: string;
   destinatarioNome: string;
@@ -867,6 +908,17 @@ export interface EncomendaEntrega {
   retiradoPorNome?: string;
   observacoes?: string;
   moradorId?: string;
+
+  // Suporte a Despacho de Embrulho do Morador (Cenário 2)
+  destinatarioExterno?: string;  // Nome de quem vai retirar
+  telefoneDestinatario?: string; // Telefone do comprador/entregador
+  dataDespacho?: string;
+  horaDespacho?: string;
+  despachadoPor?: string;
+  retiradoPorDoc?: string;
+
+  // Timeline com histórico de todos os eventos com horários
+  timeline?: TimelineEventoPortaria[];
   condominioId: string;
 }
 
