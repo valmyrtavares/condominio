@@ -514,7 +514,7 @@ export const PortariaScreen: React.FC = () => {
                           <img
                             src={acesso.fotoVisitante}
                             alt={acesso.nomeVisitante}
-                            className="w-12 h-12 rounded-2xl object-cover border-2 border-indigo-400 shadow-md shrink-0 bg-slate-100 transition-transform group-hover:scale-105"
+                            className="w-12 h-12 rounded-2xl object-contain border-2 border-indigo-400 shadow-md shrink-0 bg-slate-100 transition-transform group-hover:scale-105"
                           />
                         ) : (
                           <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 font-black transition-transform group-hover:scale-105 ${
@@ -840,7 +840,7 @@ export const PortariaScreen: React.FC = () => {
                             <img
                               src={enc.fotoPacote}
                               alt="Foto do pacote"
-                              className="w-12 h-12 rounded-lg object-cover border border-slate-300"
+                              className="w-12 h-12 rounded-lg object-contain border border-slate-300 bg-slate-100 shrink-0"
                             />
                             <span className="text-[10px] text-slate-600 font-semibold">
                               Foto registrada na recepção da portaria

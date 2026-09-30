@@ -354,14 +354,14 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
                       setImagem(img.url);
                       setImagemCustom('');
                     }}
-                    className={`relative h-14 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                    className={`relative h-14 w-14 aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer bg-slate-900 flex items-center justify-center ${
                       isSelected
                         ? 'border-amber-500 scale-105 shadow-md ring-2 ring-amber-400'
                         : 'border-slate-200 opacity-70 hover:opacity-100'
                     }`}
                     title={img.label}
                   >
-                    <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                    <img src={img.url} alt={img.label} className="w-full h-full object-contain" />
                     {isSelected && (
                       <span className="absolute inset-0 bg-amber-500/30 flex items-center justify-center text-white">
                         <Check className="w-4 h-4 stroke-[3]" />
@@ -374,10 +374,10 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
 
             {/* Preview Atual */}
             {imagem && (
-              <div className="relative h-28 w-full rounded-2xl overflow-hidden border border-slate-200 shadow-xs">
-                <img src={imagem} alt="Preview" className="w-full h-full object-cover" />
-                <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-bold backdrop-blur-xs">
-                  Pré-visualização do Banner
+              <div className="relative w-full max-w-[200px] aspect-square mx-auto rounded-2xl overflow-hidden border border-slate-200 shadow-xs bg-slate-900 flex items-center justify-center">
+                <img src={imagem} alt="Preview" className="w-full h-full object-contain" />
+                <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-bold backdrop-blur-xs pointer-events-none">
+                  Pré-visualização
                 </div>
               </div>
             )}

@@ -571,7 +571,7 @@ export const CreateEncomendaModal: React.FC<CreateEncomendaModalProps> = ({
                 <img
                   src={fotoPacote}
                   alt="Pacote"
-                  className="w-14 h-14 rounded-xl object-cover border border-indigo-400 shrink-0"
+                  className="w-14 h-14 rounded-xl object-contain border border-indigo-400 bg-slate-900 shrink-0"
                 />
               )}
               <label className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-[11px] inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs">

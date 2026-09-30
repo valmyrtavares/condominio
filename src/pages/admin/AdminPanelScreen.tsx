@@ -3846,11 +3846,13 @@ export const AdminPanelScreen: React.FC = () => {
                     >
                       {/* Topo: Imagem Thumbnail, Título, Visibilidade e Status */}
                       <div className="flex items-start gap-3">
-                        <img
-                          src={evento.imagem}
-                          alt={evento.titulo}
-                          className="w-16 h-16 rounded-2xl object-cover border border-slate-300 bg-slate-100 shrink-0 shadow-2xs"
-                        />
+                        <div className="w-16 h-16 aspect-square rounded-2xl border border-slate-300 bg-slate-900 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+                          <img
+                            src={evento.imagem}
+                            alt={evento.titulo}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
                         <div className="min-w-0 flex-1 space-y-0.5">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border shadow-2xs ${
@@ -4778,19 +4780,21 @@ export const AdminPanelScreen: React.FC = () => {
                                       <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 block mb-1">
                                         Anexo da Ocorrência:
                                       </span>
-                                      {rec.anexoTipo === 'video' ? (
-                                        <video 
-                                          src={rec.anexoUrl} 
-                                          controls 
-                                          className="max-h-48 rounded-xl border border-slate-300 bg-black/10"
-                                        />
-                                      ) : (
-                                        <img 
-                                          src={rec.anexoUrl} 
-                                          alt="Anexo" 
-                                          className="max-h-48 rounded-xl border border-slate-300 object-cover"
-                                        />
-                                      )}
+                                      <div className="w-48 h-48 aspect-square rounded-xl border border-slate-300 bg-slate-100 flex items-center justify-center overflow-hidden">
+                                        {rec.anexoTipo === 'video' ? (
+                                          <video 
+                                            src={rec.anexoUrl} 
+                                            controls 
+                                            className="w-full h-full object-contain"
+                                          />
+                                        ) : (
+                                          <img 
+                                            src={rec.anexoUrl} 
+                                            alt="Anexo" 
+                                            className="w-full h-full object-contain"
+                                          />
+                                        )}
+                                      </div>
                                     </div>
                                   )}
 
@@ -5533,19 +5537,21 @@ export const AdminPanelScreen: React.FC = () => {
                                     <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 block mb-1">
                                       Evidência Anexada:
                                     </span>
-                                    {rep.anexoTipo === 'video' ? (
-                                      <video 
-                                        src={rep.anexoUrl} 
-                                        controls 
-                                        className="max-h-48 rounded-xl border border-slate-300 bg-black/10"
-                                      />
-                                    ) : (
-                                      <img 
-                                        src={rep.anexoUrl} 
-                                        alt="Anexo do Reparo" 
-                                        className="max-h-48 rounded-xl border border-slate-300 object-cover"
-                                      />
-                                    )}
+                                    <div className="w-48 h-48 aspect-square rounded-xl border border-slate-300 bg-slate-100 flex items-center justify-center overflow-hidden">
+                                      {rep.anexoTipo === 'video' ? (
+                                        <video 
+                                          src={rep.anexoUrl} 
+                                          controls 
+                                          className="w-full h-full object-contain"
+                                        />
+                                      ) : (
+                                        <img 
+                                          src={rep.anexoUrl} 
+                                          alt="Anexo do Reparo" 
+                                          className="w-full h-full object-contain"
+                                        />
+                                      )}
+                                    </div>
                                   </div>
                                 )}
 
@@ -5553,12 +5559,13 @@ export const AdminPanelScreen: React.FC = () => {
                                 {rep.fotosAntes && rep.fotosAntes.length > 0 && !rep.anexoUrl && (
                                   <div className="pt-2 border-t border-slate-200 flex gap-2 overflow-x-auto pb-1">
                                     {rep.fotosAntes.map((foto, fIdx) => (
-                                      <img 
-                                        key={fIdx} 
-                                        src={foto} 
-                                        alt="Foto Antes" 
-                                        className="h-20 w-28 rounded-xl border border-slate-300 object-cover shrink-0" 
-                                      />
+                                      <div key={fIdx} className="w-20 h-20 aspect-square rounded-xl border border-slate-300 bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                                        <img 
+                                          src={foto} 
+                                          alt="Foto Antes" 
+                                          className="w-full h-full object-contain" 
+                                        />
+                                      </div>
                                     ))}
                                   </div>
                                 )}
@@ -8486,16 +8493,16 @@ export const AdminPanelScreen: React.FC = () => {
                             <div className="space-y-3">
                               
                               {/* Imagem + Badges */}
-                              <div className="relative h-40 rounded-2xl overflow-hidden bg-slate-900 border border-slate-200">
+                              <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 flex items-center justify-center">
                                 <img
                                   src={dep.foto}
                                   alt={dep.nome}
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-contain"
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).src = '/Salão de festas.jpg';
                                   }}
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent p-3 flex flex-col justify-between">
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent p-3 flex flex-col justify-between pointer-events-none">
                                   <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-950/80 text-amber-300 border border-amber-400/40 backdrop-blur-xs">
                                       {dep.tipo}
@@ -9308,7 +9315,7 @@ export const AdminPanelScreen: React.FC = () => {
                                     <img
                                       src={acesso.fotoVisitante}
                                       alt={acesso.nomeVisitante}
-                                      className="w-11 h-11 rounded-xl object-cover border border-indigo-300 shrink-0 bg-slate-100 shadow-2xs transition-transform group-hover:scale-105"
+                                      className="w-11 h-11 rounded-xl object-contain border border-indigo-300 shrink-0 bg-slate-100 shadow-2xs transition-transform group-hover:scale-105"
                                     />
                                   ) : (
                                     <div className="w-11 h-11 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-800 shrink-0 transition-transform group-hover:scale-105">
@@ -9692,7 +9699,7 @@ export const AdminPanelScreen: React.FC = () => {
                                       <img
                                         src={enc.fotoPacote}
                                         alt="Pacote"
-                                        className="w-10 h-10 rounded-lg object-cover border border-slate-300"
+                                        className="w-10 h-10 rounded-lg object-contain border border-slate-300 bg-slate-100 shrink-0"
                                       />
                                       <span className="text-[10px] text-slate-600 font-medium">
                                         Foto do pacote anexada

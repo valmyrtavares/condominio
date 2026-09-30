@@ -393,7 +393,7 @@ export const CreateAutorizacaoModal: React.FC<CreateAutorizacaoModalProps> = ({
                 <img
                   src={fotoVisitante}
                   alt="Visitante"
-                  className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-400 shadow-md shrink-0 bg-slate-800"
+                  className="w-16 h-16 rounded-2xl object-contain border-2 border-indigo-400 shadow-md shrink-0 bg-slate-800"
                 />
               ) : (
                 <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500 shrink-0">

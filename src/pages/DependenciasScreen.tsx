@@ -322,16 +322,16 @@ export const DependenciasScreen: React.FC = () => {
                     <div className="flex flex-col md:flex-row md:items-center gap-4">
                       
                       {/* Miniatura / Capa */}
-                      <div className="relative w-full md:w-56 h-36 md:h-32 rounded-2xl overflow-hidden bg-slate-900 shrink-0 shadow-md">
+                      <div className="relative w-full md:w-36 aspect-square rounded-2xl overflow-hidden bg-slate-900 shrink-0 shadow-md flex items-center justify-center">
                         <img
                           src={dep.foto}
                           alt={dep.nome}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = '/Salão de festas.jpg';
                           }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-between p-2.5">
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-between p-2.5 pointer-events-none">
                           <span className="self-start text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-950/80 text-amber-300 border border-amber-400/40 backdrop-blur-xs">
                             {dep.tipo}
                           </span>

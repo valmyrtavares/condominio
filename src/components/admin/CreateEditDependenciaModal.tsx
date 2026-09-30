@@ -310,12 +310,12 @@ export const CreateEditDependenciaModal: React.FC<CreateEditDependenciaModalProp
 
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
               {/* Preview Thumbnail */}
-              <div className="sm:col-span-4 h-32 rounded-2xl overflow-hidden bg-slate-950 border-2 border-slate-700/80 relative flex items-center justify-center group shadow-inner">
+              <div className="sm:col-span-4 aspect-square rounded-2xl overflow-hidden bg-slate-950 border-2 border-slate-700/80 relative flex items-center justify-center group shadow-inner">
                 {foto ? (
                   <img
                     src={foto}
                     alt="Preview da Dependência"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/Salão de festas.jpg';
                     }}

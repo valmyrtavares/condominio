@@ -287,13 +287,13 @@ export const EventosScreen: React.FC = () => {
                   <div className="min-h-0 overflow-hidden">
                     <div className="px-4 pb-4 space-y-3 border-t border-slate-950/10 pt-3">
                       {/* Event Image */}
-                      <div className="relative h-48 w-full overflow-hidden rounded-2xl border border-white/50 shadow-sm bg-slate-900">
+                      <div className="relative w-full max-w-sm sm:max-w-md mx-auto aspect-square overflow-hidden rounded-2xl border border-white/50 shadow-sm bg-slate-900 flex items-center justify-center">
                         <img 
                           src={evento.imagem} 
                           alt={evento.titulo} 
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-3">
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-3 pointer-events-none">
                           <div className="text-white text-xs font-bold flex items-center gap-1.5 drop-shadow">
                             <MapPin className="w-4 h-4 text-amber-400" />
                             <span>{evento.local}</span>

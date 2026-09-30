@@ -420,20 +420,22 @@ export const ReclamacoesScreen: React.FC = () => {
                             <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-600 block mb-1.5">
                               Evidência / Anexo Enviado:
                             </span>
-                            {rec.anexoTipo === 'video' ? (
-                              <video
-                                src={rec.anexoUrl}
-                                controls
-                                className="w-full max-h-72 rounded-xl border border-slate-300 bg-black/10 object-contain shadow-sm"
-                              />
-                            ) : (
-                              <img
-                                src={rec.anexoUrl}
-                                alt="Anexo da Ocorrência"
-                                className="w-full max-h-72 rounded-xl border border-slate-300 bg-slate-100 object-cover shadow-sm cursor-pointer hover:opacity-95 transition-opacity"
-                                onClick={() => window.open(rec.anexoUrl, '_blank')}
-                              />
-                            )}
+                            <div className="w-full max-w-sm aspect-square mx-auto rounded-xl border border-slate-300 bg-slate-900/5 flex items-center justify-center overflow-hidden shadow-sm">
+                              {rec.anexoTipo === 'video' ? (
+                                <video
+                                  src={rec.anexoUrl}
+                                  controls
+                                  className="w-full h-full object-contain"
+                                />
+                              ) : (
+                                <img
+                                  src={rec.anexoUrl}
+                                  alt="Anexo da Ocorrência"
+                                  className="w-full h-full object-contain cursor-pointer hover:opacity-95 transition-opacity"
+                                  onClick={() => window.open(rec.anexoUrl, '_blank')}
+                                />
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>

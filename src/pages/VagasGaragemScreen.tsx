@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useCondo } from '../context/CondoContext';
 import { StatusVaga, VagaGaragem, VeiculoInfo } from '../types';
 import { 
@@ -31,8 +31,18 @@ export const VagasGaragemScreen: React.FC = () => {
   const [filterSubsolo, setFilterSubsolo] = useState<string>('Todos');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Identifica a vaga pertencente ao morador logado
-  const minhaVaga = vagasGaragem.find(v => v.unidadeNumero === currentUser.unidade) || vagasGaragem[0];
+  // Identifica a vaga pertencente ao morador logado de forma precisa e estável
+  const minhaVaga = useMemo(() => {
+    const uUser = (currentUser.unidade || '').replace(/\D/g, '');
+    return (
+      vagasGaragem.find(v => {
+        const uVaga = (v.unidadeNumero || '').replace(/\D/g, '');
+        return (uVaga && uUser && uVaga === uUser) || (v.unidadeNumero && currentUser.unidade && v.unidadeNumero.trim().toLowerCase() === currentUser.unidade.trim().toLowerCase());
+      }) ||
+      vagasGaragem.find(v => v.unidadeNumero === currentUser.unidade) ||
+      vagasGaragem[0]
+    );
+  }, [vagasGaragem, currentUser.unidade]);
 
   // Form State para a vaga do morador logado
   const [meuStatus, setMeuStatus] = useState<StatusVaga>(minhaVaga?.status || 'Em uso');
@@ -43,9 +53,12 @@ export const VagasGaragemScreen: React.FC = () => {
   const [minhasObs, setMinhasObs] = useState(minhaVaga?.observacoes || '');
   const [salvoFeedback, setSalvoFeedback] = useState(false);
 
-  // Sincroniza formulário da minha vaga ao mudar de vaga ou receber atualização do Firestore
-  React.useEffect(() => {
-    if (minhaVaga) {
+  const vagaCarregadaRef = useRef<string | null>(null);
+
+  // Sincroniza formulário da minha vaga apenas quando ela é carregada inicialmente ou o ID muda
+  useEffect(() => {
+    if (minhaVaga && vagaCarregadaRef.current !== minhaVaga.id) {
+      vagaCarregadaRef.current = minhaVaga.id;
       setMeuStatus(minhaVaga.status || 'Em uso');
       setMeuModelo(minhaVaga.veiculo?.modelo || '');
       setMinhaCor(minhaVaga.veiculo?.cor || '');
@@ -53,7 +66,7 @@ export const VagasGaragemScreen: React.FC = () => {
       setMeuAluguel(minhaVaga.valorAluguelMensal?.toString() || '250');
       setMinhasObs(minhaVaga.observacoes || '');
     }
-  }, [minhaVaga?.id, minhaVaga?.status, minhaVaga?.valorAluguelMensal, minhaVaga?.observacoes]);
+  }, [minhaVaga?.id]);
 
   // Modal / Feedback de chamada de interfone
   const [interfoneChamando, setInterfoneChamando] = useState<string | null>(null);
@@ -89,24 +102,27 @@ export const VagasGaragemScreen: React.FC = () => {
     }, 4000);
   };
 
-  // Filter Logic
-  const filteredVagas = vagasGaragem.filter(v => {
-    const matchesStatus = filterStatus === 'Todas' || v.status === filterStatus;
-    const matchesSubsolo = filterSubsolo === 'Todos' || v.subsolo === filterSubsolo;
-    const matchesSearch = !searchTerm || 
-      v.numeroVaga.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.unidadeNumero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.moradorNome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (v.veiculo?.placa && v.veiculo.placa.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (v.veiculo?.modelo && v.veiculo.modelo.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Filter Logic memoizado
+  const filteredVagas = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim();
+    return vagasGaragem.filter(v => {
+      const matchesStatus = filterStatus === 'Todas' || v.status === filterStatus;
+      const matchesSubsolo = filterSubsolo === 'Todos' || v.subsolo === filterSubsolo;
+      const matchesSearch = !term || 
+        v.numeroVaga.toLowerCase().includes(term) ||
+        v.unidadeNumero.toLowerCase().includes(term) ||
+        v.moradorNome.toLowerCase().includes(term) ||
+        (v.veiculo?.placa && v.veiculo.placa.toLowerCase().includes(term)) ||
+        (v.veiculo?.modelo && v.veiculo.modelo.toLowerCase().includes(term));
 
-    return matchesStatus && matchesSubsolo && matchesSearch;
-  });
+      return matchesStatus && matchesSubsolo && matchesSearch;
+    });
+  }, [vagasGaragem, filterStatus, filterSubsolo, searchTerm]);
 
-  // Counters
-  const countEmUso = vagasGaragem.filter(v => v.status === 'Em uso').length;
-  const countParaAlugar = vagasGaragem.filter(v => v.status === 'Para Alugar').length;
-  const countVazia = vagasGaragem.filter(v => v.status === 'Vazia').length;
+  // Counters memoizados
+  const countEmUso = useMemo(() => vagasGaragem.filter(v => v.status === 'Em uso').length, [vagasGaragem]);
+  const countParaAlugar = useMemo(() => vagasGaragem.filter(v => v.status === 'Para Alugar').length, [vagasGaragem]);
+  const countVazia = useMemo(() => vagasGaragem.filter(v => v.status === 'Vazia').length, [vagasGaragem]);
 
   const getStatusBadge = (status: StatusVaga) => {
     switch (status) {

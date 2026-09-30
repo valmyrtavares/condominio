@@ -578,20 +578,22 @@ export const ReparosScreen: React.FC = () => {
                             <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-600 block mb-1.5">
                               Evidência / Anexo Enviado:
                             </span>
-                            {rep.anexoTipo === 'video' ? (
-                              <video
-                                src={rep.anexoUrl}
-                                controls
-                                className="w-full max-h-72 rounded-xl border border-slate-300 bg-black/10 object-contain shadow-sm"
-                              />
-                            ) : (
-                              <img
-                                src={rep.anexoUrl}
-                                alt="Anexo do Reparo"
-                                className="w-full max-h-72 rounded-xl border border-slate-300 bg-slate-100 object-cover shadow-sm cursor-pointer hover:opacity-95 transition-opacity"
-                                onClick={() => window.open(rep.anexoUrl, '_blank')}
-                              />
-                            )}
+                            <div className="w-full max-w-sm aspect-square mx-auto rounded-xl border border-slate-300 bg-slate-900/5 flex items-center justify-center overflow-hidden shadow-sm">
+                              {rep.anexoTipo === 'video' ? (
+                                <video
+                                  src={rep.anexoUrl}
+                                  controls
+                                  className="w-full h-full object-contain"
+                                />
+                              ) : (
+                                <img
+                                  src={rep.anexoUrl}
+                                  alt="Anexo do Reparo"
+                                  className="w-full h-full object-contain cursor-pointer hover:opacity-95 transition-opacity"
+                                  onClick={() => window.open(rep.anexoUrl, '_blank')}
+                                />
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -604,26 +606,26 @@ export const ReparosScreen: React.FC = () => {
                         </span>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="relative rounded-2xl overflow-hidden border border-white/80 h-36 group shadow-md bg-slate-900">
+                          <div className="relative rounded-2xl overflow-hidden border border-white/80 aspect-square group shadow-md bg-slate-900 flex items-center justify-center">
                             <img
                               src={rep.fotosAntes[0] || 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80'}
                               alt="Antes do reparo"
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              className="w-full h-full object-contain group-hover:scale-105 transition-transform"
                             />
-                            <div className="absolute inset-0 bg-slate-950/40 flex items-end p-2.5">
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-2.5">
                               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-rose-600 text-white shadow-2xs">
                                 Problema Constatado
                               </span>
                             </div>
                           </div>
 
-                          <div className="relative rounded-2xl overflow-hidden border border-white/80 h-36 group shadow-md bg-slate-900">
+                          <div className="relative rounded-2xl overflow-hidden border border-white/80 aspect-square group shadow-md bg-slate-900 flex items-center justify-center">
                             <img
                               src={rep.fotosDepois?.[0] || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80'}
                               alt="Depois do reparo"
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              className="w-full h-full object-contain group-hover:scale-105 transition-transform"
                             />
-                            <div className="absolute inset-0 bg-slate-950/40 flex items-end p-2.5">
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-2.5">
                               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-600 text-white shadow-2xs">
                                 {rep.status === 'Resolvido' || rep.status === 'Executado' || rep.status === 'Confirmado' ? 'Serviço Concluído ✓' : 'Previsão de Entrega'}
                               </span>
