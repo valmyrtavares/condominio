@@ -43,13 +43,20 @@ export const ResidentMessagesModal: React.FC<ResidentMessagesModalProps> = ({
   const isSindicoOrAdmin = currentUser?.role === 'sindico' || currentUser?.role === 'subsindico';
   const canAccess = Boolean(isMyUnit || isSindicoOrAdmin);
 
-  const unitNotifs = notificacoesPrivadas.filter(n => {
-    if (!n || !n.unidadeNumero) return false;
-    const targetNorm = normalizeUnit(n.unidadeNumero);
-    const unitNorm = normalizeUnit(unitNumber);
-    const isGeneral = targetNorm === 'todos' || targetNorm === 'geral' || targetNorm === 'todas';
-    return isGeneral || targetNorm === unitNorm || targetNorm.includes(unitNorm) || unitNorm.includes(targetNorm);
-  });
+  const unitNotifs = notificacoesPrivadas
+    .filter(n => {
+      if (!n || !n.unidadeNumero) return false;
+      const targetNorm = normalizeUnit(n.unidadeNumero);
+      const unitNorm = normalizeUnit(unitNumber);
+      const isGeneral = targetNorm === 'todos' || targetNorm === 'geral' || targetNorm === 'todas';
+      return isGeneral || targetNorm === unitNorm || targetNorm.includes(unitNorm) || unitNorm.includes(targetNorm);
+    })
+    .sort((a, b) => {
+      const idA = a.id?.startsWith('notif-') ? parseInt(a.id.replace('notif-', ''), 10) : 0;
+      const idB = b.id?.startsWith('notif-') ? parseInt(b.id.replace('notif-', ''), 10) : 0;
+      if (idA && idB) return idB - idA;
+      return 0;
+    });
 
   // When modal is opened by authorized user, mark all unread notifications as read so admin is immediately notified of delivery/reading
   useEffect(() => {

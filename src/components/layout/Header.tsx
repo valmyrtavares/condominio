@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useCondo } from '../../context/CondoContext';
 import { 
   Menu, 
@@ -41,36 +41,56 @@ export const Header: React.FC = () => {
   const userUnit = normalizeUnit(currentUser?.unidade);
   const userRawNumber = currentUser?.unidade ? currentUser.unidade.replace(/[^0-9]/g, '') : '';
 
-  const unitNotifs = notificacoesPrivadas.filter(n => {
-    if (!n || !n.unidadeNumero) return false;
-    const targetNorm = normalizeUnit(n.unidadeNumero);
-    const targetRaw = n.unidadeNumero.replace(/[^0-9]/g, '');
-
-    const isGeneral = targetNorm === 'todos' || targetNorm === 'geral' || targetNorm === 'todas' || targetNorm === 'condominio';
-    if (isGeneral) return true;
-
-    if (!userUnit || currentUser?.role === 'sindico' || currentUser?.role === 'subsindico') {
-      return true;
+  // Notificações pertencentes à unidade deste morador
+  const unitNotifs = useMemo(() => {
+    // Se o usuário não tem unidade associada (ex: "Morador sem dados" / convidado),
+    // ele NÃO deve receber notificações privadas de apartamentos de terceiros.
+    if (!userUnit) {
+      return notificacoesPrivadas.filter(n => {
+        if (!n || !n.unidadeNumero) return false;
+        const targetNorm = normalizeUnit(n.unidadeNumero);
+        return targetNorm === 'todos' || targetNorm === 'geral' || targetNorm === 'todas' || targetNorm === 'condominio';
+      });
     }
 
-    if (userUnit && (targetNorm === userUnit || targetNorm.startsWith(userUnit) || userUnit.startsWith(targetNorm))) {
-      return true;
-    }
+    const filtradas = notificacoesPrivadas.filter(n => {
+      if (!n || !n.unidadeNumero) return false;
+      const targetNorm = normalizeUnit(n.unidadeNumero);
+      const targetRaw = n.unidadeNumero.replace(/[^0-9]/g, '');
 
-    if (userRawNumber && targetRaw && userRawNumber === targetRaw) {
-      return true;
-    }
+      const isGeneral = targetNorm === 'todos' || targetNorm === 'geral' || targetNorm === 'todas' || targetNorm === 'condominio';
+      if (isGeneral) return true;
 
-    return false;
-  });
-  const unreadCount = unitNotifs.filter(n => {
-    const nClean = normalizeUnit(n.unidadeNumero);
-    const isGeneral = nClean === 'todos' || nClean === 'geral' || nClean === 'todas' || nClean === 'condominio';
-    if (isGeneral && userUnit) {
-      return !n.lidasPorUnidades?.includes(userUnit);
-    }
-    return !n.lida;
-  }).length;
+      if (userUnit && (targetNorm === userUnit || targetNorm.startsWith(userUnit) || userUnit.startsWith(targetNorm))) {
+        return true;
+      }
+
+      if (userRawNumber && targetRaw && userRawNumber === targetRaw) {
+        return true;
+      }
+
+      return false;
+    });
+
+    // Ordenação da mais recente (topo da pilha) para a mais antiga
+    return [...filtradas].sort((a, b) => {
+      const idA = a.id?.startsWith('notif-') ? parseInt(a.id.replace('notif-', ''), 10) : 0;
+      const idB = b.id?.startsWith('notif-') ? parseInt(b.id.replace('notif-', ''), 10) : 0;
+      if (idA && idB) return idB - idA;
+      return 0;
+    });
+  }, [notificacoesPrivadas, userUnit, userRawNumber]);
+
+  const unreadCount = useMemo(() => {
+    return unitNotifs.filter(n => {
+      const nClean = normalizeUnit(n.unidadeNumero);
+      const isGeneral = nClean === 'todos' || nClean === 'geral' || nClean === 'todas' || nClean === 'condominio';
+      if (isGeneral && userUnit) {
+        return !n.lidasPorUnidades?.includes(userUnit);
+      }
+      return !n.lida;
+    }).length;
+  }, [unitNotifs, userUnit]);
 
   const isHome = currentScreen === 'home';
 

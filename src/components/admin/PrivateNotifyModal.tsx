@@ -194,9 +194,15 @@ export const PrivateNotifyModal: React.FC<PrivateNotifyModalProps> = ({
   const notificacoesDestaUnidade = useMemo(() => {
     if (!unidade) return [];
     const norm = normalizeUnit(unidade.numero);
-    return notificacoesPrivadas.filter(
+    const filtradas = notificacoesPrivadas.filter(
       n => normalizeUnit(n.unidadeNumero) === norm
     );
+    return [...filtradas].sort((a, b) => {
+      const idA = a.id?.startsWith('notif-') ? parseInt(a.id.replace('notif-', ''), 10) : 0;
+      const idB = b.id?.startsWith('notif-') ? parseInt(b.id.replace('notif-', ''), 10) : 0;
+      if (idA && idB) return idB - idA;
+      return 0;
+    });
   }, [notificacoesPrivadas, unidade, normalizeUnit]);
 
   const todosModelos = useMemo(() => {
