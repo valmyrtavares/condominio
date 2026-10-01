@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useCondo } from '../../context/CondoContext';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
-import { Building2, KeyRound, ArrowLeft, AlertCircle, CheckCircle2, Lock, Eye, EyeOff, Search, ChevronDown, X } from 'lucide-react';
+import { Building2, KeyRound, ArrowLeft, AlertCircle, CheckCircle2, Lock, Eye, EyeOff, Search, ChevronDown, X, Layers } from 'lucide-react';
 
 export const ResidentLoginScreen: React.FC = () => {
   const { 
@@ -15,6 +15,7 @@ export const ResidentLoginScreen: React.FC = () => {
     currentCondo
   } = useCondo();
   const isCasas = currentCondo?.tipoCondominio === 'casas';
+  const [selectedBloco, setSelectedBloco] = useState('');
   const [unidade, setUnidade] = useState('');
   const [houseSearchText, setHouseSearchText] = useState('');
   const [isHouseDropdownOpen, setIsHouseDropdownOpen] = useState(false);
@@ -26,6 +27,42 @@ export const ResidentLoginScreen: React.FC = () => {
   const [isManualInput, setIsManualInput] = useState(false);
 
   const houseDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Lista de blocos/torres disponíveis
+  const listaBlocos = React.useMemo(() => {
+    const list: string[] = [];
+    if (currentCondo?.configuracaoBlocos && Array.isArray(currentCondo.configuracaoBlocos)) {
+      currentCondo.configuracaoBlocos.forEach(b => {
+        const nome = (b.nome || '').trim();
+        if (nome && !list.includes(nome)) list.push(nome);
+      });
+    }
+    unidades.forEach(u => {
+      const b = (u.bloco || '').trim();
+      if (b && !list.includes(b)) list.push(b);
+    });
+    if (list.length === 0 && (currentCondo?.totalBlocos || 1) > 1) {
+      const totalBlocos = currentCondo?.totalBlocos || 1;
+      for (let i = 1; i <= totalBlocos; i++) {
+        list.push(`Bloco ${i}`);
+      }
+    }
+    return list;
+  }, [currentCondo?.configuracaoBlocos, currentCondo?.totalBlocos, unidades]);
+
+  // Lista de apartamentos filtrados pelo bloco selecionado
+  const unidadesDoBloco = React.useMemo(() => {
+    let list = unidades;
+    if (selectedBloco) {
+      list = list.filter(u => (u.bloco || '').trim().toLowerCase() === selectedBloco.trim().toLowerCase());
+    }
+
+    return [...list].sort((a, b) => {
+      const numA = parseInt(a.numero.replace(/\D/g, ''), 10) || 0;
+      const numB = parseInt(b.numero.replace(/\D/g, ''), 10) || 0;
+      return numA - numB;
+    });
+  }, [unidades, selectedBloco]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -57,6 +94,7 @@ export const ResidentLoginScreen: React.FC = () => {
 
   const selectedUnitObj = unidade.trim() ? unidades.find(u => 
     u.id === unidade.trim() ||
+    (selectedBloco ? (u.numero.toLowerCase() === unidade.trim().toLowerCase() && (u.bloco || '').toLowerCase() === selectedBloco.toLowerCase()) : false) ||
     (u.rua ? getHouseLabel(u).toLowerCase() === unidade.trim().toLowerCase() : false) ||
     normalizeUnitStr(u.numero) === normalizeUnitStr(unidade.trim()) ||
     u.numero.toLowerCase() === unidade.trim().toLowerCase()
@@ -159,7 +197,8 @@ export const ResidentLoginScreen: React.FC = () => {
       return;
     }
 
-    const res = loginResident(unidade, senha);
+    const unitToLogin = selectedUnitObj?.id || unidade;
+    const res = loginResident(unitToLogin, senha);
     if (!res.success) {
       setErro(res.message || 'Dados inválidos. Verifique com a administração.');
       return;
@@ -243,27 +282,25 @@ export const ResidentLoginScreen: React.FC = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
-                {isCasas ? 'Digite sua Casa / Rua' : 'Selecione sua Unidade / Apartamento'}
-              </label>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsManualInput(!isManualInput);
-                  setUnidade('');
-                  setHouseSearchText('');
-                  setIsHouseDropdownOpen(false);
-                }}
-                className="text-[10px] font-bold text-amber-900 hover:text-amber-950 underline cursor-pointer"
-              >
-                {isManualInput ? (isCasas ? 'Buscar por número/rua' : 'Escolher da lista') : 'Digitar e-mail / dev'}
-              </button>
-            </div>
-
-            <div className="relative" ref={houseDropdownRef}>
-              {isManualInput ? (
+          {/* Campo de Seleção de Unidade / Bloco / Casas / Manual */}
+          {isManualInput ? (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
+                  Credencial / E-mail / Identificador
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsManualInput(false);
+                    setUnidade('');
+                  }}
+                  className="text-[10px] font-bold text-amber-900 hover:text-amber-950 underline cursor-pointer"
+                >
+                  {isCasas ? 'Buscar por número/rua' : 'Escolher da lista'}
+                </button>
+              </div>
+              <div className="relative">
                 <input
                   type="text"
                   placeholder={isCasas ? "Ex: Casa 12 ou dev@dev.com" : "Ex: dev@dev.com ou funcionário"}
@@ -274,121 +311,194 @@ export const ResidentLoginScreen: React.FC = () => {
                   required
                   autoFocus
                 />
-              ) : isCasas ? (
-                /* CONDOCASAS: Autocomplete interativo para buscar por número e rua */
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Digite o número e nome da rua"
-                    value={houseSearchText}
-                    onFocus={() => setIsHouseDropdownOpen(true)}
-                    onChange={(e) => {
-                      const text = e.target.value;
-                      setHouseSearchText(text);
-                      setUnidade(text);
+                <Building2 className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5 pointer-events-none" />
+              </div>
+            </div>
+          ) : isCasas ? (
+            /* CONDOCASAS: Autocomplete interativo para buscar por número e rua */
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
+                  Digite sua Casa / Rua
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsManualInput(true);
+                    setUnidade('');
+                    setHouseSearchText('');
+                    setIsHouseDropdownOpen(false);
+                  }}
+                  className="text-[10px] font-bold text-amber-900 hover:text-amber-950 underline cursor-pointer"
+                >
+                  Digitar e-mail / dev
+                </button>
+              </div>
+              <div className="relative" ref={houseDropdownRef}>
+                <input
+                  type="text"
+                  placeholder="Digite o número e nome da rua"
+                  value={houseSearchText}
+                  onFocus={() => setIsHouseDropdownOpen(true)}
+                  onChange={(e) => {
+                    const text = e.target.value;
+                    setHouseSearchText(text);
+                    setUnidade(text);
+                    setIsHouseDropdownOpen(true);
+                  }}
+                  className="w-full bg-white/90 border border-white rounded-2xl px-4 py-3 pl-10 pr-10 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner cursor-text"
+                  required
+                  autoFocus
+                />
+                <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5 pointer-events-none" />
+                
+                {houseSearchText ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHouseSearchText('');
+                      setUnidade('');
                       setIsHouseDropdownOpen(true);
                     }}
-                    className="w-full bg-white/90 border border-white rounded-2xl px-4 py-3 pl-10 pr-10 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner cursor-text"
-                    required
-                    autoFocus
-                  />
-                  <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5 pointer-events-none" />
-                  
-                  {houseSearchText ? (
+                    className="p-1 text-slate-400 hover:text-slate-700 absolute right-3 top-2.5 rounded-lg cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsHouseDropdownOpen(!isHouseDropdownOpen)}
+                    className="p-1 text-slate-400 hover:text-slate-700 absolute right-3 top-2.5 rounded-lg cursor-pointer"
+                  >
+                    <ChevronDown className={`w-4 h-4 transition-transform ${isHouseDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                )}
+
+                {/* Dropdown de Sugestões de Casas */}
+                {isHouseDropdownOpen && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-2xl max-h-60 overflow-y-auto p-1.5 space-y-1 animate-in fade-in slide-in-from-top-2">
+                    {filteredCasas.length > 0 ? (
+                      filteredCasas.map((u) => {
+                        const label = getHouseLabel(u);
+                        const isSelected = unidade === u.id || unidade === label;
+                        return (
+                          <button
+                            key={u.id}
+                            type="button"
+                            onClick={() => {
+                              setHouseSearchText(label);
+                              setUnidade(u.id);
+                              setIsHouseDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                              isSelected 
+                                ? 'bg-amber-500 text-slate-950 shadow-sm' 
+                                : 'text-slate-900 hover:bg-amber-100/80 hover:text-amber-950'
+                            }`}
+                          >
+                            <span>{label}</span>
+                            {u.rua && (
+                              <span className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold ${
+                                isSelected ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-600'
+                              }`}>
+                                {u.rua}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="p-3 text-center text-xs text-slate-500 font-semibold">
+                        Nenhuma casa encontrada para "{houseSearchText}"
+                      </div>
+                    )}
+
+                    {/* Opção Dev no final da lista */}
                     <button
                       type="button"
                       onClick={() => {
-                        setHouseSearchText('');
-                        setUnidade('');
-                        setIsHouseDropdownOpen(true);
+                        setHouseSearchText('dev@dev.com');
+                        setUnidade('dev@dev.com');
+                        setIsHouseDropdownOpen(false);
                       }}
-                      className="p-1 text-slate-400 hover:text-slate-700 absolute right-3 top-2.5 rounded-lg cursor-pointer"
+                      className="w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold text-purple-900 bg-purple-50 hover:bg-purple-100 transition-colors flex items-center justify-between cursor-pointer border-t border-purple-100 mt-1"
                     >
-                      <X className="w-4 h-4" />
+                      <span>👑 Login Master de Desenvolvedor (dev@dev.com)</span>
                     </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsHouseDropdownOpen(!isHouseDropdownOpen)}
-                      className="p-1 text-slate-400 hover:text-slate-700 absolute right-3 top-2.5 rounded-lg cursor-pointer"
-                    >
-                      <ChevronDown className={`w-4 h-4 transition-transform ${isHouseDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                  )}
-
-                  {/* Dropdown de Sugestões de Casas */}
-                  {isHouseDropdownOpen && (
-                    <div className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-2xl max-h-60 overflow-y-auto p-1.5 space-y-1 animate-in fade-in slide-in-from-top-2">
-                      {filteredCasas.length > 0 ? (
-                        filteredCasas.map((u) => {
-                          const label = getHouseLabel(u);
-                          const isSelected = unidade === u.id || unidade === label;
-                          return (
-                            <button
-                              key={u.id}
-                              type="button"
-                              onClick={() => {
-                                setHouseSearchText(label);
-                                setUnidade(u.id);
-                                setIsHouseDropdownOpen(false);
-                              }}
-                              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
-                                isSelected 
-                                  ? 'bg-amber-500 text-slate-950 shadow-sm' 
-                                  : 'text-slate-900 hover:bg-amber-100/80 hover:text-amber-950'
-                              }`}
-                            >
-                              <span>{label}</span>
-                              {u.rua && (
-                                <span className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold ${
-                                  isSelected ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-600'
-                                }`}>
-                                  {u.rua}
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })
-                      ) : (
-                        <div className="p-3 text-center text-xs text-slate-500 font-semibold">
-                          Nenhuma casa encontrada para "{houseSearchText}"
-                        </div>
-                      )}
-
-                      {/* Opção Dev no final da lista */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setHouseSearchText('dev@dev.com');
-                          setUnidade('dev@dev.com');
-                          setIsHouseDropdownOpen(false);
-                        }}
-                        className="w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold text-purple-900 bg-purple-50 hover:bg-purple-100 transition-colors flex items-center justify-between cursor-pointer border-t border-purple-100 mt-1"
-                      >
-                        <span>👑 Login Master de Desenvolvedor (dev@dev.com)</span>
-                      </button>
-                    </div>
-                  )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : listaBlocos.length > 1 ? (
+            /* CONDOMÍNIO COM MÚLTIPLOS BLOCOS: Seleção em 2 passos (Bloco primeiro, depois Apartamento) */
+            <>
+              {/* Passo 1: Bloco / Torre */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
+                  Torre / Bloco
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedBloco}
+                    onChange={(e) => {
+                      setSelectedBloco(e.target.value);
+                      setUnidade('');
+                    }}
+                    className="w-full bg-white/90 border border-white rounded-2xl px-4 py-3 pl-10 pr-10 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner cursor-pointer appearance-none"
+                    required
+                  >
+                    <option value="" disabled className="text-slate-500">
+                      -- Escolha o seu bloco / torre --
+                    </option>
+                    {listaBlocos.map((blocoNome) => {
+                      const count = unidades.filter(u => (u.bloco || '').trim().toLowerCase() === blocoNome.trim().toLowerCase()).length;
+                      return (
+                        <option key={blocoNome} value={blocoNome} className="text-slate-950 font-semibold bg-white py-1">
+                          {blocoNome} {count > 0 ? `(${count})` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <Layers className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5 pointer-events-none" />
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />
                 </div>
-              ) : (
-                /* CONDOAPARTAMENTOS: Mantido intacto com select padrão */
-                <>
+              </div>
+
+              {/* Passo 2: Apartamento / Unidade */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
+                    Apartamento / Unidade
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsManualInput(true);
+                      setUnidade('');
+                    }}
+                    className="text-[10px] font-bold text-amber-900 hover:text-amber-950 underline cursor-pointer"
+                  >
+                    Digitar e-mail / dev
+                  </button>
+                </div>
+                <div className="relative">
                   <select
                     value={unidade}
                     onChange={(e) => setUnidade(e.target.value)}
-                    className="w-full bg-white/90 border border-white rounded-2xl px-4 py-3 pl-10 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner cursor-pointer appearance-none"
+                    disabled={!selectedBloco}
+                    className={`w-full bg-white/90 border border-white rounded-2xl px-4 py-3 pl-10 pr-10 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner cursor-pointer appearance-none ${
+                      !selectedBloco ? 'opacity-60 cursor-not-allowed bg-slate-100/80 text-slate-400' : ''
+                    }`}
                     required
-                    autoFocus
                   >
                     <option value="" disabled className="text-slate-500">
-                      -- Escolha o seu apartamento / unidade --
+                      {!selectedBloco ? '-- Primeiro escolha o bloco acima --' : '-- Escolha o seu apartamento --'}
                     </option>
-                    {unidades.map((u) => {
-                      const label = u.bloco && !u.numero.toLowerCase().includes('bloco')
-                        ? `Apto ${u.numero} (${u.bloco})`
-                        : `Unidade ${u.numero}`;
+                    {unidadesDoBloco.map((u) => {
+                      const numLimpo = u.numero.replace(/^(apto|apt|unidade|apartamento)\s*/i, '').trim();
+                      const label = `Apto ${numLimpo}`;
                       return (
-                        <option key={u.id} value={u.numero} className="text-slate-950 font-semibold bg-white py-1">
+                        <option key={u.id} value={u.id} className="text-slate-950 font-semibold bg-white py-1">
                           {label}
                         </option>
                       );
@@ -398,13 +508,59 @@ export const ResidentLoginScreen: React.FC = () => {
                     </option>
                   </select>
                   <Building2 className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5 pointer-events-none" />
-                </>
-              )}
-              {isManualInput && (
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />
+                </div>
+              </div>
+            </>
+          ) : (
+            /* CONDOMÍNIO DE BLOCO ÚNICO */
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">
+                  Apartamento / Unidade
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsManualInput(true);
+                    setUnidade('');
+                  }}
+                  className="text-[10px] font-bold text-amber-900 hover:text-amber-950 underline cursor-pointer"
+                >
+                  Digitar e-mail / dev
+                </button>
+              </div>
+              <div className="relative">
+                <select
+                  value={unidade}
+                  onChange={(e) => setUnidade(e.target.value)}
+                  className="w-full bg-white/90 border border-white rounded-2xl px-4 py-3 pl-10 pr-10 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner cursor-pointer appearance-none"
+                  required
+                  autoFocus
+                >
+                  <option value="" disabled className="text-slate-500">
+                    -- Escolha o seu apartamento / unidade --
+                  </option>
+                  {unidades.map((u) => {
+                    const numLimpo = u.numero.replace(/^(apto|apt|unidade|apartamento)\s*/i, '').trim();
+                    const label = u.bloco && !u.numero.toLowerCase().includes('bloco')
+                      ? `Apto ${numLimpo} (${u.bloco})`
+                      : `Apto ${numLimpo}`;
+                    return (
+                      <option key={u.id} value={u.id} className="text-slate-950 font-semibold bg-white py-1">
+                        {label}
+                      </option>
+                    );
+                  })}
+                  <option value="dev@dev.com" className="text-purple-900 font-bold bg-purple-50">
+                    👑 Login Master de Desenvolvedor (dev@dev.com)
+                  </option>
+                </select>
                 <Building2 className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5 pointer-events-none" />
-              )}
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="space-y-1">
             <div className="flex items-center justify-between">

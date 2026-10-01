@@ -43,6 +43,13 @@ const PRESET_LOCAIS = [
   'Outro Local'
 ];
 
+/** Lista de horários de 30 em 30 minutos (00:00 até 23:30) */
+const HORARIOS_MEIA_HORA = Array.from({ length: 48 }, (_, i) => {
+  const horas = String(Math.floor(i / 2)).padStart(2, '0');
+  const minutos = i % 2 === 0 ? '00' : '30';
+  return `${horas}:${minutos}`;
+});
+
 export const CreateEditAssembleiaModal: React.FC<CreateEditAssembleiaModalProps> = ({
   isOpen,
   onClose,
@@ -62,8 +69,8 @@ export const CreateEditAssembleiaModal: React.FC<CreateEditAssembleiaModalProps>
   const [tipoSubformato, setTipoSubformato] = useState<'Ordinária' | 'Extraordinária' | 'Reunião de Comissão' | 'Reunião com Moradores' | 'Outro'>('Ordinária');
   const [titulo, setTitulo] = useState('');
   const [data, setData] = useState('');
-  const [primeiraChamada, setPrimeiraChamada] = useState('');
-  const [segundaChamada, setSegundaChamada] = useState('');
+  const [primeiraChamada, setPrimeiraChamada] = useState('19:30');
+  const [segundaChamada, setSegundaChamada] = useState('20:00');
   const [local, setLocal] = useState(PRESET_LOCAIS[0]);
   const [localCustom, setLocalCustom] = useState('');
   const [descricaoGeral, setDescricaoGeral] = useState('');
@@ -101,8 +108,8 @@ export const CreateEditAssembleiaModal: React.FC<CreateEditAssembleiaModalProps>
         }
       }
       setData(dataIso);
-      setPrimeiraChamada(assembleiaToEdit.primeiraChamada || '');
-      setSegundaChamada(assembleiaToEdit.segundaChamada || '');
+      setPrimeiraChamada(assembleiaToEdit.primeiraChamada || '19:30');
+      setSegundaChamada(assembleiaToEdit.segundaChamada || '20:00');
       
       if (PRESET_LOCAIS.includes(assembleiaToEdit.local)) {
         setLocal(assembleiaToEdit.local);
@@ -123,8 +130,8 @@ export const CreateEditAssembleiaModal: React.FC<CreateEditAssembleiaModalProps>
       setTipoSubformato('Ordinária');
       setTitulo('');
       setData('');
-      setPrimeiraChamada('');
-      setSegundaChamada('');
+      setPrimeiraChamada('19:30');
+      setSegundaChamada('20:00');
       setLocal(PRESET_LOCAIS[0]);
       setLocalCustom('');
       setDescricaoGeral('');
@@ -440,28 +447,40 @@ export const CreateEditAssembleiaModal: React.FC<CreateEditAssembleiaModalProps>
               <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900 flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 text-amber-700" /> 1ª Chamada *
               </label>
-              <input
-                type="text"
-                placeholder="Ex: 19:30"
+              <select
                 value={primeiraChamada}
                 onChange={(e) => setPrimeiraChamada(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-amber-500 cursor-pointer"
                 required
-              />
+              >
+                <option value="" disabled>Selecione...</option>
+                {primeiraChamada && !HORARIOS_MEIA_HORA.includes(primeiraChamada) && (
+                  <option value={primeiraChamada}>{primeiraChamada}</option>
+                )}
+                {HORARIOS_MEIA_HORA.map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-1">
               <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-rose-700" /> 2ª Chamada / Início *
+                <Clock className="w-3.5 h-3.5 text-rose-700" /> 2ª Chamada *
               </label>
-              <input
-                type="text"
-                placeholder="Ex: 20:00"
+              <select
                 value={segundaChamada}
                 onChange={(e) => setSegundaChamada(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-amber-500 cursor-pointer"
                 required
-              />
+              >
+                <option value="" disabled>Selecione...</option>
+                {segundaChamada && !HORARIOS_MEIA_HORA.includes(segundaChamada) && (
+                  <option value={segundaChamada}>{segundaChamada}</option>
+                )}
+                {HORARIOS_MEIA_HORA.map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-1">
