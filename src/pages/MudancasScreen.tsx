@@ -9,16 +9,10 @@ import {
   Clock, 
   ShieldCheck, 
   CheckCircle2, 
-  AlertTriangle, 
-  X, 
   ChevronDown, 
-  ChevronUp, 
   Search, 
-  Building, 
-  Phone, 
-  FileText,
-  AlertCircle,
-  Check
+  AlertCircle, 
+  Check 
 } from 'lucide-react';
 import { CreateAgendamentoMudancaModal } from '../components/mudancas/CreateAgendamentoMudancaModal';
 
@@ -27,7 +21,8 @@ export const MudancasScreen: React.FC = () => {
     mudancas, 
     regrasMudanca, 
     currentUser, 
-    atualizarStatusMudanca, 
+    isAdminLoggedIn,
+    isMasterLoggedIn,
     excluirMudanca, 
     setCurrentScreen 
   } = useCondo();
@@ -58,7 +53,7 @@ export const MudancasScreen: React.FC = () => {
   };
 
   // Minhas mudanças (do morador logado)
-  const minhasMudancas = mudancas.filter(m => m.moradorId === currentUser.id || m.unidade === currentUser.unidade);
+  const minhasMudancas = mudancas.filter(m => m.moradorId === currentUser?.id || m.unidade === currentUser?.unidade);
 
   // Mudanças filtradas
   const filteredMudancas = mudancas.filter(m => {
@@ -104,7 +99,14 @@ export const MudancasScreen: React.FC = () => {
   };
 
   // Permissão para criar agendamentos (apenas administradores e colaboradores de gestão)
-  const isGestor = currentUser.isAdmin || currentUser.isDev || currentUser.role === 'sindico' || currentUser.role === 'subsindico' || currentUser.role === 'colaborador';
+  const isGestor = Boolean(
+    isAdminLoggedIn || 
+    isMasterLoggedIn || 
+    currentUser?.isDev || 
+    currentUser?.role === 'sindico' || 
+    currentUser?.role === 'subsindico' || 
+    currentUser?.role === 'colaborador'
+  );
 
   return (
     <div className="space-y-5 pb-24 animate-in fade-in duration-300 w-full max-w-full overflow-x-hidden">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useCondo } from '../../context/CondoContext';
-import { MudancaAgendamento, TipoMudanca, StatusMudanca, Unidade } from '../../types';
+import { MudancaAgendamento, TipoMudanca, StatusMudanca } from '../../types';
 import { 
   Truck, 
   X, 
@@ -13,8 +13,7 @@ import {
   Building,
   User,
   Phone,
-  FileText,
-  CheckCircle2
+  FileText
 } from 'lucide-react';
 
 /** Formata número de WhatsApp / Telefone brasileiro: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX (máx 11 dígitos) */
