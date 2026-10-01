@@ -103,6 +103,9 @@ export const MudancasScreen: React.FC = () => {
     }
   };
 
+  // Permissão para criar agendamentos (apenas administradores e colaboradores de gestão)
+  const isGestor = currentUser.isAdmin || currentUser.isDev || currentUser.role === 'sindico' || currentUser.role === 'subsindico' || currentUser.role === 'colaborador';
+
   return (
     <div className="space-y-5 pb-24 animate-in fade-in duration-300 w-full max-w-full overflow-x-hidden">
       
@@ -121,25 +124,40 @@ export const MudancasScreen: React.FC = () => {
         <div>
           <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2 drop-shadow-md">
             <Truck className="w-5 h-5 text-amber-400" />
-            Mudanças & Carretos do Condomínio
+            Consulta de Mudanças & Carretos
           </h2>
           <p className="text-xs text-amber-100/90 font-medium mt-0.5">
-            Agende transportes de mudança ou carretos, consulte horários permitidos e reserve o elevador de serviço.
+            Quadro informativo de mudanças, saídas e carretos programados por unidade no condomínio.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setMudancaToEdit(null);
-            setIsModalOpen(true);
-          }}
-          className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-2xl shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>+ Agendar Mudança / Carreto</span>
-        </button>
+        {isGestor && (
+          <button
+            type="button"
+            onClick={() => {
+              setMudancaToEdit(null);
+              setIsModalOpen(true);
+            }}
+            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-2xl shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>+ Agendar Mudança / Carreto</span>
+          </button>
+        )}
       </div>
+
+      {/* Banner Informativo para Moradores */}
+      {!isGestor && (
+        <div className="bg-amber-500/15 border border-amber-400/40 rounded-2xl p-3.5 flex items-start gap-3 text-amber-100 text-xs backdrop-blur-xs shadow-md">
+          <ShieldCheck className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <strong className="text-white block font-extrabold">Agendamento Exclusivo da Administração</strong>
+            <p className="text-[11px] text-amber-100/85 leading-relaxed font-medium">
+              Para garantir a segurança, integridade dos elevadores e logística da portaria, o cadastro e agendamento de mudanças/carretos é realizado exclusivamente pelo síndico ou administração. Caso vá realizar uma mudança ou transporte pesado, informe a administração.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 1. Card de Regras e Horários de Mudança */}
       <div className="bg-white/50 border-2 border-amber-300/80 rounded-3xl p-4 sm:p-5 shadow-xl backdrop-blur-xs space-y-3">
@@ -453,9 +471,9 @@ export const MudancasScreen: React.FC = () => {
                           <strong className="text-slate-950 block">
                             {mud.nomeMotorista || 'Motorista a identificar na portaria'}
                           </strong>
-                          {mud.rgMotorista && (
+                          {(mud.cpfMotorista || mud.rgMotorista) && (
                             <span className="text-[11px] text-slate-600 font-medium block">
-                              Doc: {mud.rgMotorista}
+                              CPF: {mud.cpfMotorista || mud.rgMotorista}
                             </span>
                           )}
                         </div>

@@ -819,6 +819,7 @@ export interface MudancaAgendamento {
   placaVeiculo?: string;
   nomeMotorista?: string;
   rgMotorista?: string;
+  cpfMotorista?: string;
   precisaElevadorServico: boolean;
   precisaAcolchoamentoElevador: boolean;
   termoCienciaAssinado: boolean;

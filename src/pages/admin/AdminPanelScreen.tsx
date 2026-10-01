@@ -122,6 +122,7 @@ import {
   BookOpen,
   ChevronRight,
   Truck,
+  Phone,
   FileSpreadsheet,
   Download,
   BarChart3,
@@ -159,6 +160,7 @@ import { BenfeitoriaTimelineModal } from '../../components/admin/BenfeitoriaTime
 import { CreateAutorizacaoModal } from '../../components/portaria/CreateAutorizacaoModal';
 import { CreateEncomendaModal } from '../../components/portaria/CreateEncomendaModal';
 import { PortariaTimelineModal } from '../../components/portaria/PortariaTimelineModal';
+import { CreateAgendamentoMudancaModal } from '../../components/mudancas/CreateAgendamentoMudancaModal';
 import { ColaboradorFirstAccessModal } from '../../components/admin/ColaboradorFirstAccessModal';
 import { BackupRestoreCondoModal } from '../../components/admin/BackupRestoreCondoModal';
 import { AdminModuloKey } from '../../types';
@@ -1068,6 +1070,8 @@ export const AdminPanelScreen: React.FC = () => {
   const [isEnjoeiAdminOpen, setIsEnjoeiAdminOpen] = useState(false);
   const [isDependenciasAdminOpen, setIsDependenciasAdminOpen] = useState(false);
   const [isMudancasAdminOpen, setIsMudancasAdminOpen] = useState(false);
+  const [isCreateEditMudancaAdminOpen, setIsCreateEditMudancaAdminOpen] = useState(false);
+  const [mudancaToEditAdmin, setMudancaToEditAdmin] = useState<MudancaAgendamento | null>(null);
   const [isPortariaAdminOpen, setIsPortariaAdminOpen] = useState(false);
   const [isBenfeitoriasAdminOpen, setIsBenfeitoriasAdminOpen] = useState(false);
   const [isBackupRestoreModalOpen, setIsBackupRestoreModalOpen] = useState(false);
@@ -9432,19 +9436,33 @@ export const AdminPanelScreen: React.FC = () => {
             >
               <div className="min-h-0 overflow-hidden bg-orange-50/50 p-4 sm:p-6 space-y-6">
                 
-                {/* Resumo */}
-                <div className="flex items-center gap-2 flex-wrap bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
-                  <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-amber-300 text-xs font-black shadow-xs">
-                    {mudancas.length} Mudanças no Total
-                  </div>
-                  <div className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
-                    ✓ {totalConfirmadas} Confirmadas
-                  </div>
-                  {totalPendentes > 0 && (
-                    <div className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-black">
-                      ⏳ {totalPendentes} Pendentes de Análise
+                {/* Resumo e Botão de Agendamento */}
+                <div className="flex items-center justify-between gap-3 flex-wrap bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-amber-300 text-xs font-black shadow-xs">
+                      {mudancas.length} Mudanças no Total
                     </div>
-                  )}
+                    <div className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
+                      ✓ {totalConfirmadas} Confirmadas
+                    </div>
+                    {totalPendentes > 0 && (
+                      <div className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-black">
+                        ⏳ {totalPendentes} Pendentes de Análise
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMudancaToEditAdmin(null);
+                      setIsCreateEditMudancaAdminOpen(true);
+                    }}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                    <span>+ Agendar Nova Mudança / Carreto</span>
+                  </button>
                 </div>
 
                 {/* Filtros e Busca */}
@@ -9511,6 +9529,11 @@ export const AdminPanelScreen: React.FC = () => {
                                   <h4 className="text-sm sm:text-base font-black text-slate-950 mt-1">
                                     Unidade {mud.unidade} {mud.bloco && `(${mud.bloco})`} • {mud.moradorNome}
                                   </h4>
+                                  {mud.moradorTelefone && (
+                                    <span className="text-[11px] text-slate-600 font-semibold flex items-center gap-1 mt-0.5">
+                                      <Phone className="w-3 h-3 text-emerald-600" /> {mud.moradorTelefone}
+                                    </span>
+                                  )}
                                 </div>
 
                                 <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shrink-0 ${
@@ -9528,9 +9551,14 @@ export const AdminPanelScreen: React.FC = () => {
                                 </div>
 
                                 <div className="p-2 rounded-xl bg-white border border-slate-200 space-y-0.5">
-                                  <span className="text-[9px] uppercase font-bold text-slate-500 block">Veículo / Transportadora:</span>
-                                  <strong className="text-slate-950 block text-[11px] truncate">{mud.transportadora || 'Particular'}</strong>
-                                  <span className="text-[10px] font-mono text-indigo-900 font-bold block">{mud.placaVeiculo || 'Placa a informar'}</span>
+                                  <span className="text-[9px] uppercase font-bold text-slate-500 block">Veículo & Motorista:</span>
+                                  <strong className="text-slate-950 block text-[11px] truncate">{mud.transportadora || 'Particular'} {mud.nomeMotorista ? `• ${mud.nomeMotorista}` : ''}</strong>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-[10px] font-mono text-indigo-900 font-bold">{mud.placaVeiculo || 'Placa a informar'}</span>
+                                    {(mud.cpfMotorista || mud.rgMotorista) && (
+                                      <span className="text-[10px] text-slate-500 font-mono">• CPF: {mud.cpfMotorista || mud.rgMotorista}</span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
 
@@ -9547,9 +9575,9 @@ export const AdminPanelScreen: React.FC = () => {
                               )}
                             </div>
 
-                            {/* Ações de Aprovação */}
+                            {/* Ações de Aprovação e Edição */}
                             <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 {isPendente && (
                                   <>
                                     <button
@@ -9582,18 +9610,32 @@ export const AdminPanelScreen: React.FC = () => {
                                 )}
                               </div>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (confirm('Deseja excluir este registro de mudança?')) {
-                                    excluirMudanca(mud.id);
-                                  }
-                                }}
-                                className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                                title="Excluir"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setMudancaToEditAdmin(mud);
+                                    setIsCreateEditMudancaAdminOpen(true);
+                                  }}
+                                  className="p-1.5 rounded-xl text-slate-600 hover:text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer"
+                                  title="Editar agendamento"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm('Deseja excluir este registro de mudança?')) {
+                                      excluirMudanca(mud.id);
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
 
                           </div>
@@ -9602,6 +9644,16 @@ export const AdminPanelScreen: React.FC = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Modal de Cadastro/Edição de Mudança no Admin */}
+                <CreateAgendamentoMudancaModal
+                  isOpen={isCreateEditMudancaAdminOpen}
+                  onClose={() => {
+                    setIsCreateEditMudancaAdminOpen(false);
+                    setMudancaToEditAdmin(null);
+                  }}
+                  mudancaToEdit={mudancaToEditAdmin}
+                />
 
               </div>
             </div>
