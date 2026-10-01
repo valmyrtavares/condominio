@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useCondo } from '../../context/CondoContext';
 import { Funcionario, StatusFuncionario, CategoriaFuncionario, AdminModuloKey } from '../../types';
 import { AdminPermissionsSelector } from './AdminPermissionsSelector';
+import { ADMIN_MODULOS_LIST } from '../../constants/adminModulos';
 import { 
   X, 
   Check, 
@@ -101,7 +102,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
       } else if (funcionario.categoria === 'Portaria') {
         setPermissoesModulos(['portaria', 'mudancas']);
       } else if (funcionario.categoria === 'Gestão' || (funcionario as any).tipoAcesso === 'total') {
-        setPermissoesModulos(['portaria', 'mudancas', 'dependencias', 'reparos', 'reclamacoes', 'eventos', 'servicos', 'unidades', 'equipe', 'financeiro', 'regras', 'imoveis', 'fornecedores', 'enjoei', 'assembleias', 'diario-sindico']);
+        setPermissoesModulos(ADMIN_MODULOS_LIST.map(m => m.key));
       } else if (funcionario.categoria === 'Zeladoria' || funcionario.categoria === 'Manutenção') {
         setPermissoesModulos(['portaria', 'mudancas', 'dependencias', 'reparos', 'reclamacoes']);
       } else {
@@ -160,7 +161,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
       senha: senhaFinal,
       permissoesModulos: permissoesModulos.length > 0 ? permissoesModulos : ['portaria'],
       permiteAcessoAreaMorador,
-      tipoAcesso: permissoesModulos.length >= 16 ? 'total' : 'personalizado'
+      tipoAcesso: permissoesModulos.length >= ADMIN_MODULOS_LIST.length ? 'total' : 'personalizado'
     });
 
     setSucesso(true);

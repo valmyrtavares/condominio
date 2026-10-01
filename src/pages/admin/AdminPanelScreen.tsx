@@ -131,6 +131,8 @@ import { PrivateNotifyModal } from '../../components/admin/PrivateNotifyModal';
 import { SuspendServiceModal } from '../../components/admin/SuspendServiceModal';
 import { EditFuncionarioModal } from '../../components/admin/EditFuncionarioModal';
 import { CreateFuncionarioModal } from '../../components/admin/CreateFuncionarioModal';
+import { AdminPermissionsSelector } from '../../components/admin/AdminPermissionsSelector';
+import { ADMIN_MODULOS_LIST } from '../../constants/adminModulos';
 import { SuspendEventoModal } from '../../components/admin/SuspendEventoModal';
 import { CreateEditEventoModal } from '../../components/eventos/CreateEditEventoModal';
 import { CreateEditAssembleiaModal } from '../../components/assembleia/CreateEditAssembleiaModal';
@@ -157,7 +159,6 @@ import { BenfeitoriaTimelineModal } from '../../components/admin/BenfeitoriaTime
 import { CreateAutorizacaoModal } from '../../components/portaria/CreateAutorizacaoModal';
 import { CreateEncomendaModal } from '../../components/portaria/CreateEncomendaModal';
 import { PortariaTimelineModal } from '../../components/portaria/PortariaTimelineModal';
-import { AdminPermissionsSelector } from '../../components/admin/AdminPermissionsSelector';
 import { ColaboradorFirstAccessModal } from '../../components/admin/ColaboradorFirstAccessModal';
 import { BackupRestoreCondoModal } from '../../components/admin/BackupRestoreCondoModal';
 import { AdminModuloKey } from '../../types';
@@ -1366,13 +1367,17 @@ export const AdminPanelScreen: React.FC = () => {
   const [visibleAdminPasswords, setVisibleAdminPasswords] = useState<{ [key: string]: boolean }>({});
 
   const isDev = Boolean(currentUser?.isDev || currentUser?.email === 'dev@dev.com');
-  const isColaborador = currentUser?.role === 'colaborador' && !isDev;
+  const isColaborador = (currentUser?.role === 'colaborador' || currentUser?.role === 'subsindico') && !isDev;
   const hasModuloPermission = (key: AdminModuloKey): boolean => {
     if (!currentUser) return false;
     if (isDev) return true;
-    if (currentUser.role === 'sindico' || currentUser.role === 'subsindico') return true;
-    if (currentUser.role === 'colaborador') {
-      if ((currentUser as any).tipoAcesso === 'total' || (currentUser.permissoesModulos && currentUser.permissoesModulos.length >= 16)) {
+    // Se for o síndico geral sem restrição explícita de módulos, tem acesso total
+    if (currentUser.role === 'sindico' && (!currentUser.permissoesModulos || currentUser.permissoesModulos.length >= 17)) {
+      return true;
+    }
+    // Para colaborador, subsíndico ou síndico delegado:
+    if (currentUser.role === 'colaborador' || currentUser.role === 'subsindico' || currentUser.role === 'sindico') {
+      if ((currentUser as any).tipoAcesso === 'total' && (!currentUser.permissoesModulos || currentUser.permissoesModulos.length >= 17)) {
         return true;
       }
       const allowed = currentUser.permissoesModulos || [];
@@ -1531,22 +1536,23 @@ export const AdminPanelScreen: React.FC = () => {
       if (!loginFinal || !senhaFinal) return;
 
       const roleObj = adminRoles.find(r => r.nome === novoAdminRoleSelected);
-      const tipoAcesso = roleObj ? roleObj.tipoAcesso : 'morador_destaque';
+      const permissoesFinais: AdminModuloKey[] = novoColabPermissoes.length > 0 ? novoColabPermissoes : ADMIN_MODULOS_LIST.map(m => m.key);
+      const isTotal = (roleObj?.tipoAcesso === 'total' || novoAdminRoleSelected === 'Síndico Geral') && permissoesFinais.length >= ADMIN_MODULOS_LIST.length;
 
       adicionarFuncionario({
         nome: novoAdminNome.trim(),
         foto: novoAdminFoto || AVATARES_SUGERIDOS[0],
         funcao: novoAdminRoleSelected,
         categoria: 'Gestão',
-        horario: tipoAcesso === 'total' ? 'Administração & Plantão' : 'Reuniões e Pareceres',
-        disponibilidade: tipoAcesso === 'total' ? 'Horário Comercial / Emergências' : 'Sob demanda',
+        horario: isTotal ? 'Administração & Plantão' : 'Reuniões e Pareceres',
+        disponibilidade: isTotal ? 'Horário Comercial / Emergências' : 'Sob demanda',
         status: novoColabStatus,
         email: emailLimpo || `${loginFinal}@condominio.com`,
         usuario: loginFinal,
         senha: senhaFinal,
-        permissoesModulos: novoColabPermissoes.length > 0 ? novoColabPermissoes : ['portaria', 'mudancas', 'dependencias', 'reparos', 'reclamacoes', 'eventos', 'servicos', 'unidades', 'equipe', 'financeiro', 'regras', 'imoveis', 'fornecedores', 'enjoei', 'assembleias', 'diario-sindico'],
+        permissoesModulos: permissoesFinais,
         permiteAcessoAreaMorador: true,
-        tipoAcesso: tipoAcesso
+        tipoAcesso: isTotal ? 'total' : 'personalizado'
       });
 
       setAdminSuccessMsg(`Perfil de ${novoAdminRoleSelected} (${novoAdminNome}) cadastrado com sucesso!`);
@@ -1554,6 +1560,7 @@ export const AdminPanelScreen: React.FC = () => {
       if (!novoColabCargo.trim()) return;
       const emailLimpo = novoColabEmail.trim().toLowerCase() || novoAdminEmail.trim().toLowerCase();
       const senhaFinal = novoColabSenha.trim() || emailLimpo || '123456';
+      const permissoesFinais: AdminModuloKey[] = novoColabPermissoes.length > 0 ? novoColabPermissoes : ['portaria', 'mudancas'];
 
       adicionarFuncionario({
         nome: novoAdminNome.trim(),
@@ -1566,9 +1573,9 @@ export const AdminPanelScreen: React.FC = () => {
         email: emailLimpo || undefined,
         usuario: emailLimpo || undefined,
         senha: senhaFinal,
-        permissoesModulos: novoColabPermissoes.length > 0 ? novoColabPermissoes : ['portaria'],
+        permissoesModulos: permissoesFinais,
         permiteAcessoAreaMorador: novoColabAcessoMorador,
-        tipoAcesso: novoColabPermissoes.length >= 16 ? 'total' : 'personalizado'
+        tipoAcesso: permissoesFinais.length >= ADMIN_MODULOS_LIST.length ? 'total' : 'personalizado'
       });
 
       setAdminSuccessMsg(`Funcionário "${novoAdminNome}" (${novoColabCargo}) cadastrado com sucesso!`);
@@ -1585,7 +1592,7 @@ export const AdminPanelScreen: React.FC = () => {
     setNovoColabHorario('');
     setNovoColabDisponibilidade('');
     setNovoColabStatus('Ativo');
-    setNovoColabPermissoes(['portaria', 'mudancas']);
+    setNovoColabPermissoes(ADMIN_MODULOS_LIST.map(m => m.key));
     setNovoColabAcessoMorador(true);
     setShowNovoAdminSenha(false);
     setShowNovoColabSenha(false);
@@ -1824,8 +1831,8 @@ export const AdminPanelScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Banner de Identificação do Colaborador Logado */}
-      {isColaborador && (
+      {/* Banner de Identificação do Colaborador ou Gestor com Acesso Restrito */}
+      {(isColaborador || (currentUser?.permissoesModulos && currentUser.permissoesModulos.length < ADMIN_MODULOS_LIST.length && !isDev)) && (
         <div className="p-4 sm:p-5 rounded-3xl bg-amber-500/15 border-2 border-amber-400/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md animate-in fade-in">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-amber-500 text-slate-950 font-black flex items-center justify-center shadow-md shrink-0">
@@ -1834,14 +1841,14 @@ export const AdminPanelScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-400">
-                  Perfil de Colaborador
+                  {currentUser.bloco === 'Gestão' || currentUser.role === 'subsindico' ? 'Membro da Gestão (Acesso Restrito)' : 'Perfil de Colaborador'}
                 </span>
                 <span className="text-xs font-black text-slate-950">
                   {currentUser.nome} ({currentUser.profissao || 'Colaborador'})
                 </span>
               </div>
               <p className="text-xs text-slate-700 font-medium mt-0.5">
-                Você possui acesso autorizado a <strong>{(currentUser.permissoesModulos || []).length} de 16</strong> abas administrativas concedidas pela administração.
+                Você possui acesso autorizado a <strong>{(currentUser.permissoesModulos || []).length} de {ADMIN_MODULOS_LIST.length}</strong> abas administrativas concedidas pela administração.
               </p>
             </div>
           </div>
@@ -3194,7 +3201,12 @@ export const AdminPanelScreen: React.FC = () => {
                   <div className="flex items-center bg-white/80 p-0.5 rounded-xl border border-amber-200 shadow-2xs">
                     <button
                       type="button"
-                      onClick={() => setTipoCadastroColab('gestao')}
+                      onClick={() => {
+                        setTipoCadastroColab('gestao');
+                        if (novoColabPermissoes.length <= 2) {
+                          setNovoColabPermissoes(ADMIN_MODULOS_LIST.map(m => m.key));
+                        }
+                      }}
                       className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${
                         tipoCadastroColab === 'gestao'
                           ? 'bg-amber-500 text-slate-950 shadow-xs scale-102'
@@ -3205,7 +3217,12 @@ export const AdminPanelScreen: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setTipoCadastroColab('operacional')}
+                      onClick={() => {
+                        setTipoCadastroColab('operacional');
+                        if (novoColabPermissoes.length >= ADMIN_MODULOS_LIST.length) {
+                          setNovoColabPermissoes(['portaria', 'mudancas']);
+                        }
+                      }}
                       className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${
                         tipoCadastroColab === 'operacional'
                           ? 'bg-amber-500 text-slate-950 shadow-xs scale-102'
@@ -3500,6 +3517,12 @@ export const AdminPanelScreen: React.FC = () => {
                         </label>
                       </div>
                     )}
+
+                    {/* Seletor de Permissões de Abas / Módulos Administrativos */}
+                    <AdminPermissionsSelector
+                      selectedModulos={novoColabPermissoes}
+                      onChange={setNovoColabPermissoes}
+                    />
 
                     {/* E-mail e Botão de Salvar */}
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-1 items-end">

@@ -179,6 +179,14 @@ const LEGACY_MOCK_DEPENDENCIA_IDS = new Set([
   'dep-salao-festas', 'dep-piscina', 'dep-academia', 'dep-brinquedoteca', 'dep-jardim', 'dep-fachada'
 ]);
 
+export const ALL_ADMIN_MODULOS: AdminModuloKey[] = [
+  'portaria', 'mudancas', 'dependencias', 'reparos', 
+  'reclamacoes', 'eventos', 'servicos', 'unidades', 
+  'equipe', 'financeiro', 'regras', 'imoveis', 
+  'fornecedores', 'enjoei', 'assembleias', 'diario-sindico',
+  'benfeitorias'
+];
+
 export const isMockReclamacao = (rec: { id?: string; autorNome?: string; autorUnidade?: string } | null | undefined): boolean => {
   if (!rec || !rec.id) return false;
   if (LEGACY_MOCK_RECLAMACAO_IDS.has(rec.id)) return true;
@@ -2196,7 +2204,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         // Sincroniza em tempo real as permissões do colaborador ativo caso sua conta seja atualizada no Firestore
         setCurrentUser(prev => {
-          if (prev && prev.role === 'colaborador') {
+          if (prev && (prev.role === 'colaborador' || prev.role === 'subsindico')) {
             const match = funcs.find(f => 
               f.id === prev.id || 
               (f.email && f.email.toLowerCase() === prev.email?.toLowerCase()) || 
@@ -2204,14 +2212,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             );
 
             if (match) {
-              const isTotal = (match as any).tipoAcesso === 'total' || 
-                              match.categoria === 'Gestão' || 
-                              (match.permissoesModulos && match.permissoesModulos.length >= 16);
-              const userPerms = isTotal 
-                ? ALL_MODULOS 
-                : (match.permissoesModulos && match.permissoesModulos.length > 0 
-                    ? match.permissoesModulos 
-                    : (match.categoria === 'Portaria' ? ['portaria'] : ['portaria']));
+              const fPerms = match.permissoesModulos;
+              const hasExplicitPerms = Array.isArray(fPerms) && fPerms.length > 0;
+              const isTotal = (match as any).tipoAcesso === 'total' && (!hasExplicitPerms || (fPerms ? fPerms.length >= 17 : false));
+              const userPerms: AdminModuloKey[] = hasExplicitPerms && fPerms
+                ? fPerms 
+                : (isTotal 
+                    ? ALL_ADMIN_MODULOS 
+                    : (match.categoria === 'Portaria' ? ['portaria', 'mudancas'] : ['portaria']));
 
               return {
                 ...prev,
@@ -3300,6 +3308,34 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
     if (itemAtualizado) {
       salvarFuncionarioNoFirestore(condoTenantId, itemAtualizado).catch(console.error);
+
+      // Se o usuário logado for este funcionário/gestor, sincroniza suas permissões imediatamente
+      setCurrentUser(prevUser => {
+        if (prevUser && (prevUser.id === id || prevUser.email?.toLowerCase() === (itemAtualizado as any).email?.toLowerCase() || prevUser.email?.toLowerCase() === (itemAtualizado as any).usuario?.toLowerCase())) {
+          const hasExplicitPerms = Array.isArray((itemAtualizado as any).permissoesModulos) && (itemAtualizado as any).permissoesModulos.length > 0;
+          const isTotal = (itemAtualizado as any).tipoAcesso === 'total' && (!hasExplicitPerms || (itemAtualizado as any).permissoesModulos.length >= 17);
+          const userPerms = hasExplicitPerms 
+            ? (itemAtualizado as any).permissoesModulos 
+            : (isTotal ? ALL_ADMIN_MODULOS : prevUser.permissoesModulos);
+
+          const updated: User = {
+            ...prevUser,
+            nome: (itemAtualizado as any).nome || prevUser.nome,
+            foto: (itemAtualizado as any).foto || prevUser.foto,
+            profissao: (itemAtualizado as any).funcao || prevUser.profissao,
+            bloco: (itemAtualizado as any).categoria || prevUser.bloco,
+            permissoesModulos: userPerms,
+            permiteAcessoAreaMorador: (itemAtualizado as any).permiteAcessoAreaMorador !== undefined ? (itemAtualizado as any).permiteAcessoAreaMorador : prevUser.permiteAcessoAreaMorador,
+            tipoAcesso: isTotal ? 'total' : 'personalizado'
+          };
+
+          try {
+            localStorage.setItem('condo_current_user', JSON.stringify(updated));
+          } catch {}
+          return updated;
+        }
+        return prevUser;
+      });
     }
   };
 
@@ -3957,13 +3993,6 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (isDevUser && isDevPass) {
       setIsAdminLoggedIn(true);
       localStorage.setItem('condo_admin_auth', 'true');
-      
-      const ALL_MODULOS: AdminModuloKey[] = [
-        'portaria', 'mudancas', 'dependencias', 'reparos', 
-        'reclamacoes', 'eventos', 'servicos', 'unidades', 
-        'equipe', 'financeiro', 'regras', 'imoveis', 
-        'fornecedores', 'enjoei', 'assembleias', 'diario-sindico'
-      ];
 
       const devUserObj: User = {
         id: `dev-master-${currentCondo.id}`,
@@ -3974,7 +4003,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         bloco: 'DEV',
         foto: '',
         profissao: 'Desenvolvedor do Sistema',
-        permissoesModulos: ALL_MODULOS,
+        permissoesModulos: ALL_ADMIN_MODULOS,
         permiteAcessoAreaMorador: true,
         condominioId: currentCondo.id,
         isDev: true
@@ -4012,7 +4041,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
-    // 2. VERIFICAÇÃO PRIORITÁRIA DE COLABORADORES / QUADRO DE FUNCIONÁRIOS (Ex: Porteiro Ademar, José Casimiro, etc.)
+    // 2. VERIFICAÇÃO PRIORITÁRIA DE COLABORADORES / QUADRO DE FUNCIONÁRIOS (Ex: Porteiro Ademar, Subsíndica Cássia, José Casimiro, etc.)
     const matchedFuncionario = funcionarios.find(f => {
       if (f.status === 'Desligado') return false;
       const fEmail = (f.email || '').trim().toLowerCase();
@@ -4043,21 +4072,23 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setIsAdminLoggedIn(true);
       localStorage.setItem('condo_admin_auth', 'true');
       
-      const isTotalAccess = (matchedFuncionario as any).tipoAcesso === 'total' || 
-                            matchedFuncionario.categoria === 'Gestão' || 
-                            (matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length >= 16);
+      const fPerms = matchedFuncionario.permissoesModulos;
+      const hasExplicitPerms = Array.isArray(fPerms) && fPerms.length > 0;
+      const isTotalAccess = (matchedFuncionario as any).tipoAcesso === 'total' && (!hasExplicitPerms || (fPerms ? fPerms.length >= 17 : false));
 
-      const userPermissoes: AdminModuloKey[] = isTotalAccess 
-        ? ALL_MODULOS 
-        : (matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length > 0
-            ? matchedFuncionario.permissoesModulos
-            : (matchedFuncionario.categoria === 'Portaria' ? ['portaria'] : ['portaria']));
+      const userPermissoes: AdminModuloKey[] = hasExplicitPerms && fPerms
+        ? fPerms
+        : (isTotalAccess 
+            ? ALL_ADMIN_MODULOS 
+            : (matchedFuncionario.categoria === 'Portaria' ? ['portaria', 'mudancas'] : ['portaria']));
+
+      const isGestaoOrSubsindico = matchedFuncionario.categoria === 'Gestão' || (matchedFuncionario.funcao || '').toLowerCase().includes('subsindic');
 
       const colabUserObj: User = {
         id: matchedFuncionario.id,
         nome: matchedFuncionario.nome,
         email: matchedFuncionario.email || matchedFuncionario.usuario || u,
-        role: 'colaborador',
+        role: isGestaoOrSubsindico ? 'subsindico' : 'colaborador',
         unidade: 'Staff',
         bloco: matchedFuncionario.categoria || 'Portaria',
         foto: matchedFuncionario.foto,
@@ -4368,21 +4399,23 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setIsAdminLoggedIn(true);
       localStorage.setItem('condo_admin_auth', 'true');
 
-      const isTotalAccess = (matchedFuncionario as any).tipoAcesso === 'total' || 
-                            matchedFuncionario.categoria === 'Gestão' || 
-                            (matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length >= 16);
+      const fPerms = matchedFuncionario.permissoesModulos;
+      const hasExplicitPerms = Array.isArray(fPerms) && fPerms.length > 0;
+      const isTotalAccess = (matchedFuncionario as any).tipoAcesso === 'total' && (!hasExplicitPerms || (fPerms ? fPerms.length >= 17 : false));
 
-      const userPermissoes: AdminModuloKey[] = isTotalAccess 
-        ? ALL_MODULOS 
-        : (matchedFuncionario.permissoesModulos && matchedFuncionario.permissoesModulos.length > 0
-            ? matchedFuncionario.permissoesModulos
-            : (matchedFuncionario.categoria === 'Portaria' ? ['portaria'] : ['portaria']));
+      const userPermissoes: AdminModuloKey[] = hasExplicitPerms && fPerms 
+        ? fPerms
+        : (isTotalAccess 
+            ? ALL_ADMIN_MODULOS 
+            : (matchedFuncionario.categoria === 'Portaria' ? ['portaria', 'mudancas'] : ['portaria']));
+
+      const isGestaoOrSubsindico = matchedFuncionario.categoria === 'Gestão' || (matchedFuncionario.funcao || '').toLowerCase().includes('subsindic');
 
       const colabUserObj: User = {
         id: matchedFuncionario.id,
         nome: matchedFuncionario.nome,
         email: matchedFuncionario.email || matchedFuncionario.usuario || inputLower,
-        role: 'colaborador',
+        role: isGestaoOrSubsindico ? 'subsindico' : 'colaborador',
         unidade: 'Staff',
         bloco: matchedFuncionario.categoria || 'Portaria',
         foto: matchedFuncionario.foto,

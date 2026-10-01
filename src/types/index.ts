@@ -42,6 +42,7 @@ export interface User {
   vagaGaragem?: string;
   permissoesModulos?: AdminModuloKey[];
   permiteAcessoAreaMorador?: boolean;
+  tipoAcesso?: 'total' | 'personalizado' | 'morador_destaque';
   condominioId: string;
   isDev?: boolean;
 }

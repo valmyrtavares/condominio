@@ -18,6 +18,7 @@ import {
   Building2, 
   Gavel, 
   BookOpen, 
+  Sparkles,
   Check, 
   ShieldCheck,
   CheckSquare,
@@ -45,7 +46,8 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Home: <Home className="w-4 h-4" />,
   Building2: <Building2 className="w-4 h-4" />,
   Gavel: <Gavel className="w-4 h-4" />,
-  BookOpen: <BookOpen className="w-4 h-4" />
+  BookOpen: <BookOpen className="w-4 h-4" />,
+  Sparkles: <Sparkles className="w-4 h-4" />
 };
 
 export const AdminPermissionsSelector: React.FC<AdminPermissionsSelectorProps> = ({

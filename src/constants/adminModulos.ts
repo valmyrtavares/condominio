@@ -147,6 +147,15 @@ export const ADMIN_MODULOS_LIST: AdminModuloConfig[] = [
     categoria: 'operacional'
   },
   {
+    key: 'benfeitorias',
+    numero: 16,
+    titulo: 'Benfeitorias e obras',
+    subtitulo: 'Acompanhamento de realizações, reformas, orçamentos e prazos',
+    icone: 'Sparkles',
+    corBadge: 'bg-amber-100 text-amber-950 border-amber-300',
+    categoria: 'gestao'
+  },
+  {
     key: 'diario-sindico',
     numero: 0,
     titulo: 'Diário do Síndico & Linha do Tempo',
@@ -170,7 +179,7 @@ export const PRESET_PERMISSOES: Record<string, { label: string; descricao: strin
   },
   gestao_total: {
     label: 'Gestão Total (Síndico / Subsíndico)',
-    descricao: 'Acesso irrestrito a todos os 16 módulos do sistema',
+    descricao: 'Acesso irrestrito a todos os 17 módulos do sistema',
     modulos: ADMIN_MODULOS_LIST.map(m => m.key)
   },
   social_eventos: {
