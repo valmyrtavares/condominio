@@ -1616,15 +1616,46 @@ export const AdminPanelScreen: React.FC = () => {
     }));
   };
 
+  const isUnitAguardando = useCallback((u: Unidade) => {
+    const isSuspensa = Boolean(u.suspensa || u.statusCadastro === 'Suspenso');
+    const isVazio = !isSuspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+    const hasMorador = Boolean(!isSuspensa && !isVazio && ((u.moradores && u.moradores.length > 0) || u.nomeCelula));
+    return hasMorador && (u.statusCadastro === 'AguardandoConfirmacao' || u.moradorConfirmado === false);
+  }, []);
+
+  const unidadesAguardando = useMemo(() => {
+    return unidades.filter(isUnitAguardando);
+  }, [unidades, isUnitAguardando]);
+
+  const [filtroStatusUnidade, setFiltroStatusUnidade] = useState<'todos' | 'aguardando' | 'cadastrados' | 'vazios' | 'suspensos'>('todos');
+
   const filteredUnidades = useMemo(() => {
+    let list = unidades;
+
+    if (filtroStatusUnidade === 'aguardando') {
+      list = list.filter(isUnitAguardando);
+    } else if (filtroStatusUnidade === 'cadastrados') {
+      list = list.filter(u => {
+        const isSuspensa = Boolean(u.suspensa || u.statusCadastro === 'Suspenso');
+        const isVazio = !isSuspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+        const hasMorador = Boolean(!isSuspensa && !isVazio && ((u.moradores && u.moradores.length > 0) || u.nomeCelula));
+        const isAguardando = hasMorador && (u.statusCadastro === 'AguardandoConfirmacao' || u.moradorConfirmado === false);
+        return hasMorador && !isAguardando;
+      });
+    } else if (filtroStatusUnidade === 'vazios') {
+      list = list.filter(u => !u.suspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio'));
+    } else if (filtroStatusUnidade === 'suspensos') {
+      list = list.filter(u => Boolean(u.suspensa || u.statusCadastro === 'Suspenso'));
+    }
+
     const rawTerm = searchTerm.trim().toLowerCase();
     if (!rawTerm) {
-      return isCasas ? unidades : sortUnidades(unidades);
+      return isCasas ? list : sortUnidades(list);
     }
 
     const keywords = rawTerm.split(/\s+/).filter(Boolean);
 
-    const list = unidades.filter(u => {
+    const searchedList = list.filter(u => {
       const numStr = (u.numero || '').toLowerCase();
       const numOnly = numStr.replace(/[^0-9]/g, '');
       const cleanNum = numStr.replace(/^(apt|apto|unidade|apartamento|cobertura|casa)\s*/i, '').trim();
@@ -1668,8 +1699,8 @@ export const AdminPanelScreen: React.FC = () => {
       });
     });
 
-    return isCasas ? list : sortUnidades(list);
-  }, [unidades, searchTerm, isCasas]);
+    return isCasas ? searchedList : sortUnidades(searchedList);
+  }, [unidades, searchTerm, isCasas, filtroStatusUnidade, isUnitAguardando]);
 
   const condoRuas = useMemo(() => {
     const fromProfile = currentCondo?.ruas || [];
@@ -1683,7 +1714,7 @@ export const AdminPanelScreen: React.FC = () => {
 
   useEffect(() => {
     setPaginaAtual(1);
-  }, [searchTerm]);
+  }, [searchTerm, filtroStatusUnidade]);
 
   const totalPaginas = Math.max(1, Math.ceil(filteredUnidades.length / itensPorPagina));
   const safePaginaAtual = Math.min(Math.max(1, paginaAtual), totalPaginas);
@@ -1693,8 +1724,17 @@ export const AdminPanelScreen: React.FC = () => {
     return filteredUnidades.slice(start, start + itensPorPagina);
   }, [filteredUnidades, safePaginaAtual, itensPorPagina]);
 
-  const unidadesCadastradas = unidades.filter(u => u.moradores && u.moradores.length > 0).length;
-  const unidadesPendentes = unidades.length - unidadesCadastradas;
+  const unidadesCadastradas = useMemo(() => {
+    return unidades.filter(u => {
+      const isSuspensa = Boolean(u.suspensa || u.statusCadastro === 'Suspenso');
+      const isVazio = !isSuspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+      const hasMorador = Boolean(!isSuspensa && !isVazio && ((u.moradores && u.moradores.length > 0) || u.nomeCelula));
+      const isAguardando = hasMorador && (u.statusCadastro === 'AguardandoConfirmacao' || u.moradorConfirmado === false);
+      return hasMorador && !isAguardando;
+    }).length;
+  }, [unidades]);
+
+  const unidadesPendentes = Math.max(0, unidades.length - unidadesCadastradas - unidadesAguardando.length);
 
   // Selected Role Info Helper
   const currentSelectedRole = adminRoles.find(r => r.nome === novoAdminRoleSelected);
@@ -1878,28 +1918,44 @@ export const AdminPanelScreen: React.FC = () => {
       {/* SEÇÃO 1: UNIDADES E MORADORES */}
       {/* ========================================================================= */}
       <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-        canAccessUnidades ? 'bg-emerald-50/70 border-emerald-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+        canAccessUnidades 
+          ? (unidadesAguardando.length > 0 ? 'bg-amber-50/50 border-amber-300 ring-2 ring-amber-400/30' : 'bg-emerald-50/70 border-emerald-300')
+          : 'bg-slate-100/90 border-slate-300 opacity-60'
       }`}>
         
         {/* Accordion Header */}
-        <button
-          type="button"
-          disabled={!canAccessUnidades}
+        <div
+          role="button"
+          tabIndex={canAccessUnidades ? 0 : -1}
           onClick={() => canAccessUnidades && setIsUnidadesOpen(!isUnidadesOpen)}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && canAccessUnidades) {
+              e.preventDefault();
+              setIsUnidadesOpen(!isUnidadesOpen);
+            }
+          }}
           className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
             canAccessUnidades 
-              ? 'bg-emerald-100/90 hover:bg-emerald-200/70 border-emerald-200 cursor-pointer active:scale-[0.999]' 
+              ? (unidadesAguardando.length > 0 
+                  ? 'bg-gradient-to-r from-amber-100/95 via-amber-50/90 to-emerald-100/70 hover:from-amber-200/90 hover:to-emerald-200/80 border-amber-300 cursor-pointer' 
+                  : 'bg-emerald-100/90 hover:bg-emerald-200/70 border-emerald-200 cursor-pointer') 
               : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
           }`}
         >
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-              canAccessUnidades ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+              canAccessUnidades 
+                ? (unidadesAguardando.length > 0 ? 'bg-amber-500/25 border-amber-400 text-amber-950' : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-950')
+                : 'bg-slate-300/50 border-slate-300 text-slate-600'
             }`}>
-              {canAccessUnidades ? <Building className="w-5 h-5 text-emerald-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
+              {canAccessUnidades ? (
+                unidadesAguardando.length > 0 ? <AlertTriangle className="w-5 h-5 text-amber-900 animate-bounce" /> : <Building className="w-5 h-5 text-emerald-900" />
+              ) : (
+                <Lock className="w-5 h-5 text-slate-500" />
+              )}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-black text-slate-950">
                   1. Unidades e moradores
                 </h3>
@@ -1913,16 +1969,54 @@ export const AdminPanelScreen: React.FC = () => {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-700 font-medium">
-                {unidadesCadastradas} com moradores configurados • {unidadesPendentes} pendentes
+              <p className="text-xs text-slate-700 font-medium flex items-center gap-1.5 flex-wrap mt-0.5">
+                <span>{unidadesCadastradas} com moradores configurados</span>
+                {unidadesAguardando.length > 0 && (
+                  <span className="text-amber-950 font-black bg-amber-300/90 border border-amber-500 px-2 py-0.5 rounded-md inline-flex items-center gap-1 shadow-2xs animate-pulse">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-900" />
+                    {unidadesAguardando.length} {unidadesAguardando.length === 1 ? 'aguardando aprovação' : 'aguardando aprovação'}
+                  </span>
+                )}
+                <span>• {unidadesPendentes} sem moradores</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
+            {/* Warning chamativo e clicável na parte externa do card */}
+            {canAccessUnidades && unidadesAguardando.length > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsUnidadesOpen(true);
+                  setFiltroStatusUnidade('aguardando');
+                  setSearchTerm('');
+                  setPaginaAtual(1);
+                }}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 rounded-2xl text-xs font-black shadow-md border-2 border-amber-600 ring-2 ring-amber-400/50 cursor-pointer transition-all transform hover:scale-105 active:scale-95 animate-pulse"
+                title="Clique para abrir a seção e exibir todas as unidades com acessos esperando liberação do síndico"
+              >
+                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600"></span>
+                </span>
+                <AlertTriangle className="w-4 h-4 text-slate-950 shrink-0" />
+                <span className="hidden sm:inline">
+                  {unidadesAguardando.length} {unidadesAguardando.length === 1 ? 'acesso para liberar' : 'acessos para liberar'}
+                </span>
+                <span className="sm:hidden">
+                  {unidadesAguardando.length} pendente{unidadesAguardando.length > 1 ? 's' : ''}
+                </span>
+                <span className="bg-slate-950 text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-lg whitespace-nowrap shadow-xs">
+                  Liberar →
+                </span>
+              </button>
+            )}
+
             {canAccessUnidades ? (
               <>
-                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                <span className="text-xs font-bold text-slate-600 hidden lg:inline">
                   {isUnidadesOpen ? 'Recolher seção' : 'Expandir seção'}
                 </span>
                 <div className="p-2 rounded-xl bg-white border border-emerald-300 text-slate-700 shadow-2xs">
@@ -1935,7 +2029,7 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
             )}
           </div>
-        </button>
+        </div>
 
         {/* Accordion Content com Animação Suave de Altura */}
         <div 
@@ -2082,77 +2176,176 @@ export const AdminPanelScreen: React.FC = () => {
 
             {/* Busca e Lista / Fila de Unidades */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3 flex-wrap bg-slate-100/90 p-3 rounded-2xl border border-slate-200">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-950 flex items-center gap-1.5">
-                    Fila de Unidades ({filteredUnidades.length})
-                  </span>
-                  <span className="text-[10px] font-bold bg-amber-100 text-amber-950 px-2 py-0.5 rounded-full border border-amber-300">
-                    Total Esperado: {currentCondo?.totalUnidades || 75}
-                  </span>
+              <div className="flex flex-col gap-3 bg-slate-100/90 p-3.5 rounded-2xl border border-slate-200">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-950 flex items-center gap-1.5">
+                      Fila de Unidades ({filteredUnidades.length})
+                    </span>
+                    <span className="text-[10px] font-bold bg-amber-100 text-amber-950 px-2 py-0.5 rounded-full border border-amber-300">
+                      Total Esperado: {currentCondo?.totalUnidades || 75}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap ml-auto">
+                    {/* Botão de Preenchimento Automático para N Unidades */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const total = currentCondo?.totalUnidades || 75;
+                        const kind = isCasas ? 'casas' : 'unidades';
+                        if (window.confirm(`Deseja gerar/preencher automaticamente a fila com as ${total} ${kind} do condomínio com senhas padrão iguais ao número de cada ${isCasas ? 'casa' : 'AP'}?`)) {
+                          gerarUnidadesAutomaticas(total);
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
+                      title={`Gerar ${currentCondo?.totalUnidades || 75} ${isCasas ? 'casas' : 'unidades'} automaticamente`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Preencher {currentCondo?.totalUnidades || 75} {isCasas ? 'Casas' : 'Unidades'}</span>
+                    </button>
+
+                    {/* Toggle Tabela vs Cards */}
+                    <div className="flex items-center bg-white rounded-xl p-0.5 border border-slate-300 shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setViewModeUnidades('table')}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                          viewModeUnidades === 'table'
+                            ? 'bg-slate-950 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+                        }`}
+                        title="Visualizar em Tabela Prática"
+                      >
+                        <Table className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Tabela</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViewModeUnidades('cards')}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                          viewModeUnidades === 'cards'
+                            ? 'bg-slate-950 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+                        }`}
+                        title="Visualizar em Cards"
+                      >
+                        <LayoutGrid className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Cards</span>
+                      </button>
+                    </div>
+
+                    {/* Campo de Filtro */}
+                    <div className="relative w-full sm:w-64">
+                      <input
+                        type="text"
+                        placeholder={isCasas ? "Filtrar por casa, rua ou morador..." : "Filtrar por apto, rua, vaga ou morador..."}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-900 placeholder-slate-500 focus:outline-none font-semibold shadow-2xs"
+                      />
+                      <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2" />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap ml-auto">
-                  {/* Botão de Preenchimento Automático para N Unidades */}
+                {/* Barra de Filtros Rápidos de Status */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-200">
+                  <span className="text-[10px] font-black uppercase text-slate-500 mr-1">Filtrar:</span>
+                  
                   <button
                     type="button"
-                    onClick={() => {
-                      const total = currentCondo?.totalUnidades || 75;
-                      const kind = isCasas ? 'casas' : 'unidades';
-                      if (window.confirm(`Deseja gerar/preencher automaticamente a fila com as ${total} ${kind} do condomínio com senhas padrão iguais ao número de cada ${isCasas ? 'casa' : 'AP'}?`)) {
-                        gerarUnidadesAutomaticas(total);
-                      }
-                    }}
-                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
-                    title={`Gerar ${currentCondo?.totalUnidades || 75} ${isCasas ? 'casas' : 'unidades'} automaticamente`}
+                    onClick={() => setFiltroStatusUnidade('todos')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      filtroStatusUnidade === 'todos'
+                        ? 'bg-slate-950 text-white shadow-xs'
+                        : 'bg-white text-slate-700 hover:bg-slate-200/80 border border-slate-300'
+                    }`}
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Preencher {currentCondo?.totalUnidades || 75} {isCasas ? 'Casas' : 'Unidades'}</span>
+                    Todas ({unidades.length})
                   </button>
 
-                  {/* Toggle Tabela vs Cards */}
-                  <div className="flex items-center bg-white rounded-xl p-0.5 border border-slate-300 shadow-2xs">
-                    <button
-                      type="button"
-                      onClick={() => setViewModeUnidades('table')}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
-                        viewModeUnidades === 'table'
-                          ? 'bg-slate-950 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
-                      }`}
-                      title="Visualizar em Tabela Prática"
-                    >
-                      <Table className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Tabela</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setViewModeUnidades('cards')}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
-                        viewModeUnidades === 'cards'
-                          ? 'bg-slate-950 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
-                      }`}
-                      title="Visualizar em Cards"
-                    >
-                      <LayoutGrid className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Cards</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFiltroStatusUnidade('aguardando')}
+                    className={`px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                      filtroStatusUnidade === 'aguardando'
+                        ? 'bg-amber-500 text-slate-950 shadow-md ring-2 ring-amber-600'
+                        : unidadesAguardando.length > 0
+                          ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-amber-400 font-extrabold animate-pulse'
+                          : 'bg-white text-slate-700 hover:bg-slate-200/80 border border-slate-300'
+                    }`}
+                  >
+                    <AlertTriangle className={`w-3.5 h-3.5 ${unidadesAguardando.length > 0 ? 'text-amber-950' : 'text-slate-500'}`} />
+                    <span>Aguardando Aprovação ({unidadesAguardando.length})</span>
+                    {unidadesAguardando.length > 0 && (
+                      <span className="w-2 h-2 rounded-full bg-rose-600 inline-block animate-ping"></span>
+                    )}
+                  </button>
 
-                  {/* Campo de Filtro */}
-                  <div className="relative w-full sm:w-64">
-                    <input
-                      type="text"
-                      placeholder={isCasas ? "Filtrar por casa, rua ou morador..." : "Filtrar por apto, rua, vaga ou morador..."}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-900 placeholder-slate-500 focus:outline-none font-semibold shadow-2xs"
-                    />
-                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2" />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFiltroStatusUnidade('cadastrados')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      filtroStatusUnidade === 'cadastrados'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-white text-slate-700 hover:bg-slate-200/80 border border-slate-300'
+                    }`}
+                  >
+                    Cadastradas ({unidadesCadastradas})
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFiltroStatusUnidade('vazios')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      filtroStatusUnidade === 'vazios'
+                        ? 'bg-slate-800 text-white shadow-xs'
+                        : 'bg-white text-slate-700 hover:bg-slate-200/80 border border-slate-300'
+                    }`}
+                  >
+                    Vazias
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFiltroStatusUnidade('suspensos')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      filtroStatusUnidade === 'suspensos'
+                        ? 'bg-rose-700 text-white shadow-xs'
+                        : 'bg-white text-slate-700 hover:bg-slate-200/80 border border-slate-300'
+                    }`}
+                  >
+                    Suspensas
+                  </button>
                 </div>
               </div>
+
+              {/* Banner Informativo quando o filtro de Aguardando Aprovação está ativo */}
+              {filtroStatusUnidade === 'aguardando' && (
+                <div className="bg-amber-100 border-2 border-amber-400 text-amber-950 p-3.5 rounded-2xl flex items-center justify-between gap-3 shadow-xs animate-in fade-in flex-wrap">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shrink-0 shadow-xs">
+                      <AlertTriangle className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-black uppercase text-amber-950">
+                        Modo de Aprovação de Novos Moradores Ativo
+                      </h5>
+                      <p className="text-xs text-amber-900 font-medium">
+                        Mostrando <strong>{filteredUnidades.length}</strong> {filteredUnidades.length === 1 ? 'unidade que solicitou' : 'unidades que solicitaram'} acesso. Clique em <strong>Confirmar</strong> para aprovar ou no <strong>X</strong> para recusar.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFiltroStatusUnidade('todos')}
+                    className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-900 border border-amber-300 rounded-xl text-xs font-bold shadow-2xs transition-all cursor-pointer whitespace-nowrap ml-auto"
+                  >
+                    Limpar Filtro / Ver Todas
+                  </button>
+                </div>
+              )}
 
               {/* VISÃO 1: TABELA PRÁTICA COMPLETA DE UNIDADES */}
               {viewModeUnidades === 'table' ? (
@@ -2199,7 +2392,22 @@ export const AdminPanelScreen: React.FC = () => {
                         {filteredUnidades.length === 0 ? (
                           <tr>
                             <td colSpan={9} className="py-8 text-center text-slate-500 font-semibold">
-                              Nenhuma {isCasas ? 'casa' : 'unidade'} encontrada. Use o botão no topo para gerar automaticamente.
+                              {filtroStatusUnidade === 'aguardando' ? (
+                                <div className="space-y-2 py-4">
+                                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+                                  <p className="font-bold text-slate-800">Nenhum morador aguardando aprovação no momento!</p>
+                                  <p className="text-xs text-slate-500">Todas as solicitações de acesso foram confirmadas.</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => setFiltroStatusUnidade('todos')}
+                                    className="mt-1 px-3 py-1 bg-slate-900 text-white rounded-lg text-xs font-bold"
+                                  >
+                                    Ver todas as unidades
+                                  </button>
+                                </div>
+                              ) : (
+                                `Nenhuma ${isCasas ? 'casa' : 'unidade'} encontrada.`
+                              )}
                             </td>
                           </tr>
                         ) : (
@@ -2526,7 +2734,27 @@ export const AdminPanelScreen: React.FC = () => {
               ) : (
                 /* VISÃO 2: GRID DE CARDS DE UNIDADES */
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto p-1">
-                  {displayedUnidades.map((u, idx) => {
+                  {filteredUnidades.length === 0 ? (
+                    <div className="col-span-full py-10 text-center bg-white rounded-2xl border border-dashed border-slate-300 p-6 space-y-2">
+                      {filtroStatusUnidade === 'aguardando' ? (
+                        <>
+                          <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+                          <p className="font-bold text-slate-800 text-sm">Nenhum morador aguardando aprovação no momento!</p>
+                          <p className="text-xs text-slate-500">Todas as solicitações de acesso foram confirmadas.</p>
+                          <button
+                            type="button"
+                            onClick={() => setFiltroStatusUnidade('todos')}
+                            className="mt-1 px-4 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+                          >
+                            Ver todas as unidades
+                          </button>
+                        </>
+                      ) : (
+                        <p className="text-xs text-slate-500 font-semibold">Nenhuma {isCasas ? 'casa' : 'unidade'} encontrada.</p>
+                      )}
+                    </div>
+                  ) : (
+                    displayedUnidades.map((u, idx) => {
                     const globalIndex = (safePaginaAtual - 1) * itensPorPagina + idx;
                     if (isCasas) {
                       return (
@@ -2808,7 +3036,7 @@ export const AdminPanelScreen: React.FC = () => {
 
                       </div>
                     );
-                  })}
+                  }))}
                 </div>
               )}
 
