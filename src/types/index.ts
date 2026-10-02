@@ -307,6 +307,7 @@ export interface Reparo {
   comentarios: Comentario[];
   anexoUrl?: string;
   anexoTipo?: 'imagem' | 'video';
+  migradoParaBenfeitoriaId?: string;
 }
 
 export type TipoBenfeitoria = 
@@ -395,6 +396,7 @@ export interface PassoTimelineBenfeitoria {
 
 export interface Benfeitoria {
   id: string;
+  reparoOrigemId?: string;
   titulo: string;
   subtitulo: string;
   tipo: TipoBenfeitoria;
@@ -459,6 +461,8 @@ export interface VagaGaragem {
   valorAluguelMensal?: number;
   observacoes?: string;
   condominioId: string;
+  alugadaParaUnidade?: string;
+  locatarioNome?: string;
 }
 
 export type StatusServicoContratado = 

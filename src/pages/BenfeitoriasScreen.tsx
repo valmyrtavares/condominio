@@ -28,9 +28,12 @@ import {
   Award,
   ThumbsUp,
   MessageSquare,
-  User
+  User,
+  Download,
+  Wrench
 } from 'lucide-react';
 import { otimizarImagemArquivo } from '../utils/imageOptimizer';
+import { ImportReparoModal } from '../components/admin/ImportReparoModal';
 
 const STATUS_CONFIG_MORADOR: Record<
   StatusFaseBenfeitoria,
@@ -49,6 +52,7 @@ const STATUS_CONFIG_MORADOR: Record<
 export const BenfeitoriasScreen: React.FC = () => {
   const { 
     benfeitorias, 
+    reparos,
     currentUser, 
     adicionarBenfeitoria, 
     setCurrentScreen,
@@ -56,12 +60,27 @@ export const BenfeitoriasScreen: React.FC = () => {
     votarOrcamentoBenfeitoria,
     avaliarBenfeitoria,
     apoiarDiarioObraBenfeitoria,
-    adicionarComentarioDiarioObraBenfeitoria
+    adicionarComentarioDiarioObraBenfeitoria,
+    selectedBenfeitoriaId
   } = useCondo();
 
   const [expandedId, setExpandedId] = useState<string | null>('initial');
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [selectedReparoForImport, setSelectedReparoForImport] = useState<string>('');
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [filterTipo, setFilterTipo] = useState<string>('Todas');
+
+  React.useEffect(() => {
+    if (selectedBenfeitoriaId) {
+      setExpandedId(selectedBenfeitoriaId);
+      setTimeout(() => {
+        const el = document.getElementById(`benfeitoria-card-${selectedBenfeitoriaId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 150);
+    }
+  }, [selectedBenfeitoriaId]);
 
   // Estados de Votação e Avaliação pelo Morador
   const [submittingVoteId, setSubmittingVoteId] = useState<string | null>(null);
@@ -215,15 +234,42 @@ export const BenfeitoriasScreen: React.FC = () => {
           <span>Voltar ao Início</span>
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {isAdmin && (
-            <button
-              onClick={() => setIsFormOpen(!isFormOpen)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold shadow-sm transition-all active:scale-95 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{isFormOpen ? 'Fechar Proposta' : 'Nova Proposta'}</span>
-            </button>
+            <>
+              <div className="flex items-center gap-1.5">
+                <select
+                  value={selectedReparoForImport}
+                  onChange={(e) => setSelectedReparoForImport(e.target.value)}
+                  className="bg-white/80 border border-white/90 rounded-full px-3 py-1.5 text-xs font-bold text-slate-950 focus:outline-none cursor-pointer shadow-xs max-w-[180px] truncate"
+                  title="Selecione um item do módulo de reparos para importar"
+                >
+                  <option value="">Selecione Reparo...</option>
+                  {reparos.filter(r => !r.migradoParaBenfeitoriaId).map(rep => (
+                    <option key={rep.id} value={rep.id}>
+                      [{rep.categoria}] {rep.titulo}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700 text-xs font-extrabold shadow-sm transition-all active:scale-95 cursor-pointer"
+                  title="Importar item do módulo de reparos"
+                >
+                  <Download className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Importar de Reparos</span>
+                </button>
+              </div>
+
+              <button
+                onClick={() => setIsFormOpen(!isFormOpen)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{isFormOpen ? 'Fechar Proposta' : 'Nova Proposta'}</span>
+              </button>
+            </>
           )}
 
           <button
@@ -471,6 +517,7 @@ export const BenfeitoriasScreen: React.FC = () => {
             return (
               <div
                 key={item.id}
+                id={`benfeitoria-card-${item.id}`}
                 className={`bg-white/55 border rounded-3xl overflow-hidden shadow-xl hover:bg-white/65 transition-all duration-300 ${
                   isCancelado ? 'border-red-400/80 bg-red-50/40' : 'border-white/70'
                 }`}
@@ -1294,6 +1341,13 @@ export const BenfeitoriasScreen: React.FC = () => {
           })
         )}
       </div>
+
+      {/* Modal de Importação de Reparos para Benfeitorias */}
+      <ImportReparoModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        initialReparoId={selectedReparoForImport}
+      />
 
     </div>
   );

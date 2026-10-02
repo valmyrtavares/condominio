@@ -38,7 +38,8 @@ import {
   TipoBenfeitoria,
   StatusFaseBenfeitoria,
   AutorizacaoAcesso,
-  EncomendaEntrega
+  EncomendaEntrega,
+  VagaGaragem
 } from '../../types';
 import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 import { 
@@ -156,6 +157,7 @@ import { CreateEditServicoContratadoModal } from '../../components/admin/CreateE
 import { CreateEditDesapegoModal } from '../../components/enjoei/CreateEditDesapegoModal';
 import { CreateEditDependenciaModal } from '../../components/admin/CreateEditDependenciaModal';
 import { CreateEditBenfeitoriaModal } from '../../components/admin/CreateEditBenfeitoriaModal';
+import { ImportReparoModal } from '../../components/admin/ImportReparoModal';
 import { BenfeitoriaTimelineModal } from '../../components/admin/BenfeitoriaTimelineModal';
 import { CreateAutorizacaoModal } from '../../components/portaria/CreateAutorizacaoModal';
 import { CreateEncomendaModal } from '../../components/portaria/CreateEncomendaModal';
@@ -1052,7 +1054,8 @@ export const AdminPanelScreen: React.FC = () => {
     benfeitorias,
     adicionarBenfeitoria,
     editarBenfeitoria,
-    excluirBenfeitoria
+    excluirBenfeitoria,
+    vagasGaragem
   } = useCondo();
 
   // Accordion section collapse states (all closed by default on entry)
@@ -1078,6 +1081,8 @@ export const AdminPanelScreen: React.FC = () => {
 
   // 16. Gestão de Benfeitorias & Conquistas State
   const [isCreateEditBenfeitoriaModalOpen, setIsCreateEditBenfeitoriaModalOpen] = useState(false);
+  const [isImportReparoModalOpen, setIsImportReparoModalOpen] = useState(false);
+  const [selectedReparoForImportAdmin, setSelectedReparoForImportAdmin] = useState<string>('');
   const [benfeitoriaToEditInAdmin, setBenfeitoriaToEditInAdmin] = useState<Benfeitoria | null>(null);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [benfeitoriaForTimelineModal, setBenfeitoriaForTimelineModal] = useState<Benfeitoria | null>(null);
@@ -2613,16 +2618,49 @@ export const AdminPanelScreen: React.FC = () => {
                                       autoFocus
                                     />
                                   ) : (
-                                    u.vagaGaragem ? (
-                                      <span className="text-slate-700 font-bold flex items-center gap-1 text-xs">
-                                        <Car className="w-3.5 h-3.5 text-amber-800 shrink-0" />
-                                        {u.vagaGaragem}
-                                      </span>
-                                    ) : (
-                                      <span className="text-slate-400 italic text-xs font-normal bg-slate-50 border border-dashed border-slate-300 px-2 py-1 rounded-md inline-block">
-                                        Vazia (Preencher)
-                                      </span>
-                                    )
+                                    (() => {
+                                      // Procura a vaga correspondente a esta unidade para verificar o status de locação
+                                      const uNumClean = (u.numero || '').toString().replace(/\D/g, '');
+                                      const uVagaClean = (u.vagaGaragem || '').toString().replace(/\D/g, '');
+                                      const vagaObj = (vagasGaragem || []).find((v: VagaGaragem) => {
+                                        const vUnidClean = (v.unidadeNumero || '').toString().replace(/\D/g, '');
+                                        const vNumClean = (v.numeroVaga || '').toString().replace(/\D/g, '');
+                                        return (uNumClean && vUnidClean && uNumClean === vUnidClean) || 
+                                               (uVagaClean && vNumClean && uVagaClean === vNumClean);
+                                      });
+
+                                      const displayVaga = u.vagaGaragem || vagaObj?.numeroVaga;
+
+                                      if (!displayVaga) {
+                                        return (
+                                          <span className="text-slate-400 italic text-xs font-normal bg-slate-50 border border-dashed border-slate-300 px-2 py-1 rounded-md inline-block">
+                                            Vazia (Preencher)
+                                          </span>
+                                        );
+                                      }
+
+                                      return (
+                                        <div className="flex flex-col gap-0.5">
+                                          <span className="text-slate-700 font-bold flex items-center gap-1.5 text-xs flex-wrap">
+                                            <Car className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+                                            <span>{displayVaga}</span>
+                                          </span>
+
+                                          {vagaObj?.status === 'Para Alugar' && (
+                                            <span className="inline-flex items-center w-fit gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-amber-950 border border-amber-500 shadow-2xs uppercase">
+                                              <span className="w-1.5 h-1.5 rounded-full bg-amber-700 animate-pulse" />
+                                              ALUGA-SE
+                                            </span>
+                                          )}
+
+                                          {vagaObj?.status === 'Em uso' && vagaObj.alugadaParaUnidade && (
+                                            <span className="text-[10px] font-extrabold text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md w-fit">
+                                              Alugada p/ {vagaObj.alugadaParaUnidade}
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    })()
                                   )}
                                 </td>
 
@@ -10658,7 +10696,7 @@ export const AdminPanelScreen: React.FC = () => {
                     </span>
                   </div>
                   <h3 className={`text-base sm:text-lg font-black mt-0.5 ${canAccessBenfeitorias ? 'text-slate-950' : 'text-slate-700'}`}>
-                    Benfeitorias, Obras & Realizações da Gestão
+                    16. Benfeitorias, Obras & Realizações da Gestão
                   </h3>
                   <p className={`text-xs font-medium max-w-2xl mt-0.5 ${canAccessBenfeitorias ? 'text-slate-700' : 'text-slate-500'}`}>
                     Publique e gerencie grandes reparos concluídos, aquisições de equipamentos e o demonstrativo de economia para a transparência do condomínio.
@@ -10754,17 +10792,46 @@ export const AdminPanelScreen: React.FC = () => {
                       </select>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBenfeitoriaToEditInAdmin(null);
-                        setIsCreateEditBenfeitoriaModalOpen(true);
-                      }}
-                      className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Nova Benfeitoria</span>
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                      {/* Select Dropdown com os reparos disponíveis no condomínio */}
+                      <select
+                        value={selectedReparoForImportAdmin}
+                        onChange={(e) => setSelectedReparoForImportAdmin(e.target.value)}
+                        className="bg-amber-50 border border-amber-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-950 focus:outline-none cursor-pointer shadow-2xs max-w-[220px] truncate"
+                        title="Selecione um item do módulo de reparos para importar"
+                      >
+                        <option value="">Selecione Reparo p/ Importar...</option>
+                        {reparos.filter(r => !r.migradoParaBenfeitoriaId).map(rep => (
+                          <option key={rep.id} value={rep.id}>
+                            [{rep.categoria}] {rep.titulo} ({rep.solicitanteNome})
+                          </option>
+                        ))}
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsImportReparoModalOpen(true);
+                        }}
+                        className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700 text-xs font-black rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                        title="Importar item do módulo de reparos"
+                      >
+                        <Download className="w-4 h-4 text-amber-400" />
+                        <span>Importar Reparo</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBenfeitoriaToEditInAdmin(null);
+                          setIsCreateEditBenfeitoriaModalOpen(true);
+                        }}
+                        className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Nova Benfeitoria</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Listagem de Benfeitorias */}
@@ -11872,6 +11939,13 @@ export const AdminPanelScreen: React.FC = () => {
         isOpen={isCreateEditBenfeitoriaModalOpen}
         onClose={() => setIsCreateEditBenfeitoriaModalOpen(false)}
         benfeitoriaToEdit={benfeitoriaToEditInAdmin}
+      />
+
+      {/* Modal de Importação de Reparos para Benfeitorias */}
+      <ImportReparoModal
+        isOpen={isImportReparoModalOpen}
+        onClose={() => setIsImportReparoModalOpen(false)}
+        initialReparoId={selectedReparoForImportAdmin}
       />
 
       {/* Modal de Gestão de Ciclo de Vida e Linha do Tempo de Benfeitorias */}

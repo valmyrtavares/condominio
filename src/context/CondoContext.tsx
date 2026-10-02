@@ -653,6 +653,10 @@ interface CondoContextType {
   excluirComentarioReparo: (reparoId: string, comentarioId: string) => void;
   excluirReparo: (reparoId: string) => void;
   resolverReparoSimples: (reparoId: string, observacao?: string) => void;
+  selectedBenfeitoriaId: string | null;
+  setSelectedBenfeitoriaId: (id: string | null) => void;
+  navigateToBenfeitoria: (id: string) => void;
+  importarReparoParaBenfeitoria: (reparoId: string) => Promise<{ success: boolean; benfeitoriaId?: string; error?: string }>;
   adicionarBenfeitoria: (titulo: string, subtitulo: string, tipo: TipoBenfeitoria, descricao: string, impactoGestao: string, fotos: string[], investimento?: number, economiaMensal?: number, regrasUso?: string) => void;
   editarBenfeitoria: (id: string, payload: Partial<Benfeitoria>) => Promise<{ success: boolean; error?: string }>;
   excluirBenfeitoria: (id: string) => Promise<{ success: boolean; error?: string }>;
@@ -677,7 +681,7 @@ interface CondoContextType {
   toggleOcultarComentario: (reclamacaoId: string, comentarioId: string, motivo?: string) => void;
   excluirComentario: (reclamacaoId: string, comentarioId: string) => void;
   excluirReclamacao: (reclamacaoId: string) => void;
-  atualizarStatusVaga: (vagaId: string, novoStatus: StatusVaga, dadosAdicionais?: { veiculo?: VeiculoInfo; valorAluguelMensal?: number; observacoes?: string }) => void;
+  atualizarStatusVaga: (vagaId: string, novoStatus: StatusVaga, dadosAdicionais?: { veiculo?: VeiculoInfo; valorAluguelMensal?: number; observacoes?: string; alugadaParaUnidade?: string; locatarioNome?: string }) => void;
   transformarEmReparo: (reclamacaoId: string, titulo: string, descricao: string) => string;
   selecionarOrcamento: (reparoId: string, orcamentoId: string) => void;
   adicionarOrcamentoReparo: (reparoId: string, orcamento: Omit<Orcamento, 'id' | 'selecionado'>) => void;
@@ -2506,17 +2510,107 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return [];
   });
 
+  const [selectedBenfeitoriaId, setSelectedBenfeitoriaId] = useState<string | null>(null);
+
+  const navigateToBenfeitoria = (id: string) => {
+    setSelectedBenfeitoriaId(id);
+    setCurrentScreen('benfeitorias');
+  };
+
   const [reparos, setReparos] = useState<Reparo[]>(() => {
     try {
       const salvo = localStorage.getItem(`condo_reparos_list_${condoTenantId}`);
       if (salvo) {
         const parsed = JSON.parse(salvo);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed.filter(item => item && item.id && !LEGACY_MOCK_REPARO_IDS.has(item.id));
         }
       }
     } catch {}
-    return [];
+    return [
+      {
+        id: 'rep-conserto-portao-principal',
+        titulo: 'Conserto do Portão Eletrônico da Garagem',
+        descricao: 'Substituição do automatizador, motor de 1/2 HP e alinhamento dos cabos de aço e sensores de presença do portão da garagem.',
+        porte: 'Grande',
+        categoria: 'Garagem',
+        solicitanteNome: 'Carlos Eduardo (Morador Ap 42)',
+        solicitanteUnidade: '42',
+        dataSolicitacao: '28/09/2026',
+        responsavel: 'Administração',
+        status: 'Buscando Orçamento',
+        orcamentos: [
+          {
+            id: 'orc-1',
+            empresa: 'Portões & Cia Tec',
+            siteUrl: 'https://portoesecia.com.br',
+            cnpj: '12.345.678/0001-90',
+            valor: 4800,
+            descricao: 'Substituição de automatizador por modelo industrial rápido de alta resistência.',
+            prazoDias: 4,
+            selecionado: false
+          },
+          {
+            id: 'orc-2',
+            empresa: 'ServPort Automatizações',
+            siteUrl: 'https://servport.com.br',
+            cnpj: '98.765.432/0001-10',
+            valor: 4150,
+            descricao: 'Troca de motor basculante rápido 1/2HP com 4 controles inclusos.',
+            prazoDias: 3,
+            selecionado: false
+          }
+        ],
+        timeline: [
+          {
+            id: 'tl-1',
+            data: '28/09/2026',
+            titulo: 'Solicitação Registrada',
+            descricao: 'Moradores relataram travamento intermitente no portão principal da garagem.',
+            autorRole: 'morador'
+          },
+          {
+            id: 'tl-2',
+            data: '29/09/2026',
+            titulo: 'Pesquisa de Mercado & Cotações',
+            descricao: 'Foram solicitadas 2 propostas de empresas especializadas em portões automatizados.',
+            autorRole: 'sindico'
+          }
+        ],
+        fotosAntes: ['https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&w=600&q=80'],
+        condominioId: condoTenantId,
+        apoiosCount: 12,
+        apoiadoPeloUsuario: true,
+        comentarios: []
+      },
+      {
+        id: 'rep-torneira-hall-social',
+        titulo: 'Troca de Vedante da Torneira do Hall',
+        descricao: 'Pequeno gotejamento na torneira de apoio do hall térreo.',
+        porte: 'Pequeno',
+        categoria: 'Hall / Corredor',
+        solicitanteNome: 'Mariana Costa (Ap 14)',
+        solicitanteUnidade: '14',
+        dataSolicitacao: '01/10/2026',
+        responsavel: 'Zelador João',
+        status: 'Solicitado',
+        orcamentos: [],
+        timeline: [
+          {
+            id: 'tl-simples-1',
+            data: '01/10/2026',
+            titulo: 'Solicitação de Reparo Simples',
+            descricao: 'Reparo simples enviado ao zelador para troca de vedante.',
+            autorRole: 'morador'
+          }
+        ],
+        fotosAntes: ['https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80'],
+        condominioId: condoTenantId,
+        apoiosCount: 2,
+        apoiadoPeloUsuario: false,
+        comentarios: []
+      }
+    ];
   });
 
   useEffect(() => {
@@ -2818,7 +2912,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const target = eventos.find(e => e.id === id);
     if (!target) return;
 
-    setEventos(prev => prev.map(e => e.id === id ? { ...e, ativo: false, motivoSuspensao: motivo } : e));
+    const eventoAtualizado: EventoCondominio = { 
+      ...target, 
+      ativo: false, 
+      motivoSuspensao: motivo 
+    };
+
+    setEventos(prev => prev.map(e => e.id === id ? eventoAtualizado : e));
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'eventos', eventoAtualizado).catch(console.error);
 
     const targetUnidade = target.organizadorUnidade || (target.organizador.includes('Apt') ? target.organizador.replace(/.*(Apt\s*\d+).*/i, '$1') : '');
     const cleanUnit = targetUnidade.replace(/[^0-9]/g, '');
@@ -2833,7 +2934,17 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const reativarEvento = (id: string) => {
-    setEventos(prev => prev.map(e => e.id === id ? { ...e, ativo: true, motivoSuspensao: undefined } : e));
+    const target = eventos.find(e => e.id === id);
+    if (!target) return;
+
+    const eventoAtualizado: EventoCondominio = { 
+      ...target, 
+      ativo: true, 
+      motivoSuspensao: '' 
+    };
+
+    setEventos(prev => prev.map(e => e.id === id ? eventoAtualizado : e));
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'eventos', eventoAtualizado).catch(console.error);
   };
 
   // Prestação de Contas Mês a Mês & Categorias exclusivamente no Cloud Firestore
@@ -5705,6 +5816,113 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', novoReparo).catch(console.error);
   };
 
+  const importarReparoParaBenfeitoria = async (reparoId: string): Promise<{ success: boolean; benfeitoriaId?: string; error?: string }> => {
+    try {
+      const rep = reparos.find(r => r.id === reparoId);
+      if (!rep) return { success: false, error: 'Reparo não encontrado' };
+
+      const dataHoje = new Date().toLocaleDateString('pt-BR');
+      const newBenfeitoriaId = `benf-imported-${rep.id}-${Date.now()}`;
+
+      // Convert repair's Orcamento[] to OrcamentoBenfeitoria[]
+      const benfOrcamentos: OrcamentoBenfeitoria[] = (rep.orcamentos || []).map((o, idx) => ({
+        id: String(idx + 1),
+        empresaNome: o.empresa,
+        cnpj: o.cnpj || '',
+        site: o.siteUrl || '',
+        contato: 'Administração',
+        prazoEntrega: `${o.prazoDias} dias`,
+        valorTotal: o.valor,
+        formaPagamento: 'Faturado / Parcelado',
+        jaPrestouServico: false,
+        propostaPdfOuFoto: o.documentoUrl || ''
+      }));
+
+      // Convert timeline step
+      const benfTimeline: PassoTimelineBenfeitoria[] = [
+        {
+          id: `passo-mig-${Date.now()}-1`,
+          data: rep.dataSolicitacao || dataHoje,
+          status: 'proposta',
+          titulo: 'Solicitação de Reparo Registrada',
+          descricao: `Solicitante: ${rep.solicitanteNome || 'Morador'}. Descrição original: ${rep.descricao}`,
+          fotos: rep.fotosAntes || [],
+          criadoPor: rep.solicitanteNome || 'Morador'
+        },
+        {
+          id: `passo-mig-${Date.now()}-2`,
+          data: dataHoje,
+          status: benfOrcamentos.length > 0 ? 'orcamento' : 'proposta',
+          titulo: 'Importado para o Módulo de Benfeitorias',
+          descricao: 'Este conserto de grande porte passou a seguir o fluxo transparente de Benfeitorias & Obras com orçamentos e acompanhamento dos condôminos.',
+          criadoPor: currentUser.nome || 'Administração'
+        }
+      ];
+
+      const novaBenfeitoria: Benfeitoria = {
+        id: newBenfeitoriaId,
+        reparoOrigemId: rep.id,
+        titulo: rep.titulo,
+        subtitulo: `Importado de Reparos (${rep.categoria})`,
+        tipo: 'Grande Reparo & Manutenção',
+        statusAtual: benfOrcamentos.length > 0 ? 'orcamento' : 'proposta',
+        dataCriacao: rep.dataSolicitacao || dataHoje,
+        dataEntrega: dataHoje,
+        descricao: rep.descricao,
+        impactoGestao: `Manutenção estrutural de grande porte derivada do módulo de Reparos (${rep.porte} Porte).`,
+        investimento: rep.valorFinal || (benfOrcamentos[0] ? benfOrcamentos[0].valorTotal : 0),
+        fotos: rep.fotosAntes && rep.fotosAntes.length > 0 ? rep.fotosAntes : ['https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&w=600&q=80'],
+        responsavel: `${currentUser.nome} (${currentUser.role === 'subsindico' ? 'Subsíndica' : 'Síndico'})`,
+        condominioId: condoTenantId,
+        regrasUso: 'Acompanhe as cotações, votações e atualizações do diário de obra nesta seção.',
+        timeline: benfTimeline,
+        orcamentos: benfOrcamentos,
+        votacaoAberta: benfOrcamentos.length > 0
+      };
+
+      // 1. Save new benfeitoria
+      setBenfeitorias(prev => [novaBenfeitoria, ...prev]);
+      if (condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'benfeitorias', JSON.parse(JSON.stringify(novaBenfeitoria)));
+      }
+
+      // 2. Mark original repair as migrated
+      const repAtualizado: Reparo = {
+        ...rep,
+        migradoParaBenfeitoriaId: newBenfeitoriaId,
+        status: 'Em Execução' as StatusReparo,
+        timeline: [
+          ...(rep.timeline || []),
+          {
+            id: `tl-mig-${Date.now()}`,
+            data: dataHoje,
+            titulo: 'Processo Transferido para Benfeitorias & Obras',
+            descricao: 'Este reparo foi importado e agora segue o fluxo transparente no módulo de Benfeitorias da gestão.',
+            autorRole: currentUser.role,
+            statusAlvo: 'Em Execução' as StatusReparo
+          }
+        ]
+      };
+
+      setReparos(prev => {
+        const lista = prev.map(r => r.id === rep.id ? repAtualizado : r);
+        try {
+          localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(lista));
+        } catch {}
+        return lista;
+      });
+
+      if (condoTenantId) {
+        await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', JSON.parse(JSON.stringify(repAtualizado)));
+      }
+
+      return { success: true, benfeitoriaId: newBenfeitoriaId };
+    } catch (err: any) {
+      console.error('🔥 Erro ao importar reparo para benfeitorias:', err);
+      return { success: false, error: err.message || 'Erro ao importar reparo' };
+    }
+  };
+
   const adicionarBenfeitoria = (
     titulo: string,
     subtitulo: string,
@@ -6448,7 +6666,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const atualizarStatusVaga = (
     vagaId: string, 
     novoStatus: StatusVaga, 
-    dadosAdicionais?: { veiculo?: VeiculoInfo; valorAluguelMensal?: number; observacoes?: string }
+    dadosAdicionais?: { veiculo?: VeiculoInfo; valorAluguelMensal?: number; observacoes?: string; alugadaParaUnidade?: string; locatarioNome?: string }
   ) => {
     const vagaExistente = vagasGaragem.find((v: VagaGaragem) => v.id === vagaId);
     const atualizada: VagaGaragem = vagaExistente
@@ -6458,6 +6676,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           veiculo: dadosAdicionais?.veiculo !== undefined ? dadosAdicionais.veiculo : vagaExistente.veiculo,
           valorAluguelMensal: dadosAdicionais?.valorAluguelMensal !== undefined ? dadosAdicionais.valorAluguelMensal : vagaExistente.valorAluguelMensal,
           observacoes: dadosAdicionais?.observacoes !== undefined ? dadosAdicionais.observacoes : vagaExistente.observacoes,
+          alugadaParaUnidade: dadosAdicionais?.alugadaParaUnidade !== undefined ? dadosAdicionais.alugadaParaUnidade : vagaExistente.alugadaParaUnidade,
+          locatarioNome: dadosAdicionais?.locatarioNome !== undefined ? dadosAdicionais.locatarioNome : vagaExistente.locatarioNome,
           condominioId: condoTenantId
         }
       : {
@@ -6791,6 +7011,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       excluirComentarioReparo,
       excluirReparo,
       resolverReparoSimples,
+      selectedBenfeitoriaId,
+      setSelectedBenfeitoriaId,
+      navigateToBenfeitoria,
+      importarReparoParaBenfeitoria,
       adicionarBenfeitoria,
       editarBenfeitoria,
       excluirBenfeitoria,

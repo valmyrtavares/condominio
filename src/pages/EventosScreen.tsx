@@ -204,14 +204,27 @@ export const EventosScreen: React.FC = () => {
               >
                 {/* Banner de Suspensão se estiver fora do ar */}
                 {isSuspenso && (
-                  <div className="px-4 py-2 bg-rose-500 text-white text-xs font-extrabold flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4 shrink-0" />
-                      <span>Evento Fora do Ar / Suspenso: {evento.motivoSuspensao || 'Moderação da administração'}</span>
+                  <div className="p-3 bg-rose-600 text-white text-xs font-bold space-y-1 animate-in fade-in">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 font-black text-rose-100 uppercase tracking-wider text-[11px]">
+                        <AlertTriangle className="w-4 h-4 text-white shrink-0" />
+                        <span>Evento Fora do Ar (Suspenso pela Moderação)</span>
+                      </div>
+                      <span className="text-[10px] uppercase font-black px-2 py-0.5 bg-black/40 text-rose-100 rounded-md">
+                        Privado / Oculto
+                      </span>
                     </div>
-                    <span className="text-[10px] uppercase font-black px-2 py-0.5 bg-black/30 rounded-md">
-                      Moderação
-                    </span>
+                    {evento.motivoSuspensao && (
+                      <div className="p-2 rounded-xl bg-black/20 border border-white/20 text-white text-xs font-semibold">
+                        <strong className="block text-[10px] uppercase font-extrabold text-rose-200">
+                          Motivo informado pela Administração:
+                        </strong>
+                        <p className="mt-0.5 text-slate-100">{evento.motivoSuspensao}</p>
+                      </div>
+                    )}
+                    <p className="text-[10px] text-rose-100 font-medium">
+                      Este evento não está visível para os outros moradores no feed geral do condomínio.
+                    </p>
                   </div>
                 )}
 
@@ -225,14 +238,21 @@ export const EventosScreen: React.FC = () => {
                       <h3 className="text-sm font-extrabold text-slate-950 leading-tight">
                         {evento.titulo}
                       </h3>
-                      <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border flex items-center gap-1 shadow-2xs ${
-                        isPublico
-                          ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
-                          : 'bg-purple-100 text-purple-950 border-purple-300'
-                      }`}>
-                        {isPublico ? <Globe className="w-2.5 h-2.5 text-emerald-700" /> : <Lock className="w-2.5 h-2.5 text-purple-700" />}
-                        {evento.visibilidade}
-                      </span>
+                      {isSuspenso ? (
+                        <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-rose-400 bg-rose-100 text-rose-800 flex items-center gap-1 shadow-2xs">
+                          <AlertTriangle className="w-2.5 h-2.5 text-rose-600" />
+                          Fora do Ar
+                        </span>
+                      ) : (
+                        <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border flex items-center gap-1 shadow-2xs ${
+                          isPublico
+                            ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
+                            : 'bg-purple-100 text-purple-950 border-purple-300'
+                        }`}>
+                          {isPublico ? <Globe className="w-2.5 h-2.5 text-emerald-700" /> : <Lock className="w-2.5 h-2.5 text-purple-700" />}
+                          {evento.visibilidade}
+                        </span>
+                      )}
                     </div>
 
                     <p className="text-[10px] text-amber-950 font-bold flex flex-wrap items-center gap-2">
@@ -310,13 +330,19 @@ export const EventosScreen: React.FC = () => {
                               Organizado por: <strong className="text-indigo-950">{evento.organizador}</strong>
                             </span>
                             
-                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                              isPublico 
-                                ? 'bg-emerald-100 text-emerald-950 border border-emerald-300' 
-                                : 'bg-purple-100 text-purple-950 border border-purple-300'
-                            }`}>
-                              {isPublico ? 'Aberto a Todos os Moradores' : 'Evento Particular Fechado'}
-                            </span>
+                            {isSuspenso ? (
+                              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300">
+                                Fora do Ar
+                              </span>
+                            ) : (
+                              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                isPublico 
+                                  ? 'bg-emerald-100 text-emerald-950 border border-emerald-300' 
+                                  : 'bg-purple-100 text-purple-950 border border-purple-300'
+                              }`}>
+                                {isPublico ? 'Aberto a Todos os Moradores' : 'Evento Particular Fechado'}
+                              </span>
+                            )}
                           </div>
 
                           <p className="text-[11px] text-slate-800 leading-relaxed font-medium">
@@ -325,7 +351,12 @@ export const EventosScreen: React.FC = () => {
                         </div>
 
                         {/* Botão de Ação / Confirmação de Presença */}
-                        {isPublico ? (
+                        {isSuspenso ? (
+                          <div className="p-3 rounded-2xl bg-rose-100 border border-rose-300 text-rose-950 text-xs font-bold flex items-center justify-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                            <span>Presença desabilitada (Evento fora do ar pela moderação)</span>
+                          </div>
+                        ) : isPublico ? (
                           <button
                             type="button"
                             onClick={(e) => handleTogglePresenca(evento.id, e)}

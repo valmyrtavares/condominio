@@ -41,6 +41,7 @@ export const ReparosScreen: React.FC = () => {
     resolverReparoSimples,
     excluirReparo,
     setCurrentScreen,
+    navigateToBenfeitoria,
     isAdminLoggedIn
   } = useCondo();
 
@@ -483,9 +484,27 @@ export const ReparosScreen: React.FC = () => {
                       <StatusBadge status={rep.status} />
                     </div>
 
-                    <h3 className="text-sm font-extrabold text-slate-950 leading-tight">
-                      {rep.titulo}
-                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-extrabold text-slate-950 leading-tight">
+                        {rep.titulo}
+                      </h3>
+
+                      {/* Mensagem solicitada na imagem 2 no campo com quadrado vermelho */}
+                      {rep.migradoParaBenfeitoriaId && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigateToBenfeitoria(rep.migradoParaBenfeitoriaId!);
+                          }}
+                          className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-extrabold rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer flex items-center gap-1 border border-amber-600 animate-pulse"
+                          title="Clique aqui para acompanhar este reparo no Módulo de Benfeitorias"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-slate-950 shrink-0" />
+                          <span>Esse reparo por necessitar de orçamentos foi transferido para o módulo de Benfeitorias. Clique aqui para acompanhar.</span>
+                        </button>
+                      )}
+                    </div>
 
                     <p className="text-[10px] text-amber-950 font-bold flex flex-wrap items-center gap-2">
                       <span className="flex items-center gap-1">
@@ -565,6 +584,20 @@ export const ReparosScreen: React.FC = () => {
                   <div className="min-h-0 overflow-hidden">
                     <div className="px-4 pb-4 space-y-3.5 border-t border-slate-950/10 pt-3">
                       
+                      {/* Banner de Transferência para Benfeitorias (Visível nos detalhes expandidos) */}
+                      {rep.migradoParaBenfeitoriaId && (
+                        <div 
+                          onClick={() => navigateToBenfeitoria(rep.migradoParaBenfeitoriaId!)}
+                          className="bg-amber-500 hover:bg-amber-400 text-slate-950 p-3.5 rounded-2xl font-extrabold text-xs flex items-center justify-between gap-3 shadow-md cursor-pointer transition-all active:scale-98 border border-amber-600 mb-1"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-slate-950 shrink-0" />
+                            <span>Esse reparo por necessitar de orçamentos foi transferido para o módulo de Benfeitorias. Clique aqui para acompanhar.</span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-slate-950 shrink-0 stroke-[3]" />
+                        </div>
+                      )}
+
                       {/* Descrição Detalhada */}
                       <div className="bg-white/60 p-4 rounded-2xl border border-white/80 text-xs text-slate-900 leading-relaxed font-semibold space-y-2">
                         <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-700 block">
