@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useCondo } from '../context/CondoContext';
 import { EventoCondominio } from '../types';
 import { 
   Calendar, 
   ArrowLeft, 
   ChevronDown, 
-  ChevronUp, 
   MapPin, 
   Users, 
   Clock, 
@@ -18,9 +17,13 @@ import {
   Pencil,
   Trash2,
   AlertTriangle,
-  PartyPopper
+  PartyPopper,
+  History,
+  CalendarCheck2,
+  Flame
 } from 'lucide-react';
 import { CreateEditEventoModal } from '../components/eventos/CreateEditEventoModal';
+import { separarEventosPorStatus, isEventoHoje, isEventoPassado } from '../utils/eventoUtils';
 
 export const EventosScreen: React.FC = () => {
   const { 
@@ -30,6 +33,20 @@ export const EventosScreen: React.FC = () => {
     excluirEvento,
     isAdminLoggedIn
   } = useCondo();
+
+  // Aba selecionada: 'proximos' (Ativos/Futuros) ou 'passados' (Histórico / Eventos Realizados)
+  const [activeTab, setActiveTab] = useState<'proximos' | 'passados'>('proximos');
+
+  // Listener / Ticker de tempo real para manter a expiração dos eventos sempre precisa sem precisar recarregar a tela
+  const [agora, setAgora] = useState<Date>(() => new Date());
+
+  useEffect(() => {
+    // Atualiza a cada 30 segundos
+    const timer = setInterval(() => {
+      setAgora(new Date());
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filterVisibilidade, setFilterVisibilidade] = useState<string>('Todos');
@@ -85,25 +102,52 @@ export const EventosScreen: React.FC = () => {
     );
   };
 
-  const filteredEventos = eventos.filter(evt => {
-    const isOwner = checkIsOwner(evt);
-    const isAtivo = evt.ativo !== false;
+  // Separação dinâmica e em tempo real dos eventos
+  const { proximos: eventosProximosBrutos, passados: eventosPassadosBrutos } = useMemo(() => {
+    return separarEventosPorStatus(eventos, agora);
+  }, [eventos, agora]);
 
-    // Se o evento estiver fora do ar/suspenso, só exibe para o dono ou admin
-    if (!isAtivo && !isOwner && !isAdmin) return false;
+  // Contagem para as abas (considerando visibilidade/permissão de ativo)
+  const countProximosVisiveis = useMemo(() => {
+    return eventosProximosBrutos.filter(evt => {
+      const isOwner = checkIsOwner(evt);
+      const isAtivo = evt.ativo !== false;
+      return isAtivo || isOwner || isAdmin;
+    }).length;
+  }, [eventosProximosBrutos, isAdmin, currentUser]);
 
-    const matchesFilter = filterVisibilidade === 'Todos' ||
-      (filterVisibilidade === 'Públicos' && evt.visibilidade === 'Público') ||
-      (filterVisibilidade === 'Privados' && evt.visibilidade === 'Privado');
+  const countPassadosVisiveis = useMemo(() => {
+    return eventosPassadosBrutos.filter(evt => {
+      const isOwner = checkIsOwner(evt);
+      const isAtivo = evt.ativo !== false;
+      return isAtivo || isOwner || isAdmin;
+    }).length;
+  }, [eventosPassadosBrutos, isAdmin, currentUser]);
 
-    const matchesSearch = !searchTerm ||
-      evt.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      evt.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      evt.local.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      evt.organizador.toLowerCase().includes(searchTerm.toLowerCase());
+  // Lista base conforme a aba ativa
+  const listaBase = activeTab === 'proximos' ? eventosProximosBrutos : eventosPassadosBrutos;
 
-    return matchesFilter && matchesSearch;
-  });
+  const filteredEventos = useMemo(() => {
+    return listaBase.filter(evt => {
+      const isOwner = checkIsOwner(evt);
+      const isAtivo = evt.ativo !== false;
+
+      // Se o evento estiver fora do ar/suspenso, só exibe para o dono ou admin
+      if (!isAtivo && !isOwner && !isAdmin) return false;
+
+      const matchesFilter = filterVisibilidade === 'Todos' ||
+        (filterVisibilidade === 'Públicos' && evt.visibilidade === 'Público') ||
+        (filterVisibilidade === 'Privados' && evt.visibilidade === 'Privado');
+
+      const matchesSearch = !searchTerm ||
+        evt.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        evt.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        evt.local.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        evt.organizador.toLowerCase().includes(searchTerm.toLowerCase());
+
+      return matchesFilter && matchesSearch;
+    });
+  }, [listaBase, filterVisibilidade, searchTerm, isAdmin, currentUser]);
 
   return (
     <div className="space-y-4 pb-24 animate-in fade-in duration-300 w-full max-w-full overflow-x-hidden">
@@ -135,8 +179,47 @@ export const EventosScreen: React.FC = () => {
           Eventos & Celebrações
         </h2>
         <p className="text-[11px] text-white/90 font-medium">
-          Mural de confraternizações públicas do condomínio e celebrações privadas agendadas.
+          Mural dinâmico de confraternizações e celebrações agendadas pelos moradores.
         </p>
+      </div>
+
+      {/* Abas Principais: Próximos & Atuais vs Eventos Realizados (Histórico) */}
+      <div className="grid grid-cols-2 gap-2 p-1 bg-black/25 backdrop-blur-md rounded-2xl border border-white/20 shadow-inner">
+        <button
+          type="button"
+          onClick={() => setActiveTab('proximos')}
+          className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+            activeTab === 'proximos'
+              ? 'bg-amber-500 text-slate-950 shadow-md scale-[1.02]'
+              : 'text-white/80 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <Sparkles className={`w-3.5 h-3.5 ${activeTab === 'proximos' ? 'text-slate-950' : 'text-amber-300'}`} />
+          <span>Próximos & Atuais</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+            activeTab === 'proximos' ? 'bg-slate-950 text-amber-300' : 'bg-white/20 text-white'
+          }`}>
+            {countProximosVisiveis}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('passados')}
+          className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+            activeTab === 'passados'
+              ? 'bg-amber-500 text-slate-950 shadow-md scale-[1.02]'
+              : 'text-white/80 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <History className={`w-3.5 h-3.5 ${activeTab === 'passados' ? 'text-slate-950' : 'text-amber-300'}`} />
+          <span>Eventos Realizados</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+            activeTab === 'passados' ? 'bg-slate-950 text-amber-300' : 'bg-white/20 text-white'
+          }`}>
+            {countPassadosVisiveis}
+          </span>
+        </button>
       </div>
 
       {/* Filtros e Busca */}
@@ -163,7 +246,11 @@ export const EventosScreen: React.FC = () => {
         <div className="relative">
           <input
             type="text"
-            placeholder="Buscar por evento (ex: Aniversário, Dia das Mães, Festa Junina, Churrasco)..."
+            placeholder={
+              activeTab === 'proximos'
+                ? "Buscar em próximos eventos (ex: Aniversário, Dia das Mães, Churrasco)..."
+                : "Buscar no histórico de eventos passados..."
+            }
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-white/70 border border-white/80 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-600 focus:outline-none focus:bg-white font-semibold shadow-xs"
@@ -176,14 +263,41 @@ export const EventosScreen: React.FC = () => {
       <div className="space-y-3">
         {filteredEventos.length === 0 ? (
           <div className="p-8 text-center bg-white/50 border border-white/70 rounded-3xl space-y-3">
-            <PartyPopper className="w-8 h-8 text-amber-600 mx-auto" />
-            <p className="text-sm font-black text-slate-950">Nenhum evento encontrado no momento.</p>
-            <button
-              onClick={handleOpenCreate}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md cursor-pointer"
-            >
-              + Anunciar o Primeiro Evento
-            </button>
+            {activeTab === 'proximos' ? (
+              <>
+                <PartyPopper className="w-8 h-8 text-amber-600 mx-auto" />
+                <p className="text-sm font-black text-slate-950">Nenhum evento futuro programado no momento.</p>
+                <p className="text-xs text-slate-700 font-medium">
+                  {countPassadosVisiveis > 0 
+                    ? `Existem ${countPassadosVisiveis} eventos concluídos na aba "Eventos Realizados".`
+                    : 'Que tal ser o primeiro a organizar uma celebração ou confraternização?'}
+                </p>
+                <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                  <button
+                    onClick={handleOpenCreate}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md cursor-pointer transition-all active:scale-95"
+                  >
+                    + Anunciar Evento
+                  </button>
+                  {countPassadosVisiveis > 0 && (
+                    <button
+                      onClick={() => setActiveTab('passados')}
+                      className="px-4 py-2 bg-white/80 hover:bg-white text-slate-900 rounded-xl text-xs font-bold border border-slate-300 shadow-sm cursor-pointer transition-all"
+                    >
+                      Ver Histórico de Realizados
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <CalendarCheck2 className="w-8 h-8 text-indigo-600 mx-auto" />
+                <p className="text-sm font-black text-slate-950">Nenhum evento passado arquivado no momento.</p>
+                <p className="text-xs text-slate-700 font-medium">
+                  Assim que um evento passar da sua data e horário programados, ele será movido automaticamente para cá.
+                </p>
+              </>
+            )}
           </div>
         ) : (
           filteredEventos.map((evento) => {
@@ -192,14 +306,18 @@ export const EventosScreen: React.FC = () => {
             const isConfirmado = confirmados[evento.id];
             const isOwner = checkIsOwner(evento);
             const isSuspenso = evento.ativo === false;
+            const isPassado = isEventoPassado(evento, agora);
+            const isHoje = !isPassado && isEventoHoje(evento, agora);
 
             return (
               <div 
                 key={evento.id}
-                className={`bg-white/45 border-2 rounded-3xl overflow-hidden shadow-xl hover:bg-white/50 transition-all duration-300 backdrop-blur-xs ${
+                className={`border-2 rounded-3xl overflow-hidden shadow-xl transition-all duration-300 backdrop-blur-xs ${
                   isSuspenso 
                     ? 'border-rose-400/80 bg-rose-50/40 opacity-90' 
-                    : 'border-white/60'
+                    : isPassado
+                    ? 'border-slate-300/80 bg-slate-100/70 hover:bg-slate-100/90'
+                    : 'border-white/60 bg-white/45 hover:bg-white/50'
                 }`}
               >
                 {/* Banner de Suspensão se estiver fora do ar */}
@@ -235,15 +353,28 @@ export const EventosScreen: React.FC = () => {
                 >
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-sm font-extrabold text-slate-950 leading-tight">
+                      <h3 className={`text-sm font-extrabold leading-tight ${isPassado ? 'text-slate-800' : 'text-slate-950'}`}>
                         {evento.titulo}
                       </h3>
+
                       {isSuspenso ? (
                         <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-rose-400 bg-rose-100 text-rose-800 flex items-center gap-1 shadow-2xs">
                           <AlertTriangle className="w-2.5 h-2.5 text-rose-600" />
                           Fora do Ar
                         </span>
-                      ) : (
+                      ) : isPassado ? (
+                        <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-slate-300 bg-slate-200 text-slate-700 flex items-center gap-1 shadow-2xs">
+                          <CalendarCheck2 className="w-2.5 h-2.5 text-slate-600" />
+                          Realizado / Encerrado
+                        </span>
+                      ) : isHoje ? (
+                        <span className="text-[9px] uppercase font-black px-2.5 py-0.5 rounded-full border border-amber-400 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 flex items-center gap-1 shadow-xs animate-pulse">
+                          <Flame className="w-2.5 h-2.5 text-slate-950" />
+                          Hoje!
+                        </span>
+                      ) : null}
+
+                      {!isSuspenso && (
                         <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border flex items-center gap-1 shadow-2xs ${
                           isPublico
                             ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
@@ -334,6 +465,10 @@ export const EventosScreen: React.FC = () => {
                               <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300">
                                 Fora do Ar
                               </span>
+                            ) : isPassado ? (
+                              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-800 border border-slate-300">
+                                Evento Finalizado
+                              </span>
                             ) : (
                               <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                                 isPublico 
@@ -355,6 +490,11 @@ export const EventosScreen: React.FC = () => {
                           <div className="p-3 rounded-2xl bg-rose-100 border border-rose-300 text-rose-950 text-xs font-bold flex items-center justify-center gap-2">
                             <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                             <span>Presença desabilitada (Evento fora do ar pela moderação)</span>
+                          </div>
+                        ) : isPassado ? (
+                          <div className="p-3 rounded-2xl bg-slate-200/80 border border-slate-300 text-slate-700 text-xs font-bold flex items-center justify-center gap-2">
+                            <CalendarCheck2 className="w-4 h-4 text-slate-600 shrink-0" />
+                            <span>Este evento já foi realizado e está arquivado no histórico.</span>
                           </div>
                         ) : isPublico ? (
                           <button

@@ -95,6 +95,7 @@ export const CreateEditDependenciaModal: React.FC<CreateEditDependenciaModalProp
   const [capacidadePessoas, setCapacidadePessoas] = useState<number | string>(30);
   const [requerReserva, setRequerReserva] = useState<boolean>(true);
   const [taxaReserva, setTaxaReserva] = useState<string>('150.00');
+  const [chavePix, setChavePix] = useState<string>('pix@condominio.com.br');
 
   // Listas dinâmicas
   const [comodidades, setComodidades] = useState<string[]>([]);
@@ -116,6 +117,7 @@ export const CreateEditDependenciaModal: React.FC<CreateEditDependenciaModalProp
       setCapacidadePessoas(dependenciaToEdit.capacidadePessoas || 30);
       setRequerReserva(dependenciaToEdit.requerReserva ?? true);
       setTaxaReserva(dependenciaToEdit.taxaReserva ? String(dependenciaToEdit.taxaReserva) : '');
+      setChavePix(dependenciaToEdit.chavePix || 'pix@condominio.com.br');
       setComodidades(dependenciaToEdit.comodidades || []);
       setRegrasUso(dependenciaToEdit.regrasUso || []);
     } else {
@@ -127,6 +129,7 @@ export const CreateEditDependenciaModal: React.FC<CreateEditDependenciaModalProp
       setCapacidadePessoas(30);
       setRequerReserva(true);
       setTaxaReserva('150.00');
+      setChavePix('pix@condominio.com.br');
       setComodidades([
         'Ar-condicionado split',
         'Mesas e cadeiras estofadas',
@@ -231,6 +234,7 @@ export const CreateEditDependenciaModal: React.FC<CreateEditDependenciaModalProp
       capacidadePessoas: capacidadeNum,
       requerReserva,
       taxaReserva: taxaNum,
+      chavePix: chavePix.trim() || 'pix@condominio.com.br',
       comodidades: comodidades.length > 0 ? comodidades : ['Wi-Fi', 'Iluminação LED'],
       regrasUso: regrasUso.length > 0 ? regrasUso : ['Respeitar as normas de convivência e horário de silêncio.']
     };
@@ -474,22 +478,40 @@ export const CreateEditDependenciaModal: React.FC<CreateEditDependenciaModalProp
             </div>
 
             {requerReserva && (
-              <div className="space-y-1.5 sm:col-span-2 bg-purple-950/20 border border-purple-800/40 p-3.5 rounded-2xl">
-                <label className="text-[11px] font-extrabold uppercase text-purple-300 flex items-center gap-1.5">
-                  <DollarSign className="w-3.5 h-3.5 text-purple-400" /> Taxa de Limpeza / Manutenção da Reserva (R$)
-                </label>
-                <div className="flex items-center gap-2">
+              <div className="space-y-3 sm:col-span-2 bg-purple-950/20 border border-purple-800/40 p-3.5 rounded-2xl">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-extrabold uppercase text-purple-300 flex items-center gap-1.5">
+                    <DollarSign className="w-3.5 h-3.5 text-purple-400" /> Taxa de Limpeza / Manutenção da Reserva (R$)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={taxaReserva}
+                      onChange={(e) => setTaxaReserva(e.target.value)}
+                      placeholder="Ex: 180.00 (deixe vazio se for gratuito)"
+                      className="w-full bg-slate-950/80 border border-purple-700/60 rounded-xl px-3 py-2 text-white placeholder-purple-300/40 focus:outline-none focus:border-purple-400 font-bold"
+                    />
+                    <span className="text-[10px] text-purple-300 font-semibold whitespace-nowrap">
+                      Cobrado por período agendado
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-2.5 border-t border-purple-800/30">
+                  <label className="text-[11px] font-extrabold uppercase text-purple-300 flex items-center gap-1.5">
+                    🔑 Chave PIX do Condomínio para Pagamento da Taxa
+                  </label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={taxaReserva}
-                    onChange={(e) => setTaxaReserva(e.target.value)}
-                    placeholder="Ex: 180.00 (deixe vazio se for gratuito)"
-                    className="w-full bg-slate-950/80 border border-purple-700/60 rounded-xl px-3 py-2 text-white placeholder-purple-300/40 focus:outline-none focus:border-purple-400 font-bold"
+                    type="text"
+                    value={chavePix}
+                    onChange={(e) => setChavePix(e.target.value)}
+                    placeholder="Ex: pix@condominio.com.br ou CNPJ / Chave Aleatória"
+                    className="w-full bg-slate-950/80 border border-purple-700/60 rounded-xl px-3 py-2 text-white placeholder-purple-300/40 focus:outline-none focus:border-purple-400 font-bold text-xs"
                   />
-                  <span className="text-[10px] text-purple-300 font-semibold whitespace-nowrap">
-                    Cobrado por período agendado
+                  <span className="text-[10px] text-purple-300/80 font-medium block">
+                    Esta chave será exibida ao morador após a aprovação da reserva para o pagamento e envio do comprovante.
                   </span>
                 </div>
               </div>

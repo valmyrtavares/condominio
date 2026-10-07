@@ -676,6 +676,7 @@ interface CondoContextType {
   concluirBenfeitoriaFinal: (benfeitoriaId: string, dadosEntrega?: { fotosDepois?: string[]; relatoFinal?: string; dataEntrega?: string }) => Promise<{ success: boolean; error?: string }>;
   solicitarReserva: (dependenciaId: string, dataReserva: string, periodo: ReservaDependencia['periodo'], observacoes?: string, comprovanteUrl?: string) => Promise<{ success: boolean; error?: string }>;
   atualizarStatusReserva: (reservaId: string, novoStatus: StatusReserva, respostaAdmin?: string, motivoRecusa?: string, pago?: boolean) => Promise<{ success: boolean; error?: string }>;
+  anexarComprovanteReserva: (reservaId: string, comprovanteUrl: string) => Promise<{ success: boolean; error?: string }>;
   cancelarReserva: (reservaId: string) => Promise<{ success: boolean; error?: string }>;
   atualizarStatusReclamacao: (id: string, novoStatus: StatusReclamacao) => void;
   toggleOcultarComentario: (reclamacaoId: string, comentarioId: string, motivo?: string) => void;
@@ -4153,6 +4154,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     // 2. VERIFICAÇÃO PRIORITÁRIA DE COLABORADORES / QUADRO DE FUNCIONÁRIOS (Ex: Porteiro Ademar, Subsíndica Cássia, José Casimiro, etc.)
+    const isColaboradorCandidate = funcionarios.some(f => {
+      if (f.status === 'Desligado') return false;
+      const fEmail = (f.email || '').trim().toLowerCase();
+      const fUser = (f.usuario || '').trim().toLowerCase();
+      const fNome = (f.nome || '').trim().toLowerCase();
+      return (fEmail && fEmail === u) || (fUser && fUser === u) || (fNome && fNome === u) || (fEmail && fEmail.split('@')[0] === u);
+    });
+
     const matchedFuncionario = funcionarios.find(f => {
       if (f.status === 'Desligado') return false;
       const fEmail = (f.email || '').trim().toLowerCase();
@@ -4178,6 +4187,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       return passMatches;
     });
+
+    if (isColaboradorCandidate && !matchedFuncionario) {
+      return {
+        success: false,
+        message: 'Senha incorreta para este colaborador.'
+      };
+    }
 
     if (matchedFuncionario) {
       setIsAdminLoggedIn(true);
@@ -4235,32 +4251,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const isLegacyAdmin = (u === 'admin' && s === 'admin');
 
     // 3. TENTATIVA NO FIREBASE AUTHENTICATION (Síndico Geral)
-    if (u.includes('@') && (u === emailCadastrado || !emailCadastrado)) {
+    if (u.includes('@') && emailCadastrado && u === emailCadastrado) {
       try {
         const userCredential = await signInWithEmailAndPassword(auth, u, s);
         if (userCredential.user) {
-          // Login no Firebase Auth SUCESSO!
-          if (s !== senhaCadastrada || u !== emailCadastrado || !jaAtivou) {
-            setCondominios(prev => prev.map(c => {
-              if (c.id === currentCondo.id) {
-                return {
-                  ...c,
-                  emailAdmin: u,
-                  senhaAdminGeral: s,
-                  senhaPadraoAlterada: true
-                };
-              }
-              return c;
-            }));
-
-            salvarCondominioNoFirestore({
-              id: currentCondo.id,
-              emailAdmin: u,
-              senhaAdminGeral: s,
-              senhaPadraoAlterada: true
-            }).catch(console.warn);
-          }
-
           setIsAdminLoggedIn(true);
           localStorage.setItem('condo_admin_auth', 'true');
           const adminUserObj: User = {
@@ -4285,7 +4279,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     // 4. Verifica credencial padrão inicial / primeiro acesso do Síndico
-    const emailConfere = (emailCadastrado && emailCadastrado === u) || (!emailCadastrado && u.includes('@'));
+    const emailConfere = (emailCadastrado && emailCadastrado === u);
 
     if (emailConfere || isLegacyAdmin) {
       if (!jaAtivou || s === senhaCadastrada) {
@@ -4830,13 +4824,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     isFirebaseSent?: boolean;
   }> => {
     const termo = unidadeOuEmail.trim().toLowerCase();
-    const numLimpo = normalizeUnitNumber(termo);
     if (!termo) {
       return { 
         success: false, 
-        message: isAdminHint 
-          ? 'Informe seu e-mail de administrador.' 
-          : 'Informe o e-mail cadastrado na sua unidade.' 
+        message: 'Informe o seu e-mail cadastrado.' 
       };
     }
 
@@ -4855,108 +4846,59 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
-    // 2. Localiza se pertence a algum morador cadastrado por e-mail
-    const unidadeMorador = unidades.find(u => 
+    // 2. Localiza se pertence a algum Colaborador / Quadro de Funcionários
+    const funcionarioMatch = funcionarios.find(f => {
+      if (f.status === 'Desligado') return false;
+      const fEmail = (f.email || '').trim().toLowerCase();
+      const fUser = (f.usuario || '').trim().toLowerCase();
+      return (fEmail && fEmail === termo) || (fUser && fUser === termo);
+    });
+
+    // 3. Localiza se pertence a algum morador cadastrado por e-mail
+    const unidadeMorador = !funcionarioMatch ? unidades.find(u => 
       (u.emailResponsavel && u.emailResponsavel.trim().toLowerCase() === termo) ||
       u.moradores.some(m => m.email && m.email.trim().toLowerCase() === termo)
-    );
+    ) : null;
 
-    // 3. Verifica se é o Administrador / Síndico
+    // 4. Verifica se é o Administrador / Síndico Geral
     const emailAdminAtual = (currentCondo.emailAdmin || '').trim().toLowerCase();
     const isAdminUser = adminUsers.some(a => a.usuario?.toLowerCase() === termo || a.email?.toLowerCase() === termo);
-    const isExplicitAdmin = (termo === 'admin' || termo === 'admin@condominio.com' || termo === emailAdminAtual || isAdminUser);
-    const isIdentifiedAsAdmin = isExplicitAdmin || (isAdminHint && termo.includes('@')) || (termo.includes('@') && !unidadeMorador && (termo === emailAdminAtual || isAdminUser));
+    const isExplicitAdmin = (termo === 'admin' || termo === 'admin@condominio.com' || (emailAdminAtual !== '' && termo === emailAdminAtual) || isAdminUser);
 
-    if (isIdentifiedAsAdmin) {
-      const emailFinal = termo.includes('@') 
-        ? termo 
-        : (currentCondo.emailAdmin || 'admin@condominio.com');
-
-      // Se o condomínio atual ainda não tinha esse e-mail pessoal salvo, vincula-o agora
-      if (emailFinal.includes('@') && emailFinal !== emailAdminAtual) {
-        setCondominios(prev => prev.map(c => {
-          if (c.id === currentCondo.id) {
-            return { ...c, emailAdmin: emailFinal };
-          }
-          return c;
-        }));
-        salvarCondominioNoFirestore({
-          id: currentCondo.id,
-          emailAdmin: emailFinal
-        }).catch(console.warn);
-      }
-
-      // Mascara o e-mail para exibição segura
-      const partes = emailFinal.split('@');
-      const nomeUser = partes[0] || 'admin';
-      const dominio = partes[1] || 'condominio.com';
-      const emailMascarado = nomeUser.length > 2
-        ? `${nomeUser.slice(0, 2)}***${nomeUser.slice(-1)}@${dominio}`
-        : `${nomeUser.slice(0, 1)}***@${dominio}`;
-
-      // Tenta enviar o e-mail oficial via Firebase Authentication
-      let isFirebaseSent = false;
-      try {
-        const fbRes = await enviarEmailRecuperacaoSenha(emailFinal);
-        if (fbRes.success) {
-          isFirebaseSent = true;
-        }
-      } catch {
-        // Fallback para o código na tela
-      }
-
+    // Se não for encontrado em NENHUMA das 3 bases oficiais, BLOQUEIA com erro
+    if (!funcionarioMatch && !unidadeMorador && !isExplicitAdmin) {
       return {
-        success: true,
-        emailMascarado,
-        codigoSimulado: '123456',
-        isFirebaseSent,
-        message: isFirebaseSent
-          ? `Link oficial de redefinição enviado para ${emailFinal} pelo Firebase! Você também pode redefinir agora com o código abaixo.`
-          : `Código de verificação gerado para o e-mail ${emailMascarado}.`
+        success: false,
+        message: 'Nenhum cadastro encontrado com este e-mail neste condomínio. Verifique o endereço digitado ou contate o síndico para cadastrar seu acesso.'
       };
     }
 
-    // 4. Regra de Segurança para Moradores: EXIGE O E-MAIL CADASTRADO
-    if (!termo.includes('@')) {
-      return { 
-        success: false, 
-        message: 'Para sua segurança, a recuperação de senha exige o e-mail cadastrado na unidade. Caso não se recorde, contate o síndico para resetar seu acesso.' 
-      };
+    // E-mail a ser mascarado
+    let emailAlvo = termo;
+    if (funcionarioMatch) {
+      emailAlvo = funcionarioMatch.email || funcionarioMatch.usuario || termo;
+    } else if (unidadeMorador) {
+      emailAlvo = (unidadeMorador.emailResponsavel && unidadeMorador.emailResponsavel.trim().toLowerCase() === termo)
+        ? unidadeMorador.emailResponsavel
+        : (unidadeMorador.moradores.find(m => m.email?.trim().toLowerCase() === termo)?.email || termo);
+    } else if (isExplicitAdmin) {
+      emailAlvo = emailAdminAtual || termo;
     }
 
-    if (!unidadeMorador) {
-      return { 
-        success: false, 
-        message: 'Nenhum cadastro de morador encontrado com este e-mail neste condomínio. Verifique o endereço digitado ou fale com o síndico para resetar seu acesso.' 
-      };
-    }
-
-    const email = (unidadeMorador.emailResponsavel && unidadeMorador.emailResponsavel.trim().toLowerCase() === termo)
-      ? unidadeMorador.emailResponsavel
-      : (unidadeMorador.moradores.find(m => m.email?.trim().toLowerCase() === termo)?.email || termo);
-
-    // Mascara o e-mail do morador
-    const partes = email.split('@');
-    const nomeUser = partes[0] || 'morador';
+    // Mascara o e-mail para exibição segura
+    const partes = emailAlvo.split('@');
+    const nomeUser = partes[0] || 'usuario';
     const dominio = partes[1] || 'email.com';
     const emailMascarado = nomeUser.length > 2
       ? `${nomeUser.slice(0, 2)}***${nomeUser.slice(-1)}@${dominio}`
       : `${nomeUser.slice(0, 1)}***@${dominio}`;
 
-    let isFirebaseSent = false;
-    try {
-      const fbRes = await enviarEmailRecuperacaoSenha(email);
-      if (fbRes.success) isFirebaseSent = true;
-    } catch {}
-
     return {
       success: true,
       emailMascarado,
       codigoSimulado: '123456',
-      isFirebaseSent,
-      message: isFirebaseSent
-        ? `Link de redefinição enviado para ${email} pelo Firebase!`
-        : `Código de verificação enviado para ${emailMascarado}.`
+      isFirebaseSent: false,
+      message: 'Cadastro validado com sucesso! Defina sua nova senha de acesso.'
     };
   };
 
@@ -4966,29 +4908,51 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     novaSenha: string
   ): Promise<{ success: boolean; message?: string }> => {
     const termo = unidadeOuEmail.trim().toLowerCase();
-    const codigoLimpo = codigo.trim();
     const senhaLimpa = novaSenha.trim();
-
-    if (!codigoLimpo || codigoLimpo.length < 4) {
-      return { success: false, message: 'Código de verificação inválido ou incompleto.' };
-    }
 
     if (!senhaLimpa || senhaLimpa.length < 3) {
       return { success: false, message: 'A nova senha deve ter pelo menos 3 caracteres.' };
     }
 
-    // Localiza se é Morador por e-mail
+    // 1. Verifica se é Colaborador / Quadro de Funcionários (PRIORITÁRIO)
+    const funcionarioMatch = funcionarios.find(f => {
+      if (f.status === 'Desligado') return false;
+      const fEmail = (f.email || '').trim().toLowerCase();
+      const fUser = (f.usuario || '').trim().toLowerCase();
+      return (fEmail && fEmail === termo) || (fUser && fUser === termo);
+    });
+
+    if (funcionarioMatch) {
+      const ok = alterarSenhaColaborador(funcionarioMatch.id, senhaLimpa);
+      if (!ok) {
+        return { success: false, message: 'Erro ao salvar a nova senha do colaborador.' };
+      }
+      return {
+        success: true,
+        message: `Senha de ${funcionarioMatch.nome} redefinida com sucesso! Você já pode entrar com sua nova senha.`
+      };
+    }
+
+    // 2. Localiza se é Morador por e-mail
     const unidadeMorador = unidades.find(u => 
       (u.emailResponsavel && u.emailResponsavel.trim().toLowerCase() === termo) ||
       u.moradores.some(m => m.email && m.email.trim().toLowerCase() === termo)
     );
 
-    // Verifica se é redefinição do Admin / Síndico
+    if (unidadeMorador) {
+      atualizarSenhaUnidade(unidadeMorador.numero, senhaLimpa);
+      return { 
+        success: true, 
+        message: `Senha da Unidade ${unidadeMorador.numero} alterada com sucesso! Você já pode entrar com sua nova senha.` 
+      };
+    }
+
+    // 3. Verifica se é redefinição do Admin / Síndico Geral
     const emailAdminAtual = (currentCondo.emailAdmin || '').trim().toLowerCase();
     const isAdminUser = adminUsers.some(a => a.usuario?.toLowerCase() === termo || a.email?.toLowerCase() === termo);
-    const isIdentifiedAsAdmin = (termo === 'admin' || termo === 'admin@condominio.com' || termo === emailAdminAtual || isAdminUser || (termo.includes('@') && !unidadeMorador));
+    const isExplicitAdmin = (termo === 'admin' || termo === 'admin@condominio.com' || (emailAdminAtual !== '' && termo === emailAdminAtual) || isAdminUser);
 
-    if (isIdentifiedAsAdmin) {
+    if (isExplicitAdmin) {
       const emailFinal = termo.includes('@') ? termo : (currentCondo.emailAdmin || 'admin@condominio.com');
 
       // Atualiza o perfil do condomínio localmente
@@ -5028,19 +4992,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
     }
 
-    // Caso seja Morador
-    if (!unidadeMorador) {
-      return { 
-        success: false, 
-        message: 'Nenhuma unidade encontrada para este e-mail. Fale com o síndico para resetar seu acesso.' 
-      };
-    }
-
-    atualizarSenhaUnidade(unidadeMorador.numero, senhaLimpa);
-
     return { 
-      success: true, 
-      message: `Senha da Unidade ${unidadeMorador.numero} alterada com sucesso! Você já pode entrar com sua nova senha.` 
+      success: false, 
+      message: 'Nenhum usuário correspondente encontrado para este e-mail. Fale com o síndico para resetar seu acesso.' 
     };
   };
 
@@ -6803,6 +6757,27 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return { success: true };
   };
 
+  const anexarComprovanteReserva = async (
+    reservaId: string, 
+    comprovanteUrl: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!condoTenantId) return { success: false, error: 'Condomínio não identificado.' };
+    const resExistente = reservas.find(r => r.id === reservaId);
+    if (!resExistente) return { success: false, error: 'Reserva não encontrada.' };
+
+    const agora = new Date().toLocaleString('pt-BR');
+    const atualizada: ReservaDependencia = {
+      ...resExistente,
+      comprovanteUrl,
+      atualizadoEm: agora,
+      condominioId: condoTenantId
+    };
+
+    setReservas(prev => prev.map(res => res.id === reservaId ? atualizada : res));
+    const saveResult = await salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reservas', atualizada);
+    return saveResult;
+  };
+
   const cancelarReserva = async (reservaId: string): Promise<{ success: boolean; error?: string }> => {
     if (!condoTenantId) return { success: false, error: 'Condomínio não identificado.' };
     setReservas(prev => prev.filter(r => r.id !== reservaId));
@@ -7038,6 +7013,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       excluirServicoContratado,
       solicitarReserva,
       atualizarStatusReserva,
+      anexarComprovanteReserva,
       cancelarReserva,
       atualizarStatusReclamacao,
       toggleOcultarComentario,

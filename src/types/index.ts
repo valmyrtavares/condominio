@@ -497,6 +497,7 @@ export type TipoDependencia = 'Lazer & Convivência' | 'Esporte & Saúde' | 'Inf
 
 export type StatusReserva = 
   | 'Pendente de Aprovação' 
+  | 'Aprovada'
   | 'Confirmada' 
   | 'Pendente de Pagamento' 
   | 'Recusada' 
@@ -542,6 +543,7 @@ export interface Dependencia {
   comodidades: string[];
   regrasUso: string[];
   condominioId: string;
+  chavePix?: string;
 }
 
 export type StatusAssembleia = 

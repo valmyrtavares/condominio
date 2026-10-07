@@ -108,7 +108,7 @@ export const ESPINHA_DORSAL_ITEMS: EspinhaDorsalItem[] = [
   },
   {
     id: 'unidades-disponiveis',
-    titulo: 'Imóveis no Prédio',
+    titulo: 'Aluguel/Venda imóveis',
     icone: 'Building',
     descricaoCurta: 'Classificados internos de apartamentos disponíveis para venda ou locação no condomínio.',
     desdobramentos: ['Imóveis dos proprietários', 'Contato direto sem intermediação', 'Fotos e metragens'],

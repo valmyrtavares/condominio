@@ -18,6 +18,38 @@ import {
   FileText
 } from 'lucide-react';
 
+// Formatação de telefone e WhatsApp: (11) 98888-2233 ou (11) 3333-4444
+const maskTelefone = (value: string): string => {
+  if (!value) return '';
+  let digits = value.replace(/\D/g, '');
+  if (digits.startsWith('55') && digits.length > 11) {
+    digits = digits.slice(2);
+  }
+  digits = digits.slice(0, 11);
+
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+// Formata valor monetário para exibição com vírgula e separador de milhar (Ex: "2.000,00", "300,00", "23,00")
+const formatarMoedaExibicao = (valorRaw: string | number): string => {
+  if (valorRaw === undefined || valorRaw === null || valorRaw === '') return '';
+  const str = String(valorRaw).replace(/[^\d.,]/g, '').replace(',', '.');
+  const num = parseFloat(str);
+  if (isNaN(num)) return '';
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+// Limpa caracteres inválidos enquanto o usuário digita moeda
+const handleMoedaChange = (val: string): string => {
+  return val.replace(/[^\d.,]/g, '');
+};
+
 interface CreateEditUnidadeDisponivelModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -52,16 +84,16 @@ export const CreateEditUnidadeDisponivelModal: React.FC<CreateEditUnidadeDisponi
       setApartamento(unidadeToEdit.apartamento || '');
       setBloco(unidadeToEdit.bloco || '');
       setFinalidade(unidadeToEdit.finalidade || 'Aluga-se');
-      setValor(unidadeToEdit.valor ? String(unidadeToEdit.valor) : '');
-      setValorCondominio(unidadeToEdit.valorCondominio ? String(unidadeToEdit.valorCondominio) : '');
-      setValorIptu(unidadeToEdit.valorIptu ? String(unidadeToEdit.valorIptu) : '');
+      setValor(unidadeToEdit.valor ? formatarMoedaExibicao(unidadeToEdit.valor) : '');
+      setValorCondominio(unidadeToEdit.valorCondominio ? formatarMoedaExibicao(unidadeToEdit.valorCondominio) : '');
+      setValorIptu(unidadeToEdit.valorIptu ? formatarMoedaExibicao(unidadeToEdit.valorIptu) : '');
       setMetragemM2(unidadeToEdit.metragemM2 ? String(unidadeToEdit.metragemM2) : '');
       setQuartos(unidadeToEdit.quartos || 2);
       setSuites(unidadeToEdit.suites || 0);
       setVagasGaragem(unidadeToEdit.vagasGaragem || 1);
       setProprietarioNome(unidadeToEdit.proprietarioNome || '');
-      setProprietarioTelefone(unidadeToEdit.proprietarioTelefone || '');
-      setProprietarioWhatsapp(unidadeToEdit.proprietarioWhatsapp || '');
+      setProprietarioTelefone(maskTelefone(unidadeToEdit.proprietarioTelefone || ''));
+      setProprietarioWhatsapp(maskTelefone(unidadeToEdit.proprietarioWhatsapp || ''));
       setDescricaoCurta(unidadeToEdit.descricaoCurta || '');
     } else {
       setApartamento('');
@@ -112,10 +144,17 @@ export const CreateEditUnidadeDisponivelModal: React.FC<CreateEditUnidadeDisponi
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const numValor = parseFloat(valor.replace(',', '.')) || 0;
-    const numCondo = valorCondominio ? parseFloat(valorCondominio.replace(',', '.')) : undefined;
-    const numIptu = valorIptu ? parseFloat(valorIptu.replace(',', '.')) : undefined;
-    const numMetros = parseFloat(metragemM2.replace(',', '.')) || 0;
+    const parseMoeda = (valStr: string): number | undefined => {
+      if (!valStr) return undefined;
+      const limpo = valStr.replace(/\./g, '').replace(',', '.');
+      const num = parseFloat(limpo);
+      return isNaN(num) ? undefined : num;
+    };
+
+    const numValor = parseMoeda(valor) || 0;
+    const numCondo = parseMoeda(valorCondominio);
+    const numIptu = parseMoeda(valorIptu);
+    const numMetros = parseFloat(metragemM2.replace(/\./g, '').replace(',', '.')) || 0;
 
     const cleanWhatsapp = proprietarioWhatsapp.replace(/\D/g, '') || proprietarioTelefone.replace(/\D/g, '');
 
@@ -277,11 +316,11 @@ export const CreateEditUnidadeDisponivelModal: React.FC<CreateEditUnidadeDisponi
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-500">R$</span>
                   <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex: 3500.00"
+                    type="text"
+                    placeholder="Ex: 2.000,00"
                     value={valor}
-                    onChange={(e) => setValor(e.target.value)}
+                    onChange={(e) => setValor(handleMoedaChange(e.target.value))}
+                    onBlur={() => setValor(formatarMoedaExibicao(valor))}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:bg-white focus:border-amber-500 font-mono shadow-xs"
                     required
                   />
@@ -295,11 +334,11 @@ export const CreateEditUnidadeDisponivelModal: React.FC<CreateEditUnidadeDisponi
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-500">R$</span>
                   <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex: 850.00"
+                    type="text"
+                    placeholder="Ex: 300,00"
                     value={valorCondominio}
-                    onChange={(e) => setValorCondominio(e.target.value)}
+                    onChange={(e) => setValorCondominio(handleMoedaChange(e.target.value))}
+                    onBlur={() => setValorCondominio(formatarMoedaExibicao(valorCondominio))}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:bg-white focus:border-amber-500 font-mono shadow-xs"
                   />
                 </div>
@@ -312,11 +351,11 @@ export const CreateEditUnidadeDisponivelModal: React.FC<CreateEditUnidadeDisponi
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-500">R$</span>
                   <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex: 220.00"
+                    type="text"
+                    placeholder="Ex: 23,00"
                     value={valorIptu}
-                    onChange={(e) => setValorIptu(e.target.value)}
+                    onChange={(e) => setValorIptu(handleMoedaChange(e.target.value))}
+                    onBlur={() => setValorIptu(formatarMoedaExibicao(valorIptu))}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:bg-white focus:border-amber-500 font-mono shadow-xs"
                   />
                 </div>
@@ -335,10 +374,10 @@ export const CreateEditUnidadeDisponivelModal: React.FC<CreateEditUnidadeDisponi
               <div className="space-y-1">
                 <span className="text-[11px] font-bold text-slate-700">Área Útil (m²):</span>
                 <input
-                  type="number"
-                  placeholder="Ex: 85"
+                  type="text"
+                  placeholder="Ex: 100"
                   value={metragemM2}
-                  onChange={(e) => setMetragemM2(e.target.value)}
+                  onChange={(e) => setMetragemM2(e.target.value.replace(/[^\d.,]/g, ''))}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:bg-white focus:border-amber-500"
                   required
                 />
@@ -410,9 +449,10 @@ export const CreateEditUnidadeDisponivelModal: React.FC<CreateEditUnidadeDisponi
                 <input
                   type="text"
                   placeholder="Ex: (11) 98888-2233"
+                  maxLength={15}
                   value={proprietarioTelefone}
-                  onChange={(e) => setProprietarioTelefone(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"
+                  onChange={(e) => setProprietarioTelefone(maskTelefone(e.target.value))}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:border-amber-500 font-mono"
                   required
                 />
               </div>
@@ -421,10 +461,11 @@ export const CreateEditUnidadeDisponivelModal: React.FC<CreateEditUnidadeDisponi
                 <span className="text-[11px] font-bold text-slate-700">WhatsApp (Número Completo):</span>
                 <input
                   type="text"
-                  placeholder="Ex: 5511988882233"
+                  placeholder="Ex: (11) 98888-2233"
+                  maxLength={15}
                   value={proprietarioWhatsapp}
-                  onChange={(e) => setProprietarioWhatsapp(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"
+                  onChange={(e) => setProprietarioWhatsapp(maskTelefone(e.target.value))}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:border-amber-500 font-mono"
                   required
                 />
               </div>

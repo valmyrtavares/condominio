@@ -137,6 +137,7 @@ import { AdminPermissionsSelector } from '../../components/admin/AdminPermission
 import { ADMIN_MODULOS_LIST } from '../../constants/adminModulos';
 import { SuspendEventoModal } from '../../components/admin/SuspendEventoModal';
 import { CreateEditEventoModal } from '../../components/eventos/CreateEditEventoModal';
+import { isEventoPassado } from '../../utils/eventoUtils';
 import { CreateEditAssembleiaModal } from '../../components/assembleia/CreateEditAssembleiaModal';
 import { PublicarAtaModal } from '../../components/assembleia/PublicarAtaModal';
 import { CreateEditDespesaModal } from '../../components/financeiro/CreateEditDespesaModal';
@@ -1309,6 +1310,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [searchEvento, setSearchEvento] = useState('');
   const [eventoToEditInAdmin, setEventoToEditInAdmin] = useState<EventoCondominio | null>(null);
   const [isCreateEditEventoAdminOpen, setIsCreateEditEventoAdminOpen] = useState(false);
+  const [filtroPeriodoEventoAdmin, setFiltroPeriodoEventoAdmin] = useState<'todos' | 'proximos' | 'passados'>('todos');
 
   // Form Unidades
   const [novoNumero, setNovoNumero] = useState('');
@@ -4136,24 +4138,60 @@ export const AdminPanelScreen: React.FC = () => {
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.8" />
             </div>
 
+            {/* Filtros de Período do Evento */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <span className="text-[10px] font-black uppercase text-sky-900 whitespace-nowrap pl-1">
+                Período:
+              </span>
+              {[
+                { id: 'todos', label: 'Todos' },
+                { id: 'proximos', label: 'Próximos / Ativos' },
+                { id: 'passados', label: 'Realizados / Encerrados' }
+              ].map(f => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setFiltroPeriodoEventoAdmin(f.id as any)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-extrabold whitespace-nowrap transition-all border shadow-2xs cursor-pointer ${
+                    filtroPeriodoEventoAdmin === f.id
+                      ? 'bg-sky-700 text-white border-sky-800 scale-105'
+                      : 'bg-white text-slate-700 border-sky-200 hover:bg-sky-100/60'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
             {/* Grid de Cards de Eventos no Admin */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {eventos
-                .filter(evt => !searchEvento || 
-                  evt.titulo.toLowerCase().includes(searchEvento.toLowerCase()) ||
-                  evt.organizador.toLowerCase().includes(searchEvento.toLowerCase()) ||
-                  evt.local.toLowerCase().includes(searchEvento.toLowerCase()) ||
-                  evt.data.toLowerCase().includes(searchEvento.toLowerCase())
-                )
+                .filter(evt => {
+                  const pass = isEventoPassado(evt);
+                  if (filtroPeriodoEventoAdmin === 'proximos' && pass) return false;
+                  if (filtroPeriodoEventoAdmin === 'passados' && !pass) return false;
+
+                  if (!searchEvento) return true;
+                  const term = searchEvento.toLowerCase();
+                  return (
+                    evt.titulo.toLowerCase().includes(term) ||
+                    evt.organizador.toLowerCase().includes(term) ||
+                    evt.local.toLowerCase().includes(term) ||
+                    evt.data.toLowerCase().includes(term)
+                  );
+                })
                 .map((evento) => {
                   const isAtivo = evento.ativo !== false;
                   const isPublico = evento.visibilidade === 'Público';
+                  const isPassado = isEventoPassado(evento);
 
                   return (
                     <div
                       key={evento.id}
                       className={`p-4 rounded-3xl border-2 transition-all shadow-md space-y-3 bg-white ${
-                        isAtivo ? 'border-sky-200' : 'border-rose-300 bg-rose-50/40'
+                        isPassado 
+                          ? 'border-slate-300 bg-slate-50/70' 
+                          : isAtivo ? 'border-sky-200' : 'border-rose-300 bg-rose-50/40'
                       }`}
                     >
                       {/* Topo: Imagem Thumbnail, Título, Visibilidade e Status */}
@@ -4177,6 +4215,11 @@ export const AdminPanelScreen: React.FC = () => {
                             }`}>
                               {isAtivo ? '🟢 No Mural' : '🔴 Fora do Ar'}
                             </span>
+                            {isPassado && (
+                              <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-slate-300 bg-slate-200 text-slate-700 shadow-2xs">
+                                Realizado
+                              </span>
+                            )}
                           </div>
 
                           <h4 className="font-black text-sm text-slate-950 leading-tight truncate">
@@ -8594,8 +8637,9 @@ export const AdminPanelScreen: React.FC = () => {
         const totalReservaveis = dependencias.filter(d => d.requerReserva).length;
         const totalUsoLivre = dependencias.filter(d => !d.requerReserva).length;
         
-        const totalReservasPendentes = reservas.filter(r => r.status === 'Pendente de Aprovação' || r.status === 'Pendente de Pagamento').length;
-        const totalReservasConfirmadas = reservas.filter(r => r.status === 'Confirmada').length;
+        const totalReservasPendentes = reservas.filter(r => r.status === 'Pendente de Aprovação' || r.status === 'Pendente de Pagamento' || (r.status === 'Aprovada' && !r.pago)).length;
+        const totalComprovantesAguardandoConfirmacao = reservas.filter(r => !r.pago && Boolean(r.comprovanteUrl)).length;
+        const totalReservasConfirmadas = reservas.filter(r => r.status === 'Confirmada' || (r.status === 'Aprovada' && r.pago)).length;
         const totalReservasRecusadas = reservas.filter(r => r.status === 'Recusada').length;
 
         const tiposDisponiveis = [
@@ -8673,8 +8717,13 @@ export const AdminPanelScreen: React.FC = () => {
                           {reservas.length} agendamentos
                         </span>
                         {totalReservasPendentes > 0 && (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 animate-pulse shadow-2xs">
-                            ⏳ {totalReservasPendentes} pendentes de aprovação
+                          <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 animate-pulse shadow-xs border border-amber-500">
+                            ⚠️ {totalReservasPendentes} pendência(s) de reserva
+                          </span>
+                        )}
+                        {totalComprovantesAguardandoConfirmacao > 0 && (
+                          <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-purple-600 text-white animate-pulse shadow-xs border border-purple-400">
+                            📑 {totalComprovantesAguardandoConfirmacao} PIX para confirmar
                           </span>
                         )}
                         {totalReservasConfirmadas > 0 && (
@@ -8856,7 +8905,7 @@ export const AdminPanelScreen: React.FC = () => {
                           </p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                           {filteredReservasAdmin.map((res) => {
                             const dep = dependencias.find(d => d.id === res.dependenciaId);
                             const nomeEspaco = res.dependenciaNome || dep?.nome || 'Espaço Comum';
@@ -8878,25 +8927,25 @@ export const AdminPanelScreen: React.FC = () => {
                             return (
                               <div
                                 key={res.id}
-                                className={`border-2 rounded-3xl p-4 shadow-md transition-all flex flex-col justify-between space-y-3.5 bg-white/85 ${
+                                className={`border-2 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-2.5 bg-white/90 ${
                                   temConflitoReserva && isPendente
                                     ? 'border-rose-400 bg-rose-50/40 ring-2 ring-rose-400/30'
                                     : isPendente 
                                       ? 'border-amber-400 bg-amber-50/40 ring-2 ring-amber-400/20' 
                                       : isConfirmada 
-                                        ? 'border-emerald-300' 
+                                        ? 'border-emerald-300 bg-white' 
                                         : isRecusada 
                                           ? 'border-rose-200 bg-rose-50/30' 
-                                          : 'border-slate-200'
+                                          : 'border-slate-200 bg-white'
                                 }`}
                               >
-                                <div className="space-y-3">
+                                <div className="space-y-2.5">
                                   
                                   {/* Header do Card: Espaço + Badges de Status */}
-                                  <div className="flex items-start justify-between gap-2.5 pb-2.5 border-b border-slate-200">
-                                    <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className="flex items-start justify-between gap-2 pb-2 border-b border-slate-200/80">
+                                    <div className="flex items-center gap-2 min-w-0">
                                       {fotoEspaco && (
-                                        <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-200 overflow-hidden shrink-0">
+                                        <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-200 overflow-hidden shrink-0 shadow-2xs">
                                           <img
                                             src={fotoEspaco}
                                             alt={nomeEspaco}
@@ -8908,23 +8957,23 @@ export const AdminPanelScreen: React.FC = () => {
                                         </div>
                                       )}
                                       <div className="min-w-0">
-                                        <span className="text-[10px] font-black uppercase text-amber-800 tracking-tight block">
+                                        <span className="text-[8.5px] font-black uppercase text-amber-800 tracking-tight block truncate">
                                           {dep?.tipo || 'Área Comum'}
                                         </span>
-                                        <h4 className="text-sm sm:text-base font-black text-slate-950 truncate" title={nomeEspaco}>
+                                        <h4 className="text-xs sm:text-sm font-black text-slate-950 truncate leading-tight" title={nomeEspaco}>
                                           {nomeEspaco}
                                         </h4>
                                       </div>
                                     </div>
 
-                                    <div className="flex items-center gap-1.5 flex-wrap justify-end shrink-0">
+                                    <div className="flex flex-col items-end gap-1 shrink-0">
                                       {temConflitoReserva && (
-                                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-600 text-white shadow-xs animate-pulse">
-                                          ⚠️ Conflito de Data
+                                        <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-rose-600 text-white shadow-2xs animate-pulse">
+                                          ⚠️ Conflito
                                         </span>
                                       )}
 
-                                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border shadow-2xs ${
+                                      <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full border shadow-2xs ${
                                         isConfirmada 
                                           ? 'bg-emerald-100 text-emerald-950 border-emerald-300' 
                                           : res.status === 'Pendente de Pagamento'
@@ -8941,24 +8990,24 @@ export const AdminPanelScreen: React.FC = () => {
                                   </div>
 
                                   {/* Dados do Morador e Data/Turno */}
-                                  <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-0.5">
-                                      <span className="text-[9px] uppercase font-bold text-slate-500 block">Morador Solicitante:</span>
-                                      <strong className="text-slate-950 block text-[11px] truncate">
+                                  <div className="grid grid-cols-2 gap-1.5 text-xs">
+                                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-200/80 space-y-0.5 min-w-0">
+                                      <span className="text-[8px] uppercase font-extrabold text-slate-500 block truncate">Morador Solicitante:</span>
+                                      <strong className="text-slate-950 block text-[11px] truncate leading-tight">
                                         {res.moradorNome}
                                       </strong>
-                                      <span className="text-[10px] text-indigo-900 font-bold block">
+                                      <span className="text-[9.5px] text-indigo-900 font-bold block truncate">
                                         {res.unidade} {res.bloco && `(${res.bloco})`}
                                       </span>
                                     </div>
 
-                                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-0.5">
-                                      <span className="text-[9px] uppercase font-bold text-slate-500 block">Data & Turno:</span>
-                                      <strong className="text-slate-950 block text-[11px] flex items-center gap-1">
-                                        <Calendar className="w-3 h-3 text-emerald-700 inline" />
+                                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-200/80 space-y-0.5 min-w-0">
+                                      <span className="text-[8px] uppercase font-extrabold text-slate-500 block truncate">Data & Turno:</span>
+                                      <strong className="text-slate-950 block text-[11px] flex items-center gap-1 leading-tight truncate">
+                                        <Calendar className="w-3 h-3 text-emerald-700 shrink-0 inline" />
                                         {res.dataReserva}
                                       </strong>
-                                      <span className="text-[10px] text-slate-700 font-semibold block">
+                                      <span className="text-[9.5px] text-slate-700 font-semibold block truncate">
                                         {res.periodo}
                                       </span>
                                     </div>
@@ -8966,33 +9015,33 @@ export const AdminPanelScreen: React.FC = () => {
 
                                   {/* Taxa de Reserva & Comprovante de Pagamento */}
                                   {res.valorTaxa !== undefined && res.valorTaxa > 0 && (
-                                    <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-between text-xs">
-                                      <div className="space-y-0.5">
-                                        <span className="text-[10px] uppercase font-black text-purple-900 block">
+                                    <div className="p-2 rounded-xl bg-purple-50/90 border border-purple-200/80 flex items-center justify-between text-xs gap-1.5">
+                                      <div className="min-w-0">
+                                        <span className="text-[8px] uppercase font-black text-purple-900 block truncate">
                                           Taxa do Espaço:
                                         </span>
-                                        <strong className="text-xs font-black text-purple-950 font-mono">
+                                        <strong className="text-[11px] font-black text-purple-950 font-mono block truncate">
                                           R$ {res.valorTaxa.toFixed(2)}
                                         </strong>
                                       </div>
 
-                                      <div className="flex items-center gap-1.5">
-                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                                      <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+                                        <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded-md ${
                                           res.pago 
                                             ? 'bg-emerald-100 text-emerald-950 border border-emerald-300' 
                                             : 'bg-amber-200 text-amber-950 border border-amber-300'
                                         }`}>
-                                          {res.pago ? '✓ Taxa Paga' : '⏳ Pagamento Pendente'}
+                                          {res.pago ? '✓ Taxa Paga' : '⏳ Pendente'}
                                         </span>
 
                                         {res.comprovanteUrl && (
                                           <button
                                             type="button"
                                             onClick={() => setViewComprovanteModal(res.comprovanteUrl || null)}
-                                            className="px-2 py-0.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold shadow-xs cursor-pointer flex items-center gap-1"
+                                            className="px-1.5 py-0.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-[9px] font-bold shadow-2xs cursor-pointer flex items-center gap-0.5"
                                             title="Visualizar comprovante de pagamento"
                                           >
-                                            <Paperclip className="w-3 h-3" />
+                                            <Paperclip className="w-2.5 h-2.5" />
                                             <span>Comprovante</span>
                                           </button>
                                         )}
@@ -9002,11 +9051,11 @@ export const AdminPanelScreen: React.FC = () => {
 
                                   {/* Observações do Morador */}
                                   {res.observacoes && (
-                                    <div className="p-2.5 rounded-xl bg-white/70 border border-slate-200 text-xs">
-                                      <span className="text-[9px] uppercase font-bold text-slate-500 block">
+                                    <div className="p-2 rounded-xl bg-slate-50/90 border border-slate-200/80 text-[10.5px]">
+                                      <span className="text-[8px] uppercase font-bold text-slate-500 block">
                                         Observações do Morador:
                                       </span>
-                                      <p className="text-slate-800 font-medium italic mt-0.5">
+                                      <p className="text-slate-800 font-medium italic mt-0.5 line-clamp-2 leading-tight">
                                         "{res.observacoes}"
                                       </p>
                                     </div>
@@ -9014,11 +9063,11 @@ export const AdminPanelScreen: React.FC = () => {
 
                                   {/* Resposta Oficial / Orientações do Síndico */}
                                   {res.respostaAdmin && (
-                                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs space-y-0.5">
-                                      <span className="text-[9px] uppercase font-bold text-emerald-900 block flex items-center gap-1">
-                                        <MessageSquare className="w-3 h-3" /> Orientações da Administração:
+                                    <div className="p-2 rounded-xl bg-emerald-50/90 border border-emerald-200/80 text-[10.5px] space-y-0.5">
+                                      <span className="text-[8px] uppercase font-bold text-emerald-900 block flex items-center gap-1">
+                                        <MessageSquare className="w-2.5 h-2.5 shrink-0" /> Orientações da Administração:
                                       </span>
-                                      <p className="text-emerald-950 font-bold">
+                                      <p className="text-emerald-950 font-bold line-clamp-2 leading-tight">
                                         {res.respostaAdmin}
                                       </p>
                                     </div>
@@ -9026,11 +9075,11 @@ export const AdminPanelScreen: React.FC = () => {
 
                                   {/* Motivo de Recusa */}
                                   {res.motivoRecusa && (
-                                    <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs space-y-0.5">
-                                      <span className="text-[9px] uppercase font-bold text-rose-900 block">
+                                    <div className="p-2 rounded-xl bg-rose-50/90 border border-rose-200/80 text-[10.5px] space-y-0.5">
+                                      <span className="text-[8px] uppercase font-bold text-rose-900 block">
                                         Motivo da Recusa:
                                       </span>
-                                      <p className="text-rose-950 font-bold">
+                                      <p className="text-rose-950 font-bold line-clamp-2 leading-tight">
                                         {res.motivoRecusa}
                                       </p>
                                     </div>
@@ -9039,8 +9088,8 @@ export const AdminPanelScreen: React.FC = () => {
                                 </div>
 
                                 {/* Botões de Ação do Síndico */}
-                                <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-200">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-200/80">
+                                  <div className="flex items-center gap-1 flex-wrap">
                                     
                                     {/* Botão Aprovar */}
                                     <button
@@ -9051,14 +9100,35 @@ export const AdminPanelScreen: React.FC = () => {
                                           reserva: res,
                                           acao: 'aprovar',
                                           texto: res.respostaAdmin || 'Reserva aprovada. Chaves disponíveis na portaria no dia do evento mediante termo de vistoria.',
-                                          pago: res.valorTaxa && res.valorTaxa > 0 ? true : res.pago
+                                          pago: false
                                         });
                                       }}
-                                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+                                      className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
                                     >
-                                      <Check className="w-3.5 h-3.5 stroke-[3]" />
-                                      <span>{isConfirmada ? 'Editar Aprovação' : 'Aprovar Reserva'}</span>
+                                      <Check className="w-3 h-3 stroke-[3]" />
+                                      <span>{isConfirmada ? 'Editar Aprovação' : 'Aprovar'}</span>
                                     </button>
+
+                                    {/* Botão Confirmar PIX se comprovante enviado */}
+                                    {Boolean(res.comprovanteUrl && !res.pago) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          atualizarStatusReserva(
+                                            res.id,
+                                            'Confirmada',
+                                            'Pagamento via PIX confirmado pela administração.',
+                                            undefined,
+                                            true
+                                          );
+                                        }}
+                                        className="px-2 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-black transition-all shadow-2xs cursor-pointer flex items-center gap-1 animate-pulse"
+                                        title="Confirmar recebimento do PIX e quitar a taxa da reserva"
+                                      >
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        <span>Confirmar PIX</span>
+                                      </button>
+                                    )}
 
                                     {/* Botão Recusar */}
                                     {!isRecusada && (
@@ -9073,9 +9143,9 @@ export const AdminPanelScreen: React.FC = () => {
                                             pago: false
                                           });
                                         }}
-                                        className="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-950 text-xs font-black transition-colors border border-rose-300 cursor-pointer"
+                                        className="px-2 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-950 text-[10px] font-black transition-colors border border-rose-300 cursor-pointer shadow-2xs flex items-center gap-0.5"
                                       >
-                                        <X className="w-3.5 h-3.5" />
+                                        <X className="w-3 h-3" />
                                         <span>Recusar</span>
                                       </button>
                                     )}
@@ -9092,10 +9162,10 @@ export const AdminPanelScreen: React.FC = () => {
                                           pago: res.pago
                                         });
                                       }}
-                                      className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-950 text-xs font-bold transition-colors border border-indigo-200 cursor-pointer flex items-center gap-1"
+                                      className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-950 text-[10px] font-bold transition-colors border border-indigo-200 cursor-pointer flex items-center gap-1 shadow-2xs"
                                       title="Enviar orientações ou instruções ao morador"
                                     >
-                                      <MessageSquare className="w-3 h-3 text-indigo-700" />
+                                      <MessageSquare className="w-2.5 h-2.5 text-indigo-700" />
                                       <span>Instruções</span>
                                     </button>
 
@@ -9108,10 +9178,10 @@ export const AdminPanelScreen: React.FC = () => {
                                         cancelarReserva(res.id);
                                       }
                                     }}
-                                    className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                    className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                                     title="Excluir Registro de Reserva"
                                   >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
 
@@ -9241,12 +9311,12 @@ export const AdminPanelScreen: React.FC = () => {
                           </button>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                           {filteredDependenciasAdmin.map(dep => {
                             return (
                               <div
                                 key={dep.id}
-                                className="border-2 border-slate-200 hover:border-amber-300 rounded-3xl p-4 bg-white/80 shadow-md transition-all flex flex-col justify-between space-y-3.5"
+                                className="border-2 border-slate-200 hover:border-amber-300 rounded-2xl p-3 bg-white/85 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-2.5"
                               >
                                 <div className="space-y-3">
                                   

@@ -80,7 +80,7 @@ export const UnidadesDisponiveisScreen: React.FC = () => {
       <div>
         <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2 drop-shadow-md">
           <KeyRound className="w-5 h-5 text-amber-400" />
-          Unidades Disponíveis
+          Aluguel/Venda imóveis
         </h2>
         <p className="text-xs text-amber-100/90 font-medium mt-0.5">
           Mural de apartamentos para locação e venda no condomínio com contato direto do proprietário.

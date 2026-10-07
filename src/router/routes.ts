@@ -30,7 +30,7 @@ export const ROUTES: RouteConfig[] = [
   { id: 'assembleias', path: '/assembleias', aliases: ['/reunioes', '/atas'], title: 'Assembleias', auth: 'resident' },
   { id: 'eventos', path: '/eventos', aliases: ['/calendario'], title: 'Eventos do Condomínio', auth: 'resident' },
   { id: 'funcionarios', path: '/funcionarios', aliases: ['/equipe', '/colaboradores'], title: 'Quadro de Funcionários', auth: 'resident' },
-  { id: 'unidades-disponiveis', path: '/unidades-disponiveis', aliases: ['/imoveis', '/aluguel', '/venda'], title: 'Unidades Disponíveis', auth: 'resident' },
+  { id: 'unidades-disponiveis', path: '/unidades-disponiveis', aliases: ['/imoveis', '/aluguel', '/venda'], title: 'Aluguel/Venda imóveis', auth: 'resident' },
   { id: 'servicos-moradores', path: '/servicos-moradores', aliases: ['/anuncios', '/classificados'], title: 'Serviços dos Moradores', auth: 'resident' },
   { id: 'enjoei', path: '/enjoei', aliases: ['/desapego', '/trocas', '/bazar'], title: 'Enjoei do Condomínio', auth: 'resident' },
   { id: 'mudancas', path: '/mudancas', aliases: ['/mudanca', '/carretos', '/fretes'], title: 'Mudanças & Carretos', auth: 'resident' },

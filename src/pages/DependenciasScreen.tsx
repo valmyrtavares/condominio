@@ -31,12 +31,15 @@ import {
   Ban
 } from 'lucide-react';
 
+import { otimizarImagemArquivo } from '../utils/imageOptimizer';
+
 export const DependenciasScreen: React.FC = () => {
   const { 
     dependencias, 
     reservas, 
     currentUser, 
     solicitarReserva, 
+    anexarComprovanteReserva,
     cancelarReserva, 
     setCurrentScreen 
   } = useCondo();
@@ -126,14 +129,34 @@ export const DependenciasScreen: React.FC = () => {
     return true;
   });
 
-  // Reservas ativas do espaço aberto no modal
+  // Reservas ativas e futuras do espaço aberto no modal (esconde datas passadas no cliente)
   const reservasAtivasDoEspaco = useMemo(() => {
     if (!selectedDependenciaReserva) return [];
-    return reservas.filter(r => 
-      r.dependenciaId === selectedDependenciaReserva.id && 
-      r.status !== 'Recusada' && 
-      r.status !== 'Cancelada'
-    );
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    return reservas.filter(r => {
+      if (r.dependenciaId !== selectedDependenciaReserva.id) return false;
+      if (r.status === 'Recusada' || r.status === 'Cancelada') return false;
+
+      // Exclui datas passadas da lista de ocupadas do cliente
+      if (r.dataReserva && r.dataReserva.includes('/')) {
+        const parts = r.dataReserva.split('/');
+        if (parts.length === 3) {
+          const dReserva = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+          dReserva.setHours(23, 59, 59, 999);
+          if (dReserva < hoje) return false;
+        }
+      } else if (r.dataReserva && r.dataReserva.includes('-')) {
+        const parts = r.dataReserva.split('-');
+        if (parts.length === 3) {
+          const dReserva = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+          dReserva.setHours(23, 59, 59, 999);
+          if (dReserva < hoje) return false;
+        }
+      }
+      return true;
+    });
   }, [reservas, selectedDependenciaReserva]);
 
   // Função para checar disponibilidade da data selecionada
@@ -413,18 +436,26 @@ export const DependenciasScreen: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Taxa e Comprovante */}
+                    {/* Taxa e Status de Pagamento */}
                     <div className="flex items-center justify-between flex-wrap gap-2 text-[11px] pt-1">
                       {res.valorTaxa ? (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-slate-600 font-bold">Taxa:</span>
+                          <span className="text-slate-600 font-bold">Taxa do Espaço:</span>
                           <span className="font-extrabold text-amber-950 font-mono">
                             R$ {res.valorTaxa.toFixed(2)}
                           </span>
                           <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
-                            res.pago ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'
+                            res.pago 
+                              ? 'bg-emerald-100 text-emerald-950 border border-emerald-300' 
+                              : res.comprovanteUrl
+                                ? 'bg-indigo-100 text-indigo-950 border border-indigo-300'
+                                : 'bg-amber-100 text-amber-950 border border-amber-300'
                           }`}>
-                            {res.pago ? '✓ Paga' : '⏳ Aguardando Pagamento'}
+                            {res.pago 
+                              ? '✓ Taxa Paga' 
+                              : res.comprovanteUrl 
+                                ? '⏳ Comprovante Enviado (Aguardando Validação)' 
+                                : '⏳ Pagamento Pendente'}
                           </span>
                         </div>
                       ) : (
@@ -444,6 +475,87 @@ export const DependenciasScreen: React.FC = () => {
                         </button>
                       )}
                     </div>
+
+                    {/* Caixa de Instruções do PIX e Envio do Comprovante se Pagamento Pendente */}
+                    {Boolean(res.valorTaxa && res.valorTaxa > 0 && !res.pago && res.status !== 'Recusada' && res.status !== 'Cancelada') && (
+                      <div className="bg-purple-950/10 border-2 border-purple-400/80 p-3.5 rounded-2xl space-y-2.5 text-xs mt-2 animate-in fade-in">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-purple-950 flex items-center gap-1.5 text-xs">
+                            🔑 Pagamento da Taxa de Reserva via PIX:
+                          </span>
+                          <span className="text-[10px] font-black bg-purple-200 text-purple-950 px-2.5 py-0.5 rounded-full uppercase">
+                            Instruções de Pagamento
+                          </span>
+                        </div>
+
+                        <div className="bg-white/90 p-2.5 rounded-xl border border-purple-200 flex items-center justify-between gap-2 shadow-2xs">
+                          <div className="min-w-0">
+                            <span className="text-[9px] uppercase font-bold text-slate-500 block">Chave PIX do Condomínio:</span>
+                            <strong className="text-xs font-black text-purple-950 font-mono select-all block truncate">
+                              {dep?.chavePix || 'pix@condominio.com.br'}
+                            </strong>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(dep?.chavePix || 'pix@condominio.com.br');
+                              alert('Chave PIX copiada com sucesso!');
+                            }}
+                            className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[10px] font-black shrink-0 shadow-2xs transition-all active:scale-95 cursor-pointer flex items-center gap-1"
+                          >
+                            <span>Copiar PIX</span>
+                          </button>
+                        </div>
+
+                        {res.comprovanteUrl ? (
+                          <div className="bg-emerald-50 border border-emerald-300 p-2.5 rounded-xl flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-bold text-emerald-950 flex items-center gap-1.5">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                              Comprovante enviado! Aguarde a validação da administração.
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setViewComprovanteModal(res.comprovanteUrl || null)}
+                              className="text-[10px] font-black text-indigo-700 hover:underline shrink-0 cursor-pointer"
+                            >
+                              Ver Foto
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5 pt-1">
+                            <label className="text-[10px] font-extrabold uppercase text-purple-950 block">
+                              Após realizar o PIX, envie o comprovante abaixo:
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                id={`upload-pix-${res.id}`}
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    try {
+                                      const optimized = await otimizarImagemArquivo(file, { maxBytes: 150 * 1024 });
+                                      await anexarComprovanteReserva(res.id, optimized);
+                                    } catch (err) {
+                                      console.error('Erro ao anexar comprovante:', err);
+                                    }
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor={`upload-pix-${res.id}`}
+                                className="px-3.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+                              >
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>Anexar Foto do Comprovante PIX</span>
+                              </label>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Observações do Morador */}
                     {res.observacoes && (
