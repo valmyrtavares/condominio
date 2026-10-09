@@ -422,6 +422,7 @@ export const salvarServicoMoradorNoFirestore = async (condoId: string, servico: 
 
     const servicoFinal = {
       ...servico,
+      prestadorNome: servico.prestadorNome || servico.moradorNome || '',
       imagem: typeof fotoUrlFinal === 'string' && !fotoUrlFinal.startsWith('data:') ? fotoUrlFinal : (servico.imagem || ''),
       ativo: Boolean(servico.ativo),
       motivoSuspensao: servico.motivoSuspensao || '',

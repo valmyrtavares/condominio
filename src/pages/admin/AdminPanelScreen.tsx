@@ -3931,6 +3931,7 @@ export const AdminPanelScreen: React.FC = () => {
                   !searchServico ||
                   s.titulo.toLowerCase().includes(searchServico.toLowerCase()) ||
                   s.moradorNome.toLowerCase().includes(searchServico.toLowerCase()) ||
+                  (s.prestadorNome && s.prestadorNome.toLowerCase().includes(searchServico.toLowerCase())) ||
                   s.moradorUnidade.toLowerCase().includes(searchServico.toLowerCase()) ||
                   s.categoria.toLowerCase().includes(searchServico.toLowerCase())
                 )
@@ -3961,7 +3962,10 @@ export const AdminPanelScreen: React.FC = () => {
                             {servico.titulo}
                           </h4>
                           <p className="text-[11px] text-slate-600 font-semibold mt-0.5 truncate">
-                            Morador: <strong>{servico.moradorNome}</strong> (Apto {servico.moradorUnidade || 'N/A'})
+                            Prestador: <strong>{servico.prestadorNome || servico.moradorNome}</strong> (Apto {servico.moradorUnidade || 'N/A'})
+                            {servico.prestadorNome && servico.moradorNome && servico.prestadorNome.trim().toLowerCase() !== servico.moradorNome.trim().toLowerCase() && (
+                              <span className="text-slate-500 font-normal"> • Titular: {servico.moradorNome}</span>
+                            )}
                           </p>
                         </div>
                       </div>

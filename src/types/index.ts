@@ -150,6 +150,7 @@ export interface ServicoMorador {
   descricao: string;
   imagem?: string;
   moradorNome: string;
+  prestadorNome?: string;
   moradorUnidade: string;
   moradorFoto?: string;
   tipoBotao: 'whatsapp' | 'site';

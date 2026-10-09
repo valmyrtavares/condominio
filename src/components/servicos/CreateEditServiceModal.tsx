@@ -10,7 +10,8 @@ import {
   Globe, 
   MessageCircle, 
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  User
 } from 'lucide-react';
 import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 
@@ -60,6 +61,7 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
 }) => {
   const { currentUser, adicionarServicoMorador, editarServicoMorador } = useCondo();
 
+  const [prestadorNome, setPrestadorNome] = useState('');
   const [titulo, setTitulo] = useState('');
   const [subtitulo, setSubtitulo] = useState('');
   const [categoria, setCategoria] = useState(CATEGORIAS_PADRAO[0]);
@@ -73,6 +75,7 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
 
   useEffect(() => {
     if (servicoParaEditar) {
+      setPrestadorNome(servicoParaEditar.prestadorNome || servicoParaEditar.moradorNome || '');
       setTitulo(servicoParaEditar.titulo);
       setSubtitulo(servicoParaEditar.subtitulo || '');
       setCategoria(servicoParaEditar.categoria || CATEGORIAS_PADRAO[0]);
@@ -82,6 +85,8 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
       setWhatsapp(formatPhoneNumber(servicoParaEditar.whatsapp || servicoParaEditar.contato || ''));
       setLinkSite(servicoParaEditar.linkSite || '');
     } else {
+      const nomePadrao = currentUser.nome && !currentUser.nome.toLowerCase().includes('morador sem dados') ? currentUser.nome : '';
+      setPrestadorNome(nomePadrao);
       setTitulo('');
       setSubtitulo('');
       setCategoria(CATEGORIAS_PADRAO[0]);
@@ -114,6 +119,7 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
 
     setIsSubmitting(true);
     const contatoPrincipal = tipoBotao === 'whatsapp' ? whatsapp : (linkSite || 'Ver site');
+    const nomeMoradorEfetivo = currentUser.nome && !currentUser.nome.toLowerCase().includes('morador sem dados') ? currentUser.nome : 'Morador';
 
     try {
       if (servicoParaEditar) {
@@ -122,6 +128,7 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
           subtitulo: subtitulo.trim() || undefined,
           categoria,
           descricao: descricao.trim(),
+          prestadorNome: prestadorNome.trim() || undefined,
           imagem,
           tipoBotao,
           whatsapp: tipoBotao === 'whatsapp' ? whatsapp.trim() : undefined,
@@ -139,8 +146,9 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
           subtitulo: subtitulo.trim() || undefined,
           categoria,
           descricao: descricao.trim(),
+          prestadorNome: prestadorNome.trim() || nomeMoradorEfetivo,
           imagem,
-          moradorNome: currentUser.nome && !currentUser.nome.toLowerCase().includes('morador sem dados') ? currentUser.nome : 'Morador',
+          moradorNome: nomeMoradorEfetivo,
           moradorUnidade: currentUser.unidade || '001',
           moradorFoto: currentUser.foto || '',
           tipoBotao,
@@ -216,6 +224,30 @@ export const CreateEditServiceModal: React.FC<CreateEditServiceModalProps> = ({
 
           <form id="form-servico-morador" onSubmit={handleSubmit} className="space-y-3.5">
             
+            {/* Nome de quem vai prestar o serviço (antes da imagem) */}
+            <div className="space-y-1 bg-amber-50/60 border border-amber-300/80 rounded-2xl p-3">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-extrabold uppercase text-slate-800 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-amber-700" />
+                  Nome de quem vai prestar o serviço:
+                </label>
+                <span className="text-[10px] text-slate-500 font-semibold hidden sm:inline">
+                  (Você, cônjuge, filho, etc.)
+                </span>
+              </div>
+              <input
+                type="text"
+                placeholder="Ex: Maria Silva, Lucas Tavares, etc."
+                value={prestadorNome}
+                onChange={(e) => setPrestadorNome(e.target.value)}
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
+                required
+              />
+              <p className="text-[10px] text-slate-500 font-medium">
+                * Informe o nome de quem efetivamente realiza o serviço (caso não seja o titular do apartamento).
+              </p>
+            </div>
+
             {/* Foto do Serviço */}
             <div className="space-y-2 bg-amber-50/80 border border-amber-200 rounded-2xl p-3">
               <label className="text-[10px] font-extrabold uppercase text-slate-700 block text-center sm:text-left">

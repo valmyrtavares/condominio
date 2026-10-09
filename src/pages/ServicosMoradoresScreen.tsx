@@ -86,6 +86,7 @@ export const ServicosMoradoresScreen: React.FC = () => {
       (servico.subtitulo && servico.subtitulo.toLowerCase().includes(searchTerm.toLowerCase())) ||
       servico.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
       servico.moradorNome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (servico.prestadorNome && servico.prestadorNome.toLowerCase().includes(searchTerm.toLowerCase())) ||
       servico.moradorUnidade.toLowerCase().includes(searchTerm.toLowerCase());
 
     return matchesCat && matchesSearch;
@@ -241,7 +242,12 @@ export const ServicosMoradoresScreen: React.FC = () => {
                     </h3>
                     
                     <p className="text-[11px] text-amber-900 font-bold mt-0.5">
-                      Oferecido por: <strong>{servico.moradorNome}</strong> {servico.moradorUnidade ? `(Apto ${servico.moradorUnidade})` : ''}
+                      Oferecido por: <strong>{servico.prestadorNome || servico.moradorNome}</strong> {servico.moradorUnidade ? `(Apto ${servico.moradorUnidade})` : ''}
+                      {servico.prestadorNome && servico.moradorNome && servico.prestadorNome.trim().toLowerCase() !== servico.moradorNome.trim().toLowerCase() && (
+                        <span className="text-[10px] text-slate-500 font-medium ml-1">
+                          • Anunciado por {servico.moradorNome}
+                        </span>
+                      )}
                     </p>
                   </div>
 
