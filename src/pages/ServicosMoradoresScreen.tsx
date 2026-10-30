@@ -2,17 +2,17 @@ import React, { useState } from 'react';
 import { useCondo } from '../context/CondoContext';
 import { ServicoMorador } from '../types';
 import { CreateEditServiceModal } from '../components/servicos/CreateEditServiceModal';
-import { 
-  ArrowLeft, 
-  ExternalLink, 
-  ChevronDown, 
-  ChevronUp, 
-  Plus, 
-  Briefcase, 
-  MessageCircle, 
-  Globe, 
-  AlertTriangle, 
-  Edit3, 
+import {
+  ArrowLeft,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Briefcase,
+  MessageCircle,
+  Globe,
+  AlertTriangle,
+  Edit3,
   Search,
   CheckCircle2,
   Sparkles,
@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 export const ServicosMoradoresScreen: React.FC = () => {
-  const { 
-    servicosMoradores, 
-    currentUser, 
-    isAdminLoggedIn, 
-    setCurrentScreen 
+  const {
+    servicosMoradores,
+    currentUser,
+    isAdminLoggedIn,
+    setCurrentScreen
   } = useCondo();
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -36,12 +36,12 @@ export const ServicosMoradoresScreen: React.FC = () => {
   const [servicoParaEditar, setServicoParaEditar] = useState<ServicoMorador | null>(null);
 
   const categorias = [
-    'Todos', 
-    'Gastronomia', 
-    'Advocacia & Consultoria', 
-    'Pets & Cuidados', 
-    'Saúde & Esportes', 
-    'Design & Organização', 
+    'Todos',
+    'Gastronomia',
+    'Advocacia & Consultoria',
+    'Pets & Cuidados',
+    'Saúde & Esportes',
+    'Design & Organização',
     'Limpeza & Higienização',
     'Aulas & Educação',
     'Outros'
@@ -94,7 +94,7 @@ export const ServicosMoradoresScreen: React.FC = () => {
 
   return (
     <div className="space-y-4 pb-24 animate-in fade-in duration-300 w-full max-w-full overflow-x-hidden">
-      
+
       {/* Header back button + Criar Anúncio Button */}
       <div className="flex items-center justify-between gap-2">
         <button
@@ -135,11 +135,10 @@ export const ServicosMoradoresScreen: React.FC = () => {
             <button
               key={cat}
               onClick={() => setSelectedCategoria(cat)}
-              className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all border shadow-xs shrink-0 cursor-pointer ${
-                selectedCategoria === cat
+              className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all border shadow-xs shrink-0 cursor-pointer ${selectedCategoria === cat
                   ? 'bg-amber-500 text-slate-950 border-amber-400 scale-105 shadow-sm'
                   : 'bg-white text-slate-900 border-slate-300 hover:bg-slate-100'
-              }`}
+                }`}
             >
               {cat}
             </button>
@@ -201,13 +200,12 @@ export const ServicosMoradoresScreen: React.FC = () => {
             }
 
             return (
-              <div 
+              <div
                 key={servico.id}
-                className={`border rounded-3xl overflow-hidden shadow-xl transition-all duration-300 ${
-                  isSuspenso
+                className={`border rounded-3xl overflow-hidden shadow-xl transition-all duration-300 ${isSuspenso
                     ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-500/20'
                     : 'bg-white border-slate-200 hover:border-amber-300'
-                }`}
+                  }`}
               >
                 {/* Header section (Always visible) */}
                 <button
@@ -216,11 +214,10 @@ export const ServicosMoradoresScreen: React.FC = () => {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border shadow-2xs ${
-                        isSuspenso 
-                          ? 'bg-rose-100 text-rose-950 border-rose-300' 
+                      <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border shadow-2xs ${isSuspenso
+                          ? 'bg-rose-100 text-rose-950 border-rose-300'
                           : 'bg-amber-100 text-amber-950 border-amber-300'
-                      }`}>
+                        }`}>
                         {servico.categoria || 'Geral'}
                       </span>
 
@@ -240,7 +237,7 @@ export const ServicosMoradoresScreen: React.FC = () => {
                     <h3 className="text-sm sm:text-base font-extrabold text-slate-950 leading-tight mt-1 truncate">
                       {servico.titulo}
                     </h3>
-                    
+
                     <p className="text-[11px] text-amber-900 font-bold mt-0.5">
                       Oferecido por: <strong>{servico.prestadorNome || servico.moradorNome}</strong> {servico.moradorUnidade ? `(Apto ${servico.moradorUnidade})` : ''}
                       {servico.prestadorNome && servico.moradorNome && servico.prestadorNome.trim().toLowerCase() !== servico.moradorNome.trim().toLowerCase() && (
@@ -273,7 +270,7 @@ export const ServicosMoradoresScreen: React.FC = () => {
                 {/* Expandable Section */}
                 {isExpanded && (
                   <div className="px-4 pb-4 space-y-3 border-t border-slate-100 pt-3 animate-in slide-in-from-top-2 duration-200">
-                    
+
                     {/* Banner de Aviso caso o anúncio esteja suspenso */}
                     {isSuspenso && (
                       <div className="p-3.5 rounded-2xl bg-rose-100/90 border border-rose-300 text-rose-950 space-y-1 text-xs">
@@ -302,9 +299,9 @@ export const ServicosMoradoresScreen: React.FC = () => {
                     {/* Service Image - Quadrada com object-contain proporcional */}
                     {servico.imagem && (
                       <div className="relative w-full max-w-[280px] sm:max-w-[320px] aspect-square mx-auto overflow-hidden rounded-2xl border-2 border-amber-300/80 shadow-inner bg-slate-950/5 flex items-center justify-center p-1">
-                        <img 
-                          src={servico.imagem} 
-                          alt={servico.titulo} 
+                        <img
+                          src={servico.imagem}
+                          alt={servico.titulo}
                           className="w-full h-full object-contain rounded-xl"
                         />
                       </div>
@@ -328,11 +325,10 @@ export const ServicosMoradoresScreen: React.FC = () => {
                         href={contactLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-2 px-4 py-3 w-full justify-center rounded-2xl text-xs font-black uppercase shadow-md transition-all active:scale-95 cursor-pointer ${
-                          isWhatsApp
+                        className={`inline-flex items-center gap-2 px-4 py-3 w-full justify-center rounded-2xl text-xs font-black uppercase shadow-md transition-all active:scale-95 cursor-pointer ${isWhatsApp
                             ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30'
                             : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/30'
-                        }`}
+                          }`}
                       >
                         {isWhatsApp ? <MessageCircle className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
                         {buttonLabel}

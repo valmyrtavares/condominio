@@ -20,7 +20,11 @@ import {
   PartyPopper,
   History,
   CalendarCheck2,
-  Flame
+  Flame,
+  Check,
+  X,
+  XCircle,
+  ShieldCheck
 } from 'lucide-react';
 import { CreateEditEventoModal } from '../components/eventos/CreateEditEventoModal';
 import { separarEventosPorStatus, isEventoHoje, isEventoPassado } from '../utils/eventoUtils';
@@ -31,6 +35,8 @@ export const EventosScreen: React.FC = () => {
     setCurrentScreen, 
     currentUser, 
     excluirEvento,
+    aprovarEvento,
+    rejeitarEvento,
     isAdminLoggedIn
   } = useCondo();
 
@@ -107,12 +113,22 @@ export const EventosScreen: React.FC = () => {
     return separarEventosPorStatus(eventos, agora);
   }, [eventos, agora]);
 
-  // Contagem para as abas (considerando visibilidade/permissão de ativo)
+  const totalPendentesAprovacao = useMemo(() => {
+    return eventos.filter(e => e.statusAprovacao === 'pendente').length;
+  }, [eventos]);
+
+  // Contagem para as abas (considerando visibilidade, ativo e status de aprovação)
   const countProximosVisiveis = useMemo(() => {
     return eventosProximosBrutos.filter(evt => {
       const isOwner = checkIsOwner(evt);
       const isAtivo = evt.ativo !== false;
-      return isAtivo || isOwner || isAdmin;
+      const isAprovado = evt.statusAprovacao === 'aprovado' || (evt.statusAprovacao === undefined && isAtivo);
+      
+      // Moradores que não são donos só contam eventos ativos e aprovados pelo síndico
+      if (!isAdmin && !isOwner) {
+        return isAtivo && isAprovado;
+      }
+      return true;
     }).length;
   }, [eventosProximosBrutos, isAdmin, currentUser]);
 
@@ -120,7 +136,12 @@ export const EventosScreen: React.FC = () => {
     return eventosPassadosBrutos.filter(evt => {
       const isOwner = checkIsOwner(evt);
       const isAtivo = evt.ativo !== false;
-      return isAtivo || isOwner || isAdmin;
+      const isAprovado = evt.statusAprovacao === 'aprovado' || (evt.statusAprovacao === undefined && isAtivo);
+      
+      if (!isAdmin && !isOwner) {
+        return isAtivo && isAprovado;
+      }
+      return true;
     }).length;
   }, [eventosPassadosBrutos, isAdmin, currentUser]);
 
@@ -131,6 +152,12 @@ export const EventosScreen: React.FC = () => {
     return listaBase.filter(evt => {
       const isOwner = checkIsOwner(evt);
       const isAtivo = evt.ativo !== false;
+      const isAprovado = evt.statusAprovacao === 'aprovado' || (evt.statusAprovacao === undefined && isAtivo);
+
+      // REGRA: Antes de ser aprovado pelo síndico, o anúncio NÃO é exibido aos outros moradores
+      if (!isAdmin && !isOwner) {
+        if (!isAtivo || !isAprovado) return false;
+      }
 
       // Se o evento estiver fora do ar/suspenso, só exibe para o dono ou admin
       if (!isAtivo && !isOwner && !isAdmin) return false;
@@ -182,6 +209,25 @@ export const EventosScreen: React.FC = () => {
           Mural dinâmico de confraternizações e celebrações agendadas pelos moradores.
         </p>
       </div>
+
+      {/* Aviso para o Síndico sobre Eventos Pendentes */}
+      {isAdmin && totalPendentesAprovacao > 0 && (
+        <div className="p-3 bg-amber-500/25 border-2 border-amber-400 rounded-2xl flex items-center justify-between gap-3 text-white backdrop-blur-xs shadow-lg animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
+              {totalPendentesAprovacao}
+            </div>
+            <div>
+              <p className="text-xs font-black text-amber-300 leading-tight">
+                {totalPendentesAprovacao === 1 ? '1 anúncio de evento público aguardando sua aprovação' : `${totalPendentesAprovacao} anúncios de eventos públicos aguardando sua aprovação`}
+              </p>
+              <p className="text-[11px] text-white/90 font-medium">
+                Moradores enviaram eventos de espaços públicos. Eles só serão publicados no feed após sua aprovação.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Abas Principais: Próximos & Atuais vs Eventos Realizados (Histórico) */}
       <div className="grid grid-cols-2 gap-2 p-1 bg-black/25 backdrop-blur-md rounded-2xl border border-white/20 shadow-inner">
@@ -305,7 +351,9 @@ export const EventosScreen: React.FC = () => {
             const isPublico = evento.visibilidade === 'Público';
             const isConfirmado = confirmados[evento.id];
             const isOwner = checkIsOwner(evento);
-            const isSuspenso = evento.ativo === false;
+            const isPendente = evento.statusAprovacao === 'pendente';
+            const isRejeitado = evento.statusAprovacao === 'rejeitado';
+            const isSuspenso = evento.ativo === false && !isPendente && !isRejeitado;
             const isPassado = isEventoPassado(evento, agora);
             const isHoje = !isPassado && isEventoHoje(evento, agora);
 
@@ -313,13 +361,93 @@ export const EventosScreen: React.FC = () => {
               <div 
                 key={evento.id}
                 className={`border-2 rounded-3xl overflow-hidden shadow-xl transition-all duration-300 backdrop-blur-xs ${
-                  isSuspenso 
+                  isPendente
+                    ? 'border-amber-400 bg-amber-50/60 shadow-amber-500/10'
+                    : isRejeitado
+                    ? 'border-rose-400/80 bg-rose-50/50'
+                    : isSuspenso 
                     ? 'border-rose-400/80 bg-rose-50/40 opacity-90' 
                     : isPassado
                     ? 'border-slate-300/80 bg-slate-100/70 hover:bg-slate-100/90'
                     : 'border-white/60 bg-white/45 hover:bg-white/50'
                 }`}
               >
+                {/* Banner de Aguardando Aprovação */}
+                {isPendente && (
+                  <div className="p-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-xs font-bold space-y-2 animate-in fade-in">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 font-black uppercase tracking-wider text-[11px]">
+                        <Clock className="w-4 h-4 text-slate-950 shrink-0" />
+                        <span>Aguardando Aprovação do Síndico</span>
+                      </div>
+                      <span className="text-[10px] uppercase font-black px-2 py-0.5 bg-black/20 text-slate-950 rounded-md">
+                        Pendente de Publicação
+                      </span>
+                    </div>
+                    <p className="text-[11px] font-medium leading-relaxed">
+                      {isAdmin 
+                        ? "Novo anúncio de evento em espaço público enviado pelo morador. Ele ainda não está visível para os outros moradores."
+                        : "Seu anúncio foi enviado com sucesso e aguarda moderação da administração. Ele só ficará visível aos outros moradores após ser aprovado pelo síndico."
+                      }
+                    </p>
+
+                    {/* Ações de Moderação Direta do Síndico */}
+                    {isAdmin && (
+                      <div className="pt-2 flex items-center gap-2 flex-wrap border-t border-slate-950/20" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => aprovarEvento(evento.id)}
+                          className="px-3 py-1.5 bg-slate-950 hover:bg-slate-900 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-sm cursor-pointer transition-all active:scale-95"
+                          title="Aprovar anúncio e publicar para todos os moradores no mural"
+                        >
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          Aprovar e Publicar no Mural
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const motivo = window.prompt(`Informe o motivo da recusa do anúncio "${evento.titulo}":`);
+                            if (motivo !== null) {
+                              rejeitarEvento(evento.id, motivo || 'Não aprovado pela administração.');
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-rose-700 hover:bg-rose-600 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-sm cursor-pointer transition-all active:scale-95"
+                          title="Rejeitar publicação deste anúncio"
+                        >
+                          <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                          Rejeitar Anúncio
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Banner de Rejeitado */}
+                {isRejeitado && (
+                  <div className="p-3 bg-rose-600 text-white text-xs font-bold space-y-1.5 animate-in fade-in">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 font-black uppercase tracking-wider text-[11px]">
+                        <XCircle className="w-4 h-4 text-white shrink-0" />
+                        <span>Anúncio Não Aprovado pelo Síndico</span>
+                      </div>
+                      <span className="text-[10px] uppercase font-black px-2 py-0.5 bg-black/40 text-rose-100 rounded-md">
+                        Recusado
+                      </span>
+                    </div>
+                    {evento.motivoRejeicao && (
+                      <div className="p-2 rounded-xl bg-black/20 border border-white/20 text-white text-xs font-semibold">
+                        <strong className="block text-[10px] uppercase font-extrabold text-rose-200">
+                          Motivo informado pela Administração:
+                        </strong>
+                        <p className="mt-0.5 text-slate-100">{evento.motivoRejeicao}</p>
+                      </div>
+                    )}
+                    <p className="text-[10px] text-rose-100 font-medium">
+                      Este anúncio não está visível para os outros moradores do condomínio.
+                    </p>
+                  </div>
+                )}
+
                 {/* Banner de Suspensão se estiver fora do ar */}
                 {isSuspenso && (
                   <div className="p-3 bg-rose-600 text-white text-xs font-bold space-y-1 animate-in fade-in">
@@ -357,7 +485,17 @@ export const EventosScreen: React.FC = () => {
                         {evento.titulo}
                       </h3>
 
-                      {isSuspenso ? (
+                      {isPendente ? (
+                        <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-amber-400 bg-amber-100 text-amber-950 flex items-center gap-1 shadow-2xs animate-pulse">
+                          <Clock className="w-2.5 h-2.5 text-amber-700" />
+                          Aguardando Aprovação
+                        </span>
+                      ) : isRejeitado ? (
+                        <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-rose-400 bg-rose-100 text-rose-900 flex items-center gap-1 shadow-2xs">
+                          <XCircle className="w-2.5 h-2.5 text-rose-600" />
+                          Não Aprovado
+                        </span>
+                      ) : isSuspenso ? (
                         <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-rose-400 bg-rose-100 text-rose-800 flex items-center gap-1 shadow-2xs">
                           <AlertTriangle className="w-2.5 h-2.5 text-rose-600" />
                           Fora do Ar
@@ -374,7 +512,7 @@ export const EventosScreen: React.FC = () => {
                         </span>
                       ) : null}
 
-                      {!isSuspenso && (
+                      {!isSuspenso && !isPendente && !isRejeitado && (
                         <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border flex items-center gap-1 shadow-2xs ${
                           isPublico
                             ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
@@ -461,7 +599,15 @@ export const EventosScreen: React.FC = () => {
                               Organizado por: <strong className="text-indigo-950">{evento.organizador}</strong>
                             </span>
                             
-                            {isSuspenso ? (
+                            {isPendente ? (
+                              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300">
+                                Aguardando Aprovação
+                              </span>
+                            ) : isRejeitado ? (
+                              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300">
+                                Não Aprovado
+                              </span>
+                            ) : isSuspenso ? (
                               <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300">
                                 Fora do Ar
                               </span>
@@ -486,7 +632,17 @@ export const EventosScreen: React.FC = () => {
                         </div>
 
                         {/* Botão de Ação / Confirmação de Presença */}
-                        {isSuspenso ? (
+                        {isPendente ? (
+                          <div className="p-3 rounded-2xl bg-amber-100/90 border border-amber-300 text-amber-950 text-xs font-bold flex items-center justify-center gap-2">
+                            <Clock className="w-4 h-4 text-amber-700 shrink-0" />
+                            <span>Confirmação de presença bloqueada (Aguardando aprovação do síndico)</span>
+                          </div>
+                        ) : isRejeitado ? (
+                          <div className="p-3 rounded-2xl bg-rose-100 border border-rose-300 text-rose-950 text-xs font-bold flex items-center justify-center gap-2">
+                            <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                            <span>Anúncio não aprovado pela administração</span>
+                          </div>
+                        ) : isSuspenso ? (
                           <div className="p-3 rounded-2xl bg-rose-100 border border-rose-300 text-rose-950 text-xs font-bold flex items-center justify-center gap-2">
                             <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                             <span>Presença desabilitada (Evento fora do ar pela moderação)</span>

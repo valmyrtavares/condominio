@@ -1,17 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
-import { 
-  User, 
-  Reclamacao, 
-  Reparo, 
+import {
+  User,
+  Reclamacao,
+  Reparo,
   ApoiadorDetalhe,
   Comentario,
   Orcamento,
-  PrestacaoContas, 
+  PrestacaoContas,
   DespesaItem,
   ReceitaItem,
-  Unidade, 
-  Funcionario, 
-  StatusReparo, 
+  Unidade,
+  Funcionario,
+  StatusReparo,
   StatusReclamacao,
   EspinhaDorsalItem,
   CategoriaReclamacao,
@@ -71,11 +71,11 @@ import {
 } from '../types';
 import { ESPINHA_DORSAL_ITEMS } from '../constants/modulosApp';
 import { getScreenFromPath, getPathFromScreen, getRouteConfig } from '../router/routes';
-import { 
-  auth, 
-  logoutFirebaseAuth, 
-  ouvirCondominiosFirestore, 
-  salvarCondominioNoFirestore, 
+import {
+  auth,
+  logoutFirebaseAuth,
+  ouvirCondominiosFirestore,
+  salvarCondominioNoFirestore,
   excluirCondominioNoFirestore,
   inicializarEstruturaCondominioNoFirestore,
   ouvirSubcolecaoFirestore,
@@ -180,9 +180,9 @@ const LEGACY_MOCK_DEPENDENCIA_IDS = new Set([
 ]);
 
 export const ALL_ADMIN_MODULOS: AdminModuloKey[] = [
-  'portaria', 'mudancas', 'dependencias', 'reparos', 
-  'reclamacoes', 'eventos', 'servicos', 'unidades', 
-  'equipe', 'financeiro', 'regras', 'imoveis', 
+  'portaria', 'mudancas', 'dependencias', 'reparos',
+  'reclamacoes', 'eventos', 'servicos', 'unidades',
+  'equipe', 'financeiro', 'regras', 'imoveis',
   'fornecedores', 'enjoei', 'assembleias', 'diario-sindico',
   'benfeitorias'
 ];
@@ -411,8 +411,8 @@ export function gerarUnidadesPorPadraoEAndar(
     .filter(Boolean);
 
   const patternItems = rawItems.length > 0 ? rawItems : ['01', '02', '03', '04'];
-  const andaresCalculados = (totalAndares && totalAndares > 0) 
-    ? totalAndares 
+  const andaresCalculados = (totalAndares && totalAndares > 0)
+    ? totalAndares
     : Math.max(1, Math.ceil(totalUnidades / patternItems.length));
 
   let unitCounter = 0;
@@ -454,11 +454,11 @@ export function gerarUnidadesPorPadraoEAndar(
  * Corrige automaticamente unidades que possam ter sido salvas com número vazio ('')
  */
 export function curarUnidadesSemNumero(
-  lista: Unidade[], 
-  totalUnidades?: number, 
-  totalAndares?: number, 
-  padraoPrimeiroAndar?: string, 
-  condoId: string = 'condo', 
+  lista: Unidade[],
+  totalUnidades?: number,
+  totalAndares?: number,
+  padraoPrimeiroAndar?: string,
+  condoId: string = 'condo',
   totalBlocos: number = 1
 ): Unidade[] {
   if (!Array.isArray(lista) || lista.length === 0) return lista;
@@ -518,6 +518,8 @@ interface CondoContextType {
   excluirEvento: (id: string) => void;
   suspenderEvento: (id: string, motivo: string) => void;
   reativarEvento: (id: string) => void;
+  aprovarEvento: (id: string) => void;
+  rejeitarEvento: (id: string, motivo: string) => void;
   unidadesDisponiveis: UnidadeDisponivel[];
   adicionarUnidadeDisponivel: (nova: Omit<UnidadeDisponivel, 'id' | 'condominioId' | 'dataAnuncio'> & { dataAnuncio?: string }) => void;
   editarUnidadeDisponivel: (id: string, dados: Partial<UnidadeDisponivel>) => void;
@@ -630,9 +632,9 @@ interface CondoContextType {
   setPendingRegistrationUnit: (unit: Unidade | null) => void;
   loginResident: (unidadeInput: string, senhaInput: string) => { success: boolean; needsRegistration?: boolean; message?: string };
   concluirCadastroMorador: (
-    unidadeNumero: string, 
-    moradoresData: { nome: string; email?: string; profissao?: string }[], 
-    fotoUrl?: string, 
+    unidadeNumero: string,
+    moradoresData: { nome: string; email?: string; profissao?: string }[],
+    fotoUrl?: string,
     novaSenha?: string
   ) => Promise<{ success: boolean; error?: string }>;
   pularCadastroMorador: (unidadeNumero: string) => void;
@@ -641,7 +643,7 @@ interface CondoContextType {
   solicitarRecuperacaoSenha: (unidadeOuEmail: string, isAdminHint?: boolean) => Promise<{ success: boolean; emailMascarado?: string; codigoSimulado?: string; message?: string; isFirebaseSent?: boolean }>;
   redefinirSenhaComCodigo: (unidadeOuEmail: string, codigo: string, novaSenha: string) => Promise<{ success: boolean; message?: string }>;
   logoutResident: () => void;
-  
+
   // Actions
   apoiarReclamacao: (id: string) => void;
   adicionarComentario: (reclamacaoId: string, texto: string) => void;
@@ -775,9 +777,9 @@ const DEFAULT_ADMIN_USERS: AdminUser[] = [
 
 
 const ALL_MODULOS: AdminModuloKey[] = [
-  'portaria', 'mudancas', 'dependencias', 'reparos', 
-  'reclamacoes', 'eventos', 'servicos', 'unidades', 
-  'equipe', 'financeiro', 'regras', 'imoveis', 
+  'portaria', 'mudancas', 'dependencias', 'reparos',
+  'reclamacoes', 'eventos', 'servicos', 'unidades',
+  'equipe', 'financeiro', 'regras', 'imoveis',
   'fornecedores', 'enjoei', 'assembleias', 'diario-sindico'
 ];
 
@@ -788,9 +790,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       (window as any).__condoStorageAuditInstalled = true;
       const originalSetItem = localStorage.setItem.bind(localStorage);
       localStorage.setItem = (key: string, value: string) => {
-        const isAuthCredentialKey = 
-          key.includes('saved_pass') || 
-          key.includes('saved_password') || 
+        const isAuthCredentialKey =
+          key.includes('saved_pass') ||
+          key.includes('saved_password') ||
           key.includes('master_saved') ||
           key.includes('resident_auth') ||
           key.includes('admin_auth') ||
@@ -817,7 +819,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch {}
+      } catch { }
     }
     return [];
   });
@@ -825,7 +827,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     try {
       localStorage.setItem('condo_multi_condominios_list', JSON.stringify(condominios));
-    } catch {}
+    } catch { }
   }, [condominios]);
 
   const [currentCondoId, setCurrentCondoId] = useState<string>(() => {
@@ -845,7 +847,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     try {
       localStorage.setItem('condo_active_tenant_id', currentCondoId);
-    } catch {}
+    } catch { }
   }, [currentCondoId]);
 
   // Alinha o condomínio ativo aos condomínios reais do Firestore
@@ -912,7 +914,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           ...s,
           ...servicoAtualizado,
           ativo: estaSuspenso ? false : (servicoAtualizado.ativo !== undefined ? servicoAtualizado.ativo : s.ativo),
-          motivoSuspensao: estaSuspenso 
+          motivoSuspensao: estaSuspenso
             ? (s.motivoSuspensao || 'Anúncio editado pelo morador. Aguardando reavaliação da sindicância.')
             : servicoAtualizado.motivoSuspensao
         };
@@ -1318,7 +1320,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           data: agora.toLocaleDateString('pt-BR'),
           hora: `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`,
           titulo: nova.deixouChave ? '🔑 Chave Deixada na Portaria à Disposição' : '👤 Autorização de Entrada Cadastrada',
-          descricao: nova.deixouChave 
+          descricao: nova.deixouChave
             ? `Morador disponibilizou a chave (${nova.identificacaoChave || 'Imóvel'}) na portaria para ${nova.nomeVisitante} (${nova.tipoVisitante}). Local: ${nova.localChavePortaria || 'Portaria'}.`
             : `Morador autorizou a entrada de "${nova.nomeVisitante}" (${nova.tipoVisitante}) para ${nova.dataPrevista} (${nova.horarioEstimado}).`,
           autorNome: nova.moradorNome || currentUser.nome || 'Morador',
@@ -1456,7 +1458,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const dataStr = nova.dataRecebimento || agora.toLocaleDateString('pt-BR');
     const horaStr = nova.horaRecebimento || `${agora.getHours().toString().padStart(2, '0')}:${agora.getMinutes().toString().padStart(2, '0')}`;
     const dataHoraStr = `${dataStr} ${horaStr}`;
-    
+
     // Define o status padrão conforme o fluxo e quem está cadastrando
     const isSaida = nova.fluxoTipo === 'saida_embrulho';
     let statusDefault: StatusEncomenda;
@@ -1528,12 +1530,12 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const atualizarStatusEncomenda = (
-    id: string, 
-    novoStatus: StatusEncomenda, 
-    dados?: { 
-      porteiroRecebedor?: string; 
-      localArmazenamento?: string; 
-      retiradoPorNome?: string; 
+    id: string,
+    novoStatus: StatusEncomenda,
+    dados?: {
+      porteiroRecebedor?: string;
+      localArmazenamento?: string;
+      retiradoPorNome?: string;
       fotoPacote?: string;
       destinatarioExterno?: string;
       despachadoPor?: string;
@@ -1658,7 +1660,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
         });
       }
-    } catch {}
+    } catch { }
 
     // Sincroniza sessão com o Firebase Auth
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
@@ -1676,7 +1678,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           try {
             localStorage.removeItem('condo_multi_condominios_list');
             localStorage.removeItem('condo_active_tenant_id');
-          } catch {}
+          } catch { }
         }
       }
     });
@@ -1700,7 +1702,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const logoutMaster = () => {
     setIsMasterLoggedIn(false);
     localStorage.removeItem('condo_superadmin_master_auth');
-    logoutFirebaseAuth().catch(() => {});
+    logoutFirebaseAuth().catch(() => { });
   };
 
   const selecionarCondominio = (slugOuId: string) => {
@@ -1777,22 +1779,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       try {
         localStorage.setItem(`condo_unidades_list_${id}`, JSON.stringify(novasUnidadesCasas));
-      } catch {}
+      } catch { }
       limparESubstituirSubcolecaoFirestore(id, 'unidades', novasUnidadesCasas).catch(console.error);
     } else if (novo.modeloInicial === 'limpo') {
       const totalUnits = novo.totalUnidades || 75;
       const novasUnidadesLimpo = (novo.configuracaoBlocos && novo.configuracaoBlocos.length > 0)
         ? gerarUnidadesPorConfiguracaoBlocos(novo.configuracaoBlocos, id)
         : gerarUnidadesPorPadraoEAndar(
-            totalUnits,
-            novo.totalAndares,
-            novo.padraoPrimeiroAndar,
-            id,
-            novo.totalBlocos || 1
-          );
+          totalUnits,
+          novo.totalAndares,
+          novo.padraoPrimeiroAndar,
+          id,
+          novo.totalBlocos || 1
+        );
       try {
         localStorage.setItem(`condo_unidades_list_${id}`, JSON.stringify(novasUnidadesLimpo));
-      } catch {}
+      } catch { }
       limparESubstituirSubcolecaoFirestore(id, 'unidades', novasUnidadesLimpo).catch(console.error);
     }
 
@@ -1800,7 +1802,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const editarCondominio = (
-    id: string, 
+    id: string,
     dados: Partial<CondominioProfile>,
     unidadesCustomizadas?: { numero: string; rua?: string }[]
   ) => {
@@ -1828,13 +1830,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setCondominios(prev => prev.map(c => {
       if (c.id === id) {
-        const atualizado: CondominioProfile = { 
-          ...c, 
+        const atualizado: CondominioProfile = {
+          ...c,
           ...dados,
           id: targetId,
           slug: targetSlug || c.slug
         };
-        
+
         // Estrita separação e integridade de campos:
         if (atualizado.tipoCondominio === 'casas') {
           delete (atualizado as any).configuracaoBlocos;
@@ -1855,7 +1857,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           inicializarEstruturaCondominioNoFirestore(targetId).catch(console.error);
           try {
             localStorage.removeItem(`condo_unidades_list_${id}`);
-          } catch {}
+          } catch { }
         }
 
         // Se for condomínio de casas e recebeu lista de unidades atualizadas:
@@ -1907,25 +1909,25 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
           try {
             localStorage.setItem(`condo_unidades_list_${targetId}`, JSON.stringify(novasUnidades));
-          } catch {}
+          } catch { }
 
           limparESubstituirSubcolecaoFirestore(targetId, 'unidades', novasUnidades).catch(console.error);
         } else if (
           dados.configuracaoBlocos !== undefined ||
-          dados.padraoPrimeiroAndar !== undefined || 
-          dados.totalAndares !== undefined || 
+          dados.padraoPrimeiroAndar !== undefined ||
+          dados.totalAndares !== undefined ||
           dados.totalUnidades !== undefined
         ) {
           const totalUnits = atualizado.totalUnidades || 75;
           const templateUnidades = (atualizado.configuracaoBlocos && atualizado.configuracaoBlocos.length > 0)
             ? gerarUnidadesPorConfiguracaoBlocos(atualizado.configuracaoBlocos, targetId)
             : gerarUnidadesPorPadraoEAndar(
-                totalUnits,
-                atualizado.totalAndares,
-                atualizado.padraoPrimeiroAndar,
-                targetId,
-                atualizado.totalBlocos || 1
-              );
+              totalUnits,
+              atualizado.totalAndares,
+              atualizado.padraoPrimeiroAndar,
+              targetId,
+              atualizado.totalBlocos || 1
+            );
 
           const mapaExistentes = new Map<string, Unidade>();
           unidades.forEach(u => {
@@ -1960,7 +1962,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
           try {
             localStorage.setItem(`condo_unidades_list_${targetId}`, JSON.stringify(novasUnidades));
-          } catch {}
+          } catch { }
 
           limparESubstituirSubcolecaoFirestore(targetId, 'unidades', novasUnidades).catch(console.error);
         }
@@ -1974,7 +1976,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setCurrentCondoId(targetId);
       try {
         localStorage.setItem('condo_active_tenant_id', targetId);
-      } catch {}
+      } catch { }
     }
   };
 
@@ -2004,7 +2006,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch {}
+      } catch { }
     }
     return DEFAULT_ADMIN_ROLES;
   });
@@ -2015,7 +2017,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch {}
+      } catch { }
     }
     return DEFAULT_ADMIN_USERS;
   });
@@ -2070,7 +2072,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved) {
       try {
         return deduplicateAndSortUnidades(JSON.parse(saved));
-      } catch {}
+      } catch { }
     }
     return [];
   });
@@ -2092,7 +2094,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setUnidades(resultado);
         try {
           localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(resultado));
-        } catch {}
+        } catch { }
       }
     });
 
@@ -2106,7 +2108,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (Array.isArray(parsed)) {
           list = parsed.filter((u: Unidade) => !(u as any).condoId || (u as any).condoId === condoTenantId || u.condominioId === condoTenantId || u.id.startsWith(`unit-${condoTenantId}`));
         }
-      } catch {}
+      } catch { }
     }
 
     if (!isCasas) {
@@ -2210,9 +2212,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // Sincroniza em tempo real as permissões do colaborador ativo caso sua conta seja atualizada no Firestore
         setCurrentUser(prev => {
           if (prev && (prev.role === 'colaborador' || prev.role === 'subsindico')) {
-            const match = funcs.find(f => 
-              f.id === prev.id || 
-              (f.email && f.email.toLowerCase() === prev.email?.toLowerCase()) || 
+            const match = funcs.find(f =>
+              f.id === prev.id ||
+              (f.email && f.email.toLowerCase() === prev.email?.toLowerCase()) ||
               (f.usuario && f.usuario.toLowerCase() === prev.email?.toLowerCase())
             );
 
@@ -2221,10 +2223,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               const hasExplicitPerms = Array.isArray(fPerms) && fPerms.length > 0;
               const isTotal = (match as any).tipoAcesso === 'total' && (!hasExplicitPerms || (fPerms ? fPerms.length >= 17 : false));
               const userPerms: AdminModuloKey[] = hasExplicitPerms && fPerms
-                ? fPerms 
-                : (isTotal 
-                    ? ALL_ADMIN_MODULOS 
-                    : (match.categoria === 'Portaria' ? ['portaria', 'mudancas'] : ['portaria']));
+                ? fPerms
+                : (isTotal
+                  ? ALL_ADMIN_MODULOS
+                  : (match.categoria === 'Portaria' ? ['portaria', 'mudancas'] : ['portaria']));
 
               return {
                 ...prev,
@@ -2319,7 +2321,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         try {
           localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(dadosReais));
           localStorage.removeItem('condo_reparos_list');
-        } catch {}
+        } catch { }
       }
     });
 
@@ -2330,7 +2332,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         try {
           localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(dadosReais));
           localStorage.removeItem('condo_reclamacoes_list');
-        } catch {}
+        } catch { }
       }
     });
 
@@ -2437,7 +2439,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         const saved = localStorage.getItem('condo_pending_reg_unit');
         if (saved) return JSON.parse(saved);
-      } catch {}
+      } catch { }
     }
     return null;
   });
@@ -2450,7 +2452,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       } else {
         localStorage.removeItem('condo_pending_reg_unit');
       }
-    } catch {}
+    } catch { }
   };
 
   const [currentUser, setCurrentUser] = useState<User>(() => {
@@ -2462,7 +2464,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (u && u.id && u.nome && u.nome !== 'Morador sem dados') {
           return u;
         }
-      } catch {}
+      } catch { }
     }
 
     // 2. Verifica se há sessão de morador por unidade
@@ -2476,7 +2478,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (u && u.moradores && u.moradores.length > 0) {
           return u.moradores[0];
         }
-      } catch {}
+      } catch { }
     }
 
     return {
@@ -2507,7 +2509,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return parsed.filter(item => item && item.id && !isMockReclamacao(item));
         }
       }
-    } catch {}
+    } catch { }
     return [];
   });
 
@@ -2527,7 +2529,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return parsed.filter(item => item && item.id && !LEGACY_MOCK_REPARO_IDS.has(item.id));
         }
       }
-    } catch {}
+    } catch { }
     return [
       {
         id: 'rep-conserto-portao-principal',
@@ -2619,7 +2621,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(reclamacoes));
       localStorage.removeItem('condo_reclamacoes_list');
-    } catch {}
+    } catch { }
   }, [reclamacoes, condoTenantId]);
 
   useEffect(() => {
@@ -2627,7 +2629,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(reparos));
       localStorage.removeItem('condo_reparos_list');
-    } catch {}
+    } catch { }
   }, [reparos, condoTenantId]);
 
   const [benfeitorias, setBenfeitorias] = useState<Benfeitoria[]>([]);
@@ -2759,7 +2761,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const [reservas, setReservas] = useState<ReservaDependencia[]>([]);
-  
+
   const [assembleias, setAssembleias] = useState<Assembleia[]>([]);
 
   const adicionarAssembleia = (nova: Omit<Assembleia, 'id' | 'condominioId'>) => {
@@ -2792,8 +2794,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const publicarAtaAssembleia = (
-    id: string, 
-    ata: AtaAssembleia, 
+    id: string,
+    ata: AtaAssembleia,
     status: StatusAssembleia = 'Realizada com Ata Publicada',
     pautasAtualizadas?: PautaAssembleia[]
   ) => {
@@ -2813,7 +2815,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const togglePresencaAssembleia = async (
-    assembleiaId: string, 
+    assembleiaId: string,
     moradorInfo?: Partial<ParticipanteConfirmado>
   ): Promise<{ success: boolean; confirmado: boolean }> => {
     try {
@@ -2834,9 +2836,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setAssembleias(prev => prev.map(a => {
         if (a.id === assembleiaId) {
           const list = a.confirmados || [];
-          const jaExisteIndex = list.findIndex(c => 
-            c.id === mId || 
-            (c.nome && mNome && c.nome.toLowerCase() === mNome.toLowerCase()) || 
+          const jaExisteIndex = list.findIndex(c =>
+            c.id === mId ||
+            (c.nome && mNome && c.nome.toLowerCase() === mNome.toLowerCase()) ||
             (c.unidade && mUnidade && normalizeUnitNumber(c.unidade) === normalizeUnitNumber(mUnidade))
           );
 
@@ -2877,17 +2879,99 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [eventos, setEventos] = useState<EventoCondominio[]>([]);
 
   const adicionarEvento = (novo: Omit<EventoCondominio, 'id' | 'condominioId'>) => {
+    const isUserAdmin = currentUser.role === 'sindico' || currentUser.role === 'subsindico' || Boolean(isAdminLoggedIn);
+
+    // Moradores só podem publicar eventos públicos, e exigem aprovação prévia do síndico
+    const visibilidadeFinal: TipoVisibilidadeEvento = isUserAdmin ? (novo.visibilidade || 'Público') : 'Público';
+    const statusAprovacaoInicial = isUserAdmin ? 'aprovado' : 'pendente';
+    const ativoInicial = isUserAdmin ? true : false;
+
     const novoEvento: EventoCondominio = {
       id: `evt-${Date.now()}`,
       condominioId: condoTenantId,
-      ativo: true,
+      ativo: ativoInicial,
+      statusAprovacao: statusAprovacaoInicial,
+      aprovadoPor: isUserAdmin ? (currentUser.nome || 'Administração') : undefined,
+      aprovadoEm: isUserAdmin ? new Date().toLocaleDateString('pt-BR') : undefined,
       criadoEm: new Date().toLocaleDateString('pt-BR'),
       organizadorId: currentUser.id,
       organizadorUnidade: currentUser.unidade ? (currentUser.unidade.toLowerCase().startsWith('apt') || currentUser.unidade.toLowerCase().startsWith('cobertura') ? currentUser.unidade : `Apt ${currentUser.unidade}`) : 'Administração',
-      ...novo
+      ...novo,
+      visibilidade: visibilidadeFinal
     };
     setEventos(prev => [novoEvento, ...prev]);
     salvarDocumentoSubcolecaoFirestore(condoTenantId, 'eventos', novoEvento).catch(console.error);
+
+    // Se foi morador que criou, registra no diário e notifica
+    if (!isUserAdmin) {
+      adicionarRegistroAtividade({
+        dataHora: `${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
+        dataIso: new Date().toISOString().split('T')[0],
+        hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        tipo: 'outro',
+        titulo: `Novo Evento Aguardando Aprovação: "${novo.titulo}"`,
+        descricao: `Morador ${currentUser.nome || 'da unidade ' + currentUser.unidade} solicitou a publicação de evento público em "${novo.local}".`,
+        autorNome: currentUser.nome || 'Morador',
+        autorUnidade: currentUser.unidade,
+        autorTipo: 'morador',
+        categoriaBadge: 'Eventos',
+        linkTela: 'eventos'
+      });
+    }
+  };
+
+  const aprovarEvento = (id: string) => {
+    const target = eventos.find(e => e.id === id);
+    if (!target) return;
+
+    const eventoAtualizado: EventoCondominio = {
+      ...target,
+      ativo: true,
+      statusAprovacao: 'aprovado',
+      motivoRejeicao: '',
+      aprovadoPor: currentUser.nome || 'Síndico',
+      aprovadoEm: new Date().toLocaleDateString('pt-BR')
+    };
+
+    setEventos(prev => prev.map(e => e.id === id ? eventoAtualizado : e));
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'eventos', eventoAtualizado).catch(console.error);
+
+    const targetUnidade = target.organizadorUnidade || (target.organizador.includes('Apt') ? target.organizador.replace(/.*(Apt\s*\d+).*/i, '$1') : '');
+    const cleanUnit = targetUnidade.replace(/[^0-9]/g, '');
+
+    if (cleanUnit) {
+      enviarNotificacaoPrivada(
+        cleanUnit,
+        `🎉 Evento Aprovado: O anúncio do seu evento "${target.titulo}" (${target.local}) foi aprovado pelo síndico e já está publicado no mural para todos os moradores!`,
+        'alta'
+      );
+    }
+  };
+
+  const rejeitarEvento = (id: string, motivo: string) => {
+    const target = eventos.find(e => e.id === id);
+    if (!target) return;
+
+    const eventoAtualizado: EventoCondominio = {
+      ...target,
+      ativo: false,
+      statusAprovacao: 'rejeitado',
+      motivoRejeicao: motivo.trim() || 'Anúncio não aprovado pela administração.'
+    };
+
+    setEventos(prev => prev.map(e => e.id === id ? eventoAtualizado : e));
+    salvarDocumentoSubcolecaoFirestore(condoTenantId, 'eventos', eventoAtualizado).catch(console.error);
+
+    const targetUnidade = target.organizadorUnidade || (target.organizador.includes('Apt') ? target.organizador.replace(/.*(Apt\s*\d+).*/i, '$1') : '');
+    const cleanUnit = targetUnidade.replace(/[^0-9]/g, '');
+
+    if (cleanUnit) {
+      enviarNotificacaoPrivada(
+        cleanUnit,
+        `Aviso da Administração: O anúncio do seu evento "${target.titulo}" não foi aprovado pelo síndico. Motivo: ${motivo.trim() || 'Verifique as diretrizes com a administração.'}`,
+        'alta'
+      );
+    }
   };
 
   const editarEvento = (id: string, dados: Partial<EventoCondominio>) => {
@@ -2913,10 +2997,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const target = eventos.find(e => e.id === id);
     if (!target) return;
 
-    const eventoAtualizado: EventoCondominio = { 
-      ...target, 
-      ativo: false, 
-      motivoSuspensao: motivo 
+    const eventoAtualizado: EventoCondominio = {
+      ...target,
+      ativo: false,
+      motivoSuspensao: motivo
     };
 
     setEventos(prev => prev.map(e => e.id === id ? eventoAtualizado : e));
@@ -2938,10 +3022,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const target = eventos.find(e => e.id === id);
     if (!target) return;
 
-    const eventoAtualizado: EventoCondominio = { 
-      ...target, 
-      ativo: true, 
-      motivoSuspensao: '' 
+    const eventoAtualizado: EventoCondominio = {
+      ...target,
+      ativo: true,
+      statusAprovacao: 'aprovado',
+      motivoSuspensao: ''
     };
 
     setEventos(prev => prev.map(e => e.id === id ? eventoAtualizado : e));
@@ -2984,7 +3069,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch {}
+      } catch { }
     }
     return [
       'Manutenção',
@@ -3016,7 +3101,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch {}
+      } catch { }
     }
     return [
       'Taxa Condominial',
@@ -3276,8 +3361,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const importarLancamentosEmLote = (
-    mesAno: string, 
-    tipo: 'despesas' | 'receitas', 
+    mesAno: string,
+    tipo: 'despesas' | 'receitas',
     itens: (Omit<DespesaItem, 'id'> | Omit<ReceitaItem, 'id'>)[]
   ) => {
     if (!itens || itens.length === 0) return;
@@ -3426,8 +3511,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (prevUser && (prevUser.id === id || prevUser.email?.toLowerCase() === (itemAtualizado as any).email?.toLowerCase() || prevUser.email?.toLowerCase() === (itemAtualizado as any).usuario?.toLowerCase())) {
           const hasExplicitPerms = Array.isArray((itemAtualizado as any).permissoesModulos) && (itemAtualizado as any).permissoesModulos.length > 0;
           const isTotal = (itemAtualizado as any).tipoAcesso === 'total' && (!hasExplicitPerms || (itemAtualizado as any).permissoesModulos.length >= 17);
-          const userPerms = hasExplicitPerms 
-            ? (itemAtualizado as any).permissoesModulos 
+          const userPerms = hasExplicitPerms
+            ? (itemAtualizado as any).permissoesModulos
             : (isTotal ? ALL_ADMIN_MODULOS : prevUser.permissoesModulos);
 
           const updated: User = {
@@ -3443,7 +3528,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
           try {
             localStorage.setItem('condo_current_user', JSON.stringify(updated));
-          } catch {}
+          } catch { }
           return updated;
         }
         return prevUser;
@@ -3500,7 +3585,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     try {
       localStorage.removeItem('condo_avaliacoes_funcionarios');
-    } catch {}
+    } catch { }
   }, []);
 
   const avaliarFuncionario = (funcionarioId: string, nota: number) => {
@@ -3514,13 +3599,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const avaliacaoSalvar: AvaliacaoFuncionario = avaliacaoExistente
       ? { ...avaliacaoExistente, nota, data: new Date().toLocaleDateString('pt-BR') }
       : {
-          id: `aval-${Date.now()}`,
-          funcionarioId,
-          usuarioId: userIdentifier,
-          unidade: unidadeMorador,
-          nota,
-          data: new Date().toLocaleDateString('pt-BR')
-        };
+        id: `aval-${Date.now()}`,
+        funcionarioId,
+        usuarioId: userIdentifier,
+        unidade: unidadeMorador,
+        nota,
+        data: new Date().toLocaleDateString('pt-BR')
+      };
 
     // 1. Gravação direta no Cloud Firestore
     salvarAvaliacaoFuncionarioNoFirestore(condoTenantId, avaliacaoSalvar).catch(err => {
@@ -3577,7 +3662,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [espinhaDorsalItems] = useState<EspinhaDorsalItem[]>(ESPINHA_DORSAL_ITEMS);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
-  
+
   // Navigation & URL Routing State
   const [currentScreen, _setCurrentScreen] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -3661,9 +3746,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Métodos de Gestão de Unidades do Admin
   const adicionarUnidade = (
-    numero: string, 
-    vagaGaragem: string = '', 
-    senhaAcesso?: string, 
+    numero: string,
+    vagaGaragem: string = '',
+    senhaAcesso?: string,
     rua?: string,
     andar?: number,
     bloco?: string
@@ -3700,16 +3785,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const atualizadas = isCasas ? [...semDuplicado, nova] : sortUnidades([...semDuplicado, nova]);
       try {
         localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(atualizadas));
-      } catch {}
+      } catch { }
       return atualizadas;
     });
   };
 
   const editarUnidade = (
-    idOuNumero: string, 
-    vagaGaragem: string, 
-    numero?: string, 
-    _senhaIgnorada?: string, 
+    idOuNumero: string,
+    vagaGaragem: string,
+    numero?: string,
+    _senhaIgnorada?: string,
     ruaOuBloco?: string,
     indexPos?: number
   ) => {
@@ -3761,7 +3846,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       try {
         localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(ordenadas));
-      } catch {}
+      } catch { }
 
       // Salva no Firestore garantido estritamente no tenant oficial do condomínio
       salvarUnidadeNoFirestore(condoTenantId, unidadeSalva).catch(console.error);
@@ -3819,16 +3904,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const atualizadas = prev.map(u => (u.id === alvo.id ? unidadeAtualizada : u));
       try {
         localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(atualizadas));
-      } catch {}
+      } catch { }
       return atualizadas;
     });
 
     salvarUnidadeNoFirestore(condoTenantId, unidadeAtualizada).catch(console.error);
 
     const unitKind = isCasas ? `da Casa ${unidadeAtualizada.numero}` : `do Apto ${unidadeAtualizada.numero}`;
-    return { 
-      success: true, 
-      message: `Cadastro e senha ${unitKind} foram resetados com sucesso! A residência agora está livre para novo cadastro.` 
+    return {
+      success: true,
+      message: `Morador ${unitKind} removido com sucesso! A residência agora está livre para o cadastro do próximo morador.`
     };
   };
 
@@ -3838,7 +3923,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const atualizadas = prev.filter(u => u.id !== id);
       try {
         localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(atualizadas));
-      } catch {}
+      } catch { }
       return atualizadas;
     });
   };
@@ -3851,8 +3936,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const unidadeSalva: Unidade = {
       ...alvo,
       semMoradores: novoSemMoradores,
-      statusCadastro: novoSemMoradores 
-        ? ('Vazio' as const) 
+      statusCadastro: novoSemMoradores
+        ? ('Vazio' as const)
         : (alvo.moradores && alvo.moradores.length > 0 ? ('Cadastrado' as const) : ('Pendente' as const))
     };
 
@@ -3860,7 +3945,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const atualizadas = prev.map(u => (u.id === id ? unidadeSalva : u));
       try {
         localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(atualizadas));
-      } catch {}
+      } catch { }
       return atualizadas;
     });
 
@@ -3876,8 +3961,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...alvo,
       suspensa: novaSuspensa,
       motivoSuspensao: novaSuspensa ? (motivo || 'Suspenso pela administração') : undefined,
-      statusCadastro: novaSuspensa 
-        ? ('Suspenso' as const) 
+      statusCadastro: novaSuspensa
+        ? ('Suspenso' as const)
         : (alvo.semMoradores ? ('Vazio' as const) : (alvo.moradores && alvo.moradores.length > 0 ? ('Cadastrado' as const) : ('Pendente' as const)))
     };
 
@@ -3885,7 +3970,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const atualizadas = prev.map(u => (u.id === id ? unidadeSalva : u));
       try {
         localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(atualizadas));
-      } catch {}
+      } catch { }
       return atualizadas;
     });
 
@@ -3963,7 +4048,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setUnidades(novas);
     try {
       localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(novas));
-    } catch {}
+    } catch { }
     limparESubstituirSubcolecaoFirestore(condoTenantId, 'unidades', novas).catch(console.error);
   };
 
@@ -3973,7 +4058,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch {}
+      } catch { }
     }
     return [];
   });
@@ -3990,7 +4075,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (e.key === 'condo_notificacoes_privadas' && e.newValue) {
         try {
           setNotificacoesPrivadas(JSON.parse(e.newValue));
-        } catch {}
+        } catch { }
       }
     };
     window.addEventListener('storage', handleStorageChange);
@@ -4021,7 +4106,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const agora = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
     const targetUnit = (unidadeNumero || currentUser?.unidade || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento|cobertura|casa)\s*/i, '').trim();
     let notifAtualizada: NotificacaoPrivada | null = null;
-    
+
     setNotificacoesPrivadas(prev => prev.map(n => {
       if (n.id === notificacaoId) {
         const nClean = (n.unidadeNumero || '').toLowerCase().replace(/^(apt|apto|unidade|apartamento|cobertura|casa)\s*/i, '').trim();
@@ -4086,7 +4171,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Autenticação do Admin / Síndico / Colaborador com Proteção Multi-Tenant & Primeiro Acesso
   const loginAdmin = async (
-    usuario: string, 
+    usuario: string,
     senha: string
   ): Promise<{ success: boolean; needsActivation?: boolean; message?: string }> => {
     const u = usuario.trim().toLowerCase();
@@ -4130,8 +4215,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setResidentAuthData(residentAuth);
       localStorage.setItem('condo_resident_auth', JSON.stringify(residentAuth));
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         needsActivation: false,
         message: 'Acesso de Desenvolvedor autorizado com privilégios totais.'
       };
@@ -4139,9 +4224,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // 1. Verificação Multi-Tenant (Anti-Mistura de Condomínios)
     if (u.includes('@')) {
-      const outroCondo = condominios.find(c => 
-        c.id !== currentCondo.id && 
-        c.emailAdmin && 
+      const outroCondo = condominios.find(c =>
+        c.id !== currentCondo.id &&
+        c.emailAdmin &&
         c.emailAdmin.trim().toLowerCase() === u
       );
 
@@ -4170,20 +4255,20 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const fPass = (f.senha || '').trim();
 
       const userMatches = (fEmail && fEmail === u) ||
-                          (fUser && fUser === u) ||
-                          (fNome && fNome === u) ||
-                          (fEmail && fEmail.split('@')[0] === u) ||
-                          (fUser && fUser.split('@')[0] === u);
+        (fUser && fUser === u) ||
+        (fNome && fNome === u) ||
+        (fEmail && fEmail.split('@')[0] === u) ||
+        (fUser && fUser.split('@')[0] === u);
 
       if (!userMatches) return false;
 
       const passMatches = (fPass && fPass === s) ||
-                          (!fPass && fEmail === s) ||
-                          (s === '123456') ||
-                          (fEmail && fEmail === s) ||
-                          (fUser && fUser === s) ||
-                          (fEmail && fEmail.split('@')[0] === s) ||
-                          (fUser && fUser.split('@')[0] === s);
+        (!fPass && fEmail === s) ||
+        (s === '123456') ||
+        (fEmail && fEmail === s) ||
+        (fUser && fUser === s) ||
+        (fEmail && fEmail.split('@')[0] === s) ||
+        (fUser && fUser.split('@')[0] === s);
 
       return passMatches;
     });
@@ -4198,16 +4283,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (matchedFuncionario) {
       setIsAdminLoggedIn(true);
       localStorage.setItem('condo_admin_auth', 'true');
-      
+
       const fPerms = matchedFuncionario.permissoesModulos;
       const hasExplicitPerms = Array.isArray(fPerms) && fPerms.length > 0;
       const isTotalAccess = (matchedFuncionario as any).tipoAcesso === 'total' && (!hasExplicitPerms || (fPerms ? fPerms.length >= 17 : false));
 
       const userPermissoes: AdminModuloKey[] = hasExplicitPerms && fPerms
         ? fPerms
-        : (isTotalAccess 
-            ? ALL_ADMIN_MODULOS 
-            : (matchedFuncionario.categoria === 'Portaria' ? ['portaria', 'mudancas'] : ['portaria']));
+        : (isTotalAccess
+          ? ALL_ADMIN_MODULOS
+          : (matchedFuncionario.categoria === 'Portaria' ? ['portaria', 'mudancas'] : ['portaria']));
 
       const isGestaoOrSubsindico = matchedFuncionario.categoria === 'Gestão' || (matchedFuncionario.funcao || '').toLowerCase().includes('subsindic');
 
@@ -4239,8 +4324,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Atualiza último acesso
       setFuncionarios(prev => prev.map(f => f.id === matchedFuncionario.id ? { ...f, ultimoAcesso: new Date().toISOString() } : f));
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         needsActivation: false
       };
     }
@@ -4322,7 +4407,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setIsAdminLoggedIn(true);
         localStorage.setItem('condo_admin_auth', 'true');
       }
-      
+
       const adminUserObj: User = {
         id: matchedAdmin.id,
         nome: matchedAdmin.nome,
@@ -4358,13 +4443,13 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const concluirPrimeiroAcessoAdmin = async (
-    email: string, 
-    novaSenha: string, 
+    email: string,
+    novaSenha: string,
     nome: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const canonicalCondoId = currentCondo?.id || condoTenantId || condominios[0]?.id || '';
-      
+
       // 1. Grava no Firebase Authentication e no Firestore users/{uid} + condominios/{condoId}
       const authResult = await ativarSindicoAuth({
         condoId: canonicalCondoId,
@@ -4428,9 +4513,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const isDevPass = (senhaLimpa === 'dev123' || senhaLimpa === 'dev' || senhaLimpa === 'dev@dev.com' || senhaLimpa === 'admin');
     if (isDevUser && isDevPass) {
       const ALL_MODULOS: AdminModuloKey[] = [
-        'portaria', 'mudancas', 'dependencias', 'reparos', 
-        'reclamacoes', 'eventos', 'servicos', 'unidades', 
-        'equipe', 'financeiro', 'regras', 'imoveis', 
+        'portaria', 'mudancas', 'dependencias', 'reparos',
+        'reclamacoes', 'eventos', 'servicos', 'unidades',
+        'equipe', 'financeiro', 'regras', 'imoveis',
         'fornecedores', 'enjoei', 'assembleias', 'diario-sindico'
       ];
 
@@ -4474,30 +4559,30 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const fPass = (f.senha || '').trim();
 
       const userMatches = (fEmail && fEmail === inputLower) ||
-                          (fUser && fUser === inputLower) ||
-                          (fNome && fNome === inputLower) ||
-                          (fNome && fNome.split(' ')[0] === inputLower) ||
-                          (fEmail && fEmail.split('@')[0] === inputLower) ||
-                          (fUser && fUser.split('@')[0] === inputLower);
+        (fUser && fUser === inputLower) ||
+        (fNome && fNome === inputLower) ||
+        (fNome && fNome.split(' ')[0] === inputLower) ||
+        (fEmail && fEmail.split('@')[0] === inputLower) ||
+        (fUser && fUser.split('@')[0] === inputLower);
 
       if (!userMatches) return false;
 
       const passMatches = (fPass && fPass === senhaLimpa) ||
-                          (!fPass && fEmail === senhaLimpa) ||
-                          (senhaLimpa === '123456') ||
-                          (fEmail && fEmail === senhaLimpa) ||
-                          (fUser && fUser === senhaLimpa) ||
-                          (fEmail && fEmail.split('@')[0] === senhaLimpa) ||
-                          (fUser && fUser.split('@')[0] === senhaLimpa);
+        (!fPass && fEmail === senhaLimpa) ||
+        (senhaLimpa === '123456') ||
+        (fEmail && fEmail === senhaLimpa) ||
+        (fUser && fUser === senhaLimpa) ||
+        (fEmail && fEmail.split('@')[0] === senhaLimpa) ||
+        (fUser && fUser.split('@')[0] === senhaLimpa);
 
       return passMatches;
     });
 
     if (matchedFuncionario) {
       if (matchedFuncionario.permiteAcessoAreaMorador === false) {
-        return { 
-          success: false, 
-          message: 'Colaborador sem permissão para acessar o Ambiente dos Moradores. Solicite a liberação ao Síndico no Painel.' 
+        return {
+          success: false,
+          message: 'Colaborador sem permissão para acessar o Ambiente dos Moradores. Solicite a liberação ao Síndico no Painel.'
         };
       }
 
@@ -4508,11 +4593,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const hasExplicitPerms = Array.isArray(fPerms) && fPerms.length > 0;
       const isTotalAccess = (matchedFuncionario as any).tipoAcesso === 'total' && (!hasExplicitPerms || (fPerms ? fPerms.length >= 17 : false));
 
-      const userPermissoes: AdminModuloKey[] = hasExplicitPerms && fPerms 
+      const userPermissoes: AdminModuloKey[] = hasExplicitPerms && fPerms
         ? fPerms
-        : (isTotalAccess 
-            ? ALL_ADMIN_MODULOS 
-            : (matchedFuncionario.categoria === 'Portaria' ? ['portaria', 'mudancas'] : ['portaria']));
+        : (isTotalAccess
+          ? ALL_ADMIN_MODULOS
+          : (matchedFuncionario.categoria === 'Portaria' ? ['portaria', 'mudancas'] : ['portaria']));
 
       const isGestaoOrSubsindico = matchedFuncionario.categoria === 'Gestão' || (matchedFuncionario.funcao || '').toLowerCase().includes('subsindic');
 
@@ -4549,11 +4634,11 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     // Busca a unidade com correspondência flexível ou ID exato (ex: u.id, Casa 222 (Rua Argentina), 21, Apto 21, 021)
-    const unidadeEncontrada = unidades.find(u => 
+    const unidadeEncontrada = unidades.find(u =>
       u.id === unidadeInput.trim() ||
       (u.rua ? `casa ${u.numero} (${u.rua})`.toLowerCase() === unidadeInput.trim().toLowerCase() : false) ||
       (u.rua ? `${u.numero} (${u.rua})`.toLowerCase() === unidadeInput.trim().toLowerCase() : false) ||
-      normalizeUnitNumber(u.numero) === numLimpo || 
+      normalizeUnitNumber(u.numero) === numLimpo ||
       u.numero.toLowerCase() === unidadeInput.trim().toLowerCase()
     );
 
@@ -4565,7 +4650,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // 1. Verificação de Suspensão pelo Síndico:
     const isSuspensa = Boolean(
-      unidadeEncontrada.suspensa || 
+      unidadeEncontrada.suspensa ||
       unidadeEncontrada.statusCadastro === 'Suspenso'
     );
     if (isSuspensa) {
@@ -4580,7 +4665,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // 2. Verifica se a residência já possui morador cadastrado
     const isCadastrado = Boolean(
       (unidadeEncontrada.statusCadastro === 'Cadastrado' || unidadeEncontrada.statusCadastro === 'AguardandoConfirmacao' || unidadeEncontrada.senhaPadraoAlterada) &&
-      unidadeEncontrada.moradores && 
+      unidadeEncontrada.moradores &&
       unidadeEncontrada.moradores.length > 0 &&
       !unidadeEncontrada.semMoradores
     );
@@ -4589,27 +4674,27 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Não permite login diretamente com senha arbitrária. Morador deve ir para o cadastro.
     if (!isCadastrado) {
       setPendingRegistrationUnit(unidadeEncontrada);
-      return { 
-        success: false, 
-        message: isCasas 
-          ? 'Esta casa ainda não possui morador cadastrado. Clique em "Cadastrar minha casa" abaixo.' 
-          : 'Esta unidade ainda não possui morador cadastrado. Clique em "Cadastrar minha unidade" abaixo.' 
+      return {
+        success: false,
+        message: isCasas
+          ? 'Esta casa ainda não possui morador cadastrado. Clique em "Cadastrar minha casa" abaixo.'
+          : 'Esta unidade ainda não possui morador cadastrado. Clique em "Cadastrar minha unidade" abaixo.'
       };
     }
 
     // 2.1 Verifica se o morador está aguardando aprovação/confirmação da administração
     if (unidadeEncontrada.statusCadastro === 'AguardandoConfirmacao' || unidadeEncontrada.moradorConfirmado === false) {
-      return { 
-        success: false, 
-        message: 'Seu cadastro foi recebido com sucesso e está aguardando a confirmação da administração para liberação do acesso.' 
+      return {
+        success: false,
+        message: 'Seu cadastro foi recebido com sucesso e está aguardando a confirmação da administração para liberação do acesso.'
       };
     }
 
     // 3. Se a residência JÁ tem morador cadastrado e confirmado: exige a senha pessoal criada no cadastro
     if (!senhaLimpa) {
-      return { 
-        success: false, 
-        message: isCasas ? 'Digite a sua senha de acesso da casa.' : 'Digite a sua senha de acesso da unidade.' 
+      return {
+        success: false,
+        message: isCasas ? 'Digite a sua senha de acesso da casa.' : 'Digite a sua senha de acesso da unidade.'
       };
     }
 
@@ -4617,9 +4702,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const isSenhaValida = senhaLimpa === senhaPessoal;
 
     if (!isSenhaValida) {
-      return { 
-        success: false, 
-        message: isCasas ? 'Senha incorreta para esta casa.' : 'Senha incorreta para este apartamento.' 
+      return {
+        success: false,
+        message: isCasas ? 'Senha incorreta para esta casa.' : 'Senha incorreta para este apartamento.'
       };
     }
 
@@ -4660,7 +4745,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const atualizadas = prev.map(u => u.id === unidadeId ? unidadeAtualizada : u);
         try {
           localStorage.setItem(`condo_unidades_list_${canonicalCondoId}`, JSON.stringify(atualizadas));
-        } catch {}
+        } catch { }
         return atualizadas;
       });
 
@@ -4697,7 +4782,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const atualizadas = prev.map(u => u.id === unidadeId ? unidadeAtualizada : u);
         try {
           localStorage.setItem(`condo_unidades_list_${canonicalCondoId}`, JSON.stringify(atualizadas));
-        } catch {}
+        } catch { }
         return atualizadas;
       });
 
@@ -4773,7 +4858,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       try {
         localStorage.setItem(`condo_unidades_list_${canonicalCondoId}`, JSON.stringify(atualizadas));
-      } catch {}
+      } catch { }
       return atualizadas;
     });
 
@@ -4783,7 +4868,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (canonicalUnitId) {
           localStorage.setItem(`condo_saved_pass_${canonicalUnitId}`, novaSenha.trim());
         }
-      } catch {}
+      } catch { }
     }
 
     return { success: true };
@@ -4805,7 +4890,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const atualizadas = prev.map(u => (u.id === alvo.id || normalizeUnitNumber(u.numero) === numLimpo ? unidadeAtualizada : u));
       try {
         localStorage.setItem(`condo_unidades_list_${condoTenantId}`, JSON.stringify(atualizadas));
-      } catch {}
+      } catch { }
       return atualizadas;
     });
 
@@ -4816,26 +4901,26 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const solicitarRecuperacaoSenha = async (
     unidadeOuEmail: string,
     isAdminHint?: boolean
-  ): Promise<{ 
-    success: boolean; 
-    emailMascarado?: string; 
-    codigoSimulado?: string; 
+  ): Promise<{
+    success: boolean;
+    emailMascarado?: string;
+    codigoSimulado?: string;
     message?: string;
     isFirebaseSent?: boolean;
   }> => {
     const termo = unidadeOuEmail.trim().toLowerCase();
     if (!termo) {
-      return { 
-        success: false, 
-        message: 'Informe o seu e-mail cadastrado.' 
+      return {
+        success: false,
+        message: 'Informe o seu e-mail cadastrado.'
       };
     }
 
     // 1. Verificação Multi-Tenant: se o e-mail pertence explicitamente a outro condomínio
     if (termo.includes('@')) {
-      const outroCondo = condominios.find(c => 
-        c.id !== currentCondo.id && 
-        c.emailAdmin && 
+      const outroCondo = condominios.find(c =>
+        c.id !== currentCondo.id &&
+        c.emailAdmin &&
         c.emailAdmin.trim().toLowerCase() === termo
       );
       if (outroCondo) {
@@ -4855,7 +4940,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     // 3. Localiza se pertence a algum morador cadastrado por e-mail
-    const unidadeMorador = !funcionarioMatch ? unidades.find(u => 
+    const unidadeMorador = !funcionarioMatch ? unidades.find(u =>
       (u.emailResponsavel && u.emailResponsavel.trim().toLowerCase() === termo) ||
       u.moradores.some(m => m.email && m.email.trim().toLowerCase() === termo)
     ) : null;
@@ -4903,8 +4988,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const redefinirSenhaComCodigo = async (
-    unidadeOuEmail: string, 
-    codigo: string, 
+    unidadeOuEmail: string,
+    codigo: string,
     novaSenha: string
   ): Promise<{ success: boolean; message?: string }> => {
     const termo = unidadeOuEmail.trim().toLowerCase();
@@ -4934,16 +5019,16 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     // 2. Localiza se é Morador por e-mail
-    const unidadeMorador = unidades.find(u => 
+    const unidadeMorador = unidades.find(u =>
       (u.emailResponsavel && u.emailResponsavel.trim().toLowerCase() === termo) ||
       u.moradores.some(m => m.email && m.email.trim().toLowerCase() === termo)
     );
 
     if (unidadeMorador) {
       atualizarSenhaUnidade(unidadeMorador.numero, senhaLimpa);
-      return { 
-        success: true, 
-        message: `Senha da Unidade ${unidadeMorador.numero} alterada com sucesso! Você já pode entrar com sua nova senha.` 
+      return {
+        success: true,
+        message: `Senha da Unidade ${unidadeMorador.numero} alterada com sucesso! Você já pode entrar com sua nova senha.`
       };
     }
 
@@ -4986,22 +5071,22 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }).catch(console.warn);
       }
 
-      return { 
-        success: true, 
-        message: 'Senha do administrador redefinida com sucesso! Você já pode entrar com sua nova senha.' 
+      return {
+        success: true,
+        message: 'Senha do administrador redefinida com sucesso! Você já pode entrar com sua nova senha.'
       };
     }
 
-    return { 
-      success: false, 
-      message: 'Nenhum usuário correspondente encontrado para este e-mail. Fale com o síndico para resetar seu acesso.' 
+    return {
+      success: false,
+      message: 'Nenhum usuário correspondente encontrado para este e-mail. Fale com o síndico para resetar seu acesso.'
     };
   };
 
   const atualizarMoradoresUnidade = async (
-    unidadeId: string, 
-    moradores: User[], 
-    fotoCelula?: string, 
+    unidadeId: string,
+    moradores: User[],
+    fotoCelula?: string,
     nomeCelula?: string
   ) => {
     const numLimpo = normalizeUnitNumber(unidadeId);
@@ -5033,7 +5118,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const atualizadas = prev.map(u => (u.id === alvo.id || normalizeUnitNumber(u.numero) === numLimpo ? finalUnidade : u));
       try {
         localStorage.setItem(`condo_unidades_list_${canonicalCondoId}`, JSON.stringify(atualizadas));
-      } catch {}
+      } catch { }
       return atualizadas;
     });
 
@@ -5172,7 +5257,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(atualizadas));
         localStorage.setItem('condo_reclamacoes_list', JSON.stringify(atualizadas));
-      } catch {}
+      } catch { }
 
       return atualizadas;
     });
@@ -5222,7 +5307,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(atualizadas));
         localStorage.setItem('condo_reclamacoes_list', JSON.stringify(atualizadas));
-      } catch {}
+      } catch { }
 
       return atualizadas;
     });
@@ -5487,7 +5572,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(atualizados));
         localStorage.removeItem('condo_reparos_list');
-      } catch {}
+      } catch { }
 
       return atualizados;
     });
@@ -5537,55 +5622,80 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(atualizados));
         localStorage.removeItem('condo_reparos_list');
-      } catch {}
+      } catch { }
 
       return atualizados;
     });
   };
 
   const toggleOcultarComentarioReparo = (reparoId: string, comentarioId: string, motivo?: string) => {
-    setReparos(prev => prev.map(rep => {
-      if (rep.id === reparoId) {
-        const atualizado = {
-          ...rep,
-          comentarios: (rep.comentarios || []).map(c => {
-            if (c.id === comentarioId) {
-              const novoOculto = !c.oculto;
-              return {
-                ...c,
-                oculto: novoOculto,
-                motivoOcultacao: novoOculto ? (motivo || 'Ocultado pela moderação administrativa') : undefined,
-                ocultadoEm: novoOculto ? new Date().toLocaleDateString('pt-BR') : undefined
-              };
-            }
-            return c;
-          })
-        };
+    setReparos(prev => {
+      const atualizados = prev.map(rep => {
+        if (rep.id === reparoId) {
+          const atualizado = {
+            ...rep,
+            comentarios: (rep.comentarios || []).map(c => {
+              if (c.id === comentarioId) {
+                const novoOculto = !c.oculto;
+                return {
+                  ...c,
+                  oculto: novoOculto,
+                  motivoOcultacao: novoOculto ? (motivo || 'Ocultado pela moderação administrativa') : undefined,
+                  ocultadoEm: novoOculto ? new Date().toLocaleDateString('pt-BR') : undefined
+                };
+              }
+              return c;
+            })
+          };
 
-        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', atualizado).catch(console.error);
-        return atualizado;
-      }
-      return rep;
-    }));
+          salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', atualizado).catch(console.error);
+          return atualizado;
+        }
+        return rep;
+      });
+
+      try {
+        localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(atualizados));
+        localStorage.setItem('condo_reparos_list', JSON.stringify(atualizados));
+      } catch { }
+
+      return atualizados;
+    });
   };
 
   const excluirComentarioReparo = (reparoId: string, comentarioId: string) => {
-    setReparos(prev => prev.map(rep => {
-      if (rep.id === reparoId) {
-        const atualizado = {
-          ...rep,
-          comentarios: (rep.comentarios || []).filter(c => c.id !== comentarioId)
-        };
+    setReparos(prev => {
+      const atualizados = prev.map(rep => {
+        if (rep.id === reparoId) {
+          const atualizado = {
+            ...rep,
+            comentarios: (rep.comentarios || []).filter(c => c.id !== comentarioId)
+          };
 
-        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', atualizado).catch(console.error);
-        return atualizado;
-      }
-      return rep;
-    }));
+          salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', atualizado).catch(console.error);
+          return atualizado;
+        }
+        return rep;
+      });
+
+      try {
+        localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(atualizados));
+        localStorage.setItem('condo_reparos_list', JSON.stringify(atualizados));
+      } catch { }
+
+      return atualizados;
+    });
   };
 
   const excluirReparo = (reparoId: string) => {
-    setReparos(prev => prev.filter(r => r.id !== reparoId));
+    setReparos(prev => {
+      const filtrados = prev.filter(r => r.id !== reparoId);
+      try {
+        localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(filtrados));
+        localStorage.setItem('condo_reparos_list', JSON.stringify(filtrados));
+      } catch { }
+      return filtrados;
+    });
     excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reparos', reparoId).catch(console.error);
   };
 
@@ -5632,7 +5742,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const atualizarStatusReparo = (reparoId: string, novoStatus: StatusReparo) => {
     const dataHoje = new Date().toLocaleDateString('pt-BR');
-    
+
     setReparos(prev => prev.map(rep => {
       if (rep.id === reparoId) {
         const novaStep = {
@@ -5704,7 +5814,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(lista));
         localStorage.setItem('condo_reclamacoes_list', JSON.stringify(lista));
-      } catch {}
+      } catch { }
       return lista;
     });
 
@@ -5713,10 +5823,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const adicionarReparo = (
-    titulo: string, 
-    descricao: string, 
-    porte: PorteReparo, 
-    categoria: CategoriaReparo, 
+    titulo: string,
+    descricao: string,
+    porte: PorteReparo,
+    categoria: CategoriaReparo,
     anexoUrl?: string,
     anexoTipo?: 'imagem' | 'video'
   ) => {
@@ -5762,7 +5872,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(lista));
         localStorage.removeItem('condo_reparos_list');
-      } catch {}
+      } catch { }
       return lista;
     });
 
@@ -5862,7 +5972,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const lista = prev.map(r => r.id === rep.id ? repAtualizado : r);
         try {
           localStorage.setItem(`condo_reparos_list_${condoTenantId}`, JSON.stringify(lista));
-        } catch {}
+        } catch { }
         return lista;
       });
 
@@ -5952,7 +6062,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const adicionarPassoTimelineBenfeitoria = async (
-    benfeitoriaId: string, 
+    benfeitoriaId: string,
     passo: Omit<PassoTimelineBenfeitoria, 'id'>
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -5985,7 +6095,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const salvarOrcamentosBenfeitoria = async (
-    benfeitoriaId: string, 
+    benfeitoriaId: string,
     orcamentos: OrcamentoBenfeitoria[]
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -6028,9 +6138,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const toggleVotacaoBenfeitoria = async (
-    benfeitoriaId: string, 
-    aberto: boolean, 
-    prazoFim?: string, 
+    benfeitoriaId: string,
+    aberto: boolean,
+    prazoFim?: string,
     dispararMensagem?: boolean
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -6043,8 +6153,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         data: new Date().toLocaleDateString('pt-BR'),
         status: 'votacao',
         titulo: aberto ? 'Votação Eletrônica Aberta' : 'Votação Eletrônica (Fase 3)',
-        descricao: aberto 
-          ? `Votação aberta para escolha do orçamento${prazoFim ? ` até ${new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.` 
+        descricao: aberto
+          ? `Votação aberta para escolha do orçamento${prazoFim ? ` até ${new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.`
           : 'Período de votação registrado pela administração.',
         criadoPor: currentUser.nome || 'Administração'
       };
@@ -6067,7 +6177,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (dispararMensagem && aberto && alvo.titulo) {
         const prazoFormatado = prazoFim ? new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'o prazo estipulado';
         enviarNotificacaoPrivada(
-          'todos', 
+          'todos',
           `A administração abriu a votação eletrônica dos orçamentos da melhoria "${alvo.titulo}". Acesse a aba Benfeitorias e registre seu voto até ${prazoFormatado}.`,
           `🗳️ Votação Aberta: ${alvo.titulo}`
         );
@@ -6084,7 +6194,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const votarOrcamentoBenfeitoria = async (
-    benfeitoriaId: string, 
+    benfeitoriaId: string,
     orcamentoIdEscolhido: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -6133,7 +6243,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const definirContratacaoBenfeitoria = async (
-    benfeitoriaId: string, 
+    benfeitoriaId: string,
     contratacao: EmpresaContratadaInfo
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -6176,7 +6286,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const adicionarDiarioObraBenfeitoria = async (
-    benfeitoriaId: string, 
+    benfeitoriaId: string,
     item: Omit<DiarioObraItem, 'id'>
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -6420,9 +6530,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const toggleAvaliacaoBenfeitoria = async (
-    benfeitoriaId: string, 
-    aberto: boolean, 
-    prazoFim?: string, 
+    benfeitoriaId: string,
+    aberto: boolean,
+    prazoFim?: string,
     dispararMensagem?: boolean
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -6435,8 +6545,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         data: new Date().toLocaleDateString('pt-BR'),
         status: 'avaliacao',
         titulo: aberto ? 'Avaliação dos Condôminos Aberta' : 'Avaliação dos Condôminos (Fase 6)',
-        descricao: aberto 
-          ? `Obra entregue para avaliação dos condôminos${prazoFim ? ` até ${new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.` 
+        descricao: aberto
+          ? `Obra entregue para avaliação dos condôminos${prazoFim ? ` até ${new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}.`
           : 'Fase de avaliação dos condôminos registrada pela administração.',
         criadoPor: currentUser.nome || 'Administração'
       };
@@ -6459,7 +6569,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (dispararMensagem && aberto && alvo.titulo) {
         const prazoFormatado = prazoFim ? new Date(prazoFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'breve';
         enviarNotificacaoPrivada(
-          'todos', 
+          'todos',
           `A melhoria/obra "${alvo.titulo}" foi concluída pela empresa contratada! Por favor, acesse a aba Benfeitorias e avalie a qualidade do serviço de 1 a 5 estrelas até ${prazoFormatado}.`,
           `⭐ Avalie a Obra Entregue: ${alvo.titulo}`
         );
@@ -6476,8 +6586,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const avaliarBenfeitoria = async (
-    benfeitoriaId: string, 
-    nota: number, 
+    benfeitoriaId: string,
+    nota: number,
     comentario?: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -6531,7 +6641,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const cancelarBenfeitoria = async (
-    benfeitoriaId: string, 
+    benfeitoriaId: string,
     justificativa: { motivo: string; fotos: string[]; dataCancelamento: string }
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -6575,7 +6685,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const concluirBenfeitoriaFinal = async (
-    benfeitoriaId: string, 
+    benfeitoriaId: string,
     dadosEntrega?: { fotosDepois?: string[]; relatoFinal?: string; dataEntrega?: string }
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -6618,34 +6728,34 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const atualizarStatusVaga = (
-    vagaId: string, 
-    novoStatus: StatusVaga, 
+    vagaId: string,
+    novoStatus: StatusVaga,
     dadosAdicionais?: { veiculo?: VeiculoInfo; valorAluguelMensal?: number; observacoes?: string; alugadaParaUnidade?: string; locatarioNome?: string }
   ) => {
     const vagaExistente = vagasGaragem.find((v: VagaGaragem) => v.id === vagaId);
     const atualizada: VagaGaragem = vagaExistente
       ? {
-          ...vagaExistente,
-          status: novoStatus,
-          veiculo: dadosAdicionais?.veiculo !== undefined ? dadosAdicionais.veiculo : vagaExistente.veiculo,
-          valorAluguelMensal: dadosAdicionais?.valorAluguelMensal !== undefined ? dadosAdicionais.valorAluguelMensal : vagaExistente.valorAluguelMensal,
-          observacoes: dadosAdicionais?.observacoes !== undefined ? dadosAdicionais.observacoes : vagaExistente.observacoes,
-          alugadaParaUnidade: dadosAdicionais?.alugadaParaUnidade !== undefined ? dadosAdicionais.alugadaParaUnidade : vagaExistente.alugadaParaUnidade,
-          locatarioNome: dadosAdicionais?.locatarioNome !== undefined ? dadosAdicionais.locatarioNome : vagaExistente.locatarioNome,
-          condominioId: condoTenantId
-        }
+        ...vagaExistente,
+        status: novoStatus,
+        veiculo: dadosAdicionais?.veiculo !== undefined ? dadosAdicionais.veiculo : vagaExistente.veiculo,
+        valorAluguelMensal: dadosAdicionais?.valorAluguelMensal !== undefined ? dadosAdicionais.valorAluguelMensal : vagaExistente.valorAluguelMensal,
+        observacoes: dadosAdicionais?.observacoes !== undefined ? dadosAdicionais.observacoes : vagaExistente.observacoes,
+        alugadaParaUnidade: dadosAdicionais?.alugadaParaUnidade !== undefined ? dadosAdicionais.alugadaParaUnidade : vagaExistente.alugadaParaUnidade,
+        locatarioNome: dadosAdicionais?.locatarioNome !== undefined ? dadosAdicionais.locatarioNome : vagaExistente.locatarioNome,
+        condominioId: condoTenantId
+      }
       : {
-          id: vagaId,
-          numeroVaga: vagaId.replace(/^vaga-[^-]+-/, ''),
-          subsolo: 'Subsolo 1',
-          unidadeNumero: vagaId.replace(/^vaga-[^-]+-/, ''),
-          bloco: 'Bloco A',
-          status: novoStatus,
-          moradorNome: currentUser?.nome || 'Morador',
-          interfoneRamal: currentUser?.unidade || '',
-          condominioId: condoTenantId,
-          ...dadosAdicionais
-        };
+        id: vagaId,
+        numeroVaga: vagaId.replace(/^vaga-[^-]+-/, ''),
+        subsolo: 'Subsolo 1',
+        unidadeNumero: vagaId.replace(/^vaga-[^-]+-/, ''),
+        bloco: 'Bloco A',
+        status: novoStatus,
+        moradorNome: currentUser?.nome || 'Morador',
+        interfoneRamal: currentUser?.unidade || '',
+        condominioId: condoTenantId,
+        ...dadosAdicionais
+      };
 
     setVagasFirestore(prev => {
       const idx = prev.findIndex(v => v.id === vagaId);
@@ -6661,19 +6771,19 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const solicitarReserva = async (
-    dependenciaId: string, 
-    dataReserva: string, 
+    dependenciaId: string,
+    dataReserva: string,
     periodo: ReservaDependencia['periodo'],
     observacoes?: string,
     comprovanteUrl?: string
   ): Promise<{ success: boolean; error?: string }> => {
     if (!condoTenantId) return { success: false, error: 'Condomínio não identificado.' };
-    
+
     // Validação de conflito de datas e horários
-    const reservasAtivasEspaco = reservas.filter(r => 
-      r.dependenciaId === dependenciaId && 
-      r.dataReserva === dataReserva && 
-      r.status !== 'Recusada' && 
+    const reservasAtivasEspaco = reservas.filter(r =>
+      r.dependenciaId === dependenciaId &&
+      r.dataReserva === dataReserva &&
+      r.status !== 'Recusada' &&
       r.status !== 'Cancelada'
     );
 
@@ -6684,9 +6794,9 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (temConflito) {
       const conflito = reservasAtivasEspaco[0];
-      return { 
-        success: false, 
-        error: `Este espaço já possui uma reserva (${conflito.periodo} - ${conflito.unidade}) para o dia ${dataReserva}. Escolha outra data ou turno disponível.` 
+      return {
+        success: false,
+        error: `Este espaço já possui uma reserva (${conflito.periodo} - ${conflito.unidade}) para o dia ${dataReserva}. Escolha outra data ou turno disponível.`
       };
     }
 
@@ -6723,10 +6833,10 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const atualizarStatusReserva = async (
-    reservaId: string, 
-    novoStatus: StatusReserva, 
-    respostaAdmin?: string, 
-    motivoRecusa?: string, 
+    reservaId: string,
+    novoStatus: StatusReserva,
+    respostaAdmin?: string,
+    motivoRecusa?: string,
     pago?: boolean
   ): Promise<{ success: boolean; error?: string }> => {
     if (!condoTenantId) return { success: false, error: 'Condomínio não identificado.' };
@@ -6758,7 +6868,7 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const anexarComprovanteReserva = async (
-    reservaId: string, 
+    reservaId: string,
     comprovanteUrl: string
   ): Promise<{ success: boolean; error?: string }> => {
     if (!condoTenantId) return { success: false, error: 'Condomínio não identificado.' };
@@ -6797,48 +6907,73 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const toggleOcultarComentario = (reclamacaoId: string, comentarioId: string, motivo?: string) => {
-    setReclamacoes(prev => prev.map(rec => {
-      if (rec.id === reclamacaoId) {
-        const atualizada = {
-          ...rec,
-          comentarios: (rec.comentarios || []).map(c => {
-            if (c.id === comentarioId) {
-              const novoOculto = !c.oculto;
-              return {
-                ...c,
-                oculto: novoOculto,
-                motivoOcultacao: novoOculto ? (motivo || 'Ocultado pela moderação administrativa') : undefined,
-                ocultadoEm: novoOculto ? new Date().toLocaleDateString('pt-BR') : undefined
-              };
-            }
-            return c;
-          })
-        };
+    setReclamacoes(prev => {
+      const atualizadas = prev.map(rec => {
+        if (rec.id === reclamacaoId) {
+          const atualizada = {
+            ...rec,
+            comentarios: (rec.comentarios || []).map(c => {
+              if (c.id === comentarioId) {
+                const novoOculto = !c.oculto;
+                return {
+                  ...c,
+                  oculto: novoOculto,
+                  motivoOcultacao: novoOculto ? (motivo || 'Ocultado pela moderação administrativa') : undefined,
+                  ocultadoEm: novoOculto ? new Date().toLocaleDateString('pt-BR') : undefined
+                };
+              }
+              return c;
+            })
+          };
 
-        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', atualizada).catch(console.error);
-        return atualizada;
-      }
-      return rec;
-    }));
+          salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', atualizada).catch(console.error);
+          return atualizada;
+        }
+        return rec;
+      });
+
+      try {
+        localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(atualizadas));
+        localStorage.setItem('condo_reclamacoes_list', JSON.stringify(atualizadas));
+      } catch { }
+
+      return atualizadas;
+    });
   };
 
   const excluirComentario = (reclamacaoId: string, comentarioId: string) => {
-    setReclamacoes(prev => prev.map(rec => {
-      if (rec.id === reclamacaoId) {
-        const atualizada = {
-          ...rec,
-          comentarios: (rec.comentarios || []).filter(c => c.id !== comentarioId)
-        };
+    setReclamacoes(prev => {
+      const atualizadas = prev.map(rec => {
+        if (rec.id === reclamacaoId) {
+          const atualizada = {
+            ...rec,
+            comentarios: (rec.comentarios || []).filter(c => c.id !== comentarioId)
+          };
 
-        salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', atualizada).catch(console.error);
-        return atualizada;
-      }
-      return rec;
-    }));
+          salvarDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', atualizada).catch(console.error);
+          return atualizada;
+        }
+        return rec;
+      });
+
+      try {
+        localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(atualizadas));
+        localStorage.setItem('condo_reclamacoes_list', JSON.stringify(atualizadas));
+      } catch { }
+
+      return atualizadas;
+    });
   };
 
   const excluirReclamacao = (reclamacaoId: string) => {
-    setReclamacoes(prev => prev.filter(r => r.id !== reclamacaoId));
+    setReclamacoes(prev => {
+      const filtradas = prev.filter(r => r.id !== reclamacaoId);
+      try {
+        localStorage.setItem(`condo_reclamacoes_list_${condoTenantId}`, JSON.stringify(filtradas));
+        localStorage.setItem('condo_reclamacoes_list', JSON.stringify(filtradas));
+      } catch { }
+      return filtradas;
+    });
     excluirDocumentoSubcolecaoFirestore(condoTenantId, 'reclamacoes', reclamacaoId).catch(console.error);
   };
 
@@ -6869,8 +7004,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const salvarNaLixeiraCondominio = async (
-    condoId: string, 
-    backupData: any, 
+    condoId: string,
+    backupData: any,
     metadata: { nomeCondo: string; excluidoPor?: string; totalUnidades?: number; tipoCondominio?: string }
   ) => {
     return await salvarNaLixeiraCondominioFirestore(condoId, backupData, metadata);
@@ -6910,6 +7045,8 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       excluirEvento,
       suspenderEvento,
       reativarEvento,
+      aprovarEvento,
+      rejeitarEvento,
       prestacaoContas,
       mesesPrestacao,
       categoriasDespesa,

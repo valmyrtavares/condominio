@@ -612,6 +612,7 @@ export interface Assembleia {
 }
 
 export type TipoVisibilidadeEvento = 'Público' | 'Privado';
+export type StatusAprovacaoEvento = 'pendente' | 'aprovado' | 'rejeitado';
 
 export interface EventoCondominio {
   id: string;
@@ -627,6 +628,10 @@ export interface EventoCondominio {
   imagem: string;
   ativo?: boolean;
   motivoSuspensao?: string;
+  statusAprovacao?: StatusAprovacaoEvento;
+  motivoRejeicao?: string;
+  aprovadoPor?: string;
+  aprovadoEm?: string;
   linkMaisInfo?: string;
   criadoEm?: string;
   condominioId: string;

@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useCondo, sortUnidades, deduplicateAndSortUnidades, isMockReclamacao } from '../../context/CondoContext';
-import { 
-  Unidade, 
-  AdminUser, 
-  AdminRole, 
-  ServicoMorador, 
-  Funcionario, 
-  StatusFuncionario, 
-  CategoriaFuncionario, 
-  EventoCondominio, 
+import {
+  Unidade,
+  AdminUser,
+  AdminRole,
+  ServicoMorador,
+  Funcionario,
+  StatusFuncionario,
+  CategoriaFuncionario,
+  EventoCondominio,
   Assembleia,
   Reclamacao,
   StatusReclamacao,
@@ -42,28 +42,28 @@ import {
   VagaGaragem
 } from '../../types';
 import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
-import { 
-  Building, 
+import {
+  Building,
   Building2,
   Database,
-  Plus, 
-  Trash2, 
-  Edit3, 
+  Plus,
+  Trash2,
+  Edit3,
   Edit2,
   ShoppingBag,
-  Check, 
-  X, 
-  KeyRound, 
+  Check,
+  X,
+  KeyRound,
   RotateCcw,
   LogOut,
   Table,
   LayoutGrid,
   Wand2,
-  Sparkles, 
-  ShieldCheck, 
-  Search, 
-  CheckCircle2, 
-  Copy, 
+  Sparkles,
+  ShieldCheck,
+  Search,
+  CheckCircle2,
+  Copy,
   ArrowLeft,
   ArrowLeftRight,
   Users,
@@ -76,7 +76,7 @@ import {
   ChevronUp,
   UserPlus,
   Mail,
-  Camera, 
+  Camera,
   Upload,
   PackageCheck,
   Package,
@@ -147,10 +147,10 @@ import { CreateCategoryModal } from '../../components/financeiro/CreateCategoryM
 import { ReceiptPdfModal } from '../../components/financeiro/ReceiptPdfModal';
 import { ImportExcelFinanceModal } from '../../components/financeiro/ImportExcelFinanceModal';
 import { FinanceGraphModal } from '../../components/financeiro/FinanceGraphModal';
-import { 
-  exportarMesFinanceiroExcel, 
-  downloadModeloSaidasExcel, 
-  downloadModeloEntradasExcel 
+import {
+  exportarMesFinanceiroExcel,
+  downloadModeloSaidasExcel,
+  downloadModeloEntradasExcel
 } from '../../utils/excelFinanceUtils';
 import { CreateEditRegraModal } from '../../components/admin/CreateEditRegraModal';
 import { CreateEditUnidadeDisponivelModal } from '../../components/admin/CreateEditUnidadeDisponivelModal';
@@ -200,7 +200,7 @@ export const resolveApoiadores = (
 
   // 2. Dos identificadores em string
   if (Array.isArray(item.apoiadores)) {
-    const todosMoradores = unidades.flatMap(u => 
+    const todosMoradores = unidades.flatMap(u =>
       (u.moradores || []).map(m => ({
         ...m,
         unidadeNumero: u.numero,
@@ -213,8 +213,8 @@ export const resolveApoiadores = (
       const idOrStr = String(rawId);
       if (seenIds.has(idOrStr)) continue;
 
-      const match = todosMoradores.find(m => 
-        m.id === idOrStr || 
+      const match = todosMoradores.find(m =>
+        m.id === idOrStr ||
         m.nome?.toLowerCase() === idOrStr.toLowerCase() ||
         m.email?.toLowerCase() === idOrStr.toLowerCase() ||
         m.unidade === idOrStr ||
@@ -353,21 +353,21 @@ const AdminCasaTableRow: React.FC<AdminCasaItemProps> = React.memo(({
   const isAguardando = hasMorador && (u.statusCadastro === 'AguardandoConfirmacao' || u.moradorConfirmado === false);
   const isConfirmado = hasMorador && !isAguardando;
 
-  const badgeText = isSuspensa 
-    ? 'Suspensa' 
-    : (isVazio 
-        ? 'Sem Moradores' 
-        : (isAguardando
-            ? 'Aguardando Aprovação'
-            : (isConfirmado ? 'Cadastrado' : 'Pendente')));
+  const badgeText = isSuspensa
+    ? 'Suspensa'
+    : (isVazio
+      ? 'Sem Moradores'
+      : (isAguardando
+        ? 'Aguardando Aprovação'
+        : (isConfirmado ? 'Cadastrado' : 'Pendente')));
 
   const badgeStyle = isSuspensa
     ? 'bg-rose-100 text-rose-950 border-rose-300 font-black'
     : (isVazio
-        ? 'bg-slate-100 text-slate-800 border-slate-300'
-        : (isAguardando
-            ? 'bg-amber-400 text-slate-950 border-amber-500 font-black shadow-xs'
-            : (isConfirmado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-slate-100 text-slate-600 border-dashed border-slate-300')));
+      ? 'bg-slate-100 text-slate-800 border-slate-300'
+      : (isAguardando
+        ? 'bg-amber-400 text-slate-950 border-amber-500 font-black shadow-xs'
+        : (isConfirmado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-slate-100 text-slate-600 border-dashed border-slate-300')));
 
   const moradorResponsavel = (u.moradores && u.moradores.length > 0)
     ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
@@ -396,7 +396,7 @@ const AdminCasaTableRow: React.FC<AdminCasaItemProps> = React.memo(({
             autoFocus
           />
         ) : (
-          <span 
+          <span
             onClick={handleStartEdit}
             className="font-black text-slate-950 text-xs sm:text-sm whitespace-nowrap cursor-pointer hover:text-amber-800 transition-colors"
             title="Clique para editar"
@@ -430,7 +430,7 @@ const AdminCasaTableRow: React.FC<AdminCasaItemProps> = React.memo(({
             />
           )
         ) : (
-          <span 
+          <span
             onClick={handleStartEdit}
             className="text-xs font-bold text-slate-900 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5 shadow-2xs cursor-pointer hover:bg-amber-100 transition-colors"
             title="Clique para editar"
@@ -446,14 +446,13 @@ const AdminCasaTableRow: React.FC<AdminCasaItemProps> = React.memo(({
         {nomeResponsavel ? (
           <div className="flex items-center justify-between gap-2.5">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className={`w-8 h-8 rounded-full border flex items-center justify-center text-xs shrink-0 overflow-hidden shadow-2xs ${
-                isAguardando ? 'bg-amber-100 border-amber-400 text-amber-950 ring-2 ring-amber-400/30' : 'bg-emerald-100 border-emerald-300 text-emerald-950'
-              }`}>
+              <div className={`w-8 h-8 rounded-full border flex items-center justify-center text-xs shrink-0 overflow-hidden shadow-2xs ${isAguardando ? 'bg-amber-100 border-amber-400 text-amber-950 ring-2 ring-amber-400/30' : 'bg-emerald-100 border-emerald-300 text-emerald-950'
+                }`}>
                 {moradorResponsavel?.foto || u.fotoCelula ? (
-                  <img 
-                    src={moradorResponsavel?.foto || u.fotoCelula} 
-                    alt={nomeResponsavel} 
-                    className="w-full h-full object-cover" 
+                  <img
+                    src={moradorResponsavel?.foto || u.fotoCelula}
+                    alt={nomeResponsavel}
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   nomeResponsavel.charAt(0).toUpperCase()
@@ -509,15 +508,18 @@ const AdminCasaTableRow: React.FC<AdminCasaItemProps> = React.memo(({
       </td>
 
       {/* 5. Reset de Senha */}
+      {/* 5. Trocar Morador */}
       <td className="py-2.5 px-3.5 text-center">
         <button
           type="button"
           onClick={() => onResetSenha(u)}
           className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-xs font-black inline-flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
           title={`Resetar cadastro e senha da Casa ${u.numero} para liberar novo cadastro`}
+          title={`Trocar morador da Casa ${u.numero} (limpar cadastro atual para um novo morador)`}
         >
           <RotateCcw className="w-3 h-3 text-amber-800" />
           <span>Reset Senha</span>
+          <span>Trocar Morador</span>
         </button>
       </td>
 
@@ -662,20 +664,20 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
   const isAguardando = hasMorador && (u.statusCadastro === 'AguardandoConfirmacao' || u.moradorConfirmado === false);
   const isConfirmado = hasMorador && !isAguardando;
 
-  const badgeText = isSuspensa 
-    ? 'Suspensa' 
-    : (isVazio 
-        ? 'Sem Moradores' 
-        : (isAguardando
-            ? 'Aguardando Aprovação'
-            : (isConfirmado ? 'Cadastrado' : 'Pendente')));
+  const badgeText = isSuspensa
+    ? 'Suspensa'
+    : (isVazio
+      ? 'Sem Moradores'
+      : (isAguardando
+        ? 'Aguardando Aprovação'
+        : (isConfirmado ? 'Cadastrado' : 'Pendente')));
   const badgeStyle = isSuspensa
     ? 'bg-rose-100 text-rose-950 border-rose-300 font-black'
     : (isVazio
-        ? 'bg-slate-200 text-slate-800 border-slate-300'
-        : (isAguardando
-            ? 'bg-amber-400 text-slate-950 border-amber-500 font-black shadow-xs'
-            : (isConfirmado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-slate-100 text-slate-600 border-dashed border-slate-300')));
+      ? 'bg-slate-200 text-slate-800 border-slate-300'
+      : (isAguardando
+        ? 'bg-amber-400 text-slate-950 border-amber-500 font-black shadow-xs'
+        : (isConfirmado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-slate-100 text-slate-600 border-dashed border-slate-300')));
 
   const moradorResponsavel = (u.moradores && u.moradores.length > 0)
     ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
@@ -761,9 +763,8 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
 
   return (
     <div
-      className={`bg-white border ${
-        isVazio ? 'border-slate-300 bg-slate-50/60' : 'border-slate-200 hover:border-amber-400'
-      } rounded-2xl p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-2.5 overflow-hidden`}
+      className={`bg-white border ${isVazio ? 'border-slate-300 bg-slate-50/60' : 'border-slate-200 hover:border-amber-400'
+        } rounded-2xl p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-2.5 overflow-hidden`}
     >
       {/* Topo do Card */}
       <div className="flex items-center justify-between gap-2">
@@ -772,7 +773,7 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
             <span className="text-[11px] font-black text-amber-950 bg-amber-100/90 px-2 py-0.5 rounded-lg border border-amber-300 shadow-2xs">
               #{index + 1}
             </span>
-            <h4 
+            <h4
               onClick={handleStartEdit}
               className="font-black text-sm sm:text-base text-slate-950 leading-tight truncate cursor-pointer hover:text-amber-800 transition-colors"
               title="Clique para editar"
@@ -780,7 +781,7 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
               {u.numero ? (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`) : 'Sem número'}
             </h4>
           </div>
-          <span 
+          <span
             onClick={handleStartEdit}
             className="text-[10px] sm:text-[11px] font-bold text-slate-600 flex items-center gap-1 mt-1 truncate cursor-pointer hover:text-amber-800 transition-colors"
             title="Clique para editar"
@@ -800,10 +801,10 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-950 font-black text-xs shrink-0 overflow-hidden shadow-2xs">
             {moradorResponsavel?.foto || u.fotoCelula ? (
-              <img 
-                src={moradorResponsavel?.foto || u.fotoCelula} 
-                alt={nomeResponsavel || ''} 
-                className="w-full h-full object-cover" 
+              <img
+                src={moradorResponsavel?.foto || u.fotoCelula}
+                alt={nomeResponsavel || ''}
+                className="w-full h-full object-cover"
               />
             ) : (
               (nomeResponsavel ? nomeResponsavel.charAt(0).toUpperCase() : '?')
@@ -857,9 +858,11 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
             onClick={() => onResetSenha(u)}
             className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer shadow-2xs"
             title={`Resetar cadastro e senha da Casa ${u.numero} para liberar novo cadastro`}
+            title={`Trocar morador da Casa ${u.numero} (limpar cadastro atual para um novo morador)`}
           >
             <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
             <span>Reset Senha</span>
+            <span>Trocar Morador</span>
           </button>
         </div>
       </div>
@@ -867,7 +870,7 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
       {/* Ações: Check Vazio & Suspensa + Editar + Notificar + Excluir */}
       <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
         <div className="flex items-center gap-2 shrink-0">
-          <label 
+          <label
             className="flex items-center gap-1 cursor-pointer select-none group bg-slate-100/90 hover:bg-amber-100/70 px-1.5 py-1 rounded-lg border border-slate-200 transition-colors shrink-0"
             title="Marcar como casa vazia / sem moradores"
           >
@@ -877,21 +880,19 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
               onChange={() => onToggleVazio(u.id)}
               className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer accent-amber-600"
             />
-            <span className={`text-[9px] uppercase tracking-tight transition-colors ${
-              isVazio 
-                ? 'text-slate-950 font-black' 
+            <span className={`text-[9px] uppercase tracking-tight transition-colors ${isVazio
+                ? 'text-slate-950 font-black'
                 : 'text-slate-500 font-bold group-hover:text-slate-800'
-            }`}>
+              }`}>
               Vazio
             </span>
           </label>
 
-          <label 
-            className={`flex items-center gap-1 cursor-pointer select-none px-1.5 py-1 rounded-lg border transition-colors shrink-0 ${
-              isSuspensa
+          <label
+            className={`flex items-center gap-1 cursor-pointer select-none px-1.5 py-1 rounded-lg border transition-colors shrink-0 ${isSuspensa
                 ? 'bg-rose-100 border-rose-300 text-rose-950'
                 : 'bg-slate-100/90 hover:bg-rose-50 border-slate-200 text-slate-500 hover:text-rose-900'
-            }`}
+              }`}
             title="Suspender ou bloquear cadastro/acesso desta casa pelo síndico"
           >
             <input
@@ -943,19 +944,19 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
 });
 
 export const AdminPanelScreen: React.FC = () => {
-  const { 
-    unidades, 
-    adicionarUnidade, 
-    editarUnidade, 
+  const {
+    unidades,
+    adicionarUnidade,
+    editarUnidade,
     resetarSenhaUnidade,
     confirmarMoradorUnidade,
     recusarMoradorUnidade,
-    excluirUnidade, 
+    excluirUnidade,
     toggleUnidadeSemMoradores,
     toggleUnidadeSuspensa,
     gerarUnidadesAutomaticas,
     currentCondo,
-    logoutAdmin, 
+    logoutAdmin,
     setCurrentScreen,
     currentUser,
     adminUsers,
@@ -978,6 +979,8 @@ export const AdminPanelScreen: React.FC = () => {
     excluirEvento,
     suspenderEvento,
     reativarEvento,
+    aprovarEvento,
+    rejeitarEvento,
     assembleias,
     adicionarAssembleia,
     editarAssembleia,
@@ -1133,7 +1136,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [searchDependenciaAdmin, setSearchDependenciaAdmin] = useState('');
   const [filtroTipoDependenciaAdmin, setFiltroTipoDependenciaAdmin] = useState('Todas');
   const [filtroRegimeDependenciaAdmin, setFiltroRegimeDependenciaAdmin] = useState('Todas');
-  
+
   // Reservas de Dependências State
   const [searchReservaAdmin, setSearchReservaAdmin] = useState('');
   const [filtroStatusReservaAdmin, setFiltroStatusReservaAdmin] = useState('Todas');
@@ -1206,11 +1209,11 @@ export const AdminPanelScreen: React.FC = () => {
   const [expandedReclamacoesInAdmin, setExpandedReclamacoesInAdmin] = useState<Record<string, boolean>>({});
   const [expandedCommentsInAdmin, setExpandedCommentsInAdmin] = useState<Record<string, boolean>>({});
   const [expandedApoiadoresInReclamacoesAdmin, setExpandedApoiadoresInReclamacoesAdmin] = useState<Record<string, boolean>>({});
-  const [motivoOcultacaoModal, setMotivoOcultacaoModal] = useState<{ 
-    isOpen: boolean; 
-    reclamacaoId: string; 
-    comentarioId: string; 
-    autorNome: string; 
+  const [motivoOcultacaoModal, setMotivoOcultacaoModal] = useState<{
+    isOpen: boolean;
+    reclamacaoId: string;
+    comentarioId: string;
+    autorNome: string;
     autorUnidade: string;
     texto: string;
   } | null>(null);
@@ -1226,11 +1229,11 @@ export const AdminPanelScreen: React.FC = () => {
   const [expandedOrcamentosInReparosAdmin, setExpandedOrcamentosInReparosAdmin] = useState<Record<string, boolean>>({});
   const [expandedApoiadoresInReparosAdmin, setExpandedApoiadoresInReparosAdmin] = useState<Record<string, boolean>>({});
   const [expandedReparosInAdmin, setExpandedReparosInAdmin] = useState<Record<string, boolean>>({});
-  const [motivoOcultacaoReparoModal, setMotivoOcultacaoReparoModal] = useState<{ 
-    isOpen: boolean; 
-    reparoId: string; 
-    comentarioId: string; 
-    autorNome: string; 
+  const [motivoOcultacaoReparoModal, setMotivoOcultacaoReparoModal] = useState<{
+    isOpen: boolean;
+    reparoId: string;
+    comentarioId: string;
+    autorNome: string;
     autorUnidade: string;
     texto: string;
   } | null>(null);
@@ -1310,7 +1313,7 @@ export const AdminPanelScreen: React.FC = () => {
   const [searchEvento, setSearchEvento] = useState('');
   const [eventoToEditInAdmin, setEventoToEditInAdmin] = useState<EventoCondominio | null>(null);
   const [isCreateEditEventoAdminOpen, setIsCreateEditEventoAdminOpen] = useState(false);
-  const [filtroPeriodoEventoAdmin, setFiltroPeriodoEventoAdmin] = useState<'todos' | 'proximos' | 'passados'>('todos');
+  const [filtroPeriodoEventoAdmin, setFiltroPeriodoEventoAdmin] = useState<'todos' | 'pendentes' | 'proximos' | 'passados'>('todos');
 
   // Form Unidades
   const [novoNumero, setNovoNumero] = useState('');
@@ -1466,12 +1469,13 @@ export const AdminPanelScreen: React.FC = () => {
   }, [editarUnidade, editVaga, editNumero, editRua, editBloco, isCasas]);
 
   const handleResetSenha = (u: Unidade) => {
-    const unitLabel = isCasas 
-      ? (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`) 
+    const unitLabel = isCasas
+      ? (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`)
       : (u.numero ? `Apto ${u.numero}` : 'apartamento');
 
     const confirmou = window.confirm(
       `Deseja realmente resetar o cadastro e senha ${isCasas ? `da ${unitLabel}` : `do ${unitLabel}`}?\n\nEsta ação liberará a residência para que o morador possa selecioná-la e realizar um novo cadastro a partir do início (definindo uma nova senha pessoal).\n\nUse esta opção caso o morador tenha esquecido a senha e o e-mail cadastrado.`
+        `Deseja realmente trocar o morador ${isCasas ? `da ${unitLabel}` : `do ${unitLabel}`}?\n\nEsta ação removerá o perfil do morador atual e liberará a residência para que o próximo morador possa selecioná-la e realizar um novo cadastro do zero.`
     );
     if (!confirmou) return;
 
@@ -1483,8 +1487,8 @@ export const AdminPanelScreen: React.FC = () => {
 
   const handleConfirmarMorador = useCallback(async (u: Unidade) => {
     const moradorNome = u.moradores?.[0]?.nome || u.nomeCelula || 'este morador';
-    const unitLabel = isCasas 
-      ? (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`) 
+    const unitLabel = isCasas
+      ? (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`)
       : (u.numero ? `Apto ${u.numero}` : 'esta unidade');
 
     const confirmou = window.confirm(
@@ -1501,8 +1505,8 @@ export const AdminPanelScreen: React.FC = () => {
 
   const handleRecusarMorador = useCallback(async (u: Unidade) => {
     const moradorNome = u.moradores?.[0]?.nome || u.nomeCelula || 'este morador';
-    const unitLabel = isCasas 
-      ? (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`) 
+    const unitLabel = isCasas
+      ? (u.numero.toLowerCase().startsWith('casa') ? u.numero : `Casa ${u.numero}`)
       : (u.numero ? `Apto ${u.numero}` : 'esta unidade');
 
     const confirmou = window.confirm(
@@ -1686,7 +1690,7 @@ export const AdminPanelScreen: React.FC = () => {
       const emailRespStr = (u.emailResponsavel || '').toLowerCase();
       const nomeMoradorStr = ((u as any).nomeMorador || '').toLowerCase();
 
-      const moradoresText = (u.moradores || []).map(m => 
+      const moradoresText = (u.moradores || []).map(m =>
         [m.nome, m.email, m.profissao, (m as any).sobrenome, (m as any).telefone, (m as any).cpf].filter(Boolean).join(' ').toLowerCase()
       ).join(' ');
 
@@ -1759,7 +1763,7 @@ export const AdminPanelScreen: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24 animate-in fade-in duration-300 w-full max-w-full overflow-x-hidden">
-      
+
       {/* Top Header with Navigation & Logout */}
       <div className="flex items-center justify-between gap-2 border-b border-amber-900/10 pb-3">
         <button
@@ -1873,24 +1877,22 @@ export const AdminPanelScreen: React.FC = () => {
       )}
 
       {/* Card Exclusivo do Diário do Síndico & Linha do Tempo */}
-      <div 
+      <div
         onClick={() => {
           if (!canAccessDiario) return;
           setCurrentScreen('diario-sindico');
         }}
-        className={`rounded-3xl p-5 sm:p-6 border-2 shadow-xl transition-all group select-none ${
-          canAccessDiario
+        className={`rounded-3xl p-5 sm:p-6 border-2 shadow-xl transition-all group select-none ${canAccessDiario
             ? 'bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-950 text-white border-indigo-500/40 cursor-pointer hover:border-indigo-400 hover:shadow-indigo-500/10'
             : 'bg-slate-100 border-slate-300 opacity-60 cursor-not-allowed text-slate-600'
-        }`}
+          }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-4">
-            <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 ${
-              canAccessDiario 
+            <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 ${canAccessDiario
                 ? 'bg-indigo-500/20 border-indigo-400/30 text-indigo-300 group-hover:scale-110 transition-transform'
                 : 'bg-slate-200 border-slate-300 text-slate-500'
-            }`}>
+              }`}>
               <BookOpen className="w-6 h-6" />
             </div>
             <div>
@@ -1935,12 +1937,11 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 1: UNIDADES E MORADORES */}
       {/* ========================================================================= */}
-      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-        canAccessUnidades 
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessUnidades
           ? (unidadesAguardando.length > 0 ? 'bg-amber-50/50 border-amber-300 ring-2 ring-amber-400/30' : 'bg-emerald-50/70 border-emerald-300')
           : 'bg-slate-100/90 border-slate-300 opacity-60'
-      }`}>
-        
+        }`}>
+
         {/* Accordion Header */}
         <div
           role="button"
@@ -1952,20 +1953,18 @@ export const AdminPanelScreen: React.FC = () => {
               setIsUnidadesOpen(!isUnidadesOpen);
             }
           }}
-          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-            canAccessUnidades 
-              ? (unidadesAguardando.length > 0 
-                  ? 'bg-gradient-to-r from-amber-100/95 via-amber-50/90 to-emerald-100/70 hover:from-amber-200/90 hover:to-emerald-200/80 border-amber-300 cursor-pointer' 
-                  : 'bg-emerald-100/90 hover:bg-emerald-200/70 border-emerald-200 cursor-pointer') 
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessUnidades
+              ? (unidadesAguardando.length > 0
+                ? 'bg-gradient-to-r from-amber-100/95 via-amber-50/90 to-emerald-100/70 hover:from-amber-200/90 hover:to-emerald-200/80 border-amber-300 cursor-pointer'
+                : 'bg-emerald-100/90 hover:bg-emerald-200/70 border-emerald-200 cursor-pointer')
               : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-              canAccessUnidades 
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${canAccessUnidades
                 ? (unidadesAguardando.length > 0 ? 'bg-amber-500/25 border-amber-400 text-amber-950' : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-950')
                 : 'bg-slate-300/50 border-slate-300 text-slate-600'
-            }`}>
+              }`}>
               {canAccessUnidades ? (
                 unidadesAguardando.length > 0 ? <AlertTriangle className="w-5 h-5 text-amber-900 animate-bounce" /> : <Building className="w-5 h-5 text-emerald-900" />
               ) : (
@@ -2050,13 +2049,12 @@ export const AdminPanelScreen: React.FC = () => {
         </div>
 
         {/* Accordion Content com Animação Suave de Altura */}
-        <div 
-          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            canAccessUnidades && isUnidadesOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-          }`}
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessUnidades && isUnidadesOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}
         >
           <div className="min-h-0 overflow-hidden bg-emerald-50/50 p-5 sm:p-6 space-y-6">
-            
+
             {/* Form de Criação de Unidade */}
             <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-2xs">
               <div className="flex items-center justify-between gap-2 pb-1 flex-wrap">
@@ -2079,7 +2077,7 @@ export const AdminPanelScreen: React.FC = () => {
 
               <form onSubmit={handleAddUnidade} className="space-y-3">
                 <div className={`grid grid-cols-1 ${isCasas ? 'sm:grid-cols-3' : 'sm:grid-cols-2 md:grid-cols-4'} gap-2.5`}>
-                  
+
                   {/* Número / Identificação Completa da Unidade */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-extrabold uppercase text-slate-700">
@@ -2228,11 +2226,10 @@ export const AdminPanelScreen: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setViewModeUnidades('table')}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
-                          viewModeUnidades === 'table'
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${viewModeUnidades === 'table'
                             ? 'bg-slate-950 text-white shadow-xs'
                             : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
-                        }`}
+                          }`}
                         title="Visualizar em Tabela Prática"
                       >
                         <Table className="w-3.5 h-3.5" />
@@ -2241,11 +2238,10 @@ export const AdminPanelScreen: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setViewModeUnidades('cards')}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
-                          viewModeUnidades === 'cards'
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${viewModeUnidades === 'cards'
                             ? 'bg-slate-950 text-white shadow-xs'
                             : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
-                        }`}
+                          }`}
                         title="Visualizar em Cards"
                       >
                         <LayoutGrid className="w-3.5 h-3.5" />
@@ -2270,15 +2266,14 @@ export const AdminPanelScreen: React.FC = () => {
                 {/* Barra de Filtros Rápidos de Status */}
                 <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-200">
                   <span className="text-[10px] font-black uppercase text-slate-500 mr-1">Filtrar:</span>
-                  
+
                   <button
                     type="button"
                     onClick={() => setFiltroStatusUnidade('todos')}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      filtroStatusUnidade === 'todos'
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${filtroStatusUnidade === 'todos'
                         ? 'bg-slate-950 text-white shadow-xs'
                         : 'bg-white text-slate-700 hover:bg-slate-200/80 border border-slate-300'
-                    }`}
+                      }`}
                   >
                     Todas ({unidades.length})
                   </button>
@@ -2286,13 +2281,12 @@ export const AdminPanelScreen: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setFiltroStatusUnidade('aguardando')}
-                    className={`px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
-                      filtroStatusUnidade === 'aguardando'
+                    className={`px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${filtroStatusUnidade === 'aguardando'
                         ? 'bg-amber-500 text-slate-950 shadow-md ring-2 ring-amber-600'
                         : unidadesAguardando.length > 0
                           ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-amber-400 font-extrabold animate-pulse'
                           : 'bg-white text-slate-700 hover:bg-slate-200/80 border border-slate-300'
-                    }`}
+                      }`}
                   >
                     <AlertTriangle className={`w-3.5 h-3.5 ${unidadesAguardando.length > 0 ? 'text-amber-950' : 'text-slate-500'}`} />
                     <span>Aguardando Aprovação ({unidadesAguardando.length})</span>
@@ -2304,11 +2298,10 @@ export const AdminPanelScreen: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setFiltroStatusUnidade('cadastrados')}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      filtroStatusUnidade === 'cadastrados'
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${filtroStatusUnidade === 'cadastrados'
                         ? 'bg-emerald-600 text-white shadow-xs'
                         : 'bg-white text-slate-700 hover:bg-slate-200/80 border border-slate-300'
-                    }`}
+                      }`}
                   >
                     Cadastradas ({unidadesCadastradas})
                   </button>
@@ -2316,11 +2309,10 @@ export const AdminPanelScreen: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setFiltroStatusUnidade('vazios')}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      filtroStatusUnidade === 'vazios'
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${filtroStatusUnidade === 'vazios'
                         ? 'bg-slate-800 text-white shadow-xs'
                         : 'bg-white text-slate-700 hover:bg-slate-200/80 border border-slate-300'
-                    }`}
+                      }`}
                   >
                     Vazias
                   </button>
@@ -2328,11 +2320,10 @@ export const AdminPanelScreen: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setFiltroStatusUnidade('suspensos')}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      filtroStatusUnidade === 'suspensos'
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${filtroStatusUnidade === 'suspensos'
                         ? 'bg-rose-700 text-white shadow-xs'
                         : 'bg-white text-slate-700 hover:bg-slate-200/80 border border-slate-300'
-                    }`}
+                      }`}
                   >
                     Suspensas
                   </button>
@@ -2401,6 +2392,7 @@ export const AdminPanelScreen: React.FC = () => {
                             <th className="py-3 px-3.5 min-w-[150px]">Vaga da Garagem</th>
                           )}
                           <th className="py-3 px-3.5 text-center min-w-[130px]">Reset de Senha</th>
+                          <th className="py-3 px-3.5 text-center min-w-[130px]">Trocar Morador</th>
                           <th className="py-3 px-2.5 text-center min-w-[80px]">Vazio</th>
                           <th className="py-3 px-3.5 text-center min-w-[100px]">Status</th>
                           <th className="py-3 px-3.5 text-right min-w-[180px]">Ações</th>
@@ -2459,18 +2451,18 @@ export const AdminPanelScreen: React.FC = () => {
 
                             const badgeText = isSuspensa
                               ? 'Suspensa'
-                              : (isVazio 
-                                  ? 'Sem Moradores' 
-                                  : (isAguardando
-                                      ? 'Aguardando Aprovação'
-                                      : (isConfirmado ? 'Cadastrado' : 'Pendente')));
+                              : (isVazio
+                                ? 'Sem Moradores'
+                                : (isAguardando
+                                  ? 'Aguardando Aprovação'
+                                  : (isConfirmado ? 'Cadastrado' : 'Pendente')));
                             const badgeStyle = isSuspensa
                               ? 'bg-rose-100 text-rose-950 border-rose-300 font-black'
                               : (isVazio
-                                  ? 'bg-slate-100 text-slate-800 border-slate-300'
-                                  : (isAguardando
-                                      ? 'bg-amber-400 text-slate-950 border-amber-500 font-black shadow-xs'
-                                      : (isConfirmado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-slate-100 text-slate-600 border-dashed border-slate-300')));
+                                ? 'bg-slate-100 text-slate-800 border-slate-300'
+                                : (isAguardando
+                                  ? 'bg-amber-400 text-slate-950 border-amber-500 font-black shadow-xs'
+                                  : (isConfirmado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-slate-100 text-slate-600 border-dashed border-slate-300')));
 
                             const moradorResponsavel = (u.moradores && u.moradores.length > 0)
                               ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
@@ -2487,8 +2479,8 @@ export const AdminPanelScreen: React.FC = () => {
                             };
 
                             return (
-                              <tr 
-                                key={u.id} 
+                              <tr
+                                key={u.id}
                                 className={`hover:bg-amber-50/60 transition-colors ${isEditing ? 'bg-amber-100/70 font-semibold' : ''} ${isAguardando ? 'bg-amber-50/90' : ''}`}
                               >
                                 {/* 1. Nome da Unidade */}
@@ -2546,14 +2538,13 @@ export const AdminPanelScreen: React.FC = () => {
                                   {nomeResponsavel ? (
                                     <div className="flex items-center justify-between gap-2.5">
                                       <div className="flex items-center gap-2.5 min-w-0">
-                                        <div className={`w-8 h-8 rounded-full border flex items-center justify-center text-xs shrink-0 overflow-hidden shadow-2xs ${
-                                          isAguardando ? 'bg-amber-100 border-amber-400 text-amber-950 ring-2 ring-amber-400/30' : 'bg-emerald-100 border-emerald-300 text-emerald-950'
-                                        }`}>
+                                        <div className={`w-8 h-8 rounded-full border flex items-center justify-center text-xs shrink-0 overflow-hidden shadow-2xs ${isAguardando ? 'bg-amber-100 border-amber-400 text-amber-950 ring-2 ring-amber-400/30' : 'bg-emerald-100 border-emerald-300 text-emerald-950'
+                                          }`}>
                                           {moradorResponsavel?.foto || u.fotoCelula ? (
-                                            <img 
-                                              src={moradorResponsavel?.foto || u.fotoCelula} 
-                                              alt={nomeResponsavel} 
-                                              className="w-full h-full object-cover" 
+                                            <img
+                                              src={moradorResponsavel?.foto || u.fotoCelula}
+                                              alt={nomeResponsavel}
+                                              className="w-full h-full object-cover"
                                             />
                                           ) : (
                                             nomeResponsavel.charAt(0).toUpperCase()
@@ -2627,8 +2618,8 @@ export const AdminPanelScreen: React.FC = () => {
                                       const vagaObj = (vagasGaragem || []).find((v: VagaGaragem) => {
                                         const vUnidClean = (v.unidadeNumero || '').toString().replace(/\D/g, '');
                                         const vNumClean = (v.numeroVaga || '').toString().replace(/\D/g, '');
-                                        return (uNumClean && vUnidClean && uNumClean === vUnidClean) || 
-                                               (uVagaClean && vNumClean && uVagaClean === vNumClean);
+                                        return (uNumClean && vUnidClean && uNumClean === vUnidClean) ||
+                                          (uVagaClean && vNumClean && uVagaClean === vNumClean);
                                       });
 
                                       const displayVaga = u.vagaGaragem || vagaObj?.numeroVaga;
@@ -2667,15 +2658,18 @@ export const AdminPanelScreen: React.FC = () => {
                                 </td>
 
                                 {/* 6. Reset de Senha Seguro */}
+                                {/* 6. Trocar Morador */}
                                 <td className="py-2.5 px-3.5 text-center">
                                   <button
                                     type="button"
                                     onClick={() => handleResetSenha(u)}
                                     className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-xs font-black inline-flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
                                     title={`Resetar cadastro e senha do Apto ${u.numero} para liberar novo cadastro`}
+                                    title={`Trocar morador do Apto ${u.numero} (limpar cadastro atual para um novo morador)`}
                                   >
                                     <RotateCcw className="w-3 h-3 text-amber-800" />
                                     <span>Reset Senha</span>
+                                    <span>Trocar Morador</span>
                                   </button>
                                 </td>
 
@@ -2806,288 +2800,287 @@ export const AdminPanelScreen: React.FC = () => {
                     </div>
                   ) : (
                     displayedUnidades.map((u, idx) => {
-                    const globalIndex = (safePaginaAtual - 1) * itensPorPagina + idx;
-                    if (isCasas) {
-                      return (
-                        <AdminCasaCard
-                          key={u.id}
-                          u={u}
-                          index={globalIndex}
-                          condoRuas={condoRuas}
-                          onSaveCasa={handleSaveCasa}
-                          onResetSenha={handleResetSenha}
-                          onToggleVazio={toggleUnidadeSemMoradores}
-                          onToggleSuspensa={toggleUnidadeSuspensa}
-                          onNotificar={handleNotificar}
-                          onExcluir={excluirUnidade}
-                          onConfirmarMorador={handleConfirmarMorador}
-                          onRecusarMorador={handleRecusarMorador}
-                        />
-                      );
-                    }
+                      const globalIndex = (safePaginaAtual - 1) * itensPorPagina + idx;
+                      if (isCasas) {
+                        return (
+                          <AdminCasaCard
+                            key={u.id}
+                            u={u}
+                            index={globalIndex}
+                            condoRuas={condoRuas}
+                            onSaveCasa={handleSaveCasa}
+                            onResetSenha={handleResetSenha}
+                            onToggleVazio={toggleUnidadeSemMoradores}
+                            onToggleSuspensa={toggleUnidadeSuspensa}
+                            onNotificar={handleNotificar}
+                            onExcluir={excluirUnidade}
+                            onConfirmarMorador={handleConfirmarMorador}
+                            onRecusarMorador={handleRecusarMorador}
+                          />
+                        );
+                      }
 
-                    const isEditing = editingId === u.id;
+                      const isEditing = editingId === u.id;
 
-                    if (isEditing) {
+                      if (isEditing) {
+                        return (
+                          <div
+                            key={u.id}
+                            className="bg-amber-100/90 border-2 border-amber-400 rounded-2xl p-3.5 shadow-md space-y-2.5 animate-in zoom-in-95 duration-150"
+                          >
+                            <span className="text-[10px] uppercase font-black text-amber-950 block">
+                              Editando Unidade
+                            </span>
+
+                            <div className="space-y-1.5">
+                              <input
+                                type="text"
+                                value={editNumero}
+                                onChange={(e) => setEditNumero(e.target.value)}
+                                placeholder="Número / Identificação"
+                                className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
+                              />
+                              <div className="space-y-0.5">
+                                <label className="text-[9px] font-black uppercase text-slate-700">Torre / Bloco</label>
+                                <select
+                                  value={editBloco}
+                                  onChange={(e) => setEditBloco(e.target.value)}
+                                  className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 cursor-pointer"
+                                >
+                                  {condoBlocos.map((blocoNome, i) => (
+                                    <option key={i} value={blocoNome}>{blocoNome}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <input
+                                type="text"
+                                value={editVaga}
+                                onChange={(e) => setEditVaga(e.target.value)}
+                                placeholder="Vaga de Garagem"
+                                className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
+                                autoFocus
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-1.5 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => handleSaveEdit(u.id)}
+                                className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1"
+                              >
+                                <Check className="w-3.5 h-3.5" /> Salvar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingId(null)}
+                                className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      const formatUnitTitle = (num: string) => {
+                        if (!num) return 'Sem número';
+                        if (num.toLowerCase().startsWith('apt') || num.toLowerCase().startsWith('cobertura')) {
+                          return num;
+                        }
+                        return `Apto ${num}`;
+                      };
+
+                      const isSuspensa = Boolean(u.suspensa || u.statusCadastro === 'Suspenso');
+                      const isVazio = !isSuspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
+                      const hasMorador = Boolean(!isSuspensa && !isVazio && ((u.moradores && u.moradores.length > 0) || u.nomeCelula));
+                      const isAguardando = hasMorador && (u.statusCadastro === 'AguardandoConfirmacao' || u.moradorConfirmado === false);
+                      const isConfirmado = hasMorador && !isAguardando;
+
+                      const badgeText = isSuspensa
+                        ? 'Suspensa'
+                        : (isVazio
+                          ? 'Sem Moradores'
+                          : (isAguardando
+                            ? 'Aguardando Aprovação'
+                            : (isConfirmado ? 'Cadastrado' : 'Pendente')));
+                      const badgeStyle = isSuspensa
+                        ? 'bg-rose-100 text-rose-950 border-rose-300 font-black'
+                        : (isVazio
+                          ? 'bg-slate-200 text-slate-800 border-slate-300'
+                          : (isAguardando
+                            ? 'bg-amber-400 text-slate-950 border-amber-500 font-black shadow-xs'
+                            : (isConfirmado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300')));
+
+                      const moradorResponsavel = (u.moradores && u.moradores.length > 0)
+                        ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
+                        : null;
+                      const nomeResponsavel = moradorResponsavel?.nome || u.nomeCelula;
+                      const emailResponsavel = moradorResponsavel?.email || u.emailResponsavel;
+
                       return (
                         <div
                           key={u.id}
-                          className="bg-amber-100/90 border-2 border-amber-400 rounded-2xl p-3.5 shadow-md space-y-2.5 animate-in zoom-in-95 duration-150"
+                          className={`bg-white border ${isVazio ? 'border-slate-300 bg-slate-50/60' : 'border-slate-200 hover:border-amber-400'
+                            } rounded-2xl p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-2.5 overflow-hidden`}
                         >
-                          <span className="text-[10px] uppercase font-black text-amber-950 block">
-                            Editando Unidade
-                          </span>
-                          
-                          <div className="space-y-1.5">
-                            <input
-                              type="text"
-                              value={editNumero}
-                              onChange={(e) => setEditNumero(e.target.value)}
-                              placeholder="Número / Identificação"
-                              className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
-                            />
-                            <div className="space-y-0.5">
-                              <label className="text-[9px] font-black uppercase text-slate-700">Torre / Bloco</label>
-                              <select
-                                value={editBloco}
-                                onChange={(e) => setEditBloco(e.target.value)}
-                                className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950 cursor-pointer"
-                              >
-                                {condoBlocos.map((blocoNome, i) => (
-                                  <option key={i} value={blocoNome}>{blocoNome}</option>
-                                ))}
-                              </select>
+                          {/* Topo do Card de Unidade */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <h4 className="font-black text-sm sm:text-base text-slate-950 leading-tight truncate">
+                                  {formatUnitTitle(u.numero)}
+                                </h4>
+                                <span className="text-[10px] font-bold text-amber-950 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5">
+                                  <Building2 className="w-2.5 h-2.5 text-amber-700 shrink-0" />
+                                  {u.bloco || 'Bloco Único'}
+                                </span>
+                              </div>
+                              <span className="text-[10px] sm:text-[11px] font-bold text-slate-600 flex items-center gap-1 mt-0.5 truncate">
+                                <Car className="w-3 h-3 text-amber-800 shrink-0" />
+                                Vaga: {u.vagaGaragem || 'Sem vaga'}
+                              </span>
                             </div>
-                            <input
-                              type="text"
-                              value={editVaga}
-                              onChange={(e) => setEditVaga(e.target.value)}
-                              placeholder="Vaga de Garagem"
-                              className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-950"
-                              autoFocus
-                            />
+
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${badgeStyle}`}>
+                              {badgeText}
+                            </span>
                           </div>
 
-                          <div className="flex items-center gap-1.5 pt-1">
-                            <button
-                              type="button"
-                              onClick={() => handleSaveEdit(u.id)}
-                              className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1"
-                            >
-                              <Check className="w-3.5 h-3.5" /> Salvar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditingId(null)}
-                              className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
+                          {/* Morador Responsável e Botão de Reset de Senha */}
+                          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs gap-2">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className={`w-8 h-8 rounded-full border flex items-center justify-center font-black text-xs shrink-0 overflow-hidden shadow-2xs ${isAguardando ? 'bg-amber-100 border-amber-400 text-amber-950 ring-2 ring-amber-400/30' : 'bg-amber-100 border-amber-300 text-amber-950'
+                                }`}>
+                                {moradorResponsavel?.foto || u.fotoCelula ? (
+                                  <img
+                                    src={moradorResponsavel?.foto || u.fotoCelula}
+                                    alt={nomeResponsavel || ''}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  (nomeResponsavel ? nomeResponsavel.charAt(0).toUpperCase() : '?')
+                                )}
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-black text-slate-950 text-xs truncate">
+                                  {nomeResponsavel || <span className="text-slate-400 italic font-normal">Sem morador</span>}
+                                </span>
+                                {emailResponsavel ? (
+                                  <span className="text-[10px] text-slate-500 font-medium truncate font-mono flex items-center gap-1" title={emailResponsavel}>
+                                    <Mail className="w-2.5 h-2.5 text-amber-800 shrink-0 inline" />
+                                    {emailResponsavel}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-amber-800 font-semibold italic">Pendente</span>
+                                )}
+                                {isAguardando && (
+                                  <span className="text-[8.5px] font-extrabold uppercase text-amber-800 tracking-tight flex items-center gap-0.5 mt-0.5">
+                                    <Clock className="w-2.5 h-2.5" /> Novo Cadastro
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0">
+                              {isAguardando && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleConfirmarMorador(u)}
+                                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                                    title={`Confirmar morador do Apto ${u.numero}`}
+                                  >
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    <span>Confirmar</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRecusarMorador(u)}
+                                    className="p-1 bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 rounded-lg text-[10px] transition-all cursor-pointer"
+                                    title="Recusar cadastro desconhecido"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => handleResetSenha(u)}
+                                className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                                title={`Resetar cadastro e senha do Apto ${u.numero} para liberar novo cadastro`}
+                                title={`Trocar morador do Apto ${u.numero} (limpar cadastro atual para um novo morador)`}
+                              >
+                                <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
+                                <span>Reset Senha</span>
+                                <span>Trocar Morador</span>
+                              </button>
+                            </div>
                           </div>
+
+                          {/* Ações: Check Vazio (canto esquerdo) + Editar + Notificar + Excluir (canto direito) */}
+                          <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
+
+                            {/* Checkbox de Apartamento Vazio */}
+                            <label
+                              className="flex items-center gap-1 cursor-pointer select-none group bg-slate-100/90 hover:bg-amber-100/70 px-1.5 py-1 rounded-lg border border-slate-200 transition-colors shrink-0"
+                              title="Marcar como apartamento vazio / sem moradores"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isVazio}
+                                onChange={() => toggleUnidadeSemMoradores(u.id)}
+                                className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer accent-amber-600"
+                              />
+                              <span className={`text-[9px] uppercase tracking-tight transition-colors ${isVazio
+                                  ? 'text-slate-950 font-black'
+                                  : 'text-slate-500 font-bold group-hover:text-slate-800'
+                                }`}>
+                                Vazio
+                              </span>
+                            </label>
+
+                            {/* Ações da Direita: Editar + Notificar + Excluir */}
+                            <div className="flex items-center gap-0.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEdit(u)}
+                                className="px-1.5 py-1 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold cursor-pointer"
+                                title="Editar Vaga / Unidade"
+                              >
+                                <Edit3 className="w-3 h-3 text-slate-600" />
+                                <span>Editar</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedUnidadeParaNotificar(u);
+                                  setIsNotifyModalOpen(true);
+                                }}
+                                className="px-1.5 py-1 rounded-lg text-amber-800 hover:text-amber-950 hover:bg-amber-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold cursor-pointer"
+                                title="Notificar Moradia Privadamente"
+                              >
+                                <Bell className="w-3 h-3 text-amber-700" />
+                                <span>Notificar</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => excluirUnidade(u.id)}
+                                className="px-1.5 py-1 rounded-lg text-rose-700 hover:text-rose-900 hover:bg-rose-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold cursor-pointer"
+                                title="Excluir Unidade"
+                              >
+                                <Trash2 className="w-3 h-3 text-rose-600" />
+                                <span>Excluir</span>
+                              </button>
+                            </div>
+
+                          </div>
+
                         </div>
                       );
-                    }
-
-                    const formatUnitTitle = (num: string) => {
-                      if (!num) return 'Sem número';
-                      if (num.toLowerCase().startsWith('apt') || num.toLowerCase().startsWith('cobertura')) {
-                        return num;
-                      }
-                      return `Apto ${num}`;
-                    };
-
-                    const isSuspensa = Boolean(u.suspensa || u.statusCadastro === 'Suspenso');
-                    const isVazio = !isSuspensa && Boolean(u.semMoradores || u.statusCadastro === 'Vazio');
-                    const hasMorador = Boolean(!isSuspensa && !isVazio && ((u.moradores && u.moradores.length > 0) || u.nomeCelula));
-                    const isAguardando = hasMorador && (u.statusCadastro === 'AguardandoConfirmacao' || u.moradorConfirmado === false);
-                    const isConfirmado = hasMorador && !isAguardando;
-
-                    const badgeText = isSuspensa 
-                      ? 'Suspensa' 
-                      : (isVazio 
-                          ? 'Sem Moradores' 
-                          : (isAguardando
-                              ? 'Aguardando Aprovação'
-                              : (isConfirmado ? 'Cadastrado' : 'Pendente')));
-                    const badgeStyle = isSuspensa
-                      ? 'bg-rose-100 text-rose-950 border-rose-300 font-black'
-                      : (isVazio
-                          ? 'bg-slate-200 text-slate-800 border-slate-300'
-                          : (isAguardando
-                              ? 'bg-amber-400 text-slate-950 border-amber-500 font-black shadow-xs'
-                              : (isConfirmado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-amber-100 text-amber-950 border-amber-300')));
-
-                    const moradorResponsavel = (u.moradores && u.moradores.length > 0)
-                      ? (u.moradores.find(m => m.email && m.email.trim() !== '') || u.moradores[0])
-                      : null;
-                    const nomeResponsavel = moradorResponsavel?.nome || u.nomeCelula;
-                    const emailResponsavel = moradorResponsavel?.email || u.emailResponsavel;
-
-                    return (
-                      <div
-                        key={u.id}
-                        className={`bg-white border ${
-                          isVazio ? 'border-slate-300 bg-slate-50/60' : 'border-slate-200 hover:border-amber-400'
-                        } rounded-2xl p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-2.5 overflow-hidden`}
-                      >
-                        {/* Topo do Card de Unidade */}
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <h4 className="font-black text-sm sm:text-base text-slate-950 leading-tight truncate">
-                                {formatUnitTitle(u.numero)}
-                              </h4>
-                              <span className="text-[10px] font-bold text-amber-950 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5">
-                                <Building2 className="w-2.5 h-2.5 text-amber-700 shrink-0" />
-                                {u.bloco || 'Bloco Único'}
-                              </span>
-                            </div>
-                            <span className="text-[10px] sm:text-[11px] font-bold text-slate-600 flex items-center gap-1 mt-0.5 truncate">
-                              <Car className="w-3 h-3 text-amber-800 shrink-0" />
-                              Vaga: {u.vagaGaragem || 'Sem vaga'}
-                            </span>
-                          </div>
-
-                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${badgeStyle}`}>
-                            {badgeText}
-                          </span>
-                        </div>
-
-                        {/* Morador Responsável e Botão de Reset de Senha */}
-                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs gap-2">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className={`w-8 h-8 rounded-full border flex items-center justify-center font-black text-xs shrink-0 overflow-hidden shadow-2xs ${
-                              isAguardando ? 'bg-amber-100 border-amber-400 text-amber-950 ring-2 ring-amber-400/30' : 'bg-amber-100 border-amber-300 text-amber-950'
-                            }`}>
-                              {moradorResponsavel?.foto || u.fotoCelula ? (
-                                <img 
-                                  src={moradorResponsavel?.foto || u.fotoCelula} 
-                                  alt={nomeResponsavel || ''} 
-                                  className="w-full h-full object-cover" 
-                                />
-                              ) : (
-                                (nomeResponsavel ? nomeResponsavel.charAt(0).toUpperCase() : '?')
-                              )}
-                            </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className="font-black text-slate-950 text-xs truncate">
-                                {nomeResponsavel || <span className="text-slate-400 italic font-normal">Sem morador</span>}
-                              </span>
-                              {emailResponsavel ? (
-                                <span className="text-[10px] text-slate-500 font-medium truncate font-mono flex items-center gap-1" title={emailResponsavel}>
-                                  <Mail className="w-2.5 h-2.5 text-amber-800 shrink-0 inline" />
-                                  {emailResponsavel}
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-amber-800 font-semibold italic">Pendente</span>
-                              )}
-                              {isAguardando && (
-                                <span className="text-[8.5px] font-extrabold uppercase text-amber-800 tracking-tight flex items-center gap-0.5 mt-0.5">
-                                  <Clock className="w-2.5 h-2.5" /> Novo Cadastro
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1 shrink-0">
-                            {isAguardando && (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleConfirmarMorador(u)}
-                                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
-                                  title={`Confirmar morador do Apto ${u.numero}`}
-                                >
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  <span>Confirmar</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRecusarMorador(u)}
-                                  className="p-1 bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 rounded-lg text-[10px] transition-all cursor-pointer"
-                                  title="Recusar cadastro desconhecido"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => handleResetSenha(u)}
-                              className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer shadow-2xs"
-                              title={`Resetar cadastro e senha do Apto ${u.numero} para liberar novo cadastro`}
-                            >
-                              <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
-                              <span>Reset Senha</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Ações: Check Vazio (canto esquerdo) + Editar + Notificar + Excluir (canto direito) */}
-                        <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
-                          
-                          {/* Checkbox de Apartamento Vazio */}
-                          <label 
-                            className="flex items-center gap-1 cursor-pointer select-none group bg-slate-100/90 hover:bg-amber-100/70 px-1.5 py-1 rounded-lg border border-slate-200 transition-colors shrink-0"
-                            title="Marcar como apartamento vazio / sem moradores"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isVazio}
-                              onChange={() => toggleUnidadeSemMoradores(u.id)}
-                              className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer accent-amber-600"
-                            />
-                            <span className={`text-[9px] uppercase tracking-tight transition-colors ${
-                              isVazio 
-                                ? 'text-slate-950 font-black' 
-                                : 'text-slate-500 font-bold group-hover:text-slate-800'
-                            }`}>
-                              Vazio
-                            </span>
-                          </label>
-
-                          {/* Ações da Direita: Editar + Notificar + Excluir */}
-                          <div className="flex items-center gap-0.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => handleStartEdit(u)}
-                              className="px-1.5 py-1 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-slate-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold cursor-pointer"
-                              title="Editar Vaga / Unidade"
-                            >
-                              <Edit3 className="w-3 h-3 text-slate-600" />
-                              <span>Editar</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedUnidadeParaNotificar(u);
-                                setIsNotifyModalOpen(true);
-                              }}
-                              className="px-1.5 py-1 rounded-lg text-amber-800 hover:text-amber-950 hover:bg-amber-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold cursor-pointer"
-                              title="Notificar Moradia Privadamente"
-                            >
-                              <Bell className="w-3 h-3 text-amber-700" />
-                              <span>Notificar</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => excluirUnidade(u.id)}
-                              className="px-1.5 py-1 rounded-lg text-rose-700 hover:text-rose-900 hover:bg-rose-100 transition-colors text-[10px] sm:text-[11px] flex items-center gap-0.5 font-bold cursor-pointer"
-                              title="Excluir Unidade"
-                            >
-                              <Trash2 className="w-3 h-3 text-rose-600" />
-                              <span>Excluir</span>
-                            </button>
-                          </div>
-
-                        </div>
-
-                      </div>
-                    );
-                  }))}
+                    }))}
                 </div>
               )}
 
@@ -3154,25 +3147,22 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 2: EQUIPE E GESTÃO DE ACESSOS */}
       {/* ========================================================================= */}
-      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-        canAccessEquipe ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-      }`}>
-        
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessEquipe ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+        }`}>
+
         {/* Accordion Header */}
         <button
           type="button"
           disabled={!canAccessEquipe}
           onClick={() => canAccessEquipe && setIsSenhasAdminOpen(!isSenhasAdminOpen)}
-          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-            canAccessEquipe 
-              ? 'bg-amber-100/90 hover:bg-amber-200/70 border-amber-200 cursor-pointer active:scale-[0.999]' 
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessEquipe
+              ? 'bg-amber-100/90 hover:bg-amber-200/70 border-amber-200 cursor-pointer active:scale-[0.999]'
               : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-              canAccessEquipe ? 'bg-amber-500/20 border-amber-400/40 text-amber-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-            }`}>
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${canAccessEquipe ? 'bg-amber-500/20 border-amber-400/40 text-amber-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+              }`}>
               {canAccessEquipe ? <KeyRound className="w-5 h-5 text-amber-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
@@ -3215,13 +3205,12 @@ export const AdminPanelScreen: React.FC = () => {
         </button>
 
         {/* Accordion Content com Animação Suave de Altura */}
-        <div 
-          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            canAccessEquipe && isSenhasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-          }`}
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessEquipe && isSenhasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}
         >
           <div className="min-h-0 overflow-hidden bg-amber-50/50 p-5 sm:p-6 space-y-6">
-            
+
             {/* Success Message */}
             {adminSuccessMsg && (
               <div className="p-3 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs font-bold flex items-center gap-2 animate-in zoom-in-95">
@@ -3251,11 +3240,10 @@ export const AdminPanelScreen: React.FC = () => {
                           setNovoColabPermissoes(ADMIN_MODULOS_LIST.map(m => m.key));
                         }
                       }}
-                      className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${
-                        tipoCadastroColab === 'gestao'
+                      className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${tipoCadastroColab === 'gestao'
                           ? 'bg-amber-500 text-slate-950 shadow-xs scale-102'
                           : 'text-slate-600 hover:text-slate-950'
-                      }`}
+                        }`}
                     >
                       <ShieldCheck className="w-3.5 h-3.5" /> Membro da Gestão (Com Senha)
                     </button>
@@ -3267,11 +3255,10 @@ export const AdminPanelScreen: React.FC = () => {
                           setNovoColabPermissoes(['portaria', 'mudancas']);
                         }
                       }}
-                      className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${
-                        tipoCadastroColab === 'operacional'
+                      className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${tipoCadastroColab === 'operacional'
                           ? 'bg-amber-500 text-slate-950 shadow-xs scale-102'
                           : 'text-slate-600 hover:text-slate-950'
-                      }`}
+                        }`}
                     >
                       <Briefcase className="w-3.5 h-3.5" /> Funcionário Operacional (Portaria, Faxina, Vigia...)
                     </button>
@@ -3290,10 +3277,10 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
 
               <form onSubmit={handleAddAdminUser} autoComplete="off" className="space-y-4">
-                
+
                 {/* Linha 1: Foto de Perfil Individual + Dados Principais */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-                  
+
                   {/* Foto de Perfil com Upload e Preview */}
                   <div className="md:col-span-3 space-y-2 bg-white/80 border border-amber-200 rounded-2xl p-3 text-center">
                     <label className="text-[10px] font-extrabold uppercase text-slate-700 block">
@@ -3306,7 +3293,7 @@ export const AdminPanelScreen: React.FC = () => {
                         alt="Preview"
                         className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-md bg-slate-100"
                       />
-                      <label 
+                      <label
                         htmlFor="upload-admin-foto"
                         className="absolute -bottom-1.5 -right-1.5 p-1.5 rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 cursor-pointer shadow-md border border-white"
                         title="Trocar Foto"
@@ -3332,9 +3319,8 @@ export const AdminPanelScreen: React.FC = () => {
                             key={idx}
                             type="button"
                             onClick={() => setNovoAdminFoto(av)}
-                            className={`w-6 h-6 rounded-full overflow-hidden border-2 transition-all cursor-pointer ${
-                              novoAdminFoto === av ? 'border-amber-600 scale-110 shadow-sm ring-1 ring-amber-400' : 'border-transparent opacity-70 hover:opacity-100'
-                            }`}
+                            className={`w-6 h-6 rounded-full overflow-hidden border-2 transition-all cursor-pointer ${novoAdminFoto === av ? 'border-amber-600 scale-110 shadow-sm ring-1 ring-amber-400' : 'border-transparent opacity-70 hover:opacity-100'
+                              }`}
                           >
                             <img src={av} alt="Avatar" className="w-full h-full object-cover" />
                           </button>
@@ -3345,10 +3331,10 @@ export const AdminPanelScreen: React.FC = () => {
 
                   {/* Campos do Formulário */}
                   <div className="md:col-span-9 space-y-3">
-                    
+
                     {/* Linha de Nome e Cargo */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      
+
                       {/* Nome Completo */}
                       <div className="space-y-1">
                         <label className="text-[10px] font-extrabold uppercase text-slate-700">
@@ -3409,7 +3395,7 @@ export const AdminPanelScreen: React.FC = () => {
                     {/* Linha de Dados Específicos: Se for Gestão (Usuário/Senha) | Se for Operacional (Categoria, Horário, Escala) */}
                     {tipoCadastroColab === 'gestao' ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        
+
                         {/* Usuário de Login */}
                         <div className="space-y-1">
                           <label className="text-[10px] font-extrabold uppercase text-slate-700">
@@ -3456,7 +3442,7 @@ export const AdminPanelScreen: React.FC = () => {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                        
+
                         {/* Categoria Operacional */}
                         <div className="space-y-1">
                           <label className="text-[10px] font-extrabold uppercase text-slate-700">
@@ -3529,11 +3515,10 @@ export const AdminPanelScreen: React.FC = () => {
                             key={st.val}
                             type="button"
                             onClick={() => setNovoColabStatus(st.val as StatusFuncionario)}
-                            className={`py-1 px-2 rounded-lg text-[11px] font-black uppercase transition-all border cursor-pointer ${
-                              novoColabStatus === st.val
+                            className={`py-1 px-2 rounded-lg text-[11px] font-black uppercase transition-all border cursor-pointer ${novoColabStatus === st.val
                                 ? `${st.bg} border-transparent shadow-xs scale-102 ring-2 ring-amber-400`
                                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                            }`}
+                              }`}
                           >
                             {st.label}
                           </button>
@@ -3619,7 +3604,7 @@ export const AdminPanelScreen: React.FC = () => {
                     + Novo Colaborador
                   </button>
                 </div>
-                
+
                 {/* Filtro por Categoria */}
                 <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
                   {['Todos', 'Gestão', 'Portaria', 'Limpeza', 'Segurança'].map((cat) => (
@@ -3627,11 +3612,10 @@ export const AdminPanelScreen: React.FC = () => {
                       key={cat}
                       type="button"
                       onClick={() => setFiltroCategoriaColab(cat)}
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase transition-all border cursor-pointer ${
-                        filtroCategoriaColab === cat
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase transition-all border cursor-pointer ${filtroCategoriaColab === cat
                           ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-xs'
                           : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
+                        }`}
                     >
                       {cat}
                     </button>
@@ -3668,9 +3652,8 @@ export const AdminPanelScreen: React.FC = () => {
                     return (
                       <div
                         key={func.id}
-                        className={`bg-white border hover:border-amber-400 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${
-                          currentStatus === 'Desligado' ? 'opacity-70 border-slate-200 bg-slate-50/80' : 'border-slate-200'
-                        }`}
+                        className={`bg-white border hover:border-amber-400 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${currentStatus === 'Desligado' ? 'opacity-70 border-slate-200 bg-slate-50/80' : 'border-slate-200'
+                          }`}
                       >
                         {/* Topo do Card com Foto e Indicador de Status */}
                         <div className="flex items-start justify-between gap-2">
@@ -3681,8 +3664,8 @@ export const AdminPanelScreen: React.FC = () => {
                                 alt={func.nome}
                                 className="w-13 h-13 rounded-2xl object-cover border-2 border-amber-300 shadow-sm bg-slate-100"
                               />
-                              <span 
-                                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white shadow-xs ${statusStyle.dot}`} 
+                              <span
+                                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white shadow-xs ${statusStyle.dot}`}
                                 title={`Status: ${currentStatus}`}
                               />
                             </div>
@@ -3774,7 +3757,7 @@ export const AdminPanelScreen: React.FC = () => {
 
                         {/* Rodapé do Card com Ações (Editar, Copiar, Excluir) */}
                         <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
-                          
+
                           {/* Botão de Editar */}
                           <button
                             type="button"
@@ -3831,25 +3814,22 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 3: ANUNCIOS DE MORADORES */}
       {/* ========================================================================= */}
-      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-        canAccessServicos ? 'bg-purple-50/70 border-purple-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-      }`}>
-        
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessServicos ? 'bg-purple-50/70 border-purple-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+        }`}>
+
         {/* Accordion Header */}
         <button
           type="button"
           disabled={!canAccessServicos}
           onClick={() => canAccessServicos && setIsServicosAdminOpen(!isServicosAdminOpen)}
-          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-            canAccessServicos 
-              ? 'bg-purple-100/90 hover:bg-purple-200/70 border-purple-200 cursor-pointer active:scale-[0.999]' 
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessServicos
+              ? 'bg-purple-100/90 hover:bg-purple-200/70 border-purple-200 cursor-pointer active:scale-[0.999]'
               : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-              canAccessServicos ? 'bg-purple-500/20 border-purple-400/40 text-purple-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-            }`}>
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${canAccessServicos ? 'bg-purple-500/20 border-purple-400/40 text-purple-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+              }`}>
               {canAccessServicos ? <Briefcase className="w-5 h-5 text-purple-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
@@ -3899,13 +3879,12 @@ export const AdminPanelScreen: React.FC = () => {
         </button>
 
         {/* Accordion Content com Animação Suave de Altura */}
-        <div 
-          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            canAccessServicos && isServicosAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-          }`}
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessServicos && isServicosAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}
         >
           <div className="min-h-0 overflow-hidden bg-purple-50/50 p-5 sm:p-6 space-y-5">
-            
+
             {/* Header com Busca */}
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="text-xs font-extrabold uppercase tracking-wider text-slate-950">
@@ -3927,7 +3906,7 @@ export const AdminPanelScreen: React.FC = () => {
             {/* Grid de Cards de Moderação de Serviços */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {servicosMoradores
-                .filter(s => 
+                .filter(s =>
                   !searchServico ||
                   s.titulo.toLowerCase().includes(searchServico.toLowerCase()) ||
                   s.moradorNome.toLowerCase().includes(searchServico.toLowerCase()) ||
@@ -3941,11 +3920,10 @@ export const AdminPanelScreen: React.FC = () => {
                   return (
                     <div
                       key={servico.id}
-                      className={`border rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${
-                        isSuspenso 
-                          ? 'bg-rose-50/80 border-rose-300' 
+                      className={`border rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${isSuspenso
+                          ? 'bg-rose-50/80 border-rose-300'
                           : 'bg-white border-slate-200 hover:border-purple-400'
-                      }`}
+                        }`}
                     >
                       {/* Topo: Imagem Thumbnail + Título + Morador */}
                       <div className="flex items-start gap-3">
@@ -3990,7 +3968,7 @@ export const AdminPanelScreen: React.FC = () => {
 
                       {/* Status & Botões de Ação */}
                       <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between gap-1 flex-wrap text-xs">
-                        
+
                         <div className="flex items-center gap-1">
                           {isSuspenso ? (
                             <button
@@ -4054,25 +4032,22 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 4: EVENTOS E MURAL DE COMUNITÁRIO */}
       {/* ========================================================================= */}
-      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-        canAccessEventos ? 'bg-sky-50/80 border-sky-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-      }`}>
-        
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessEventos ? 'bg-sky-50/80 border-sky-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+        }`}>
+
         {/* Accordion Header */}
         <button
           type="button"
           disabled={!canAccessEventos}
           onClick={() => canAccessEventos && setIsEventosAdminOpen(prev => !prev)}
-          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left focus:outline-none border-b transition-colors select-none ${
-            canAccessEventos 
-              ? 'bg-sky-100/90 hover:bg-sky-200/70 border-sky-200 cursor-pointer active:scale-[0.999]' 
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left focus:outline-none border-b transition-colors select-none ${canAccessEventos
+              ? 'bg-sky-100/90 hover:bg-sky-200/70 border-sky-200 cursor-pointer active:scale-[0.999]'
               : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-              canAccessEventos ? 'bg-sky-500/20 text-sky-950 border-sky-400/40' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-            }`}>
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${canAccessEventos ? 'bg-sky-500/20 text-sky-950 border-sky-400/40' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+              }`}>
               {canAccessEventos ? <PartyPopper className="w-5 h-5 text-sky-800" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
@@ -4123,13 +4098,12 @@ export const AdminPanelScreen: React.FC = () => {
         </button>
 
         {/* Accordion Content com Animação Suave de Altura */}
-        <div 
-          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            canAccessEventos && isEventosAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-          }`}
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessEventos && isEventosAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}
         >
           <div className="min-h-0 overflow-hidden bg-sky-50/70 p-4 sm:p-6 space-y-4">
-            
+
             {/* Barra de Busca de Eventos */}
             <div className="relative">
               <input
@@ -4149,6 +4123,10 @@ export const AdminPanelScreen: React.FC = () => {
               </span>
               {[
                 { id: 'todos', label: 'Todos' },
+                ...(eventos.some(e => e.statusAprovacao === 'pendente') ? [{
+                  id: 'pendentes',
+                  label: `⏳ Aguardando Aprovação (${eventos.filter(e => e.statusAprovacao === 'pendente').length})`
+                }] : []),
                 { id: 'proximos', label: 'Próximos / Ativos' },
                 { id: 'passados', label: 'Realizados / Encerrados' }
               ].map(f => (
@@ -4156,11 +4134,10 @@ export const AdminPanelScreen: React.FC = () => {
                   key={f.id}
                   type="button"
                   onClick={() => setFiltroPeriodoEventoAdmin(f.id as any)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-extrabold whitespace-nowrap transition-all border shadow-2xs cursor-pointer ${
-                    filtroPeriodoEventoAdmin === f.id
-                      ? 'bg-sky-700 text-white border-sky-800 scale-105'
-                      : 'bg-white text-slate-700 border-sky-200 hover:bg-sky-100/60'
-                  }`}
+                  className={`px-3 py-1 rounded-full text-[11px] font-extrabold whitespace-nowrap transition-all border shadow-2xs cursor-pointer ${filtroPeriodoEventoAdmin === f.id
+                      ? f.id === 'pendentes' ? 'bg-amber-500 text-slate-950 border-amber-600 scale-105 font-black' : 'bg-sky-700 text-white border-sky-800 scale-105'
+                      : f.id === 'pendentes' ? 'bg-amber-100 text-amber-950 border-amber-300 hover:bg-amber-200' : 'bg-white text-slate-700 border-sky-200 hover:bg-sky-100/60'
+                    }`}
                 >
                   {f.label}
                 </button>
@@ -4172,8 +4149,9 @@ export const AdminPanelScreen: React.FC = () => {
               {eventos
                 .filter(evt => {
                   const pass = isEventoPassado(evt);
-                  if (filtroPeriodoEventoAdmin === 'proximos' && pass) return false;
-                  if (filtroPeriodoEventoAdmin === 'passados' && !pass) return false;
+                  if (filtroPeriodoEventoAdmin === 'pendentes' && evt.statusAprovacao !== 'pendente') return false;
+                  if (filtroPeriodoEventoAdmin === 'proximos' && (pass || evt.statusAprovacao === 'pendente')) return false;
+                  if (filtroPeriodoEventoAdmin === 'passados' && (!pass || evt.statusAprovacao === 'pendente')) return false;
 
                   if (!searchEvento) return true;
                   const term = searchEvento.toLowerCase();
@@ -4185,18 +4163,23 @@ export const AdminPanelScreen: React.FC = () => {
                   );
                 })
                 .map((evento) => {
-                  const isAtivo = evento.ativo !== false;
+                  const isPendente = evento.statusAprovacao === 'pendente';
+                  const isRejeitado = evento.statusAprovacao === 'rejeitado';
+                  const isAtivo = evento.ativo !== false && !isPendente && !isRejeitado;
                   const isPublico = evento.visibilidade === 'Público';
                   const isPassado = isEventoPassado(evento);
 
                   return (
                     <div
                       key={evento.id}
-                      className={`p-4 rounded-3xl border-2 transition-all shadow-md space-y-3 bg-white ${
-                        isPassado 
-                          ? 'border-slate-300 bg-slate-50/70' 
-                          : isAtivo ? 'border-sky-200' : 'border-rose-300 bg-rose-50/40'
-                      }`}
+                      className={`p-4 rounded-3xl border-2 transition-all shadow-md space-y-3 bg-white ${isPendente
+                          ? 'border-amber-400 bg-amber-50/40 shadow-amber-500/10'
+                          : isRejeitado
+                            ? 'border-rose-300 bg-rose-50/40'
+                            : isPassado
+                              ? 'border-slate-300 bg-slate-50/70'
+                              : isAtivo ? 'border-sky-200' : 'border-rose-300 bg-rose-50/40'
+                        }`}
                     >
                       {/* Topo: Imagem Thumbnail, Título, Visibilidade e Status */}
                       <div className="flex items-start gap-3">
@@ -4209,16 +4192,24 @@ export const AdminPanelScreen: React.FC = () => {
                         </div>
                         <div className="min-w-0 flex-1 space-y-0.5">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border shadow-2xs ${
-                              isPublico ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-purple-100 text-purple-950 border-purple-300'
-                            }`}>
+                            <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border shadow-2xs ${isPublico ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-purple-100 text-purple-950 border-purple-300'
+                              }`}>
                               {evento.visibilidade}
                             </span>
-                            <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border shadow-2xs ${
-                              isAtivo ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-rose-100 text-rose-950 border-rose-300'
-                            }`}>
-                              {isAtivo ? '🟢 No Mural' : '🔴 Fora do Ar'}
-                            </span>
+                            {isPendente ? (
+                              <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full border shadow-2xs bg-amber-100 text-amber-950 border-amber-400 animate-pulse">
+                                ⏳ Aguardando Aprovação
+                              </span>
+                            ) : isRejeitado ? (
+                              <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full border shadow-2xs bg-rose-100 text-rose-950 border-rose-300">
+                                ❌ Recusado
+                              </span>
+                            ) : (
+                              <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full border shadow-2xs ${isAtivo ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-rose-100 text-rose-950 border-rose-300'
+                                }`}>
+                                {isAtivo ? '🟢 No Mural' : '🔴 Fora do Ar'}
+                              </span>
+                            )}
                             {isPassado && (
                               <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-slate-300 bg-slate-200 text-slate-700 shadow-2xs">
                                 Realizado
@@ -4253,7 +4244,7 @@ export const AdminPanelScreen: React.FC = () => {
                       </p>
 
                       {/* Se estiver suspenso com motivo */}
-                      {!isAtivo && evento.motivoSuspensao && (
+                      {!isAtivo && !isPendente && evento.motivoSuspensao && (
                         <div className="p-2 rounded-xl bg-rose-100 border border-rose-300 text-rose-950 text-[11px] font-semibold space-y-0.5">
                           <strong className="block text-[10px] font-black uppercase text-rose-900">
                             Motivo da Moderação:
@@ -4262,12 +4253,58 @@ export const AdminPanelScreen: React.FC = () => {
                         </div>
                       )}
 
+                      {/* Se foi rejeitado com motivo */}
+                      {isRejeitado && evento.motivoRejeicao && (
+                        <div className="p-2 rounded-xl bg-rose-100 border border-rose-300 text-rose-950 text-[11px] font-semibold space-y-0.5">
+                          <strong className="block text-[10px] font-black uppercase text-rose-900">
+                            Motivo da Reprovação:
+                          </strong>
+                          <p>{evento.motivoRejeicao}</p>
+                        </div>
+                      )}
+
                       {/* Ações de Moderação */}
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1 flex-wrap">
                         <div className="flex items-center gap-1 flex-wrap">
-                          
-                          {/* Alternar Ativo / Suspenso */}
-                          {isAtivo ? (
+
+                          {/* Se for Pendente: Botões de Aprovação e Rejeição */}
+                          {isPendente ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => aprovarEvento(evento.id)}
+                                className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95"
+                                title="Aprovar e publicar anúncio para todos os moradores"
+                              >
+                                <Check className="w-3 h-3 stroke-[3]" />
+                                <span>Aprovar</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const motivo = window.prompt(`Informe o motivo da recusa do anúncio "${evento.titulo}":`);
+                                  if (motivo !== null) {
+                                    rejeitarEvento(evento.id, motivo || 'Não aprovado pela administração.');
+                                  }
+                                }}
+                                className="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-95"
+                                title="Recusar publicação deste evento"
+                              >
+                                <X className="w-3 h-3" />
+                                <span>Rejeitar</span>
+                              </button>
+                            </>
+                          ) : isRejeitado ? (
+                            <button
+                              type="button"
+                              onClick={() => aprovarEvento(evento.id)}
+                              className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95"
+                              title="Reconsiderar e aprovar evento"
+                            >
+                              <Check className="w-3 h-3 stroke-[3]" />
+                              <span>Aprovar</span>
+                            </button>
+                          ) : isAtivo ? (
                             <button
                               type="button"
                               onClick={() => {
@@ -4356,25 +4393,22 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 5: ASSEMBLEIAS E REUNIÕES INFORMAIS */}
       {/* ========================================================================= */}
-      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-        canAccessAssembleias ? 'bg-rose-50/70 border-rose-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-      }`}>
-        
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessAssembleias ? 'bg-rose-50/70 border-rose-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+        }`}>
+
         {/* Accordion Header */}
         <button
           type="button"
           disabled={!canAccessAssembleias}
           onClick={() => canAccessAssembleias && setIsAssembleiasAdminOpen(prev => !prev)}
-          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-            canAccessAssembleias
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessAssembleias
               ? 'bg-rose-100/90 hover:bg-rose-200/70 border-rose-200 cursor-pointer active:scale-[0.999]'
               : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${
-              canAccessAssembleias ? 'bg-rose-500/20 border-rose-400/40 text-rose-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-            }`}>
+            <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${canAccessAssembleias ? 'bg-rose-500/20 border-rose-400/40 text-rose-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+              }`}>
               {canAccessAssembleias ? <Gavel className="w-5 h-5 text-rose-800" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
@@ -4425,17 +4459,16 @@ export const AdminPanelScreen: React.FC = () => {
         </button>
 
         {/* Accordion Content com Animação Suave de Altura */}
-        <div 
-          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            canAccessAssembleias && isAssembleiasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-          }`}
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessAssembleias && isAssembleiasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}
         >
           <div className="min-h-0 overflow-hidden bg-rose-50/50 p-4 sm:p-6 space-y-5">
-            
+
             {/* Filtros e Busca */}
             <div className="space-y-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
-                
+
                 {/* Busca */}
                 <div className="relative flex-1">
                   <input
@@ -4455,11 +4488,10 @@ export const AdminPanelScreen: React.FC = () => {
                       key={opt}
                       type="button"
                       onClick={() => setFiltroTipoAssembleia(opt)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all border shadow-2xs cursor-pointer ${
-                        filtroTipoAssembleia === opt
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all border shadow-2xs cursor-pointer ${filtroTipoAssembleia === opt
                           ? 'bg-rose-500 text-white border-rose-600 scale-[1.02]'
                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
+                        }`}
                     >
                       {opt}
                     </button>
@@ -4530,22 +4562,21 @@ export const AdminPanelScreen: React.FC = () => {
                         const isAguardando = assembleia.status === 'Realizada - Aguardando Ata';
 
                         return (
-                          <div 
+                          <div
                             key={assembleia.id}
                             className="bg-white border-2 border-rose-300 rounded-3xl shadow-md overflow-hidden transition-all hover:border-rose-400 space-y-0"
                           >
                             {/* Header Retrátil do Card de Assembleia */}
-                            <div 
+                            <div
                               onClick={() => setExpandedAssembleiasInAdmin(prev => ({ ...prev, [assembleia.id]: !Boolean(prev[assembleia.id]) }))}
                               className="p-4 sm:p-5 flex items-start justify-between gap-3 flex-wrap cursor-pointer select-none bg-rose-50/50 hover:bg-rose-100/60 transition-colors"
                             >
                               <div className="space-y-1.5 min-w-0 flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs ${
-                                    isInformal
+                                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs ${isInformal
                                       ? 'bg-indigo-100 text-indigo-950 border-indigo-300'
                                       : 'bg-amber-100 text-amber-950 border-amber-300'
-                                  }`}>
+                                    }`}>
                                     {isInformal ? '🤝 Reunião Informal' : '🏛️ Assembleia Geral'}
                                   </span>
 
@@ -4602,13 +4633,12 @@ export const AdminPanelScreen: React.FC = () => {
                                   <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-500 block">
                                     Status da Reunião:
                                   </span>
-                                  <span className={`inline-block px-3 py-1.5 rounded-xl text-xs font-black uppercase border-2 shadow-xs transition-all ${
-                                    isRealizada
+                                  <span className={`inline-block px-3 py-1.5 rounded-xl text-xs font-black uppercase border-2 shadow-xs transition-all ${isRealizada
                                       ? 'bg-emerald-100 text-emerald-950 border-emerald-400'
                                       : isAguardando
-                                      ? 'bg-amber-100 text-amber-950 border-amber-400'
-                                      : 'bg-rose-100 text-rose-950 border-rose-400'
-                                  }`}>
+                                        ? 'bg-amber-100 text-amber-950 border-amber-400'
+                                        : 'bg-rose-100 text-rose-950 border-rose-400'
+                                    }`}>
                                     {isRealizada ? '✓ Ata Publicada' : isAguardando ? '⏳ Aguardando Ata' : '📅 Agendada'}
                                   </span>
                                 </div>
@@ -4628,19 +4658,18 @@ export const AdminPanelScreen: React.FC = () => {
                             </div>
 
                             {/* Corpo Interno Retrátil com Animação Suave */}
-                            <div 
-                              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                                isCardOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
-                              }`}
+                            <div
+                              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${isCardOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+                                }`}
                             >
                               <div className="min-h-0 overflow-hidden p-4 sm:p-5 pt-3 space-y-4 border-t border-rose-100 bg-white">
-                                
+
                                 {/* Descrição e Local/Horários */}
                                 <div className="space-y-2 text-xs text-slate-800 font-medium leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
                                   <p className="text-slate-800 font-medium text-xs leading-relaxed">
                                     {assembleia.descricaoGeral}
                                   </p>
-                                  
+
                                   <div className="pt-2 border-t border-slate-200 flex items-center justify-between flex-wrap gap-2 text-xs">
                                     <span className="flex items-center gap-1 font-bold text-slate-700">
                                       <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
@@ -4678,13 +4707,12 @@ export const AdminPanelScreen: React.FC = () => {
                                             {idx + 1}. {p.titulo}
                                           </strong>
                                           {p.origemTipo && (
-                                            <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full shrink-0 border ${
-                                              p.origemTipo === 'reclamacao'
+                                            <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full shrink-0 border ${p.origemTipo === 'reclamacao'
                                                 ? 'bg-rose-100 text-rose-900 border-rose-200'
                                                 : p.origemTipo === 'reparo'
-                                                ? 'bg-indigo-100 text-indigo-900 border-indigo-200'
-                                                : 'bg-slate-100 text-slate-700 border-slate-200'
-                                            }`}>
+                                                  ? 'bg-indigo-100 text-indigo-900 border-indigo-200'
+                                                  : 'bg-slate-100 text-slate-700 border-slate-200'
+                                              }`}>
                                               {p.origemTipo === 'reclamacao' ? '📌 Reclamação' : p.origemTipo === 'reparo' ? '🔧 Reparo' : '➕ Geral'}
                                             </span>
                                           )}
@@ -4828,25 +4856,22 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 6: RECLAMAÇÕES E OCORRENCIAS */}
       {/* ========================================================================= */}
-      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-        canAccessReclamacoes ? 'bg-orange-50/70 border-orange-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-      }`}>
-        
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessReclamacoes ? 'bg-orange-50/70 border-orange-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+        }`}>
+
         {/* Accordion Header */}
         <button
           type="button"
           disabled={!canAccessReclamacoes}
           onClick={() => canAccessReclamacoes && setIsReclamacoesAdminOpen(!isReclamacoesAdminOpen)}
-          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-            canAccessReclamacoes
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessReclamacoes
               ? 'bg-orange-100/90 hover:bg-orange-200/70 border-orange-200 cursor-pointer active:scale-[0.999]'
               : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-              canAccessReclamacoes ? 'bg-orange-500/20 border-orange-400/40 text-orange-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-            }`}>
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${canAccessReclamacoes ? 'bg-orange-500/20 border-orange-400/40 text-orange-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+              }`}>
               {canAccessReclamacoes ? <MessageSquare className="w-5 h-5 text-orange-800" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
@@ -4891,17 +4916,16 @@ export const AdminPanelScreen: React.FC = () => {
         </button>
 
         {/* Accordion Body com Animação Suave de Altura */}
-        <div 
-          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            canAccessReclamacoes && isReclamacoesAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-          }`}
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessReclamacoes && isReclamacoesAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}
         >
           <div className="min-h-0 overflow-hidden bg-orange-50/50 p-4 sm:p-6 space-y-5">
 
             {/* Filtros e Busca */}
             <div className="space-y-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                
+
                 {/* Busca */}
                 <div className="sm:col-span-1 relative">
                   <input
@@ -4956,7 +4980,7 @@ export const AdminPanelScreen: React.FC = () => {
             {(() => {
               const filteredReclamacoes = reclamacoes.filter(rec => {
                 if (isMockReclamacao(rec)) return false;
-                const matchesSearch = !searchReclamacao || 
+                const matchesSearch = !searchReclamacao ||
                   rec.titulo.toLowerCase().includes(searchReclamacao.toLowerCase()) ||
                   rec.descricao.toLowerCase().includes(searchReclamacao.toLowerCase()) ||
                   rec.autorNome.toLowerCase().includes(searchReclamacao.toLowerCase()) ||
@@ -5012,12 +5036,12 @@ export const AdminPanelScreen: React.FC = () => {
                         const apoiadoresRecLista = resolveApoiadores(rec, unidades);
 
                         return (
-                          <div 
+                          <div
                             key={rec.id}
                             className="bg-white border-2 border-orange-300 rounded-3xl shadow-md overflow-hidden transition-all hover:border-orange-400 space-y-0"
                           >
                             {/* Header Retrátil do Card */}
-                            <div 
+                            <div
                               onClick={() => setExpandedReclamacoesInAdmin(prev => ({ ...prev, [rec.id]: !Boolean(prev[rec.id]) }))}
                               className="p-4 sm:p-5 flex items-start justify-between gap-3 flex-wrap cursor-pointer select-none bg-orange-50/50 hover:bg-orange-100/60 transition-colors"
                             >
@@ -5027,15 +5051,14 @@ export const AdminPanelScreen: React.FC = () => {
                                     {rec.categoria}
                                   </span>
 
-                                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border flex items-center gap-1 shadow-2xs ${
-                                    (rec.apoiosCount || 0) > 0 
-                                      ? 'bg-amber-100 text-amber-950 border-amber-300' 
+                                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border flex items-center gap-1 shadow-2xs ${(rec.apoiosCount || 0) > 0
+                                      ? 'bg-amber-100 text-amber-950 border-amber-300'
                                       : 'bg-slate-100 text-slate-700 border-slate-300'
-                                  }`}>
+                                    }`}>
                                     <ThumbsUp className="w-3 h-3 text-amber-800 fill-amber-700/20" />
                                     {rec.apoiosCount || 0} Apoio(s)
                                   </span>
-                                  
+
                                   <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
                                     <Clock className="w-3.5 h-3.5 text-slate-400" />
                                     {rec.data}
@@ -5088,9 +5111,8 @@ export const AdminPanelScreen: React.FC = () => {
                                   <select
                                     value={rec.status}
                                     onChange={(e) => atualizarStatusReclamacao(rec.id, e.target.value as StatusReclamacao)}
-                                    className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase border-2 shadow-xs cursor-pointer transition-all ${
-                                      rec.status === 'Resolvida' 
-                                        ? 'bg-emerald-100 text-emerald-950 border-emerald-400' 
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase border-2 shadow-xs cursor-pointer transition-all ${rec.status === 'Resolvida'
+                                        ? 'bg-emerald-100 text-emerald-950 border-emerald-400'
                                         : rec.status === 'Em andamento'
                                           ? 'bg-indigo-100 text-indigo-950 border-indigo-400'
                                           : rec.status === 'Em análise'
@@ -5098,7 +5120,7 @@ export const AdminPanelScreen: React.FC = () => {
                                             : rec.status === 'Encerrada'
                                               ? 'bg-slate-200 text-slate-900 border-slate-400'
                                               : 'bg-rose-100 text-rose-950 border-rose-400'
-                                    }`}
+                                      }`}
                                   >
                                     <option value="Recebida">📥 Recebida</option>
                                     <option value="Em análise">🔍 Em análise</option>
@@ -5123,13 +5145,12 @@ export const AdminPanelScreen: React.FC = () => {
                             </div>
 
                             {/* Corpo Interno Retrátil com Animação Suave */}
-                            <div 
-                              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                                isCardOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
-                              }`}
+                            <div
+                              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${isCardOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+                                }`}
                             >
                               <div className="min-h-0 overflow-hidden p-4 sm:p-5 pt-3 space-y-4 border-t border-orange-100 bg-white">
-                                
+
                                 {/* Descrição e Anexos */}
                                 <div className="space-y-2 text-xs text-slate-800 font-medium leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
                                   <p>{rec.descricao}</p>
@@ -5141,15 +5162,15 @@ export const AdminPanelScreen: React.FC = () => {
                                       </span>
                                       <div className="w-48 h-48 aspect-square rounded-xl border border-slate-300 bg-slate-100 flex items-center justify-center overflow-hidden">
                                         {rec.anexoTipo === 'video' ? (
-                                          <video 
-                                            src={rec.anexoUrl} 
-                                            controls 
+                                          <video
+                                            src={rec.anexoUrl}
+                                            controls
                                             className="w-full h-full object-contain"
                                           />
                                         ) : (
-                                          <img 
-                                            src={rec.anexoUrl} 
-                                            alt="Anexo" 
+                                          <img
+                                            src={rec.anexoUrl}
+                                            alt="Anexo"
                                             className="w-full h-full object-contain"
                                           />
                                         )}
@@ -5265,16 +5286,16 @@ export const AdminPanelScreen: React.FC = () => {
                                       ) : (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                                           {apoiadoresRecLista.map((apoiador, idx) => (
-                                            <div 
+                                            <div
                                               key={apoiador.id || idx}
                                               className="p-3 rounded-2xl bg-amber-50/80 border border-amber-300/80 shadow-2xs flex items-center justify-between gap-2.5 hover:bg-amber-100/70 transition-all"
                                             >
                                               <div className="flex items-center gap-2.5 min-w-0">
                                                 {apoiador.foto ? (
-                                                  <img 
-                                                    src={apoiador.foto} 
-                                                    alt={apoiador.nome} 
-                                                    className="w-8 h-8 rounded-full object-cover border border-amber-300 shrink-0 shadow-2xs" 
+                                                  <img
+                                                    src={apoiador.foto}
+                                                    alt={apoiador.nome}
+                                                    className="w-8 h-8 rounded-full object-cover border border-amber-300 shrink-0 shadow-2xs"
                                                   />
                                                 ) : (
                                                   <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
@@ -5365,20 +5386,18 @@ export const AdminPanelScreen: React.FC = () => {
                                         rec.comentarios.map((com) => (
                                           <div
                                             key={com.id}
-                                            className={`p-3 rounded-2xl border-2 transition-all space-y-2 ${
-                                              com.oculto
+                                            className={`p-3 rounded-2xl border-2 transition-all space-y-2 ${com.oculto
                                                 ? 'bg-rose-50/90 border-rose-300 shadow-2xs'
                                                 : com.oficial
                                                   ? 'bg-amber-50 border-amber-300 shadow-2xs'
                                                   : 'bg-white border-slate-200 shadow-xs'
-                                            }`}
+                                              }`}
                                           >
                                             {/* Header do Comentário com Autoria Transparente */}
                                             <div className="flex items-start justify-between gap-2 flex-wrap">
                                               <div className="flex items-center gap-1.5 flex-wrap">
-                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] ${
-                                                  com.oficial ? 'bg-amber-500 text-slate-950' : 'bg-indigo-100 text-indigo-900'
-                                                }`}>
+                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] ${com.oficial ? 'bg-amber-500 text-slate-950' : 'bg-indigo-100 text-indigo-900'
+                                                  }`}>
                                                   {com.oficial ? <ShieldCheck className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />}
                                                 </div>
                                                 <strong className="text-xs font-black text-slate-950">
@@ -5427,7 +5446,7 @@ export const AdminPanelScreen: React.FC = () => {
                                             {/* Ações de Moderação do Comentário */}
                                             <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 ml-7 flex-wrap">
                                               <div className="flex items-center gap-1.5 flex-wrap">
-                                                
+
                                                 {/* Botão Ocultar / Reexibir */}
                                                 {com.oculto ? (
                                                   <button
@@ -5526,25 +5545,22 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {/* SEÇÃO 7: REPAROS E MANUTENÇÕES */}
       {/* ========================================================================= */}
-      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-        canAccessReparos ? 'bg-teal-50/70 border-teal-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-      }`}>
-        
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessReparos ? 'bg-teal-50/70 border-teal-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+        }`}>
+
         {/* Accordion Header */}
         <button
           type="button"
           disabled={!canAccessReparos}
           onClick={() => canAccessReparos && setIsReparosAdminOpen(prev => !prev)}
-          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-            canAccessReparos
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessReparos
               ? 'bg-teal-100/90 hover:bg-teal-200/70 border-teal-200 cursor-pointer active:scale-[0.999]'
               : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-              canAccessReparos ? 'bg-teal-500/20 border-teal-400/40 text-teal-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-            }`}>
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${canAccessReparos ? 'bg-teal-500/20 border-teal-400/40 text-teal-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+              }`}>
               {canAccessReparos ? <Wrench className="w-5 h-5 text-teal-800" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
             <div>
@@ -5587,17 +5603,16 @@ export const AdminPanelScreen: React.FC = () => {
         </button>
 
         {/* Accordion Body com Animação Suave de Altura */}
-        <div 
-          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-            canAccessReparos && isReparosAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-          }`}
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessReparos && isReparosAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}
         >
           <div className="min-h-0 overflow-hidden bg-teal-50/50 p-4 sm:p-6 space-y-5">
 
             {/* Filtros e Busca */}
             <div className="space-y-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
-                
+
                 {/* Busca */}
                 <div className="sm:col-span-1 relative">
                   <input
@@ -5673,7 +5688,7 @@ export const AdminPanelScreen: React.FC = () => {
               <span className="text-xs font-black uppercase tracking-wider text-slate-900">
                 Ordens de Reparo & Manutenção ({reparos
                   .filter(rep => {
-                    const matchesSearch = !searchReparo || 
+                    const matchesSearch = !searchReparo ||
                       rep.titulo.toLowerCase().includes(searchReparo.toLowerCase()) ||
                       rep.descricao.toLowerCase().includes(searchReparo.toLowerCase()) ||
                       rep.solicitanteNome.toLowerCase().includes(searchReparo.toLowerCase()) ||
@@ -5710,7 +5725,7 @@ export const AdminPanelScreen: React.FC = () => {
             <div className="space-y-4">
               {reparos
                 .filter(rep => {
-                  const matchesSearch = !searchReparo || 
+                  const matchesSearch = !searchReparo ||
                     rep.titulo.toLowerCase().includes(searchReparo.toLowerCase()) ||
                     rep.descricao.toLowerCase().includes(searchReparo.toLowerCase()) ||
                     rep.solicitanteNome.toLowerCase().includes(searchReparo.toLowerCase()) ||
@@ -5723,758 +5738,751 @@ export const AdminPanelScreen: React.FC = () => {
                   return matchesSearch && matchesStatus && matchesPorte && matchesCategoria;
                 })
                 .length === 0 ? (
-                  <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl space-y-2">
-                    <Wrench className="w-8 h-8 text-slate-400 mx-auto" />
-                    <p className="text-sm font-bold text-slate-700">Nenhum reparo encontrado com estes filtros.</p>
-                  </div>
-                ) : (
-                  reparos
-                    .filter(rep => {
-                      const matchesSearch = !searchReparo || 
-                        rep.titulo.toLowerCase().includes(searchReparo.toLowerCase()) ||
-                        rep.descricao.toLowerCase().includes(searchReparo.toLowerCase()) ||
-                        rep.solicitanteNome.toLowerCase().includes(searchReparo.toLowerCase()) ||
-                        rep.solicitanteUnidade.toLowerCase().includes(searchReparo.toLowerCase());
+                <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl space-y-2">
+                  <Wrench className="w-8 h-8 text-slate-400 mx-auto" />
+                  <p className="text-sm font-bold text-slate-700">Nenhum reparo encontrado com estes filtros.</p>
+                </div>
+              ) : (
+                reparos
+                  .filter(rep => {
+                    const matchesSearch = !searchReparo ||
+                      rep.titulo.toLowerCase().includes(searchReparo.toLowerCase()) ||
+                      rep.descricao.toLowerCase().includes(searchReparo.toLowerCase()) ||
+                      rep.solicitanteNome.toLowerCase().includes(searchReparo.toLowerCase()) ||
+                      rep.solicitanteUnidade.toLowerCase().includes(searchReparo.toLowerCase());
 
-                      const matchesStatus = filtroStatusReparo === 'Todas' || rep.status === filtroStatusReparo;
-                      const matchesPorte = filtroPorteReparo === 'Todos' || rep.porte === filtroPorteReparo;
-                      const matchesCategoria = filtroCategoriaReparo === 'Todas' || rep.categoria === filtroCategoriaReparo;
+                    const matchesStatus = filtroStatusReparo === 'Todas' || rep.status === filtroStatusReparo;
+                    const matchesPorte = filtroPorteReparo === 'Todos' || rep.porte === filtroPorteReparo;
+                    const matchesCategoria = filtroCategoriaReparo === 'Todas' || rep.categoria === filtroCategoriaReparo;
 
-                      return matchesSearch && matchesStatus && matchesPorte && matchesCategoria;
-                    })
-                    .map((rep) => {
-                      const isCardOpen = Boolean(expandedReparosInAdmin[rep.id]);
-                      const isCommentsOpen = expandedCommentsInReparosAdmin[rep.id] !== false; // default open
-                      const isOrcsOpen = expandedOrcamentosInReparosAdmin[rep.id] !== false; // default open
-                      const isApoiadoresOpen = expandedApoiadoresInReparosAdmin[rep.id] !== false; // default open
-                      const hiddenCommentsCount = (rep.comentarios || []).filter(c => c.oculto).length;
-                      const apoiadoresRepLista = resolveApoiadores(rep, unidades);
+                    return matchesSearch && matchesStatus && matchesPorte && matchesCategoria;
+                  })
+                  .map((rep) => {
+                    const isCardOpen = Boolean(expandedReparosInAdmin[rep.id]);
+                    const isCommentsOpen = expandedCommentsInReparosAdmin[rep.id] !== false; // default open
+                    const isOrcsOpen = expandedOrcamentosInReparosAdmin[rep.id] !== false; // default open
+                    const isApoiadoresOpen = expandedApoiadoresInReparosAdmin[rep.id] !== false; // default open
+                    const hiddenCommentsCount = (rep.comentarios || []).filter(c => c.oculto).length;
+                    const apoiadoresRepLista = resolveApoiadores(rep, unidades);
 
-                      return (
-                        <div 
-                          key={rep.id}
-                          className="bg-white border-2 border-emerald-500 rounded-3xl shadow-md overflow-hidden transition-all hover:border-emerald-600 space-y-0"
+                    return (
+                      <div
+                        key={rep.id}
+                        className="bg-white border-2 border-emerald-500 rounded-3xl shadow-md overflow-hidden transition-all hover:border-emerald-600 space-y-0"
+                      >
+
+                        {/* Header Retrátil do Card de Reparo */}
+                        <div
+                          onClick={() => setExpandedReparosInAdmin(prev => ({ ...prev, [rep.id]: !Boolean(prev[rep.id]) }))}
+                          className="p-4 sm:p-5 flex items-start justify-between gap-3 flex-wrap cursor-pointer select-none bg-emerald-50/50 hover:bg-emerald-100/60 transition-colors"
                         >
-                          
-                          {/* Header Retrátil do Card de Reparo */}
-                          <div 
-                            onClick={() => setExpandedReparosInAdmin(prev => ({ ...prev, [rep.id]: !Boolean(prev[rep.id]) }))}
-                            className="p-4 sm:p-5 flex items-start justify-between gap-3 flex-wrap cursor-pointer select-none bg-emerald-50/50 hover:bg-emerald-100/60 transition-colors"
-                          >
-                            <div className="space-y-1.5 min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
-                                  rep.porte === 'Pequeno' ? 'bg-emerald-100 text-emerald-950 border-emerald-300' :
+                          <div className="space-y-1.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${rep.porte === 'Pequeno' ? 'bg-emerald-100 text-emerald-950 border-emerald-300' :
                                   rep.porte === 'Médio' ? 'bg-amber-100 text-amber-950 border-amber-300' :
-                                  'bg-rose-100 text-rose-950 border-rose-300'
+                                    'bg-rose-100 text-rose-950 border-rose-300'
                                 }`}>
-                                  Porte {rep.porte}
-                                </span>
+                                Porte {rep.porte}
+                              </span>
 
-                                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-900 border border-slate-300">
-                                  {rep.categoria}
-                                </span>
+                              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-900 border border-slate-300">
+                                {rep.categoria}
+                              </span>
 
-                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border flex items-center gap-1 shadow-2xs ${
-                                  (rep.apoiosCount || 0) > 0 
-                                    ? 'bg-amber-100 text-amber-950 border-amber-300' 
-                                    : 'bg-slate-100 text-slate-700 border-slate-300'
+                              <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border flex items-center gap-1 shadow-2xs ${(rep.apoiosCount || 0) > 0
+                                  ? 'bg-amber-100 text-amber-950 border-amber-300'
+                                  : 'bg-slate-100 text-slate-700 border-slate-300'
                                 }`}>
-                                  <ThumbsUp className="w-3 h-3 text-amber-800 fill-amber-700/20" />
-                                  {rep.apoiosCount || 0} Apoio(s)
-                                </span>
-                                
-                                <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                  {rep.dataSolicitacao}
-                                </span>
+                                <ThumbsUp className="w-3 h-3 text-amber-800 fill-amber-700/20" />
+                                {rep.apoiosCount || 0} Apoio(s)
+                              </span>
 
-                                <span className="text-xs font-black text-slate-950 bg-white/90 px-2 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
-                                  Solicitante: {rep.solicitanteNome} ({rep.solicitanteUnidade})
-                                </span>
+                              <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                {rep.dataSolicitacao}
+                              </span>
+
+                              <span className="text-xs font-black text-slate-950 bg-white/90 px-2 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
+                                Solicitante: {rep.solicitanteNome} ({rep.solicitanteUnidade})
+                              </span>
+                            </div>
+
+                            <h4 className="text-base font-black text-slate-950 leading-tight">
+                              {rep.titulo}
+                            </h4>
+
+                            {/* Prévia quando fechado */}
+                            {!isCardOpen && (
+                              <div className="flex items-center gap-3 pt-0.5 text-xs text-slate-600 font-medium flex-wrap">
+                                <p className="line-clamp-1 flex-1">
+                                  {rep.descricao}
+                                </p>
+                                <div className="flex items-center gap-2 shrink-0 text-[11px] font-bold text-slate-500">
+                                  {(rep.apoiosCount || 0) > 0 && (
+                                    <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1 font-bold">
+                                      <ThumbsUp className="w-3 h-3 text-amber-600 fill-amber-500/20" />
+                                      {rep.apoiosCount} Apoio(s)
+                                    </span>
+                                  )}
+                                  {rep.orcamentos && rep.orcamentos.length > 0 && (
+                                    <span className="text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md">
+                                      {rep.orcamentos.length} Orçamento(s)
+                                    </span>
+                                  )}
+                                  {rep.comentarios && rep.comentarios.length > 0 && (
+                                    <span className="text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                                      {rep.comentarios.length} Comentário(s)
+                                    </span>
+                                  )}
+                                </div>
                               </div>
+                            )}
+                          </div>
 
-                              <h4 className="text-base font-black text-slate-950 leading-tight">
-                                {rep.titulo}
-                              </h4>
+                          {/* Seletor de Status Interativo e Botão Expandir */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="space-y-0.5 text-right" onClick={(e) => e.stopPropagation()}>
+                              <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                                Status do Reparo:
+                              </span>
+                              <select
+                                value={rep.status}
+                                onChange={(e) => atualizarStatusReparo(rep.id, e.target.value as StatusReparo)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase border-2 shadow-xs cursor-pointer transition-all ${rep.status === 'Resolvido'
+                                    ? 'bg-emerald-100 text-emerald-950 border-emerald-400'
+                                    : rep.status === 'Em Execução'
+                                      ? 'bg-sky-100 text-sky-950 border-sky-400'
+                                      : rep.status === 'Orçamento Contratado'
+                                        ? 'bg-teal-100 text-teal-950 border-teal-400'
+                                        : rep.status === 'Análise de Orçamento'
+                                          ? 'bg-orange-100 text-orange-950 border-orange-400'
+                                          : rep.status === 'Buscando Orçamento'
+                                            ? 'bg-amber-100 text-amber-950 border-amber-400'
+                                            : rep.status === 'Em análise'
+                                              ? 'bg-purple-100 text-purple-950 border-purple-400'
+                                              : rep.status === 'Cancelado'
+                                                ? 'bg-slate-200 text-slate-900 border-slate-400'
+                                                : 'bg-blue-100 text-blue-950 border-blue-400'
+                                  }`}
+                              >
+                                <option value="Solicitado">📥 Solicitado</option>
+                                <option value="Em análise">🔍 Em análise</option>
+                                <option value="Buscando Orçamento">📋 Buscando Orçamento</option>
+                                <option value="Análise de Orçamento">⚖️ Análise de Orçamento</option>
+                                <option value="Orçamento Contratado">🤝 Orçamento Contratado</option>
+                                <option value="Em Execução">🛠️ Em Execução</option>
+                                <option value="Resolvido">✅ Resolvido</option>
+                                <option value="Cancelado">🔒 Cancelado</option>
+                              </select>
+                            </div>
 
-                              {/* Prévia quando fechado */}
-                              {!isCardOpen && (
-                                <div className="flex items-center gap-3 pt-0.5 text-xs text-slate-600 font-medium flex-wrap">
-                                  <p className="line-clamp-1 flex-1">
-                                    {rep.descricao}
-                                  </p>
-                                  <div className="flex items-center gap-2 shrink-0 text-[11px] font-bold text-slate-500">
-                                    {(rep.apoiosCount || 0) > 0 && (
-                                      <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1 font-bold">
-                                        <ThumbsUp className="w-3 h-3 text-amber-600 fill-amber-500/20" />
-                                        {rep.apoiosCount} Apoio(s)
-                                      </span>
-                                    )}
-                                    {rep.orcamentos && rep.orcamentos.length > 0 && (
-                                      <span className="text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md">
-                                        {rep.orcamentos.length} Orçamento(s)
-                                      </span>
-                                    )}
-                                    {rep.comentarios && rep.comentarios.length > 0 && (
-                                      <span className="text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
-                                        {rep.comentarios.length} Comentário(s)
-                                      </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedReparosInAdmin(prev => ({ ...prev, [rep.id]: !Boolean(prev[rep.id]) }));
+                              }}
+                              className="p-2 rounded-xl bg-white border border-emerald-300 text-slate-700 hover:bg-emerald-50 shadow-2xs cursor-pointer ml-1"
+                              title={isCardOpen ? "Recolher detalhes deste reparo" : "Expandir detalhes deste reparo"}
+                            >
+                              <ChevronDown className={`w-4 h-4 text-emerald-900 transition-transform duration-500 ease-out ${isCardOpen ? 'rotate-180' : 'rotate-0'}`} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Corpo Interno Retrátil com Animação Suave */}
+                        <div
+                          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${isCardOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+                            }`}
+                        >
+                          <div className="min-h-0 overflow-hidden p-4 sm:p-5 pt-3 space-y-4 border-t border-emerald-100 bg-white">
+
+                            {/* Descrição e Anexos */}
+                            <div className="space-y-2 text-xs text-slate-800 font-medium leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                              <p>{rep.descricao}</p>
+
+                              {/* Anexo de Abertura se houver */}
+                              {rep.anexoUrl && (
+                                <div className="pt-2 border-t border-slate-200">
+                                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 block mb-1">
+                                    Evidência Anexada:
+                                  </span>
+                                  <div className="w-48 h-48 aspect-square rounded-xl border border-slate-300 bg-slate-100 flex items-center justify-center overflow-hidden">
+                                    {rep.anexoTipo === 'video' ? (
+                                      <video
+                                        src={rep.anexoUrl}
+                                        controls
+                                        className="w-full h-full object-contain"
+                                      />
+                                    ) : (
+                                      <img
+                                        src={rep.anexoUrl}
+                                        alt="Anexo do Reparo"
+                                        className="w-full h-full object-contain"
+                                      />
                                     )}
                                   </div>
                                 </div>
                               )}
-                            </div>
 
-                            {/* Seletor de Status Interativo e Botão Expandir */}
-                            <div className="flex items-center gap-2 shrink-0">
-                              <div className="space-y-0.5 text-right" onClick={(e) => e.stopPropagation()}>
-                                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-500 block">
-                                  Status do Reparo:
-                                </span>
-                                <select
-                                  value={rep.status}
-                                  onChange={(e) => atualizarStatusReparo(rep.id, e.target.value as StatusReparo)}
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase border-2 shadow-xs cursor-pointer transition-all ${
-                                    rep.status === 'Resolvido' 
-                                      ? 'bg-emerald-100 text-emerald-950 border-emerald-400' 
-                                      : rep.status === 'Em Execução'
-                                        ? 'bg-sky-100 text-sky-950 border-sky-400'
-                                        : rep.status === 'Orçamento Contratado'
-                                          ? 'bg-teal-100 text-teal-950 border-teal-400'
-                                          : rep.status === 'Análise de Orçamento'
-                                            ? 'bg-orange-100 text-orange-950 border-orange-400'
-                                            : rep.status === 'Buscando Orçamento'
-                                              ? 'bg-amber-100 text-amber-950 border-amber-400'
-                                              : rep.status === 'Em análise'
-                                                ? 'bg-purple-100 text-purple-950 border-purple-400'
-                                                : rep.status === 'Cancelado'
-                                                  ? 'bg-slate-200 text-slate-900 border-slate-400'
-                                                  : 'bg-blue-100 text-blue-950 border-blue-400'
-                                  }`}
-                                >
-                                  <option value="Solicitado">📥 Solicitado</option>
-                                  <option value="Em análise">🔍 Em análise</option>
-                                  <option value="Buscando Orçamento">📋 Buscando Orçamento</option>
-                                  <option value="Análise de Orçamento">⚖️ Análise de Orçamento</option>
-                                  <option value="Orçamento Contratado">🤝 Orçamento Contratado</option>
-                                  <option value="Em Execução">🛠️ Em Execução</option>
-                                  <option value="Resolvido">✅ Resolvido</option>
-                                  <option value="Cancelado">🔒 Cancelado</option>
-                                </select>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedReparosInAdmin(prev => ({ ...prev, [rep.id]: !Boolean(prev[rep.id]) }));
-                                }}
-                                className="p-2 rounded-xl bg-white border border-emerald-300 text-slate-700 hover:bg-emerald-50 shadow-2xs cursor-pointer ml-1"
-                                title={isCardOpen ? "Recolher detalhes deste reparo" : "Expandir detalhes deste reparo"}
-                              >
-                                <ChevronDown className={`w-4 h-4 text-emerald-900 transition-transform duration-500 ease-out ${isCardOpen ? 'rotate-180' : 'rotate-0'}`} />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Corpo Interno Retrátil com Animação Suave */}
-                          <div 
-                            className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                              isCardOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
-                            }`}
-                          >
-                            <div className="min-h-0 overflow-hidden p-4 sm:p-5 pt-3 space-y-4 border-t border-emerald-100 bg-white">
-                              
-                              {/* Descrição e Anexos */}
-                              <div className="space-y-2 text-xs text-slate-800 font-medium leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                                <p>{rep.descricao}</p>
-
-                                {/* Anexo de Abertura se houver */}
-                                {rep.anexoUrl && (
-                                  <div className="pt-2 border-t border-slate-200">
-                                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 block mb-1">
-                                      Evidência Anexada:
-                                    </span>
-                                    <div className="w-48 h-48 aspect-square rounded-xl border border-slate-300 bg-slate-100 flex items-center justify-center overflow-hidden">
-                                      {rep.anexoTipo === 'video' ? (
-                                        <video 
-                                          src={rep.anexoUrl} 
-                                          controls 
-                                          className="w-full h-full object-contain"
-                                        />
-                                      ) : (
-                                        <img 
-                                          src={rep.anexoUrl} 
-                                          alt="Anexo do Reparo" 
-                                          className="w-full h-full object-contain"
-                                        />
-                                      )}
+                              {/* Fotos Antes / Depois Cadastradas */}
+                              {rep.fotosAntes && rep.fotosAntes.length > 0 && !rep.anexoUrl && (
+                                <div className="pt-2 border-t border-slate-200 flex gap-2 overflow-x-auto pb-1">
+                                  {rep.fotosAntes.map((foto, fIdx) => (
+                                    <div key={fIdx} className="w-20 h-20 aspect-square rounded-xl border border-slate-300 bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                                      <img
+                                        src={foto}
+                                        alt="Foto Antes"
+                                        className="w-full h-full object-contain"
+                                      />
                                     </div>
-                                  </div>
-                                )}
-
-                                {/* Fotos Antes / Depois Cadastradas */}
-                                {rep.fotosAntes && rep.fotosAntes.length > 0 && !rep.anexoUrl && (
-                                  <div className="pt-2 border-t border-slate-200 flex gap-2 overflow-x-auto pb-1">
-                                    {rep.fotosAntes.map((foto, fIdx) => (
-                                      <div key={fIdx} className="w-20 h-20 aspect-square rounded-xl border border-slate-300 bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
-                                        <img 
-                                          src={foto} 
-                                          alt="Foto Antes" 
-                                          className="w-full h-full object-contain" 
-                                        />
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-
-                                {/* Informação de Apoios e Cotação */}
-                                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 text-[11px] flex-wrap">
-                                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                                    <ThumbsUp className="w-3.5 h-3.5 text-amber-700 fill-amber-500/30" />
-                                    <span><strong>{rep.apoiosCount || 0}</strong> {rep.apoiosCount === 1 ? 'morador apoia' : 'moradores apoiam'} a prioridade desta manutenção</span>
-                                  </span>
-
-                                  {rep.valorContratado && (
-                                    <span className="font-black text-emerald-950 bg-emerald-100 px-2.5 py-0.5 rounded-lg border border-emerald-300 shadow-2xs">
-                                      Valor Contratado: {rep.valorContratado} {rep.empresaContratada ? `(${rep.empresaContratada})` : ''}
-                                    </span>
-                                  )}
+                                  ))}
                                 </div>
+                              )}
+
+                              {/* Informação de Apoios e Cotação */}
+                              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 text-[11px] flex-wrap">
+                                <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                                  <ThumbsUp className="w-3.5 h-3.5 text-amber-700 fill-amber-500/30" />
+                                  <span><strong>{rep.apoiosCount || 0}</strong> {rep.apoiosCount === 1 ? 'morador apoia' : 'moradores apoiam'} a prioridade desta manutenção</span>
+                                </span>
+
+                                {rep.valorContratado && (
+                                  <span className="font-black text-emerald-950 bg-emerald-100 px-2.5 py-0.5 rounded-lg border border-emerald-300 shadow-2xs">
+                                    Valor Contratado: {rep.valorContratado} {rep.empresaContratada ? `(${rep.empresaContratada})` : ''}
+                                  </span>
+                                )}
                               </div>
+                            </div>
 
-                              {/* Ações Rápidas de Moderação */}
-                              <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  
-                                  {/* Botão Resolver Reparo Simples */}
-                                  {rep.status !== 'Resolvido' && rep.status !== 'Cancelado' && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (window.confirm(`Deseja marcar o reparo "${rep.titulo}" como RESOLVIDO diretamente?`)) {
-                                          resolverReparoSimples(rep.id);
-                                        }
-                                      }}
-                                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer"
-                                      title="Finalizar e marcar como resolvido em 1 clique (para manutenções simples como troca de lâmpada, ajustes rápidos)"
-                                    >
-                                      <Zap className="w-3.5 h-3.5 fill-white" />
-                                      <span>Resolver Reparo Direto (Simples)</span>
-                                    </button>
-                                  )}
+                            {/* Ações Rápidas de Moderação */}
+                            <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap">
 
-                                  {/* Notificar Solicitante */}
+                                {/* Botão Resolver Reparo Simples */}
+                                {rep.status !== 'Resolvido' && rep.status !== 'Cancelado' && (
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      const rawUnit = String(rep.solicitanteUnidade || '').replace(/[^0-9]/g, '');
-                                      const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
-                                        id: `unit-${rawUnit || 'temp'}`,
-                                        numero: rep.solicitanteUnidade || 'Geral',
-                                        bloco: 'A',
-                                        vagaGaragem: '',
-                                        moradores: []
-                                      };
-                                      setSelectedUnidadeParaNotificar(unitObj);
-                                      setIsNotifyModalOpen(true);
+                                      if (window.confirm(`Deseja marcar o reparo "${rep.titulo}" como RESOLVIDO diretamente?`)) {
+                                        resolverReparoSimples(rep.id);
+                                      }
                                     }}
-                                    className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black uppercase flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
+                                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer"
+                                    title="Finalizar e marcar como resolvido em 1 clique (para manutenções simples como troca de lâmpada, ajustes rápidos)"
                                   >
-                                    <Bell className="w-3.5 h-3.5 text-amber-700" />
-                                    <span>Notificar Solicitante</span>
+                                    <Zap className="w-3.5 h-3.5 fill-white" />
+                                    <span>Resolver Reparo Direto (Simples)</span>
                                   </button>
-                                </div>
+                                )}
 
-                                {/* Excluir Reparo */}
+                                {/* Notificar Solicitante */}
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (window.confirm(`Tem certeza que deseja excluir permanentemente o pedido de reparo "${rep.titulo}"?`)) {
-                                      excluirReparo(rep.id);
-                                    }
+                                    const rawUnit = String(rep.solicitanteUnidade || '').replace(/[^0-9]/g, '');
+                                    const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
+                                      id: `unit-${rawUnit || 'temp'}`,
+                                      numero: rep.solicitanteUnidade || 'Geral',
+                                      bloco: 'A',
+                                      vagaGaragem: '',
+                                      moradores: []
+                                    };
+                                    setSelectedUnidadeParaNotificar(unitObj);
+                                    setIsNotifyModalOpen(true);
                                   }}
-                                  className="p-2 rounded-xl hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
-                                  title="Excluir Pedido de Reparo"
+                                  className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black uppercase flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Bell className="w-3.5 h-3.5 text-amber-700" />
+                                  <span>Notificar Solicitante</span>
                                 </button>
                               </div>
 
-                              {/* ========================================================= */}
-                              {/* SUBSEÇÃO: MORADORES QUE APOIARAM (QUEM DEU JOINHA) */}
-                              {/* ========================================================= */}
-                              <div className="pt-3 border-t-2 border-slate-200 space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                                      <ThumbsUp className="w-4 h-4 text-amber-700" />
-                                      Moradores que Apoiaram / Deram Joinha ({apoiadoresRepLista.length})
-                                    </span>
-                                    {apoiadoresRepLista.length > 0 && (
-                                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300 text-[9px] font-black uppercase">
-                                        {apoiadoresRepLista.length} {apoiadoresRepLista.length === 1 ? 'Joinha' : 'Joinhas'}
-                                      </span>
-                                    )}
-                                  </div>
+                              {/* Excluir Reparo */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm(`Tem certeza que deseja excluir permanentemente o pedido de reparo "${rep.titulo}"?`)) {
+                                    excluirReparo(rep.id);
+                                  }
+                                }}
+                                className="p-2 rounded-xl hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                                title="Excluir Pedido de Reparo"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
 
-                                  <button
-                                    type="button"
-                                    onClick={() => setExpandedApoiadoresInReparosAdmin(prev => ({ ...prev, [rep.id]: !isApoiadoresOpen }))}
-                                    className="text-xs font-extrabold text-amber-900 hover:underline cursor-pointer flex items-center gap-1"
-                                  >
-                                    {isApoiadoresOpen ? 'Recolher Apoios' : 'Ver Quem Apoiou'}
-                                    {isApoiadoresOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                                  </button>
+                            {/* ========================================================= */}
+                            {/* SUBSEÇÃO: MORADORES QUE APOIARAM (QUEM DEU JOINHA) */}
+                            {/* ========================================================= */}
+                            <div className="pt-3 border-t-2 border-slate-200 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                                    <ThumbsUp className="w-4 h-4 text-amber-700" />
+                                    Moradores que Apoiaram / Deram Joinha ({apoiadoresRepLista.length})
+                                  </span>
+                                  {apoiadoresRepLista.length > 0 && (
+                                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300 text-[9px] font-black uppercase">
+                                      {apoiadoresRepLista.length} {apoiadoresRepLista.length === 1 ? 'Joinha' : 'Joinhas'}
+                                    </span>
+                                  )}
                                 </div>
 
-                                {isApoiadoresOpen && (
-                                  <div className="space-y-2 animate-in fade-in duration-200">
-                                    {apoiadoresRepLista.length === 0 ? (
-                                      <p className="text-xs text-slate-500 italic py-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                                        Nenhum morador deu joinha / apoio nesta ordem de reparo até o momento.
-                                      </p>
-                                    ) : (
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                                        {apoiadoresRepLista.map((apoiador, idx) => (
-                                          <div 
-                                            key={apoiador.id || idx}
-                                            className="p-3 rounded-2xl bg-amber-50/80 border border-amber-300/80 shadow-2xs flex items-center justify-between gap-2.5 hover:bg-amber-100/70 transition-all"
-                                          >
-                                            <div className="flex items-center gap-2.5 min-w-0">
-                                              {apoiador.foto ? (
-                                                <img 
-                                                  src={apoiador.foto} 
-                                                  alt={apoiador.nome} 
-                                                  className="w-8 h-8 rounded-full object-cover border border-amber-300 shrink-0 shadow-2xs" 
-                                                />
-                                              ) : (
-                                                <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                                                  {apoiador.nome ? apoiador.nome.substring(0, 2).toUpperCase() : 'MO'}
-                                                </div>
-                                              )}
-                                              <div className="min-w-0">
-                                                <span className="text-xs font-black text-slate-950 block truncate">
-                                                  {apoiador.nome}
-                                                </span>
-                                                <span className="text-[10px] font-bold text-amber-950 bg-amber-200/80 px-1.5 py-0.5 rounded border border-amber-300 inline-block">
-                                                  {apoiador.unidade || 'Morador'}
-                                                </span>
-                                                {apoiador.data && (
-                                                  <span className="text-[9px] text-slate-600 block mt-0.5">
-                                                    {apoiador.data}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            </div>
-
-                                            <div className="shrink-0 flex items-center gap-1">
-                                              <span className="p-1 rounded-full bg-amber-200 text-amber-950 border border-amber-300" title="Apoiou esta manutenção">
-                                                <ThumbsUp className="w-3.5 h-3.5 fill-amber-700 stroke-amber-950" />
-                                              </span>
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  const rawUnit = String(apoiador.unidade || '').replace(/[^0-9]/g, '');
-                                                  const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
-                                                    id: `unit-${rawUnit || 'temp'}`,
-                                                    numero: apoiador.unidade || 'Geral',
-                                                    bloco: apoiador.bloco || 'A',
-                                                    vagaGaragem: '',
-                                                    moradores: []
-                                                  };
-                                                  setSelectedUnidadeParaNotificar(unitObj);
-                                                  setIsNotifyModalOpen(true);
-                                                }}
-                                                className="p-1 rounded-lg hover:bg-amber-200 text-amber-800 transition-colors cursor-pointer"
-                                                title={`Notificar ${apoiador.nome}`}
-                                              >
-                                                <Bell className="w-3.5 h-3.5" />
-                                              </button>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedApoiadoresInReparosAdmin(prev => ({ ...prev, [rep.id]: !isApoiadoresOpen }))}
+                                  className="text-xs font-extrabold text-amber-900 hover:underline cursor-pointer flex items-center gap-1"
+                                >
+                                  {isApoiadoresOpen ? 'Recolher Apoios' : 'Ver Quem Apoiou'}
+                                  {isApoiadoresOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                </button>
                               </div>
 
-                              {/* ========================================================= */}
-                              {/* SUBSEÇÃO: ORÇAMENTOS E COTAÇÕES DE EMPRESAS */}
-                              {/* ========================================================= */}
-                              <div className="pt-3 border-t-2 border-slate-200 space-y-3">
-                                <div className="flex items-center justify-between gap-2 flex-wrap">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                                      <DollarSign className="w-4 h-4 text-emerald-700" />
-                                      Orçamentos & Cotações Publicadas ({rep.orcamentos?.length || 0})
-                                    </span>
-                                    {rep.orcamentoAprovadoId && (
-                                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-300 text-[9px] font-black uppercase">
-                                        Contratado: {rep.empresaContratada || 'Empresa Selecionada'}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setReparoParaOrcamento(rep);
-                                        setFormOrcamento({
-                                          empresa: '',
-                                          siteUrl: '',
-                                          cnpj: '',
-                                          valor: '',
-                                          prazoDias: '',
-                                          descricao: '',
-                                          documentoUrl: '',
-                                          documentoNome: ''
-                                        });
-                                        setIsModalNovoOrcamentoOpen(true);
-                                      }}
-                                      className="px-2.5 py-1 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white text-[11px] font-black uppercase flex items-center gap-1 shadow-2xs cursor-pointer active:scale-95"
-                                    >
-                                      <Plus className="w-3.5 h-3.5" /> Publicar Orçamento
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => setExpandedOrcamentosInReparosAdmin(prev => ({ ...prev, [rep.id]: !isOrcsOpen }))}
-                                      className="text-xs font-extrabold text-slate-700 hover:underline cursor-pointer flex items-center gap-1"
-                                    >
-                                      {isOrcsOpen ? 'Recolher Cotações' : 'Ver Cotações'}
-                                      {isOrcsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {isOrcsOpen && (
-                                  <div className="space-y-3 animate-in fade-in duration-200">
-                                    {(!rep.orcamentos || rep.orcamentos.length === 0) ? (
-                                      <div className="p-3.5 text-center bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-xs font-semibold text-slate-600">
-                                        Nenhum orçamento cadastrado ainda para esta manutenção. Clique em "+ Publicar Orçamento" para adicionar cotações de empresas.
-                                      </div>
-                                    ) : (
-                                      <div className="space-y-2.5">
-                                        {rep.orcamentos.map((orc) => {
-                                          const isContratado = rep.orcamentoAprovadoId === orc.id;
-
-                                          return (
-                                            <div 
-                                              key={orc.id}
-                                              className={`p-3.5 rounded-2xl border-2 transition-all space-y-2 ${
-                                                isContratado 
-                                                  ? 'bg-emerald-50/90 border-emerald-400 shadow-sm ring-2 ring-emerald-400/20' 
-                                                  : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
-                                              }`}
-                                            >
-                                              <div className="flex items-start justify-between gap-2 flex-wrap">
-                                                <div>
-                                                  <div className="flex items-center gap-2 flex-wrap">
-                                                    <strong className="text-xs font-black text-slate-950">
-                                                      {orc.empresa}
-                                                    </strong>
-
-                                                    {orc.siteUrl && (
-                                                      <a 
-                                                        href={orc.siteUrl.startsWith('http') ? orc.siteUrl : `https://${orc.siteUrl}`} 
-                                                        target="_blank" 
-                                                        rel="noopener noreferrer"
-                                                        className="text-[10px] font-extrabold text-indigo-700 hover:underline inline-flex items-center gap-0.5"
-                                                      >
-                                                        <span>Visitar Site</span>
-                                                        <ExternalLink className="w-2.5 h-2.5" />
-                                                      </a>
-                                                    )}
-
-                                                    {isContratado && (
-                                                      <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-400 text-[9px] font-black uppercase flex items-center gap-1">
-                                                        <CheckCircle2 className="w-3 h-3" />
-                                                        Orçamento Aprovado
-                                                      </span>
-                                                    )}
-                                                  </div>
-
-                                                  {orc.cnpj && (
-                                                    <span className="text-[10px] text-slate-500 font-mono font-medium block">
-                                                      CNPJ: {orc.cnpj}
-                                                    </span>
-                                                  )}
-                                                </div>
-
-                                                <div className="text-right">
-                                                  <span className="text-sm font-black text-slate-950 block">
-                                                    {orc.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                                  </span>
-                                                  <span className="text-[10px] font-bold text-slate-600 block">
-                                                    Prazo: {orc.prazoDias} dias úteis
-                                                  </span>
-                                                </div>
-                                              </div>
-
-                                              {orc.descricao && (
-                                                <p className="text-xs text-slate-800 font-medium bg-slate-50/80 p-2 rounded-xl border border-slate-200/80">
-                                                  {orc.descricao}
-                                                </p>
-                                              )}
-
-                                              {/* Documento / PDF Anexado & Ações */}
-                                              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 flex-wrap">
-                                                <div>
-                                                  {orc.documentoUrl ? (
-                                                    <a 
-                                                      href={orc.documentoUrl} 
-                                                      target="_blank" 
-                                                      rel="noopener noreferrer"
-                                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-[11px] font-extrabold transition-all shadow-2xs cursor-pointer"
-                                                      title="Abrir proposta original em PDF"
-                                                    >
-                                                      <FileText className="w-3.5 h-3.5 text-indigo-700" />
-                                                      <span>{orc.documentoNome || 'Ver Documento da Proposta / PDF'}</span>
-                                                      <ExternalLink className="w-2.5 h-2.5 opacity-70" />
-                                                    </a>
-                                                  ) : (
-                                                    <span className="text-[10px] text-slate-400 italic">
-                                                      Documento físico / Proposta sem anexo digital
-                                                    </span>
-                                                  )}
-                                                </div>
-
-                                                <div className="flex items-center gap-1.5">
-                                                  {!isContratado ? (
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => {
-                                                        if (window.confirm(`Deseja aprovar e contratar o orçamento de "${orc.empresa}" por ${orc.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}?`)) {
-                                                          selecionarOrcamento(rep.id, orc.id);
-                                                        }
-                                                      }}
-                                                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase flex items-center gap-1 shadow-2xs transition-all cursor-pointer active:scale-95"
-                                                    >
-                                                      <CheckCircle2 className="w-3 h-3" /> Contratar Empresa
-                                                    </button>
-                                                  ) : (
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => selecionarOrcamento(rep.id, '')}
-                                                      className="px-2.5 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 text-[11px] font-bold transition-all cursor-pointer"
-                                                    >
-                                                      Desmarcar Contratação
-                                                    </button>
-                                                  )}
-
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                      if (window.confirm(`Tem certeza que deseja excluir o orçamento de "${orc.empresa}"?`)) {
-                                                        excluirOrcamentoReparo(rep.id, orc.id);
-                                                      }
-                                                    }}
-                                                    className="p-1 rounded-lg hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
-                                                    title="Excluir Orçamento"
-                                                  >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                  </button>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* ========================================================= */}
-                              {/* SUBSEÇÃO: MODERAÇÃO DE COMENTÁRIOS DO REPARO */}
-                              {/* ========================================================= */}
-                              <div className="pt-3 border-t-2 border-slate-200 space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                                      <MessageSquare className="w-4 h-4 text-indigo-700" />
-                                      Comentários Registrados do Reparo ({rep.comentarios?.length || 0})
-                                    </span>
-                                    {hiddenCommentsCount > 0 && (
-                                      <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300 text-[9px] font-black uppercase">
-                                        {hiddenCommentsCount} Ocultado(s)
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => setExpandedCommentsInReparosAdmin(prev => ({ ...prev, [rep.id]: !isCommentsOpen }))}
-                                    className="text-xs font-extrabold text-indigo-800 hover:underline cursor-pointer flex items-center gap-1"
-                                  >
-                                    {isCommentsOpen ? 'Recolher Comentários' : 'Ver Comentários'}
-                                    {isCommentsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                                  </button>
-                                </div>
-
-                                {isCommentsOpen && (
-                                  <div className="space-y-2.5 animate-in fade-in duration-200">
-                                    {(!rep.comentarios || rep.comentarios.length === 0) ? (
-                                      <p className="text-xs text-slate-500 italic py-2">
-                                        Nenhum comentário ou manifestação registrada nesta ordem de reparo.
-                                      </p>
-                                    ) : (
-                                      rep.comentarios.map((com) => (
+                              {isApoiadoresOpen && (
+                                <div className="space-y-2 animate-in fade-in duration-200">
+                                  {apoiadoresRepLista.length === 0 ? (
+                                    <p className="text-xs text-slate-500 italic py-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                      Nenhum morador deu joinha / apoio nesta ordem de reparo até o momento.
+                                    </p>
+                                  ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                      {apoiadoresRepLista.map((apoiador, idx) => (
                                         <div
-                                          key={com.id}
-                                          className={`p-3 rounded-2xl border-2 transition-all space-y-2 ${
-                                            com.oculto
-                                              ? 'bg-rose-50/90 border-rose-300 shadow-2xs'
-                                              : com.oficial
-                                                ? 'bg-amber-50 border-amber-300 shadow-2xs'
-                                                : 'bg-white border-slate-200 shadow-xs'
-                                          }`}
+                                          key={apoiador.id || idx}
+                                          className="p-3 rounded-2xl bg-amber-50/80 border border-amber-300/80 shadow-2xs flex items-center justify-between gap-2.5 hover:bg-amber-100/70 transition-all"
                                         >
-                                          {/* Header do Comentário com Autoria Transparente */}
-                                          <div className="flex items-start justify-between gap-2 flex-wrap">
-                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                              <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] ${
-                                                com.oficial ? 'bg-amber-500 text-slate-950' : 'bg-indigo-100 text-indigo-900'
-                                              }`}>
-                                                {com.oficial ? <ShieldCheck className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />}
+                                          <div className="flex items-center gap-2.5 min-w-0">
+                                            {apoiador.foto ? (
+                                              <img
+                                                src={apoiador.foto}
+                                                alt={apoiador.nome}
+                                                className="w-8 h-8 rounded-full object-cover border border-amber-300 shrink-0 shadow-2xs"
+                                              />
+                                            ) : (
+                                              <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                                                {apoiador.nome ? apoiador.nome.substring(0, 2).toUpperCase() : 'MO'}
                                               </div>
-                                              <strong className="text-xs font-black text-slate-950">
-                                                {com.autorNome}
-                                              </strong>
-                                              <span className="text-xs font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
-                                                {com.autorUnidade || 'Unidade não informada'}
+                                            )}
+                                            <div className="min-w-0">
+                                              <span className="text-xs font-black text-slate-950 block truncate">
+                                                {apoiador.nome}
                                               </span>
-                                              {com.autorRole && (
-                                                <span className="text-[10px] font-bold text-slate-600 uppercase">
-                                                  • {com.autorRole}
-                                                </span>
-                                              )}
-                                            </div>
-
-                                            <div className="flex items-center gap-2">
-                                              <span className="text-[10px] font-mono text-slate-500 font-semibold">
-                                                {com.data}
+                                              <span className="text-[10px] font-bold text-amber-950 bg-amber-200/80 px-1.5 py-0.5 rounded border border-amber-300 inline-block">
+                                                {apoiador.unidade || 'Morador'}
                                               </span>
-
-                                              {/* Badge de Ocultação */}
-                                              {com.oculto && (
-                                                <span className="px-2 py-0.5 rounded-md bg-rose-200 text-rose-950 border border-rose-400 text-[9px] font-black uppercase flex items-center gap-1">
-                                                  <EyeOff className="w-3 h-3" />
-                                                  Oculto ao Público
+                                              {apoiador.data && (
+                                                <span className="text-[9px] text-slate-600 block mt-0.5">
+                                                  {apoiador.data}
                                                 </span>
                                               )}
                                             </div>
                                           </div>
 
-                                          {/* Texto do Comentário */}
-                                          <p className="text-xs text-slate-900 font-medium pl-7 leading-relaxed">
-                                            {com.texto}
-                                          </p>
-
-                                          {/* Motivo da Ocultação se houver */}
-                                          {com.oculto && com.motivoOcultacao && (
-                                            <div className="ml-7 p-2 rounded-xl bg-rose-100/90 border border-rose-300 text-[11px] text-rose-950 space-y-0.5 font-semibold">
-                                              <span className="font-black block uppercase text-[9px] text-rose-900">
-                                                Motivo da Moderação Registrado:
-                                              </span>
-                                              <p>{com.motivoOcultacao}</p>
-                                            </div>
-                                          )}
-
-                                          {/* Ações de Moderação do Comentário */}
-                                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 ml-7 flex-wrap">
-                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                              
-                                              {/* Botão Ocultar / Reexibir */}
-                                              {com.oculto ? (
-                                                <button
-                                                  type="button"
-                                                  onClick={() => toggleOcultarComentarioReparo(rep.id, com.id)}
-                                                  className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                                                  title="Tornar este comentário visível novamente aos moradores"
-                                                >
-                                                  <Eye className="w-3.5 h-3.5" />
-                                                  <span>Reexibir ao Público</span>
-                                                </button>
-                                              ) : (
-                                                <button
-                                                  type="button"
-                                                  onClick={() => {
-                                                    setMotivoOcultacaoReparoModal({
-                                                      isOpen: true,
-                                                      reparoId: rep.id,
-                                                      comentarioId: com.id,
-                                                      autorNome: com.autorNome,
-                                                      autorUnidade: com.autorUnidade,
-                                                      texto: com.texto
-                                                    });
-                                                    setMotivoOcultacaoReparoTexto('Comentário em desacordo com as diretrizes de respeito e convivência do condomínio.');
-                                                    setEnviarNotificacaoAoOcultarReparo(true);
-                                                  }}
-                                                  className="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 text-[11px] font-black uppercase flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                                                  title="Ocultar comentário mantendo o registro no banco"
-                                                >
-                                                  <EyeOff className="w-3.5 h-3.5 text-rose-600" />
-                                                  <span>Ocultar Comentário</span>
-                                                </button>
-                                              )}
-
-                                              {/* Botão Notificar Morador Autor do Comentário */}
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  const rawUnit = String(com.autorUnidade || '').replace(/[^0-9]/g, '');
-                                                  const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
-                                                    id: `unit-${rawUnit || 'temp'}`,
-                                                    numero: com.autorUnidade || 'Geral',
-                                                    bloco: 'A',
-                                                    vagaGaragem: '',
-                                                    moradores: []
-                                                  };
-                                                  setSelectedUnidadeParaNotificar(unitObj);
-                                                  setIsNotifyModalOpen(true);
-                                                }}
-                                                className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-950 border border-slate-300 text-[11px] font-black uppercase flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                                                title="Enviar notificação privada para a unidade deste morador"
-                                              >
-                                                <Bell className="w-3.5 h-3.5 text-amber-700" />
-                                                <span>Notificar Autor</span>
-                                              </button>
-                                            </div>
-
-                                            {/* Excluir Definitivo */}
+                                          <div className="shrink-0 flex items-center gap-1">
+                                            <span className="p-1 rounded-full bg-amber-200 text-amber-950 border border-amber-300" title="Apoiou esta manutenção">
+                                              <ThumbsUp className="w-3.5 h-3.5 fill-amber-700 stroke-amber-950" />
+                                            </span>
                                             <button
                                               type="button"
                                               onClick={() => {
-                                                if (window.confirm(`Tem certeza que deseja excluir permanentemente este comentário de "${com.autorNome}"?`)) {
-                                                  excluirComentarioReparo(rep.id, com.id);
-                                                }
+                                                const rawUnit = String(apoiador.unidade || '').replace(/[^0-9]/g, '');
+                                                const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
+                                                  id: `unit-${rawUnit || 'temp'}`,
+                                                  numero: apoiador.unidade || 'Geral',
+                                                  bloco: apoiador.bloco || 'A',
+                                                  vagaGaragem: '',
+                                                  moradores: []
+                                                };
+                                                setSelectedUnidadeParaNotificar(unitObj);
+                                                setIsNotifyModalOpen(true);
                                               }}
-                                              className="p-1 rounded-lg hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
-                                              title="Excluir Comentário Definitivamente"
+                                              className="p-1 rounded-lg hover:bg-amber-200 text-amber-800 transition-colors cursor-pointer"
+                                              title={`Notificar ${apoiador.nome}`}
                                             >
-                                              <Trash2 className="w-3.5 h-3.5" />
+                                              <Bell className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* ========================================================= */}
+                            {/* SUBSEÇÃO: ORÇAMENTOS E COTAÇÕES DE EMPRESAS */}
+                            {/* ========================================================= */}
+                            <div className="pt-3 border-t-2 border-slate-200 space-y-3">
+                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                                    <DollarSign className="w-4 h-4 text-emerald-700" />
+                                    Orçamentos & Cotações Publicadas ({rep.orcamentos?.length || 0})
+                                  </span>
+                                  {rep.orcamentoAprovadoId && (
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-300 text-[9px] font-black uppercase">
+                                      Contratado: {rep.empresaContratada || 'Empresa Selecionada'}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setReparoParaOrcamento(rep);
+                                      setFormOrcamento({
+                                        empresa: '',
+                                        siteUrl: '',
+                                        cnpj: '',
+                                        valor: '',
+                                        prazoDias: '',
+                                        descricao: '',
+                                        documentoUrl: '',
+                                        documentoNome: ''
+                                      });
+                                      setIsModalNovoOrcamentoOpen(true);
+                                    }}
+                                    className="px-2.5 py-1 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white text-[11px] font-black uppercase flex items-center gap-1 shadow-2xs cursor-pointer active:scale-95"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" /> Publicar Orçamento
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedOrcamentosInReparosAdmin(prev => ({ ...prev, [rep.id]: !isOrcsOpen }))}
+                                    className="text-xs font-extrabold text-slate-700 hover:underline cursor-pointer flex items-center gap-1"
+                                  >
+                                    {isOrcsOpen ? 'Recolher Cotações' : 'Ver Cotações'}
+                                    {isOrcsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                  </button>
+                                </div>
+                              </div>
+
+                              {isOrcsOpen && (
+                                <div className="space-y-3 animate-in fade-in duration-200">
+                                  {(!rep.orcamentos || rep.orcamentos.length === 0) ? (
+                                    <div className="p-3.5 text-center bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-xs font-semibold text-slate-600">
+                                      Nenhum orçamento cadastrado ainda para esta manutenção. Clique em "+ Publicar Orçamento" para adicionar cotações de empresas.
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-2.5">
+                                      {rep.orcamentos.map((orc) => {
+                                        const isContratado = rep.orcamentoAprovadoId === orc.id;
+
+                                        return (
+                                          <div
+                                            key={orc.id}
+                                            className={`p-3.5 rounded-2xl border-2 transition-all space-y-2 ${isContratado
+                                                ? 'bg-emerald-50/90 border-emerald-400 shadow-sm ring-2 ring-emerald-400/20'
+                                                : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
+                                              }`}
+                                          >
+                                            <div className="flex items-start justify-between gap-2 flex-wrap">
+                                              <div>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                  <strong className="text-xs font-black text-slate-950">
+                                                    {orc.empresa}
+                                                  </strong>
+
+                                                  {orc.siteUrl && (
+                                                    <a
+                                                      href={orc.siteUrl.startsWith('http') ? orc.siteUrl : `https://${orc.siteUrl}`}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="text-[10px] font-extrabold text-indigo-700 hover:underline inline-flex items-center gap-0.5"
+                                                    >
+                                                      <span>Visitar Site</span>
+                                                      <ExternalLink className="w-2.5 h-2.5" />
+                                                    </a>
+                                                  )}
+
+                                                  {isContratado && (
+                                                    <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-400 text-[9px] font-black uppercase flex items-center gap-1">
+                                                      <CheckCircle2 className="w-3 h-3" />
+                                                      Orçamento Aprovado
+                                                    </span>
+                                                  )}
+                                                </div>
+
+                                                {orc.cnpj && (
+                                                  <span className="text-[10px] text-slate-500 font-mono font-medium block">
+                                                    CNPJ: {orc.cnpj}
+                                                  </span>
+                                                )}
+                                              </div>
+
+                                              <div className="text-right">
+                                                <span className="text-sm font-black text-slate-950 block">
+                                                  {orc.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-slate-600 block">
+                                                  Prazo: {orc.prazoDias} dias úteis
+                                                </span>
+                                              </div>
+                                            </div>
+
+                                            {orc.descricao && (
+                                              <p className="text-xs text-slate-800 font-medium bg-slate-50/80 p-2 rounded-xl border border-slate-200/80">
+                                                {orc.descricao}
+                                              </p>
+                                            )}
+
+                                            {/* Documento / PDF Anexado & Ações */}
+                                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 flex-wrap">
+                                              <div>
+                                                {orc.documentoUrl ? (
+                                                  <a
+                                                    href={orc.documentoUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-[11px] font-extrabold transition-all shadow-2xs cursor-pointer"
+                                                    title="Abrir proposta original em PDF"
+                                                  >
+                                                    <FileText className="w-3.5 h-3.5 text-indigo-700" />
+                                                    <span>{orc.documentoNome || 'Ver Documento da Proposta / PDF'}</span>
+                                                    <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                                                  </a>
+                                                ) : (
+                                                  <span className="text-[10px] text-slate-400 italic">
+                                                    Documento físico / Proposta sem anexo digital
+                                                  </span>
+                                                )}
+                                              </div>
+
+                                              <div className="flex items-center gap-1.5">
+                                                {!isContratado ? (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      if (window.confirm(`Deseja aprovar e contratar o orçamento de "${orc.empresa}" por ${orc.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}?`)) {
+                                                        selecionarOrcamento(rep.id, orc.id);
+                                                      }
+                                                    }}
+                                                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase flex items-center gap-1 shadow-2xs transition-all cursor-pointer active:scale-95"
+                                                  >
+                                                    <CheckCircle2 className="w-3 h-3" /> Contratar Empresa
+                                                  </button>
+                                                ) : (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => selecionarOrcamento(rep.id, '')}
+                                                    className="px-2.5 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 text-[11px] font-bold transition-all cursor-pointer"
+                                                  >
+                                                    Desmarcar Contratação
+                                                  </button>
+                                                )}
+
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    if (window.confirm(`Tem certeza que deseja excluir o orçamento de "${orc.empresa}"?`)) {
+                                                      excluirOrcamentoReparo(rep.id, orc.id);
+                                                    }
+                                                  }}
+                                                  className="p-1 rounded-lg hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                                                  title="Excluir Orçamento"
+                                                >
+                                                  <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* ========================================================= */}
+                            {/* SUBSEÇÃO: MODERAÇÃO DE COMENTÁRIOS DO REPARO */}
+                            {/* ========================================================= */}
+                            <div className="pt-3 border-t-2 border-slate-200 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                                    <MessageSquare className="w-4 h-4 text-indigo-700" />
+                                    Comentários Registrados do Reparo ({rep.comentarios?.length || 0})
+                                  </span>
+                                  {hiddenCommentsCount > 0 && (
+                                    <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300 text-[9px] font-black uppercase">
+                                      {hiddenCommentsCount} Ocultado(s)
+                                    </span>
+                                  )}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedCommentsInReparosAdmin(prev => ({ ...prev, [rep.id]: !isCommentsOpen }))}
+                                  className="text-xs font-extrabold text-indigo-800 hover:underline cursor-pointer flex items-center gap-1"
+                                >
+                                  {isCommentsOpen ? 'Recolher Comentários' : 'Ver Comentários'}
+                                  {isCommentsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+
+                              {isCommentsOpen && (
+                                <div className="space-y-2.5 animate-in fade-in duration-200">
+                                  {(!rep.comentarios || rep.comentarios.length === 0) ? (
+                                    <p className="text-xs text-slate-500 italic py-2">
+                                      Nenhum comentário ou manifestação registrada nesta ordem de reparo.
+                                    </p>
+                                  ) : (
+                                    rep.comentarios.map((com) => (
+                                      <div
+                                        key={com.id}
+                                        className={`p-3 rounded-2xl border-2 transition-all space-y-2 ${com.oculto
+                                            ? 'bg-rose-50/90 border-rose-300 shadow-2xs'
+                                            : com.oficial
+                                              ? 'bg-amber-50 border-amber-300 shadow-2xs'
+                                              : 'bg-white border-slate-200 shadow-xs'
+                                          }`}
+                                      >
+                                        {/* Header do Comentário com Autoria Transparente */}
+                                        <div className="flex items-start justify-between gap-2 flex-wrap">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] ${com.oficial ? 'bg-amber-500 text-slate-950' : 'bg-indigo-100 text-indigo-900'
+                                              }`}>
+                                              {com.oficial ? <ShieldCheck className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />}
+                                            </div>
+                                            <strong className="text-xs font-black text-slate-950">
+                                              {com.autorNome}
+                                            </strong>
+                                            <span className="text-xs font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                                              {com.autorUnidade || 'Unidade não informada'}
+                                            </span>
+                                            {com.autorRole && (
+                                              <span className="text-[10px] font-bold text-slate-600 uppercase">
+                                                • {com.autorRole}
+                                              </span>
+                                            )}
+                                          </div>
+
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-mono text-slate-500 font-semibold">
+                                              {com.data}
+                                            </span>
+
+                                            {/* Badge de Ocultação */}
+                                            {com.oculto && (
+                                              <span className="px-2 py-0.5 rounded-md bg-rose-200 text-rose-950 border border-rose-400 text-[9px] font-black uppercase flex items-center gap-1">
+                                                <EyeOff className="w-3 h-3" />
+                                                Oculto ao Público
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* Texto do Comentário */}
+                                        <p className="text-xs text-slate-900 font-medium pl-7 leading-relaxed">
+                                          {com.texto}
+                                        </p>
+
+                                        {/* Motivo da Ocultação se houver */}
+                                        {com.oculto && com.motivoOcultacao && (
+                                          <div className="ml-7 p-2 rounded-xl bg-rose-100/90 border border-rose-300 text-[11px] text-rose-950 space-y-0.5 font-semibold">
+                                            <span className="font-black block uppercase text-[9px] text-rose-900">
+                                              Motivo da Moderação Registrado:
+                                            </span>
+                                            <p>{com.motivoOcultacao}</p>
+                                          </div>
+                                        )}
+
+                                        {/* Ações de Moderação do Comentário */}
+                                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 ml-7 flex-wrap">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+
+                                            {/* Botão Ocultar / Reexibir */}
+                                            {com.oculto ? (
+                                              <button
+                                                type="button"
+                                                onClick={() => toggleOcultarComentarioReparo(rep.id, com.id)}
+                                                className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                                title="Tornar este comentário visível novamente aos moradores"
+                                              >
+                                                <Eye className="w-3.5 h-3.5" />
+                                                <span>Reexibir ao Público</span>
+                                              </button>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  setMotivoOcultacaoReparoModal({
+                                                    isOpen: true,
+                                                    reparoId: rep.id,
+                                                    comentarioId: com.id,
+                                                    autorNome: com.autorNome,
+                                                    autorUnidade: com.autorUnidade,
+                                                    texto: com.texto
+                                                  });
+                                                  setMotivoOcultacaoReparoTexto('Comentário em desacordo com as diretrizes de respeito e convivência do condomínio.');
+                                                  setEnviarNotificacaoAoOcultarReparo(true);
+                                                }}
+                                                className="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 text-[11px] font-black uppercase flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                                title="Ocultar comentário mantendo o registro no banco"
+                                              >
+                                                <EyeOff className="w-3.5 h-3.5 text-rose-600" />
+                                                <span>Ocultar Comentário</span>
+                                              </button>
+                                            )}
+
+                                            {/* Botão Notificar Morador Autor do Comentário */}
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const rawUnit = String(com.autorUnidade || '').replace(/[^0-9]/g, '');
+                                                const unitObj: Unidade = unidades.find(u => u && u.numero && String(u.numero).replace(/[^0-9]/g, '') === rawUnit) || {
+                                                  id: `unit-${rawUnit || 'temp'}`,
+                                                  numero: com.autorUnidade || 'Geral',
+                                                  bloco: 'A',
+                                                  vagaGaragem: '',
+                                                  moradores: []
+                                                };
+                                                setSelectedUnidadeParaNotificar(unitObj);
+                                                setIsNotifyModalOpen(true);
+                                              }}
+                                              className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-950 border border-slate-300 text-[11px] font-black uppercase flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                              title="Enviar notificação privada para a unidade deste morador"
+                                            >
+                                              <Bell className="w-3.5 h-3.5 text-amber-700" />
+                                              <span>Notificar Autor</span>
                                             </button>
                                           </div>
 
+                                          {/* Excluir Definitivo */}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              if (window.confirm(`Tem certeza que deseja excluir permanentemente este comentário de "${com.autorNome}"?`)) {
+                                                excluirComentarioReparo(rep.id, com.id);
+                                              }
+                                            }}
+                                            className="p-1 rounded-lg hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                                            title="Excluir Comentário Definitivamente"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
                                         </div>
-                                      ))
-                                    )}
-                                  </div>
-                                )}
-                              </div>
 
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              )}
                             </div>
-                          </div>
 
+                          </div>
                         </div>
-                      );
-                    })
-                )}
+
+                      </div>
+                    );
+                  })
+              )}
             </div>
 
           </div>
@@ -6486,8 +6494,8 @@ export const AdminPanelScreen: React.FC = () => {
       {/* SEÇÃO 8: PRESTAÇÃO DE CONTAS */}
       {/* ========================================================================= */}
       {(() => {
-        const mesesDisponiveis = Object.keys(mesesPrestacao).length > 0 
-          ? Object.keys(mesesPrestacao) 
+        const mesesDisponiveis = Object.keys(mesesPrestacao).length > 0
+          ? Object.keys(mesesPrestacao)
           : ['Abril / 2026', 'Março / 2026'];
 
         const mesAtualContas = mesesPrestacao[selectedMesFinanceiro] || mesesPrestacao[mesesDisponiveis[0]] || {
@@ -6504,7 +6512,7 @@ export const AdminPanelScreen: React.FC = () => {
         const todasCategorias = ['Todas', ...Array.from(new Set([...categoriasDespesa, ...categoriasReceita]))];
 
         const despesasFiltradas = (mesAtualContas.despesas || []).filter(d => {
-          const matchBusca = !searchFinanceiro || 
+          const matchBusca = !searchFinanceiro ||
             (d.titulo && d.titulo.toLowerCase().includes(searchFinanceiro.toLowerCase())) ||
             d.descricao.toLowerCase().includes(searchFinanceiro.toLowerCase()) ||
             d.fornecedor.toLowerCase().includes(searchFinanceiro.toLowerCase()) ||
@@ -6515,7 +6523,7 @@ export const AdminPanelScreen: React.FC = () => {
         });
 
         const receitasFiltradas = (mesAtualContas.receitas || []).filter(r => {
-          const matchBusca = !searchFinanceiro || 
+          const matchBusca = !searchFinanceiro ||
             (r.titulo && r.titulo.toLowerCase().includes(searchFinanceiro.toLowerCase())) ||
             r.descricao.toLowerCase().includes(searchFinanceiro.toLowerCase()) ||
             r.origem.toLowerCase().includes(searchFinanceiro.toLowerCase()) ||
@@ -6554,25 +6562,22 @@ export const AdminPanelScreen: React.FC = () => {
         const isSaldoPositivo = (mesAtualContas.saldo || 0) >= 0;
 
         return (
-          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-            canAccessFinanceiro ? 'bg-emerald-50/70 border-emerald-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-          }`}>
-            
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessFinanceiro ? 'bg-emerald-50/70 border-emerald-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+            }`}>
+
             {/* Accordion Header */}
             <button
               type="button"
               disabled={!canAccessFinanceiro}
               onClick={() => canAccessFinanceiro && setIsFinanceiroAdminOpen(!isFinanceiroAdminOpen)}
-              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-                canAccessFinanceiro
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessFinanceiro
                   ? 'bg-emerald-100/90 hover:bg-emerald-200/70 border-emerald-200 cursor-pointer active:scale-[0.999]'
                   : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-xs ${
-                  canAccessFinanceiro ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-                }`}>
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-xs ${canAccessFinanceiro ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                  }`}>
                   {canAccessFinanceiro ? <PieChart className="w-5 h-5 text-emerald-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
@@ -6585,11 +6590,10 @@ export const AdminPanelScreen: React.FC = () => {
                         <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-300">
                           {selectedMesFinanceiro}
                         </span>
-                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs ${
-                          isSaldoPositivo
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs ${isSaldoPositivo
                             ? 'bg-emerald-600 text-white border-emerald-700'
                             : 'bg-rose-600 text-white border-rose-700'
-                        }`}>
+                          }`}>
                           Saldo: R$ {(mesAtualContas.saldo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </span>
                       </>
@@ -6624,16 +6628,15 @@ export const AdminPanelScreen: React.FC = () => {
             </button>
 
             {/* Accordion Body */}
-            <div 
-              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                canAccessFinanceiro && isFinanceiroAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
+            <div
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessFinanceiro && isFinanceiroAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
             >
               <div className="min-h-0 overflow-hidden bg-emerald-50/50 p-4 sm:p-6 space-y-6">
-                
+
                 {/* 1. Barra de Controles: Seletor de Mês e Botões de Ação */}
                 <div className="bg-white/80 border border-emerald-200/80 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5 shadow-xs">
-                  
+
                   {/* Seletor de Mês Ativo */}
                   <div className="flex items-center gap-2.5 flex-wrap">
                     <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-black shrink-0">
@@ -6747,7 +6750,7 @@ export const AdminPanelScreen: React.FC = () => {
 
                 {/* 2. Cards de Indicadores do Mês (Entradas, Saídas e Saldo) */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  
+
                   {/* Total Entradas */}
                   <div className="p-4 rounded-2xl bg-white border border-emerald-200 shadow-xs flex items-center justify-between">
                     <div>
@@ -6785,11 +6788,10 @@ export const AdminPanelScreen: React.FC = () => {
                   </div>
 
                   {/* Saldo Líquido do Mês */}
-                  <div className={`p-4 rounded-2xl border shadow-xs flex items-center justify-between ${
-                    isSaldoPositivo 
-                      ? 'bg-emerald-600 text-white border-emerald-700' 
+                  <div className={`p-4 rounded-2xl border shadow-xs flex items-center justify-between ${isSaldoPositivo
+                      ? 'bg-emerald-600 text-white border-emerald-700'
                       : 'bg-rose-600 text-white border-rose-700'
-                  }`}>
+                    }`}>
                     <div>
                       <span className="text-[10px] font-black uppercase tracking-wider text-white/90 block">
                         Saldo Final do Mês
@@ -6810,19 +6812,18 @@ export const AdminPanelScreen: React.FC = () => {
 
                 {/* 3. Filtros, Busca, Abas e Botões de Expansão Global */}
                 <div className="bg-white/80 border border-slate-200/80 rounded-2xl p-4 space-y-3 shadow-xs">
-                  
+
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                    
+
                     {/* Abas de Navegação */}
                     <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 shrink-0">
                       <button
                         type="button"
                         onClick={() => setTabFinanceiro('todas')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                          tabFinanceiro === 'todas'
+                        className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${tabFinanceiro === 'todas'
                             ? 'bg-white text-slate-950 shadow-xs'
                             : 'text-slate-600 hover:text-slate-900'
-                        }`}
+                          }`}
                       >
                         Todas ({(mesAtualContas.despesas || []).length + (mesAtualContas.receitas || []).length})
                       </button>
@@ -6830,11 +6831,10 @@ export const AdminPanelScreen: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setTabFinanceiro('saidas')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1 ${
-                          tabFinanceiro === 'saidas'
+                        className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1 ${tabFinanceiro === 'saidas'
                             ? 'bg-rose-100 text-rose-950 border border-rose-300 shadow-xs'
                             : 'text-slate-600 hover:text-rose-700'
-                        }`}
+                          }`}
                       >
                         <TrendingDown className="w-3 h-3" />
                         <span>Saídas ({(mesAtualContas.despesas || []).length})</span>
@@ -6843,11 +6843,10 @@ export const AdminPanelScreen: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setTabFinanceiro('entradas')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1 ${
-                          tabFinanceiro === 'entradas'
+                        className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1 ${tabFinanceiro === 'entradas'
                             ? 'bg-emerald-100 text-emerald-950 border border-emerald-300 shadow-xs'
                             : 'text-slate-600 hover:text-emerald-700'
-                        }`}
+                          }`}
                       >
                         <TrendingUp className="w-3 h-3" />
                         <span>Entradas ({(mesAtualContas.receitas || []).length})</span>
@@ -6879,7 +6878,7 @@ export const AdminPanelScreen: React.FC = () => {
                 {/* 4. LISTA DE SAÍDAS (DESPESAS) */}
                 {(tabFinanceiro === 'todas' || tabFinanceiro === 'saidas') && (
                   <div className="space-y-3">
-                    
+
                     {/* Header da Seção de Saídas */}
                     <div className="flex items-center justify-between bg-rose-100/80 border border-rose-300 rounded-2xl p-3.5">
                       <div className="flex items-center gap-2">
@@ -6914,13 +6913,12 @@ export const AdminPanelScreen: React.FC = () => {
                           return (
                             <div
                               key={desp.id}
-                              className={`bg-white border rounded-2xl shadow-xs transition-all duration-200 overflow-hidden ${
-                                isExpanded
+                              className={`bg-white border rounded-2xl shadow-xs transition-all duration-200 overflow-hidden ${isExpanded
                                   ? 'border-rose-400 ring-2 ring-rose-300/40'
                                   : 'border-slate-200 hover:border-rose-300'
-                              }`}
+                                }`}
                             >
-                              
+
                               {/* Topo / Modo Compacto do Card */}
                               <div
                                 onClick={() => toggleDespesaExpand(desp.id)}
@@ -6978,9 +6976,8 @@ export const AdminPanelScreen: React.FC = () => {
                                       e.stopPropagation();
                                       toggleDespesaExpand(desp.id);
                                     }}
-                                    className={`p-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-950 transition-transform duration-300 border border-rose-300 ${
-                                      isExpanded ? 'rotate-180' : 'rotate-0'
-                                    }`}
+                                    className={`p-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-950 transition-transform duration-300 border border-rose-300 ${isExpanded ? 'rotate-180' : 'rotate-0'
+                                      }`}
                                   >
                                     <ChevronDown className="w-4 h-4" />
                                   </button>
@@ -6990,12 +6987,11 @@ export const AdminPanelScreen: React.FC = () => {
 
                               {/* Corpo Detalhado Expansível com Transição Fluida */}
                               <div
-                                className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                                  isExpanded ? 'grid-rows-[1fr] opacity-100 border-t border-rose-100' : 'grid-rows-[0fr] opacity-0'
-                                }`}
+                                className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${isExpanded ? 'grid-rows-[1fr] opacity-100 border-t border-rose-100' : 'grid-rows-[0fr] opacity-0'
+                                  }`}
                               >
                                 <div className="min-h-0 overflow-hidden p-4 sm:p-5 bg-white space-y-4 text-xs">
-                                  
+
                                   {/* Grid de Detalhes */}
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
                                     <div>
@@ -7030,7 +7026,7 @@ export const AdminPanelScreen: React.FC = () => {
 
                                   {/* Barra de Ações: Ver NF, Editar e Excluir */}
                                   <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-100">
-                                    
+
                                     {/* Botão de Visualização de Nota Fiscal */}
                                     <button
                                       type="button"
@@ -7085,7 +7081,7 @@ export const AdminPanelScreen: React.FC = () => {
                 {/* 5. LISTA DE ENTRADAS (RECEITAS) */}
                 {(tabFinanceiro === 'todas' || tabFinanceiro === 'entradas') && (
                   <div className="space-y-3">
-                    
+
                     {/* Header da Seção de Entradas */}
                     <div className="flex items-center justify-between bg-emerald-100/80 border border-emerald-300 rounded-2xl p-3.5">
                       <div className="flex items-center gap-2">
@@ -7119,13 +7115,12 @@ export const AdminPanelScreen: React.FC = () => {
                           return (
                             <div
                               key={rec.id}
-                              className={`bg-white border rounded-2xl shadow-xs transition-all duration-200 overflow-hidden ${
-                                isExpanded
+                              className={`bg-white border rounded-2xl shadow-xs transition-all duration-200 overflow-hidden ${isExpanded
                                   ? 'border-emerald-400 ring-2 ring-emerald-300/40'
                                   : 'border-slate-200 hover:border-emerald-300'
-                              }`}
+                                }`}
                             >
-                              
+
                               {/* Topo / Modo Compacto do Card */}
                               <div
                                 onClick={() => toggleReceitaExpand(rec.id)}
@@ -7178,9 +7173,8 @@ export const AdminPanelScreen: React.FC = () => {
                                       e.stopPropagation();
                                       toggleReceitaExpand(rec.id);
                                     }}
-                                    className={`p-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-950 transition-transform duration-300 border border-emerald-300 ${
-                                      isExpanded ? 'rotate-180' : 'rotate-0'
-                                    }`}
+                                    className={`p-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-950 transition-transform duration-300 border border-emerald-300 ${isExpanded ? 'rotate-180' : 'rotate-0'
+                                      }`}
                                   >
                                     <ChevronDown className="w-4 h-4" />
                                   </button>
@@ -7190,12 +7184,11 @@ export const AdminPanelScreen: React.FC = () => {
 
                               {/* Corpo Detalhado Expansível */}
                               <div
-                                className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                                  isExpanded ? 'grid-rows-[1fr] opacity-100 border-t border-emerald-100' : 'grid-rows-[0fr] opacity-0'
-                                }`}
+                                className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${isExpanded ? 'grid-rows-[1fr] opacity-100 border-t border-emerald-100' : 'grid-rows-[0fr] opacity-0'
+                                  }`}
                               >
                                 <div className="min-h-0 overflow-hidden p-4 sm:p-5 bg-white space-y-4 text-xs">
-                                  
+
                                   {/* Grid de Detalhes */}
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
                                     <div>
@@ -7230,7 +7223,7 @@ export const AdminPanelScreen: React.FC = () => {
 
                                   {/* Barra de Ações: Ver Recibo, Editar e Excluir */}
                                   <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-100">
-                                    
+
                                     <button
                                       type="button"
                                       onClick={() => setViewPdfModalItem({ item: rec, tipo: 'receita' })}
@@ -7294,38 +7287,35 @@ export const AdminPanelScreen: React.FC = () => {
       {(() => {
         // Filtragem dinâmica de regras
         const categoriasDisponiveis = ['Todas', ...Array.from(new Set(regrasCondominio.map(r => r.categoria).filter(Boolean)))];
-        
+
         const regrasFiltradas = regrasCondominio.filter(regra => {
           const matchCat = filtroCategoriaRegra === 'Todas' || regra.categoria === filtroCategoriaRegra;
           const termo = searchRegra.toLowerCase().trim();
-          const matchBusca = !termo || 
-            regra.titulo.toLowerCase().includes(termo) || 
-            regra.categoria.toLowerCase().includes(termo) || 
+          const matchBusca = !termo ||
+            regra.titulo.toLowerCase().includes(termo) ||
+            regra.categoria.toLowerCase().includes(termo) ||
             (regra.palavrasChave && regra.palavrasChave.some(k => k.toLowerCase().includes(termo))) ||
             regra.conteudo.toLowerCase().includes(termo);
           return matchCat && matchBusca;
         });
 
         return (
-          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-            canAccessRegras ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-          }`}>
-            
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessRegras ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+            }`}>
+
             {/* Accordion Header */}
             <button
               type="button"
               disabled={!canAccessRegras}
               onClick={() => canAccessRegras && setIsRegrasAdminOpen(!isRegrasAdminOpen)}
-              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-                canAccessRegras
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessRegras
                   ? 'bg-amber-100/90 hover:bg-amber-200/70 border-amber-200 cursor-pointer active:scale-[0.999]'
                   : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-                  canAccessRegras ? 'bg-amber-500/20 border-amber-400/40 text-amber-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-                }`}>
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${canAccessRegras ? 'bg-amber-500/20 border-amber-400/40 text-amber-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                  }`}>
                   {canAccessRegras ? <BookOpen className="w-5 h-5 text-amber-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
@@ -7368,13 +7358,12 @@ export const AdminPanelScreen: React.FC = () => {
             </button>
 
             {/* Accordion Content */}
-            <div 
-              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                canAccessRegras && isRegrasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
+            <div
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessRegras && isRegrasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
             >
               <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
-                
+
                 {/* Action Bar: Criar Nova Regra + Busca + Filtro de Categoria */}
                 <div className="bg-white/85 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -7435,11 +7424,10 @@ export const AdminPanelScreen: React.FC = () => {
                         key={cat}
                         type="button"
                         onClick={() => setFiltroCategoriaRegra(cat)}
-                        className={`px-3 py-1 rounded-xl text-[11px] font-bold shrink-0 transition-all cursor-pointer ${
-                          filtroCategoriaRegra === cat
+                        className={`px-3 py-1 rounded-xl text-[11px] font-bold shrink-0 transition-all cursor-pointer ${filtroCategoriaRegra === cat
                             ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
                             : 'bg-slate-100 text-slate-700 hover:bg-amber-100 hover:text-slate-950'
-                        }`}
+                          }`}
                       >
                         {cat}
                       </button>
@@ -7490,8 +7478,8 @@ export const AdminPanelScreen: React.FC = () => {
                                 <div className="flex items-center gap-1 flex-wrap pt-0.5">
                                   <span className="text-[10px] font-bold text-slate-400 mr-1">Tags IA:</span>
                                   {regra.palavrasChave.slice(0, 6).map((kw, i) => (
-                                    <span 
-                                      key={i} 
+                                    <span
+                                      key={i}
                                       className="px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-600 text-[9px] font-semibold"
                                     >
                                       #{kw}
@@ -7553,10 +7541,9 @@ export const AdminPanelScreen: React.FC = () => {
                           </div>
 
                           {/* Formatted Content Area */}
-                          <div 
-                            className={`pt-3 border-t border-slate-100 text-xs sm:text-sm text-slate-800 leading-relaxed font-medium transition-all ${
-                              isExpanded ? 'block' : 'line-clamp-2'
-                            }
+                          <div
+                            className={`pt-3 border-t border-slate-100 text-xs sm:text-sm text-slate-800 leading-relaxed font-medium transition-all ${isExpanded ? 'block' : 'line-clamp-2'
+                              }
                               [&_p]:my-1 
                               [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-1.5 [&_ol_li]:my-0.5
                               [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1.5 [&_ul_li]:my-0.5
@@ -7600,8 +7587,8 @@ export const AdminPanelScreen: React.FC = () => {
       {/* ========================================================================= */}
       {(() => {
         const filteredUnidadesAdmin = unidadesDisponiveis.filter(uni => {
-          const matchModalidade = filtroFinalidadeAdmin === 'Todas' || 
-            uni.finalidade === filtroFinalidadeAdmin || 
+          const matchModalidade = filtroFinalidadeAdmin === 'Todas' ||
+            uni.finalidade === filtroFinalidadeAdmin ||
             uni.finalidade === 'Aluga-se ou Vende-se';
 
           const termo = searchUnidadeDisponivel.toLowerCase().trim();
@@ -7629,25 +7616,22 @@ export const AdminPanelScreen: React.FC = () => {
         };
 
         return (
-          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-            canAccessImoveis ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-          }`}>
-            
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessImoveis ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+            }`}>
+
             {/* Accordion Header */}
             <button
               type="button"
               disabled={!canAccessImoveis}
               onClick={() => canAccessImoveis && setIsUnidadesDisponiveisSectionOpen(!isUnidadesDisponiveisSectionOpen)}
-              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-                canAccessImoveis
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessImoveis
                   ? 'bg-amber-100/90 hover:bg-amber-200/70 border-amber-200 cursor-pointer active:scale-[0.999]'
                   : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-                  canAccessImoveis ? 'bg-amber-500/20 border-amber-400/40 text-amber-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-                }`}>
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${canAccessImoveis ? 'bg-amber-500/20 border-amber-400/40 text-amber-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                  }`}>
                   {canAccessImoveis ? <Building2 className="w-5 h-5 text-amber-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
@@ -7690,13 +7674,12 @@ export const AdminPanelScreen: React.FC = () => {
             </button>
 
             {/* Accordion Content */}
-            <div 
-              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                canAccessImoveis && isUnidadesDisponiveisSectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
+            <div
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessImoveis && isUnidadesDisponiveisSectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
             >
               <div className="min-h-0 overflow-hidden bg-amber-50/50 p-4 sm:p-6 space-y-6">
-                
+
                 {/* Action Bar: Anunciar Nova Unidade + Busca + Filtros */}
                 <div className="bg-white/85 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -7768,11 +7751,10 @@ export const AdminPanelScreen: React.FC = () => {
                           key={mod}
                           type="button"
                           onClick={() => setFiltroFinalidadeAdmin(mod)}
-                          className={`px-3 py-1.5 rounded-xl text-[11px] font-bold shrink-0 transition-all cursor-pointer ${
-                            filtroFinalidadeAdmin === mod
+                          className={`px-3 py-1.5 rounded-xl text-[11px] font-bold shrink-0 transition-all cursor-pointer ${filtroFinalidadeAdmin === mod
                               ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
                               : 'bg-slate-100 text-slate-700 hover:bg-amber-100 hover:text-slate-950'
-                          }`}
+                            }`}
                         >
                           {mod}
                         </button>
@@ -7964,25 +7946,22 @@ export const AdminPanelScreen: React.FC = () => {
         const totalOrcadasAdmin = servicosContratados.filter(s => s.status === 'Orçada').length;
 
         return (
-          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-            canAccessFornecedores ? 'bg-sky-50/70 border-sky-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-          }`}>
-            
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessFornecedores ? 'bg-sky-50/70 border-sky-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+            }`}>
+
             {/* Accordion Header */}
             <button
               type="button"
               disabled={!canAccessFornecedores}
               onClick={() => canAccessFornecedores && setIsFornecedoresSectionOpen(!isFornecedoresSectionOpen)}
-              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-                canAccessFornecedores
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessFornecedores
                   ? 'bg-sky-100/90 hover:bg-sky-200/70 border-sky-200 cursor-pointer active:scale-[0.999]'
                   : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-                  canAccessFornecedores ? 'bg-sky-500/20 border-sky-400/40 text-sky-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-                }`}>
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${canAccessFornecedores ? 'bg-sky-500/20 border-sky-400/40 text-sky-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                  }`}>
                   {canAccessFornecedores ? <Briefcase className="w-5 h-5 text-sky-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
@@ -8025,13 +8004,12 @@ export const AdminPanelScreen: React.FC = () => {
             </button>
 
             {/* Accordion Content */}
-            <div 
-              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                canAccessFornecedores && isFornecedoresSectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
+            <div
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessFornecedores && isFornecedoresSectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
             >
               <div className="min-h-0 overflow-hidden bg-sky-50/50 p-4 sm:p-6 space-y-6">
-                
+
                 {/* Resumo & Botão de Criação */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -8062,7 +8040,7 @@ export const AdminPanelScreen: React.FC = () => {
                 {/* Filtros e Busca */}
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    
+
                     {/* Busca */}
                     <div className="relative sm:col-span-1">
                       <input
@@ -8085,11 +8063,10 @@ export const AdminPanelScreen: React.FC = () => {
                           key={st}
                           type="button"
                           onClick={() => setFiltroStatusFornecedorAdmin(st)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
-                            filtroStatusFornecedorAdmin === st
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${filtroStatusFornecedorAdmin === st
                               ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
                               : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
-                          }`}
+                            }`}
                         >
                           {st === 'Todas' ? 'Todas' : st === 'Contratada' ? '✓ Contratadas' : st === 'Orçada' ? '📋 Orçadas' : '📁 Histórico'}
                         </button>
@@ -8108,11 +8085,10 @@ export const AdminPanelScreen: React.FC = () => {
                         key={cat}
                         type="button"
                         onClick={() => setFiltroCategoriaFornecedorAdmin(cat)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${
-                          filtroCategoriaFornecedorAdmin === cat
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${filtroCategoriaFornecedorAdmin === cat
                             ? 'bg-slate-900 text-amber-300 border-slate-900 font-black shadow-xs'
                             : 'bg-white/50 text-slate-700 border-white/70 hover:bg-white'
-                        }`}
+                          }`}
                       >
                         {cat}
                       </button>
@@ -8145,14 +8121,13 @@ export const AdminPanelScreen: React.FC = () => {
                         return (
                           <div
                             key={fornecedor.id}
-                            className={`border-2 rounded-2xl p-4 shadow-md transition-all flex flex-col justify-between space-y-3 bg-white/70 ${
-                              isContratada 
-                                ? 'border-emerald-300 hover:border-emerald-400' 
+                            className={`border-2 rounded-2xl p-4 shadow-md transition-all flex flex-col justify-between space-y-3 bg-white/70 ${isContratada
+                                ? 'border-emerald-300 hover:border-emerald-400'
                                 : 'border-blue-200 hover:border-blue-300'
-                            }`}
+                              }`}
                           >
                             <div className="space-y-2">
-                              
+
                               {/* Header do Card */}
                               <div className="flex items-start justify-between gap-2 border-b border-slate-200 pb-2">
                                 <div className="space-y-0.5">
@@ -8171,11 +8146,10 @@ export const AdminPanelScreen: React.FC = () => {
                                   </h4>
                                 </div>
 
-                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shrink-0 ${
-                                  isContratada 
-                                    ? 'bg-emerald-100 text-emerald-950 border-emerald-300' 
+                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shrink-0 ${isContratada
+                                    ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
                                     : 'bg-blue-100 text-blue-950 border-blue-300'
-                                }`}>
+                                  }`}>
                                   {isContratada ? '✓ Contratada' : '📋 Orçada'}
                                 </span>
                               </div>
@@ -8297,25 +8271,22 @@ export const AdminPanelScreen: React.FC = () => {
         const totalSuspensosAdmin = itensEnjoei.filter(i => i.status === 'suspenso').length;
 
         return (
-          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-            canAccessEnjoei ? 'bg-rose-50/70 border-rose-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-          }`}>
-            
+          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessEnjoei ? 'bg-rose-50/70 border-rose-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+            }`}>
+
             {/* Accordion Header */}
             <button
               type="button"
               disabled={!canAccessEnjoei}
               onClick={() => canAccessEnjoei && setIsEnjoeiAdminOpen(!isEnjoeiAdminOpen)}
-              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-                canAccessEnjoei
+              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessEnjoei
                   ? 'bg-rose-100/90 hover:bg-rose-200/70 border-rose-200 cursor-pointer active:scale-[0.999]'
                   : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-                  canAccessEnjoei ? 'bg-rose-500/20 border-rose-400/40 text-rose-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-                }`}>
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${canAccessEnjoei ? 'bg-rose-500/20 border-rose-400/40 text-rose-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+                  }`}>
                   {canAccessEnjoei ? <ShoppingBag className="w-5 h-5 text-rose-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
                 </div>
                 <div>
@@ -8358,13 +8329,12 @@ export const AdminPanelScreen: React.FC = () => {
             </button>
 
             {/* Accordion Content */}
-            <div 
-              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                canAccessEnjoei && isEnjoeiAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
+            <div
+              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessEnjoei && isEnjoeiAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
             >
               <div className="min-h-0 overflow-hidden bg-rose-50/50 p-4 sm:p-6 space-y-6">
-                
+
                 {/* Resumo & Botão de Criação */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -8403,7 +8373,7 @@ export const AdminPanelScreen: React.FC = () => {
                 {/* Filtros e Busca */}
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    
+
                     {/* Busca */}
                     <div className="relative sm:col-span-1">
                       <input
@@ -8433,11 +8403,10 @@ export const AdminPanelScreen: React.FC = () => {
                           key={t.id}
                           type="button"
                           onClick={() => setFiltroTipoEnjoeiAdmin(t.id)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
-                            filtroTipoEnjoeiAdmin === t.id
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${filtroTipoEnjoeiAdmin === t.id
                               ? 'bg-rose-500 text-white border-rose-600 font-black shadow-xs'
                               : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
-                          }`}
+                            }`}
                         >
                           {t.label}
                         </button>
@@ -8456,11 +8425,10 @@ export const AdminPanelScreen: React.FC = () => {
                         key={st}
                         type="button"
                         onClick={() => setFiltroStatusEnjoeiAdmin(st)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${
-                          filtroStatusEnjoeiAdmin === st
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${filtroStatusEnjoeiAdmin === st
                             ? 'bg-slate-900 text-amber-300 border-slate-900 font-black shadow-xs'
                             : 'bg-white/50 text-slate-700 border-white/70 hover:bg-white'
-                        }`}
+                          }`}
                       >
                         {st === 'Todas' ? 'Todos os Status' : st === 'disponivel' ? 'Disponíveis' : st === 'negociando' ? 'Negociando' : st === 'concluido' ? 'Concluídos' : '⚠️ Suspensos'}
                       </button>
@@ -8494,16 +8462,15 @@ export const AdminPanelScreen: React.FC = () => {
                         return (
                           <div
                             key={item.id}
-                            className={`border-2 rounded-2xl p-4 shadow-md transition-all flex flex-col justify-between space-y-3 bg-white/70 ${
-                              isSuspenso 
-                                ? 'border-rose-400 bg-rose-50/50' 
-                                : isConcluido 
-                                  ? 'border-slate-300 bg-slate-100/50' 
+                            className={`border-2 rounded-2xl p-4 shadow-md transition-all flex flex-col justify-between space-y-3 bg-white/70 ${isSuspenso
+                                ? 'border-rose-400 bg-rose-50/50'
+                                : isConcluido
+                                  ? 'border-slate-300 bg-slate-100/50'
                                   : 'border-slate-200 hover:border-slate-300'
-                            }`}
+                              }`}
                           >
                             <div className="space-y-2">
-                              
+
                               {/* Header do Card */}
                               <div className="flex items-start gap-3">
                                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-950/80 border border-slate-300 shrink-0 shadow-2xs flex items-center justify-center p-0.5">
@@ -8564,7 +8531,7 @@ export const AdminPanelScreen: React.FC = () => {
 
                             {/* Ações de Moderação */}
                             <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200">
-                              
+
                               {/* Status Suspensão Toggle */}
                               <div>
                                 {isSuspenso ? (
@@ -8622,9 +8589,9 @@ export const AdminPanelScreen: React.FC = () => {
                           </div>
                         );
                       })}
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
+                </div>
 
               </div>
             </div>
@@ -8640,7 +8607,7 @@ export const AdminPanelScreen: React.FC = () => {
         // Cálculos e estatísticas de Espaços e Reservas
         const totalReservaveis = dependencias.filter(d => d.requerReserva).length;
         const totalUsoLivre = dependencias.filter(d => !d.requerReserva).length;
-        
+
         const totalReservasPendentes = reservas.filter(r => r.status === 'Pendente de Aprovação' || r.status === 'Pendente de Pagamento' || (r.status === 'Aprovada' && !r.pago)).length;
         const totalComprovantesAguardandoConfirmacao = reservas.filter(r => !r.pago && Boolean(r.comprovanteUrl)).length;
         const totalReservasConfirmadas = reservas.filter(r => r.status === 'Confirmada' || (r.status === 'Aprovada' && r.pago)).length;
@@ -8656,7 +8623,7 @@ export const AdminPanelScreen: React.FC = () => {
 
         const filteredDependenciasAdmin = dependencias.filter(dep => {
           const matchTipo = filtroTipoDependenciaAdmin === 'Todas' || dep.tipo === filtroTipoDependenciaAdmin;
-          const matchRegime = filtroRegimeDependenciaAdmin === 'Todas' || 
+          const matchRegime = filtroRegimeDependenciaAdmin === 'Todas' ||
             (filtroRegimeDependenciaAdmin === 'reservavel' && dep.requerReserva) ||
             (filtroRegimeDependenciaAdmin === 'livre' && !dep.requerReserva);
           const termo = searchDependenciaAdmin.toLowerCase().trim();
@@ -8726,6 +8693,8 @@ export const AdminPanelScreen: React.FC = () => {
                           </span>
                         )}
                         {totalComprovantesAguardandoConfirmacao > 0 && (
+                          <span className="text-[10px] font-black px-2.5 py-0.5 rou
+... [truncated for diff preview]
                           <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-purple-600 text-white animate-pulse shadow-xs border border-purple-400">
                             📑 {totalComprovantesAguardandoConfirmacao} PIX para confirmar
                           </span>
@@ -8766,3228 +8735,3206 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
             </button>
 
-            {/* Accordion Content */}
-            <div 
-              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                canAccessDependencias && isDependenciasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
-            >
-              <div className="min-h-0 overflow-hidden bg-emerald-50/50 p-4 sm:p-6 space-y-6">
-                
-                {/* Alternador de Abas Principais (Reservas vs Espaços) */}
-                <div className="flex items-center gap-2 border-b border-emerald-200 pb-3">
+            {/* Accordion Content */ }
+  <div
+    className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessDependencias && isDependenciasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+      }`}
+  >
+    <div className="min-h-0 overflow-hidden bg-emerald-50/50 p-4 sm:p-6 space-y-6">
+
+      {/* Alternador de Abas Principais (Reservas vs Espaços) */}
+      <div className="flex items-center gap-2 border-b border-emerald-200 pb-3">
+        <button
+          type="button"
+          onClick={() => setTabDependenciasAdmin('reservas')}
+          className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs ${tabDependenciasAdmin === 'reservas'
+              ? 'bg-slate-950 text-amber-300 ring-2 ring-amber-400/40'
+              : 'bg-white/80 text-slate-700 hover:bg-white hover:text-slate-950'
+            }`}
+        >
+          <Calendar className="w-4 h-4 text-amber-400" />
+          <span>Reservas & Agendamentos dos Moradores</span>
+          <span className={`text-[10px] px-2 py-0.5 rounded-full ${tabDependenciasAdmin === 'reservas' ? 'bg-amber-400 text-slate-950' : 'bg-slate-200 text-slate-800'
+            }`}>
+            {reservas.length}
+          </span>
+          {totalReservasPendentes > 0 && (
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setTabDependenciasAdmin('espacos')}
+          className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs ${tabDependenciasAdmin === 'espacos'
+              ? 'bg-slate-950 text-amber-300 ring-2 ring-amber-400/40'
+              : 'bg-white/80 text-slate-700 hover:bg-white hover:text-slate-950'
+            }`}
+        >
+          <Building2 className="w-4 h-4 text-emerald-400" />
+          <span>Espaços & Dependências Cadastradas</span>
+          <span className={`text-[10px] px-2 py-0.5 rounded-full ${tabDependenciasAdmin === 'espacos' ? 'bg-amber-400 text-slate-950' : 'bg-slate-200 text-slate-800'
+            }`}>
+            {dependencias.length}
+          </span>
+        </button>
+      </div>
+
+      {/* ========================================================= */}
+      {/* ABA 1: RESERVAS E AGENDAMENTOS DOS MORADORES              */}
+      {/* ========================================================= */}
+      {tabDependenciasAdmin === 'reservas' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+
+          {/* Resumo com contadores */}
+          <div className="flex items-center gap-2 flex-wrap bg-white/60 p-3.5 rounded-2xl border border-white/80 shadow-xs">
+            <div className="px-3 py-1 rounded-xl bg-slate-900 text-amber-300 text-xs font-black">
+              {reservas.length} Agendamentos no Total
+            </div>
+            {totalReservasPendentes > 0 && (
+              <div className="px-3 py-1 rounded-xl bg-amber-400 text-slate-950 text-xs font-black shadow-xs animate-pulse">
+                ⏳ {totalReservasPendentes} Pendentes de Análise
+              </div>
+            )}
+            <div className="px-3 py-1 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
+              ✓ {totalReservasConfirmadas} Confirmadas
+            </div>
+            {totalReservasRecusadas > 0 && (
+              <div className="px-3 py-1 rounded-xl bg-rose-100 text-rose-950 border border-rose-300 text-xs font-black">
+                ❌ {totalReservasRecusadas} Recusadas
+              </div>
+            )}
+          </div>
+
+          {/* Filtros e Busca */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+
+              {/* Busca */}
+              <div className="sm:col-span-5 relative">
+                <input
+                  type="text"
+                  placeholder="Buscar por morador, unidade, espaço, data..."
+                  value={searchReservaAdmin}
+                  onChange={(e) => setSearchReservaAdmin(e.target.value)}
+                  className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+              </div>
+
+              {/* Filtro por Dependência */}
+              <div className="sm:col-span-3">
+                <select
+                  value={filtroDependenciaReservaAdmin}
+                  onChange={(e) => setFiltroDependenciaReservaAdmin(e.target.value)}
+                  className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none shadow-xs cursor-pointer"
+                >
+                  <option value="Todas">Todos os Espaços</option>
+                  {dependencias.map(d => (
+                    <option key={d.id} value={d.id}>{d.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por Status da Reserva */}
+              <div className="sm:col-span-4 flex items-center gap-1 overflow-x-auto scrollbar-none">
+                {[
+                  { id: 'Todas', label: 'Todas' },
+                  { id: 'Pendente de Aprovação', label: '⏳ Pendentes' },
+                  { id: 'Confirmada', label: '✓ Confirmadas' },
+                  { id: 'Pendente de Pagamento', label: '💳 Pagamento' },
+                  { id: 'Recusada', label: '❌ Recusadas' }
+                ].map(st => (
                   <button
+                    key={st.id}
                     type="button"
-                    onClick={() => setTabDependenciasAdmin('reservas')}
-                    className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
-                      tabDependenciasAdmin === 'reservas'
-                        ? 'bg-slate-950 text-amber-300 ring-2 ring-amber-400/40'
-                        : 'bg-white/80 text-slate-700 hover:bg-white hover:text-slate-950'
-                    }`}
+                    onClick={() => setFiltroStatusReservaAdmin(st.id)}
+                    className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${filtroStatusReservaAdmin === st.id
+                        ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
+                        : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
+                      }`}
                   >
-                    <Calendar className="w-4 h-4 text-amber-400" />
-                    <span>Reservas & Agendamentos dos Moradores</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                      tabDependenciasAdmin === 'reservas' ? 'bg-amber-400 text-slate-950' : 'bg-slate-200 text-slate-800'
-                    }`}>
-                      {reservas.length}
-                    </span>
-                    {totalReservasPendentes > 0 && (
-                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                    )}
+                    {st.label}
                   </button>
+                ))}
+              </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setTabDependenciasAdmin('espacos')}
-                    className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
-                      tabDependenciasAdmin === 'espacos'
-                        ? 'bg-slate-950 text-amber-300 ring-2 ring-amber-400/40'
-                        : 'bg-white/80 text-slate-700 hover:bg-white hover:text-slate-950'
-                    }`}
-                  >
-                    <Building2 className="w-4 h-4 text-emerald-400" />
-                    <span>Espaços & Dependências Cadastradas</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                      tabDependenciasAdmin === 'espacos' ? 'bg-amber-400 text-slate-950' : 'bg-slate-200 text-slate-800'
-                    }`}>
-                      {dependencias.length}
-                    </span>
-                  </button>
-                </div>
+            </div>
+          </div>
 
-                {/* ========================================================= */}
-                {/* ABA 1: RESERVAS E AGENDAMENTOS DOS MORADORES              */}
-                {/* ========================================================= */}
-                {tabDependenciasAdmin === 'reservas' && (
-                  <div className="space-y-4 animate-in fade-in duration-200">
-                    
-                    {/* Resumo com contadores */}
-                    <div className="flex items-center gap-2 flex-wrap bg-white/60 p-3.5 rounded-2xl border border-white/80 shadow-xs">
-                      <div className="px-3 py-1 rounded-xl bg-slate-900 text-amber-300 text-xs font-black">
-                        {reservas.length} Agendamentos no Total
-                      </div>
-                      {totalReservasPendentes > 0 && (
-                        <div className="px-3 py-1 rounded-xl bg-amber-400 text-slate-950 text-xs font-black shadow-xs animate-pulse">
-                          ⏳ {totalReservasPendentes} Pendentes de Análise
-                        </div>
-                      )}
-                      <div className="px-3 py-1 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
-                        ✓ {totalReservasConfirmadas} Confirmadas
-                      </div>
-                      {totalReservasRecusadas > 0 && (
-                        <div className="px-3 py-1 rounded-xl bg-rose-100 text-rose-950 border border-rose-300 text-xs font-black">
-                          ❌ {totalReservasRecusadas} Recusadas
-                        </div>
-                      )}
-                    </div>
+          {/* Lista de Cards das Reservas */}
+          <div className="space-y-3">
+            {filteredReservasAdmin.length === 0 ? (
+              <div className="p-8 text-center bg-white/40 border border-white/60 rounded-2xl text-xs font-bold text-slate-700 space-y-1">
+                <p>Nenhuma reserva encontrada para os filtros selecionados.</p>
+                <p className="text-[11px] text-slate-500 font-normal">
+                  Quando os moradores solicitarem agendamento pelo aplicativo, as reservas aparecerão aqui para sua aprovação.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {filteredReservasAdmin.map((res) => {
+                  const dep = dependencias.find(d => d.id === res.dependenciaId);
+                  const nomeEspaco = res.dependenciaNome || dep?.nome || 'Espaço Comum';
+                  const fotoEspaco = res.dependenciaFoto || dep?.foto;
+                  const isPendente = res.status === 'Pendente de Aprovação' || res.status === 'Pendente de Pagamento';
+                  const isConfirmada = res.status === 'Confirmada';
+                  const isRecusada = res.status === 'Recusada';
 
-                    {/* Filtros e Busca */}
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-                        
-                        {/* Busca */}
-                        <div className="sm:col-span-5 relative">
-                          <input
-                            type="text"
-                            placeholder="Buscar por morador, unidade, espaço, data..."
-                            value={searchReservaAdmin}
-                            onChange={(e) => setSearchReservaAdmin(e.target.value)}
-                            className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
-                          />
-                          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
-                        </div>
+                  // Identifica se há duplicidade ou conflito de data para o mesmo espaço
+                  const temConflitoReserva = reservas.some(outra =>
+                    outra.id !== res.id &&
+                    outra.dependenciaId === res.dependenciaId &&
+                    outra.dataReserva === res.dataReserva &&
+                    outra.status !== 'Recusada' &&
+                    outra.status !== 'Cancelada' &&
+                    (outra.periodo === 'Dia Inteiro' || res.periodo === 'Dia Inteiro' || outra.periodo === res.periodo)
+                  );
 
-                        {/* Filtro por Dependência */}
-                        <div className="sm:col-span-3">
-                          <select
-                            value={filtroDependenciaReservaAdmin}
-                            onChange={(e) => setFiltroDependenciaReservaAdmin(e.target.value)}
-                            className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none shadow-xs cursor-pointer"
-                          >
-                            <option value="Todas">Todos os Espaços</option>
-                            {dependencias.map(d => (
-                              <option key={d.id} value={d.id}>{d.nome}</option>
-                            ))}
-                          </select>
-                        </div>
+                  return (
+                    <div
+                      key={res.id}
+                      className={`border-2 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-2.5 bg-white/90 ${temConflitoReserva && isPendente
+                          ? 'border-rose-400 bg-rose-50/40 ring-2 ring-rose-400/30'
+                          : isPendente
+                            ? 'border-amber-400 bg-amber-50/40 ring-2 ring-amber-400/20'
+                            : isConfirmada
+                              ? 'border-emerald-300 bg-white'
+                              : isRecusada
+                                ? 'border-rose-200 bg-rose-50/30'
+                                : 'border-slate-200 bg-white'
+                        }`}
+                    >
+                      <div className="space-y-2.5">
 
-                        {/* Filtro por Status da Reserva */}
-                        <div className="sm:col-span-4 flex items-center gap-1 overflow-x-auto scrollbar-none">
-                          {[
-                            { id: 'Todas', label: 'Todas' },
-                            { id: 'Pendente de Aprovação', label: '⏳ Pendentes' },
-                            { id: 'Confirmada', label: '✓ Confirmadas' },
-                            { id: 'Pendente de Pagamento', label: '💳 Pagamento' },
-                            { id: 'Recusada', label: '❌ Recusadas' }
-                          ].map(st => (
-                            <button
-                              key={st.id}
-                              type="button"
-                              onClick={() => setFiltroStatusReservaAdmin(st.id)}
-                              className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${
-                                filtroStatusReservaAdmin === st.id
-                                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
-                                  : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
-                              }`}
-                            >
-                              {st.label}
-                            </button>
-                          ))}
-                        </div>
-
-                      </div>
-                    </div>
-
-                    {/* Lista de Cards das Reservas */}
-                    <div className="space-y-3">
-                      {filteredReservasAdmin.length === 0 ? (
-                        <div className="p-8 text-center bg-white/40 border border-white/60 rounded-2xl text-xs font-bold text-slate-700 space-y-1">
-                          <p>Nenhuma reserva encontrada para os filtros selecionados.</p>
-                          <p className="text-[11px] text-slate-500 font-normal">
-                            Quando os moradores solicitarem agendamento pelo aplicativo, as reservas aparecerão aqui para sua aprovação.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                          {filteredReservasAdmin.map((res) => {
-                            const dep = dependencias.find(d => d.id === res.dependenciaId);
-                            const nomeEspaco = res.dependenciaNome || dep?.nome || 'Espaço Comum';
-                            const fotoEspaco = res.dependenciaFoto || dep?.foto;
-                            const isPendente = res.status === 'Pendente de Aprovação' || res.status === 'Pendente de Pagamento';
-                            const isConfirmada = res.status === 'Confirmada';
-                            const isRecusada = res.status === 'Recusada';
-
-                            // Identifica se há duplicidade ou conflito de data para o mesmo espaço
-                            const temConflitoReserva = reservas.some(outra => 
-                              outra.id !== res.id &&
-                              outra.dependenciaId === res.dependenciaId &&
-                              outra.dataReserva === res.dataReserva &&
-                              outra.status !== 'Recusada' &&
-                              outra.status !== 'Cancelada' &&
-                              (outra.periodo === 'Dia Inteiro' || res.periodo === 'Dia Inteiro' || outra.periodo === res.periodo)
-                            );
-
-                            return (
-                              <div
-                                key={res.id}
-                                className={`border-2 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-2.5 bg-white/90 ${
-                                  temConflitoReserva && isPendente
-                                    ? 'border-rose-400 bg-rose-50/40 ring-2 ring-rose-400/30'
-                                    : isPendente 
-                                      ? 'border-amber-400 bg-amber-50/40 ring-2 ring-amber-400/20' 
-                                      : isConfirmada 
-                                        ? 'border-emerald-300 bg-white' 
-                                        : isRecusada 
-                                          ? 'border-rose-200 bg-rose-50/30' 
-                                          : 'border-slate-200 bg-white'
-                                }`}
-                              >
-                                <div className="space-y-2.5">
-                                  
-                                  {/* Header do Card: Espaço + Badges de Status */}
-                                  <div className="flex items-start justify-between gap-2 pb-2 border-b border-slate-200/80">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      {fotoEspaco && (
-                                        <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-200 overflow-hidden shrink-0 shadow-2xs">
-                                          <img
-                                            src={fotoEspaco}
-                                            alt={nomeEspaco}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                              (e.target as HTMLImageElement).src = '/Salão de festas.jpg';
-                                            }}
-                                          />
-                                        </div>
-                                      )}
-                                      <div className="min-w-0">
-                                        <span className="text-[8.5px] font-black uppercase text-amber-800 tracking-tight block truncate">
-                                          {dep?.tipo || 'Área Comum'}
-                                        </span>
-                                        <h4 className="text-xs sm:text-sm font-black text-slate-950 truncate leading-tight" title={nomeEspaco}>
-                                          {nomeEspaco}
-                                        </h4>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex flex-col items-end gap-1 shrink-0">
-                                      {temConflitoReserva && (
-                                        <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-rose-600 text-white shadow-2xs animate-pulse">
-                                          ⚠️ Conflito
-                                        </span>
-                                      )}
-
-                                      <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full border shadow-2xs ${
-                                        isConfirmada 
-                                          ? 'bg-emerald-100 text-emerald-950 border-emerald-300' 
-                                          : res.status === 'Pendente de Pagamento'
-                                            ? 'bg-purple-100 text-purple-950 border-purple-300'
-                                            : isPendente 
-                                              ? 'bg-amber-400 text-slate-950 border-amber-500 font-black' 
-                                              : isRecusada 
-                                                ? 'bg-rose-100 text-rose-950 border-rose-300' 
-                                                : 'bg-slate-100 text-slate-700 border-slate-300'
-                                      }`}>
-                                        {res.status}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* Dados do Morador e Data/Turno */}
-                                  <div className="grid grid-cols-2 gap-1.5 text-xs">
-                                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-200/80 space-y-0.5 min-w-0">
-                                      <span className="text-[8px] uppercase font-extrabold text-slate-500 block truncate">Morador Solicitante:</span>
-                                      <strong className="text-slate-950 block text-[11px] truncate leading-tight">
-                                        {res.moradorNome}
-                                      </strong>
-                                      <span className="text-[9.5px] text-indigo-900 font-bold block truncate">
-                                        {res.unidade} {res.bloco && `(${res.bloco})`}
-                                      </span>
-                                    </div>
-
-                                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-200/80 space-y-0.5 min-w-0">
-                                      <span className="text-[8px] uppercase font-extrabold text-slate-500 block truncate">Data & Turno:</span>
-                                      <strong className="text-slate-950 block text-[11px] flex items-center gap-1 leading-tight truncate">
-                                        <Calendar className="w-3 h-3 text-emerald-700 shrink-0 inline" />
-                                        {res.dataReserva}
-                                      </strong>
-                                      <span className="text-[9.5px] text-slate-700 font-semibold block truncate">
-                                        {res.periodo}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* Taxa de Reserva & Comprovante de Pagamento */}
-                                  {res.valorTaxa !== undefined && res.valorTaxa > 0 && (
-                                    <div className="p-2 rounded-xl bg-purple-50/90 border border-purple-200/80 flex items-center justify-between text-xs gap-1.5">
-                                      <div className="min-w-0">
-                                        <span className="text-[8px] uppercase font-black text-purple-900 block truncate">
-                                          Taxa do Espaço:
-                                        </span>
-                                        <strong className="text-[11px] font-black text-purple-950 font-mono block truncate">
-                                          R$ {res.valorTaxa.toFixed(2)}
-                                        </strong>
-                                      </div>
-
-                                      <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
-                                        <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded-md ${
-                                          res.pago 
-                                            ? 'bg-emerald-100 text-emerald-950 border border-emerald-300' 
-                                            : 'bg-amber-200 text-amber-950 border border-amber-300'
-                                        }`}>
-                                          {res.pago ? '✓ Taxa Paga' : '⏳ Pendente'}
-                                        </span>
-
-                                        {res.comprovanteUrl && (
-                                          <button
-                                            type="button"
-                                            onClick={() => setViewComprovanteModal(res.comprovanteUrl || null)}
-                                            className="px-1.5 py-0.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-[9px] font-bold shadow-2xs cursor-pointer flex items-center gap-0.5"
-                                            title="Visualizar comprovante de pagamento"
-                                          >
-                                            <Paperclip className="w-2.5 h-2.5" />
-                                            <span>Comprovante</span>
-                                          </button>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Observações do Morador */}
-                                  {res.observacoes && (
-                                    <div className="p-2 rounded-xl bg-slate-50/90 border border-slate-200/80 text-[10.5px]">
-                                      <span className="text-[8px] uppercase font-bold text-slate-500 block">
-                                        Observações do Morador:
-                                      </span>
-                                      <p className="text-slate-800 font-medium italic mt-0.5 line-clamp-2 leading-tight">
-                                        "{res.observacoes}"
-                                      </p>
-                                    </div>
-                                  )}
-
-                                  {/* Resposta Oficial / Orientações do Síndico */}
-                                  {res.respostaAdmin && (
-                                    <div className="p-2 rounded-xl bg-emerald-50/90 border border-emerald-200/80 text-[10.5px] space-y-0.5">
-                                      <span className="text-[8px] uppercase font-bold text-emerald-900 block flex items-center gap-1">
-                                        <MessageSquare className="w-2.5 h-2.5 shrink-0" /> Orientações da Administração:
-                                      </span>
-                                      <p className="text-emerald-950 font-bold line-clamp-2 leading-tight">
-                                        {res.respostaAdmin}
-                                      </p>
-                                    </div>
-                                  )}
-
-                                  {/* Motivo de Recusa */}
-                                  {res.motivoRecusa && (
-                                    <div className="p-2 rounded-xl bg-rose-50/90 border border-rose-200/80 text-[10.5px] space-y-0.5">
-                                      <span className="text-[8px] uppercase font-bold text-rose-900 block">
-                                        Motivo da Recusa:
-                                      </span>
-                                      <p className="text-rose-950 font-bold line-clamp-2 leading-tight">
-                                        {res.motivoRecusa}
-                                      </p>
-                                    </div>
-                                  )}
-
-                                </div>
-
-                                {/* Botões de Ação do Síndico */}
-                                <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-200/80">
-                                  <div className="flex items-center gap-1 flex-wrap">
-                                    
-                                    {/* Botão Aprovar */}
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setRespostaAdminModal({
-                                          isOpen: true,
-                                          reserva: res,
-                                          acao: 'aprovar',
-                                          texto: res.respostaAdmin || 'Reserva aprovada. Chaves disponíveis na portaria no dia do evento mediante termo de vistoria.',
-                                          pago: false
-                                        });
-                                      }}
-                                      className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
-                                    >
-                                      <Check className="w-3 h-3 stroke-[3]" />
-                                      <span>{isConfirmada ? 'Editar Aprovação' : 'Aprovar'}</span>
-                                    </button>
-
-                                    {/* Botão Confirmar PIX se comprovante enviado */}
-                                    {Boolean(res.comprovanteUrl && !res.pago) && (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          atualizarStatusReserva(
-                                            res.id,
-                                            'Confirmada',
-                                            'Pagamento via PIX confirmado pela administração.',
-                                            undefined,
-                                            true
-                                          );
-                                        }}
-                                        className="px-2 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-black transition-all shadow-2xs cursor-pointer flex items-center gap-1 animate-pulse"
-                                        title="Confirmar recebimento do PIX e quitar a taxa da reserva"
-                                      >
-                                        <CheckCircle2 className="w-3 h-3" />
-                                        <span>Confirmar PIX</span>
-                                      </button>
-                                    )}
-
-                                    {/* Botão Recusar */}
-                                    {!isRecusada && (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setRespostaAdminModal({
-                                            isOpen: true,
-                                            reserva: res,
-                                            acao: 'recusar',
-                                            texto: res.motivoRecusa || 'Conflito de agenda ou necessidade de manutenção preventiva no espaço.',
-                                            pago: false
-                                          });
-                                        }}
-                                        className="px-2 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-950 text-[10px] font-black transition-colors border border-rose-300 cursor-pointer shadow-2xs flex items-center gap-0.5"
-                                      >
-                                        <X className="w-3 h-3" />
-                                        <span>Recusar</span>
-                                      </button>
-                                    )}
-
-                                    {/* Botão Mensagem / Orientações */}
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setRespostaAdminModal({
-                                          isOpen: true,
-                                          reserva: res,
-                                          acao: 'responder',
-                                          texto: res.respostaAdmin || '',
-                                          pago: res.pago
-                                        });
-                                      }}
-                                      className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-950 text-[10px] font-bold transition-colors border border-indigo-200 cursor-pointer flex items-center gap-1 shadow-2xs"
-                                      title="Enviar orientações ou instruções ao morador"
-                                    >
-                                      <MessageSquare className="w-2.5 h-2.5 text-indigo-700" />
-                                      <span>Instruções</span>
-                                    </button>
-
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (confirm(`Deseja realmente excluir o agendamento de ${res.moradorNome} para ${nomeEspaco}?`)) {
-                                        cancelarReserva(res.id);
-                                      }
-                                    }}
-                                    className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                                    title="Excluir Registro de Reserva"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-
+                        {/* Header do Card: Espaço + Badges de Status */}
+                        <div className="flex items-start justify-between gap-2 pb-2 border-b border-slate-200/80">
+                          <div className="flex items-center gap-2 min-w-0">
+                            {fotoEspaco && (
+                              <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-200 overflow-hidden shrink-0 shadow-2xs">
+                                <img
+                                  src={fotoEspaco}
+                                  alt={nomeEspaco}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = '/Salão de festas.jpg';
+                                  }}
+                                />
                               </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
+                            )}
+                            <div className="min-w-0">
+                              <span className="text-[8.5px] font-black uppercase text-amber-800 tracking-tight block truncate">
+                                {dep?.tipo || 'Área Comum'}
+                              </span>
+                              <h4 className="text-xs sm:text-sm font-black text-slate-950 truncate leading-tight" title={nomeEspaco}>
+                                {nomeEspaco}
+                              </h4>
+                            </div>
+                          </div>
 
-                  </div>
-                )}
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            {temConflitoReserva && (
+                              <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-rose-600 text-white shadow-2xs animate-pulse">
+                                ⚠️ Conflito
+                              </span>
+                            )}
 
-                {/* ========================================================= */}
-                {/* ABA 2: ESPAÇOS & DEPENDÊNCIAS FÍSICAS                     */}
-                {/* ========================================================= */}
-                {tabDependenciasAdmin === 'espacos' && (
-                  <div className="space-y-6 animate-in fade-in duration-200">
-                    
-                    {/* Resumo & Botão de Criação */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-amber-300 text-xs font-black shadow-xs">
-                          {dependencias.length} Espaços Totais
+                            <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full border shadow-2xs ${isConfirmada
+                                ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
+                                : res.status === 'Pendente de Pagamento'
+                                  ? 'bg-purple-100 text-purple-950 border-purple-300'
+                                  : isPendente
+                                    ? 'bg-amber-400 text-slate-950 border-amber-500 font-black'
+                                    : isRecusada
+                                      ? 'bg-rose-100 text-rose-950 border-rose-300'
+                                      : 'bg-slate-100 text-slate-700 border-slate-300'
+                              }`}>
+                              {res.status}
+                            </span>
+                          </div>
                         </div>
-                        <div className="px-3 py-1.5 rounded-xl bg-purple-100 text-purple-950 border border-purple-300 text-xs font-black">
-                          📅 {totalReservaveis} Reserváveis
+
+                        {/* Dados do Morador e Data/Turno */}
+                        <div className="grid grid-cols-2 gap-1.5 text-xs">
+                          <div className="p-2 rounded-xl bg-slate-50 border border-slate-200/80 space-y-0.5 min-w-0">
+                            <span className="text-[8px] uppercase font-extrabold text-slate-500 block truncate">Morador Solicitante:</span>
+                            <strong className="text-slate-950 block text-[11px] truncate leading-tight">
+                              {res.moradorNome}
+                            </strong>
+                            <span className="text-[9.5px] text-indigo-900 font-bold block truncate">
+                              {res.unidade} {res.bloco && `(${res.bloco})`}
+                            </span>
+                          </div>
+
+                          <div className="p-2 rounded-xl bg-slate-50 border border-slate-200/80 space-y-0.5 min-w-0">
+                            <span className="text-[8px] uppercase font-extrabold text-slate-500 block truncate">Data & Turno:</span>
+                            <strong className="text-slate-950 block text-[11px] flex items-center gap-1 leading-tight truncate">
+                              <Calendar className="w-3 h-3 text-emerald-700 shrink-0 inline" />
+                              {res.dataReserva}
+                            </strong>
+                            <span className="text-[9.5px] text-slate-700 font-semibold block truncate">
+                              {res.periodo}
+                            </span>
+                          </div>
                         </div>
-                        <div className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
-                          ✨ {totalUsoLivre} de Uso Livre
-                        </div>
+
+                        {/* Taxa de Reserva & Comprovante de Pagamento */}
+                        {res.valorTaxa !== undefined && res.valorTaxa > 0 && (
+                          <div className="p-2 rounded-xl bg-purple-50/90 border border-purple-200/80 flex items-center justify-between text-xs gap-1.5">
+                            <div className="min-w-0">
+                              <span className="text-[8px] uppercase font-black text-purple-900 block truncate">
+                                Taxa do Espaço:
+                              </span>
+                              <strong className="text-[11px] font-black text-purple-950 font-mono block truncate">
+                                R$ {res.valorTaxa.toFixed(2)}
+                              </strong>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+                              <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded-md ${res.pago
+                                  ? 'bg-emerald-100 text-emerald-950 border border-emerald-300'
+                                  : 'bg-amber-200 text-amber-950 border border-amber-300'
+                                }`}>
+                                {res.pago ? '✓ Taxa Paga' : '⏳ Pendente'}
+                              </span>
+
+                              {res.comprovanteUrl && (
+                                <button
+                                  type="button"
+                                  onClick={() => setViewComprovanteModal(res.comprovanteUrl || null)}
+                                  className="px-1.5 py-0.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-[9px] font-bold shadow-2xs cursor-pointer flex items-center gap-0.5"
+                                  title="Visualizar comprovante de pagamento"
+                                >
+                                  <Paperclip className="w-2.5 h-2.5" />
+                                  <span>Comprovante</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Observações do Morador */}
+                        {res.observacoes && (
+                          <div className="p-2 rounded-xl bg-slate-50/90 border border-slate-200/80 text-[10.5px]">
+                            <span className="text-[8px] uppercase font-bold text-slate-500 block">
+                              Observações do Morador:
+                            </span>
+                            <p className="text-slate-800 font-medium italic mt-0.5 line-clamp-2 leading-tight">
+                              "{res.observacoes}"
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Resposta Oficial / Orientações do Síndico */}
+                        {res.respostaAdmin && (
+                          <div className="p-2 rounded-xl bg-emerald-50/90 border border-emerald-200/80 text-[10.5px] space-y-0.5">
+                            <span className="text-[8px] uppercase font-bold text-emerald-900 block flex items-center gap-1">
+                              <MessageSquare className="w-2.5 h-2.5 shrink-0" /> Orientações da Administração:
+                            </span>
+                            <p className="text-emerald-950 font-bold line-clamp-2 leading-tight">
+                              {res.respostaAdmin}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Motivo de Recusa */}
+                        {res.motivoRecusa && (
+                          <div className="p-2 rounded-xl bg-rose-50/90 border border-rose-200/80 text-[10.5px] space-y-0.5">
+                            <span className="text-[8px] uppercase font-bold text-rose-900 block">
+                              Motivo da Recusa:
+                            </span>
+                            <p className="text-rose-950 font-bold line-clamp-2 leading-tight">
+                              {res.motivoRecusa}
+                            </p>
+                          </div>
+                        )}
+
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDependenciaToEditInAdmin(null);
-                          setIsCreateEditDependenciaModalOpen(true);
-                        }}
-                        className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0"
-                      >
-                        <Plus className="w-4 h-4 stroke-[3]" />
-                        <span>+ Cadastrar Nova Dependência</span>
-                      </button>
-                    </div>
+                      {/* Botões de Ação do Síndico */}
+                      <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-200/80">
+                        <div className="flex items-center gap-1 flex-wrap">
 
-                    {/* Filtros e Busca */}
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                        
-                        {/* Busca */}
-                        <div className="relative sm:col-span-1">
-                          <input
-                            type="text"
-                            placeholder="Buscar por nome, comodidade..."
-                            value={searchDependenciaAdmin}
-                            onChange={(e) => setSearchDependenciaAdmin(e.target.value)}
-                            className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
-                          />
-                          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
-                        </div>
-
-                        {/* Filtro por Regime */}
-                        <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none sm:col-span-2">
-                          <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
-                            Regime:
-                          </span>
-                          {[
-                            { id: 'Todas', label: 'Todas' },
-                            { id: 'reservavel', label: '📅 Requer Reserva' },
-                            { id: 'livre', label: '✨ Uso Livre' }
-                          ].map(reg => (
-                            <button
-                              key={reg.id}
-                              type="button"
-                              onClick={() => setFiltroRegimeDependenciaAdmin(reg.id)}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
-                                filtroRegimeDependenciaAdmin === reg.id
-                                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
-                                  : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
-                              }`}
-                            >
-                              {reg.label}
-                            </button>
-                          ))}
-                        </div>
-
-                      </div>
-
-                      {/* Filtro por Categoria */}
-                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                        <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
-                          Categorias:
-                        </span>
-                        {tiposDisponiveis.map(tp => (
-                          <button
-                            key={tp}
-                            type="button"
-                            onClick={() => setFiltroTipoDependenciaAdmin(tp)}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${
-                              filtroTipoDependenciaAdmin === tp
-                                ? 'bg-slate-900 text-amber-300 border-slate-900 font-black shadow-xs'
-                                : 'bg-white/50 text-slate-700 border-white/70 hover:bg-white'
-                            }`}
-                          >
-                            {tp}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Grid de Cards das Dependências */}
-                    <div className="space-y-3">
-                      {filteredDependenciasAdmin.length === 0 ? (
-                        <div className="p-8 text-center bg-white/40 border border-white/60 rounded-2xl space-y-2">
-                          <p className="text-sm font-bold text-slate-800">Nenhum espaço encontrado com os filtros aplicados.</p>
+                          {/* Botão Aprovar */}
                           <button
                             type="button"
                             onClick={() => {
-                              setSearchDependenciaAdmin('');
-                              setFiltroTipoDependenciaAdmin('Todas');
-                              setFiltroRegimeDependenciaAdmin('Todas');
+                              setRespostaAdminModal({
+                                isOpen: true,
+                                reserva: res,
+                                acao: 'aprovar',
+                                texto: res.respostaAdmin || 'Reserva aprovada. Chaves disponíveis na portaria no dia do evento mediante termo de vistoria.',
+                                pago: false
+                              });
                             }}
-                            className="text-xs text-indigo-800 font-black hover:underline cursor-pointer"
+                            className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
                           >
-                            Limpar filtros
+                            <Check className="w-3 h-3 stroke-[3]" />
+                            <span>{isConfirmada ? 'Editar Aprovação' : 'Aprovar'}</span>
                           </button>
+
+                          {/* Botão Confirmar PIX se comprovante enviado */}
+                          {Boolean(res.comprovanteUrl && !res.pago) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                atualizarStatusReserva(
+                                  res.id,
+                                  'Confirmada',
+                                  'Pagamento via PIX confirmado pela administração.',
+                                  undefined,
+                                  true
+                                );
+                              }}
+                              className="px-2 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-black transition-all shadow-2xs cursor-pointer flex items-center gap-1 animate-pulse"
+                              title="Confirmar recebimento do PIX e quitar a taxa da reserva"
+                            >
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Confirmar PIX</span>
+                            </button>
+                          )}
+
+                          {/* Botão Recusar */}
+                          {!isRecusada && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRespostaAdminModal({
+                                  isOpen: true,
+                                  reserva: res,
+                                  acao: 'recusar',
+                                  texto: res.motivoRecusa || 'Conflito de agenda ou necessidade de manutenção preventiva no espaço.',
+                                  pago: false
+                                });
+                              }}
+                              className="px-2 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-950 text-[10px] font-black transition-colors border border-rose-300 cursor-pointer shadow-2xs flex items-center gap-0.5"
+                            >
+                              <X className="w-3 h-3" />
+                              <span>Recusar</span>
+                            </button>
+                          )}
+
+                          {/* Botão Mensagem / Orientações */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRespostaAdminModal({
+                                isOpen: true,
+                                reserva: res,
+                                acao: 'responder',
+                                texto: res.respostaAdmin || '',
+                                pago: res.pago
+                              });
+                            }}
+                            className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-950 text-[10px] font-bold transition-colors border border-indigo-200 cursor-pointer flex items-center gap-1 shadow-2xs"
+                            title="Enviar orientações ou instruções ao morador"
+                          >
+                            <MessageSquare className="w-2.5 h-2.5 text-indigo-700" />
+                            <span>Instruções</span>
+                          </button>
+
                         </div>
-                      ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                          {filteredDependenciasAdmin.map(dep => {
-                            return (
-                              <div
-                                key={dep.id}
-                                className="border-2 border-slate-200 hover:border-amber-300 rounded-2xl p-3 bg-white/85 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-2.5"
-                              >
-                                <div className="space-y-3">
-                                  
-                                  {/* Imagem + Badges */}
-                                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 flex items-center justify-center">
-                                    <img
-                                      src={dep.foto}
-                                      alt={dep.nome}
-                                      className="w-full h-full object-contain"
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).src = '/Salão de festas.jpg';
-                                      }}
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent p-3 flex flex-col justify-between pointer-events-none">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-950/80 text-amber-300 border border-amber-400/40 backdrop-blur-xs">
-                                          {dep.tipo}
-                                        </span>
-                                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md ${
-                                          dep.requerReserva
-                                            ? 'bg-purple-600 text-white'
-                                            : 'bg-emerald-600 text-white'
-                                        }`}>
-                                          {dep.requerReserva ? '📅 Requer Reserva' : '✨ Uso Livre'}
-                                        </span>
-                                      </div>
 
-                                      <div>
-                                        <h4 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-md">
-                                          {dep.nome}
-                                        </h4>
-                                      </div>
-                                    </div>
-                                  </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`Deseja realmente excluir o agendamento de ${res.moradorNome} para ${nomeEspaco}?`)) {
+                              cancelarReserva(res.id);
+                            }
+                          }}
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Excluir Registro de Reserva"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
 
-                                  {/* Info Metas */}
-                                  <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div className="p-2 rounded-xl bg-slate-100/80 border border-slate-200 flex items-center gap-1.5">
-                                      <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                                      <span className="font-bold text-slate-800 truncate text-[11px]">
-                                        {dep.horarioFuncionamento}
-                                      </span>
-                                    </div>
-                                    <div className="p-2 rounded-xl bg-slate-100/80 border border-slate-200 flex items-center gap-1.5">
-                                      <Users className="w-3.5 h-3.5 text-indigo-700 shrink-0" />
-                                      <span className="font-bold text-slate-800 text-[11px]">
-                                        Até {dep.capacidadePessoas} pessoas
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {dep.taxaReserva !== undefined && dep.taxaReserva > 0 && (
-                                    <div className="p-2 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-between text-xs">
-                                      <span className="text-[10px] uppercase font-black text-purple-900">
-                                        Taxa de Manutenção/Limpeza:
-                                      </span>
-                                      <span className="font-black text-purple-950 font-mono">
-                                        R$ {dep.taxaReserva.toFixed(2)}
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  <p className="text-xs text-slate-600 font-medium line-clamp-2">
-                                    {dep.descricao}
-                                  </p>
-
-                                  {/* Comodidades & Regras Resumo */}
-                                  <div className="space-y-1">
-                                    <span className="text-[10px] font-extrabold uppercase text-slate-700 block">
-                                      Comodidades ({dep.comodidades.length}) • Regras ({dep.regrasUso.length})
-                                    </span>
-                                    <div className="flex flex-wrap gap-1">
-                                      {dep.comodidades.slice(0, 3).map((com, cIdx) => (
-                                        <span key={cIdx} className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
-                                          ✓ {com}
-                                        </span>
-                                      ))}
-                                      {dep.comodidades.length > 3 && (
-                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500">
-                                          +{dep.comodidades.length - 3} mais
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                </div>
-
-                                {/* Ações Administrativas */}
-                                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setDependenciaToEditInAdmin(dep);
-                                      setIsCreateEditDependenciaModalOpen(true);
-                                    }}
-                                    className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-300"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5 text-indigo-700" />
-                                    <span>Editar</span>
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (confirm(`Deseja realmente remover a dependência "${dep.nome}" do condomínio?`)) {
-                                        excluirDependencia(dep.id);
-                                      }
-                                    }}
-                                    className="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-rose-200"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                                    <span>Excluir</span>
-                                  </button>
-                                </div>
-
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
                     </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
-                  </div>
-                )}
+        </div>
+      )}
 
+      {/* ========================================================= */}
+      {/* ABA 2: ESPAÇOS & DEPENDÊNCIAS FÍSICAS                     */}
+      {/* ========================================================= */}
+      {tabDependenciasAdmin === 'espacos' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+
+          {/* Resumo & Botão de Criação */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-amber-300 text-xs font-black shadow-xs">
+                {dependencias.length} Espaços Totais
+              </div>
+              <div className="px-3 py-1.5 rounded-xl bg-purple-100 text-purple-950 border border-purple-300 text-xs font-black">
+                📅 {totalReservaveis} Reserváveis
+              </div>
+              <div className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
+                ✨ {totalUsoLivre} de Uso Livre
               </div>
             </div>
 
-          </div>
-        );
-      })()}
-
-      {/* ========================================================================= */}
-      {/* SEÇÃO 14: MUDANÇAS E SAÍDAS */}
-      {/* ========================================================================= */}
-      {(() => {
-        const totalPendentes = mudancas.filter(m => m.status === 'Pendente de Aprovação').length;
-        const totalConfirmadas = mudancas.filter(m => m.status === 'Confirmada').length;
-
-        const filteredMudancasAdmin = mudancas.filter(mud => {
-          const matchStatus = filtroStatusMudancaAdmin === 'Todas' || mud.status === filtroStatusMudancaAdmin;
-          const termo = searchMudancaAdmin.toLowerCase().trim();
-          const matchBusca = !termo ||
-            mud.moradorNome.toLowerCase().includes(termo) ||
-            mud.unidade.includes(termo) ||
-            (mud.transportadora && mud.transportadora.toLowerCase().includes(termo)) ||
-            (mud.placaVeiculo && mud.placaVeiculo.toLowerCase().includes(termo));
-
-          return matchStatus && matchBusca;
-        });
-
-        return (
-          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-            canAccessMudancas ? 'bg-orange-50/70 border-orange-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-          }`}>
-            
-            {/* Accordion Header */}
             <button
               type="button"
-              disabled={!canAccessMudancas}
-              onClick={() => canAccessMudancas && setIsMudancasAdminOpen(!isMudancasAdminOpen)}
-              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-                canAccessMudancas
-                  ? 'bg-orange-100/90 hover:bg-orange-200/70 border-orange-200 cursor-pointer active:scale-[0.999]'
-                  : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-              }`}
+              onClick={() => {
+                setDependenciaToEditInAdmin(null);
+                setIsCreateEditDependenciaModalOpen(true);
+              }}
+              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0"
             >
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-                  canAccessMudancas ? 'bg-orange-500/20 border-orange-400/40 text-orange-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-                }`}>
-                  {canAccessMudancas ? <Truck className="w-5 h-5 text-orange-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-base font-black text-slate-950">
-                      14. Mudanças e saídas
-                    </h3>
-                    {canAccessMudancas ? (
-                      <>
-                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-orange-200 text-orange-950 border border-orange-300">
-                          {mudancas.length} agendadas
-                        </span>
-                        {totalPendentes > 0 && (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-500 text-slate-950 animate-pulse">
-                            ⚠️ {totalPendentes} pendentes
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
-                        <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-700 font-medium">
-                    Aprove ou recuse agendamentos de mudança, consulte veículos na portaria e gerencie regras de elevador de serviço.
-                  </p>
-                </div>
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>+ Cadastrar Nova Dependência</span>
+            </button>
+          </div>
+
+          {/* Filtros e Busca */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+
+              {/* Busca */}
+              <div className="relative sm:col-span-1">
+                <input
+                  type="text"
+                  placeholder="Buscar por nome, comodidade..."
+                  value={searchDependenciaAdmin}
+                  onChange={(e) => setSearchDependenciaAdmin(e.target.value)}
+                  className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              {/* Filtro por Regime */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none sm:col-span-2">
+                <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
+                  Regime:
+                </span>
+                {[
+                  { id: 'Todas', label: 'Todas' },
+                  { id: 'reservavel', label: '📅 Requer Reserva' },
+                  { id: 'livre', label: '✨ Uso Livre' }
+                ].map(reg => (
+                  <button
+                    key={reg.id}
+                    type="button"
+                    onClick={() => setFiltroRegimeDependenciaAdmin(reg.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${filtroRegimeDependenciaAdmin === reg.id
+                        ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
+                        : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
+                      }`}
+                  >
+                    {reg.label}
+                  </button>
+                ))}
+              </div>
+
+            </div>
+
+            {/* Filtro por Categoria */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <span className="text-[10px] font-black uppercase text-slate-700 whitespace-nowrap pl-1">
+                Categorias:
+              </span>
+              {tiposDisponiveis.map(tp => (
+                <button
+                  key={tp}
+                  type="button"
+                  onClick={() => setFiltroTipoDependenciaAdmin(tp)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${filtroTipoDependenciaAdmin === tp
+                      ? 'bg-slate-900 text-amber-300 border-slate-900 font-black shadow-xs'
+                      : 'bg-white/50 text-slate-700 border-white/70 hover:bg-white'
+                    }`}
+                >
+                  {tp}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grid de Cards das Dependências */}
+          <div className="space-y-3">
+            {filteredDependenciasAdmin.length === 0 ? (
+              <div className="p-8 text-center bg-white/40 border border-white/60 rounded-2xl space-y-2">
+                <p className="text-sm font-bold text-slate-800">Nenhum espaço encontrado com os filtros aplicados.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchDependenciaAdmin('');
+                    setFiltroTipoDependenciaAdmin('Todas');
+                    setFiltroRegimeDependenciaAdmin('Todas');
+                  }}
+                  className="text-xs text-indigo-800 font-black hover:underline cursor-pointer"
+                >
+                  Limpar filtros
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {filteredDependenciasAdmin.map(dep => {
+                  return (
+                    <div
+                      key={dep.id}
+                      className="border-2 border-slate-200 hover:border-amber-300 rounded-2xl p-3 bg-white/85 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-2.5"
+                    >
+                      <div className="space-y-3">
+
+                        {/* Imagem + Badges */}
+                        <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 flex items-center justify-center">
+                          <img
+                            src={dep.foto}
+                            alt={dep.nome}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/Salão de festas.jpg';
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent p-3 flex flex-col justify-between pointer-events-none">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-950/80 text-amber-300 border border-amber-400/40 backdrop-blur-xs">
+                                {dep.tipo}
+                              </span>
+                              <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md ${dep.requerReserva
+                                  ? 'bg-purple-600 text-white'
+                                  : 'bg-emerald-600 text-white'
+                                }`}>
+                                {dep.requerReserva ? '📅 Requer Reserva' : '✨ Uso Livre'}
+                              </span>
+                            </div>
+
+                            <div>
+                              <h4 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-md">
+                                {dep.nome}
+                              </h4>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Info Metas */}
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="p-2 rounded-xl bg-slate-100/80 border border-slate-200 flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                            <span className="font-bold text-slate-800 truncate text-[11px]">
+                              {dep.horarioFuncionamento}
+                            </span>
+                          </div>
+                          <div className="p-2 rounded-xl bg-slate-100/80 border border-slate-200 flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5 text-indigo-700 shrink-0" />
+                            <span className="font-bold text-slate-800 text-[11px]">
+                              Até {dep.capacidadePessoas} pessoas
+                            </span>
+                          </div>
+                        </div>
+
+                        {dep.taxaReserva !== undefined && dep.taxaReserva > 0 && (
+                          <div className="p-2 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-between text-xs">
+                            <span className="text-[10px] uppercase font-black text-purple-900">
+                              Taxa de Manutenção/Limpeza:
+                            </span>
+                            <span className="font-black text-purple-950 font-mono">
+                              R$ {dep.taxaReserva.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+
+                        <p className="text-xs text-slate-600 font-medium line-clamp-2">
+                          {dep.descricao}
+                        </p>
+
+                        {/* Comodidades & Regras Resumo */}
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-extrabold uppercase text-slate-700 block">
+                            Comodidades ({dep.comodidades.length}) • Regras ({dep.regrasUso.length})
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {dep.comodidades.slice(0, 3).map((com, cIdx) => (
+                              <span key={cIdx} className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                                ✓ {com}
+                              </span>
+                            ))}
+                            {dep.comodidades.length > 3 && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500">
+                                +{dep.comodidades.length - 3} mais
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* Ações Administrativas */}
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDependenciaToEditInAdmin(dep);
+                            setIsCreateEditDependenciaModalOpen(true);
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-300"
+                        >
+                          <Edit2 className="w-3.5 h-3.5 text-indigo-700" />
+                          <span>Editar</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`Deseja realmente remover a dependência "${dep.nome}" do condomínio?`)) {
+                              excluirDependencia(dep.id);
+                            }
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer border border-rose-200"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                          <span>Excluir</span>
+                        </button>
+                      </div>
+
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+        </div>
+      )}
+
+    </div>
+  </div>
+
+          </div >
+        );
+      }) ()}
+
+{/* ========================================================================= */ }
+{/* SEÇÃO 14: MUDANÇAS E SAÍDAS */ }
+{/* ========================================================================= */ }
+{
+  (() => {
+    const totalPendentes = mudancas.filter(m => m.status === 'Pendente de Aprovação').length;
+    const totalConfirmadas = mudancas.filter(m => m.status === 'Confirmada').length;
+
+    const filteredMudancasAdmin = mudancas.filter(mud => {
+      const matchStatus = filtroStatusMudancaAdmin === 'Todas' || mud.status === filtroStatusMudancaAdmin;
+      const termo = searchMudancaAdmin.toLowerCase().trim();
+      const matchBusca = !termo ||
+        mud.moradorNome.toLowerCase().includes(termo) ||
+        mud.unidade.includes(termo) ||
+        (mud.transportadora && mud.transportadora.toLowerCase().includes(termo)) ||
+        (mud.placaVeiculo && mud.placaVeiculo.toLowerCase().includes(termo));
+
+      return matchStatus && matchBusca;
+    });
+
+    return (
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessMudancas ? 'bg-orange-50/70 border-orange-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+        }`}>
+
+        {/* Accordion Header */}
+        <button
+          type="button"
+          disabled={!canAccessMudancas}
+          onClick={() => canAccessMudancas && setIsMudancasAdminOpen(!isMudancasAdminOpen)}
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessMudancas
+              ? 'bg-orange-100/90 hover:bg-orange-200/70 border-orange-200 cursor-pointer active:scale-[0.999]'
+              : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+            }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${canAccessMudancas ? 'bg-orange-500/20 border-orange-400/40 text-orange-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+              }`}>
+              {canAccessMudancas ? <Truck className="w-5 h-5 text-orange-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-black text-slate-950">
+                  14. Mudanças e saídas
+                </h3>
                 {canAccessMudancas ? (
                   <>
-                    <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-                      {isMudancasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-orange-200 text-orange-950 border border-orange-300">
+                      {mudancas.length} agendadas
                     </span>
-                    <div className="p-2 rounded-xl bg-white border border-orange-300 text-slate-700 shadow-2xs">
-                      <ChevronDown className={`w-4 h-4 text-orange-900 transition-transform duration-500 ease-out ${isMudancasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-                    </div>
+                    {totalPendentes > 0 && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-500 text-slate-950 animate-pulse">
+                        ⚠️ {totalPendentes} pendentes
+                      </span>
+                    )}
                   </>
                 ) : (
-                  <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
-                    <Lock className="w-4 h-4 text-slate-400" />
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-700 font-medium">
+                Aprove ou recuse agendamentos de mudança, consulte veículos na portaria e gerencie regras de elevador de serviço.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {canAccessMudancas ? (
+              <>
+                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                  {isMudancasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                </span>
+                <div className="p-2 rounded-xl bg-white border border-orange-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-orange-900 transition-transform duration-500 ease-out ${isMudancasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
+              </>
+            ) : (
+              <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                <Lock className="w-4 h-4 text-slate-400" />
+              </div>
+            )}
+          </div>
+        </button>
+
+        {/* Accordion Content */}
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessMudancas && isMudancasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}
+        >
+          <div className="min-h-0 overflow-hidden bg-orange-50/50 p-4 sm:p-6 space-y-6">
+
+            {/* Resumo e Botão de Agendamento */}
+            <div className="flex items-center justify-between gap-3 flex-wrap bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-amber-300 text-xs font-black shadow-xs">
+                  {mudancas.length} Mudanças no Total
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
+                  ✓ {totalConfirmadas} Confirmadas
+                </div>
+                {totalPendentes > 0 && (
+                  <div className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-black">
+                    ⏳ {totalPendentes} Pendentes de Análise
                   </div>
                 )}
               </div>
-            </button>
 
-            {/* Accordion Content */}
-            <div 
-              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                canAccessMudancas && isMudancasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
-            >
-              <div className="min-h-0 overflow-hidden bg-orange-50/50 p-4 sm:p-6 space-y-6">
-                
-                {/* Resumo e Botão de Agendamento */}
-                <div className="flex items-center justify-between gap-3 flex-wrap bg-white/60 p-4 rounded-2xl border border-white/80 shadow-xs">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-amber-300 text-xs font-black shadow-xs">
-                      {mudancas.length} Mudanças no Total
-                    </div>
-                    <div className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-950 border border-emerald-300 text-xs font-black">
-                      ✓ {totalConfirmadas} Confirmadas
-                    </div>
-                    {totalPendentes > 0 && (
-                      <div className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-black">
-                        ⏳ {totalPendentes} Pendentes de Análise
-                      </div>
-                    )}
-                  </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMudancaToEditAdmin(null);
+                  setIsCreateEditMudancaAdminOpen(true);
+                }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>+ Agendar Nova Mudança / Carreto</span>
+              </button>
+            </div>
 
+            {/* Filtros e Busca */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+              <div className="sm:col-span-7 relative">
+                <input
+                  type="text"
+                  placeholder="Buscar por morador, apto, empresa, placa..."
+                  value={searchMudancaAdmin}
+                  onChange={(e) => setSearchMudancaAdmin(e.target.value)}
+                  className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+              </div>
+
+              <div className="sm:col-span-5 flex items-center gap-1 overflow-x-auto scrollbar-none">
+                {['Todas', 'Pendente de Aprovação', 'Confirmada', 'Recusada'].map(st => (
                   <button
+                    key={st}
                     type="button"
-                    onClick={() => {
-                      setMudancaToEditAdmin(null);
-                      setIsCreateEditMudancaAdminOpen(true);
-                    }}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer shrink-0"
+                    onClick={() => setFiltroStatusMudancaAdmin(st)}
+                    className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${filtroStatusMudancaAdmin === st
+                        ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
+                        : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
+                      }`}
                   >
-                    <Plus className="w-4 h-4 stroke-[3]" />
-                    <span>+ Agendar Nova Mudança / Carreto</span>
+                    {st === 'Todas' ? 'Todas' : st === 'Pendente de Aprovação' ? '⏳ Pendentes' : st === 'Confirmada' ? '✓ Confirmadas' : '❌ Recusadas'}
                   </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Lista das Mudanças */}
+            <div className="space-y-3">
+              {filteredMudancasAdmin.length === 0 ? (
+                <div className="p-6 text-center bg-white/40 border border-white/60 rounded-2xl text-xs font-bold text-slate-700">
+                  Nenhum agendamento de mudança para esta filtragem.
                 </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {filteredMudancasAdmin.map((mud) => {
+                    const isPendente = mud.status === 'Pendente de Aprovação';
+                    const isConfirmada = mud.status === 'Confirmada';
+                    const isRecusada = mud.status === 'Recusada';
 
-                {/* Filtros e Busca */}
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-                  <div className="sm:col-span-7 relative">
-                    <input
-                      type="text"
-                      placeholder="Buscar por morador, apto, empresa, placa..."
-                      value={searchMudancaAdmin}
-                      onChange={(e) => setSearchMudancaAdmin(e.target.value)}
-                      className="w-full bg-white/80 border border-white/90 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 placeholder-slate-500 font-semibold focus:outline-none focus:bg-white shadow-xs"
-                    />
-                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
-                  </div>
-
-                  <div className="sm:col-span-5 flex items-center gap-1 overflow-x-auto scrollbar-none">
-                    {['Todas', 'Pendente de Aprovação', 'Confirmada', 'Recusada'].map(st => (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => setFiltroStatusMudancaAdmin(st)}
-                        className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all border cursor-pointer ${
-                          filtroStatusMudancaAdmin === st
-                            ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs'
-                            : 'bg-white/60 text-slate-800 border-white/80 hover:bg-white'
-                        }`}
+                    return (
+                      <div
+                        key={mud.id}
+                        className={`border-2 rounded-2xl p-4 shadow-md transition-all flex flex-col justify-between space-y-3 bg-white/80 ${isPendente
+                            ? 'border-amber-400 bg-amber-50/50'
+                            : isConfirmada
+                              ? 'border-emerald-300'
+                              : 'border-rose-200'
+                          }`}
                       >
-                        {st === 'Todas' ? 'Todas' : st === 'Pendente de Aprovação' ? '⏳ Pendentes' : st === 'Confirmada' ? '✓ Confirmadas' : '❌ Recusadas'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Lista das Mudanças */}
-                <div className="space-y-3">
-                  {filteredMudancasAdmin.length === 0 ? (
-                    <div className="p-6 text-center bg-white/40 border border-white/60 rounded-2xl text-xs font-bold text-slate-700">
-                      Nenhum agendamento de mudança para esta filtragem.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      {filteredMudancasAdmin.map((mud) => {
-                        const isPendente = mud.status === 'Pendente de Aprovação';
-                        const isConfirmada = mud.status === 'Confirmada';
-                        const isRecusada = mud.status === 'Recusada';
-
-                        return (
-                          <div
-                            key={mud.id}
-                            className={`border-2 rounded-2xl p-4 shadow-md transition-all flex flex-col justify-between space-y-3 bg-white/80 ${
-                              isPendente 
-                                ? 'border-amber-400 bg-amber-50/50' 
-                                : isConfirmada 
-                                  ? 'border-emerald-300' 
-                                  : 'border-rose-200'
-                            }`}
-                          >
-                            <div className="space-y-2">
-                              <div className="flex items-start justify-between gap-2 border-b border-slate-200 pb-2">
-                                <div>
-                                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-slate-900 text-amber-300">
-                                    {mud.tipo}
-                                  </span>
-                                  <h4 className="text-sm sm:text-base font-black text-slate-950 mt-1">
-                                    Unidade {mud.unidade} {mud.bloco && `(${mud.bloco})`} • {mud.moradorNome}
-                                  </h4>
-                                  {mud.moradorTelefone && (
-                                    <span className="text-[11px] text-slate-600 font-semibold flex items-center gap-1 mt-0.5">
-                                      <Phone className="w-3 h-3 text-emerald-600" /> {mud.moradorTelefone}
-                                    </span>
-                                  )}
-                                </div>
-
-                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shrink-0 ${
-                                  isConfirmada ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : isPendente ? 'bg-amber-100 text-amber-950 border-amber-300' : 'bg-rose-100 text-rose-950 border-rose-300'
-                                }`}>
-                                  {mud.status}
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between gap-2 border-b border-slate-200 pb-2">
+                            <div>
+                              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-slate-900 text-amber-300">
+                                {mud.tipo}
+                              </span>
+                              <h4 className="text-sm sm:text-base font-black text-slate-950 mt-1">
+                                Unidade {mud.unidade} {mud.bloco && `(${mud.bloco})`} • {mud.moradorNome}
+                              </h4>
+                              {mud.moradorTelefone && (
+                                <span className="text-[11px] text-slate-600 font-semibold flex items-center gap-1 mt-0.5">
+                                  <Phone className="w-3 h-3 text-emerald-600" /> {mud.moradorTelefone}
                                 </span>
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-2 text-xs">
-                                <div className="p-2 rounded-xl bg-white border border-slate-200 space-y-0.5">
-                                  <span className="text-[9px] uppercase font-bold text-slate-500 block">Data & Turno:</span>
-                                  <strong className="text-slate-950 block text-[11px]">{mud.dataMudanca}</strong>
-                                  <span className="text-[10px] text-slate-600 block">{mud.periodo}</span>
-                                </div>
-
-                                <div className="p-2 rounded-xl bg-white border border-slate-200 space-y-0.5">
-                                  <span className="text-[9px] uppercase font-bold text-slate-500 block">Veículo & Motorista:</span>
-                                  <strong className="text-slate-950 block text-[11px] truncate">{mud.transportadora || 'Particular'} {mud.nomeMotorista ? `• ${mud.nomeMotorista}` : ''}</strong>
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-[10px] font-mono text-indigo-900 font-bold">{mud.placaVeiculo || 'Placa a informar'}</span>
-                                    {(mud.cpfMotorista || mud.rgMotorista) && (
-                                      <span className="text-[10px] text-slate-500 font-mono">• CPF: {mud.cpfMotorista || mud.rgMotorista}</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {mud.observacoes && (
-                                <p className="text-xs text-slate-700 font-medium p-2 rounded-xl bg-white/60 border border-slate-200">
-                                  <b>Obs:</b> {mud.observacoes}
-                                </p>
-                              )}
-
-                              {mud.motivoRecusa && (
-                                <p className="text-xs text-rose-800 font-bold p-2 rounded-xl bg-rose-50 border border-rose-200">
-                                  <b>Motivo Recusa:</b> {mud.motivoRecusa}
-                                </p>
                               )}
                             </div>
 
-                            {/* Ações de Aprovação e Edição */}
-                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200">
+                            <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shrink-0 ${isConfirmada ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : isPendente ? 'bg-amber-100 text-amber-950 border-amber-300' : 'bg-rose-100 text-rose-950 border-rose-300'
+                              }`}>
+                              {mud.status}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="p-2 rounded-xl bg-white border border-slate-200 space-y-0.5">
+                              <span className="text-[9px] uppercase font-bold text-slate-500 block">Data & Turno:</span>
+                              <strong className="text-slate-950 block text-[11px]">{mud.dataMudanca}</strong>
+                              <span className="text-[10px] text-slate-600 block">{mud.periodo}</span>
+                            </div>
+
+                            <div className="p-2 rounded-xl bg-white border border-slate-200 space-y-0.5">
+                              <span className="text-[9px] uppercase font-bold text-slate-500 block">Veículo & Motorista:</span>
+                              <strong className="text-slate-950 block text-[11px] truncate">{mud.transportadora || 'Particular'} {mud.nomeMotorista ? `• ${mud.nomeMotorista}` : ''}</strong>
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                {isPendente && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => atualizarStatusMudanca(mud.id, 'Confirmada')}
-                                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
-                                    >
-                                      <Check className="w-3.5 h-3.5" />
-                                      <span>Aprovar</span>
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setMotivoRecusaMudancaModal(mud);
-                                        setMotivoRecusaMudancaTexto('Conflito de horário ou necessidade de vistoria prévia.');
-                                      }}
-                                      className="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-950 text-xs font-black transition-colors border border-rose-300 cursor-pointer"
-                                    >
-                                      <span>Recusar</span>
-                                    </button>
-                                  </>
-                                )}
-
-                                {isConfirmada && (
-                                  <span className="text-xs font-bold text-emerald-900 flex items-center gap-1">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                                    Liberado na Portaria
-                                  </span>
+                                <span className="text-[10px] font-mono text-indigo-900 font-bold">{mud.placaVeiculo || 'Placa a informar'}</span>
+                                {(mud.cpfMotorista || mud.rgMotorista) && (
+                                  <span className="text-[10px] text-slate-500 font-mono">• CPF: {mud.cpfMotorista || mud.rgMotorista}</span>
                                 )}
                               </div>
+                            </div>
+                          </div>
 
-                              <div className="flex items-center gap-1">
+                          {mud.observacoes && (
+                            <p className="text-xs text-slate-700 font-medium p-2 rounded-xl bg-white/60 border border-slate-200">
+                              <b>Obs:</b> {mud.observacoes}
+                            </p>
+                          )}
+
+                          {mud.motivoRecusa && (
+                            <p className="text-xs text-rose-800 font-bold p-2 rounded-xl bg-rose-50 border border-rose-200">
+                              <b>Motivo Recusa:</b> {mud.motivoRecusa}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Ações de Aprovação e Edição */}
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {isPendente && (
+                              <>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setMudancaToEditAdmin(mud);
-                                    setIsCreateEditMudancaAdminOpen(true);
-                                  }}
-                                  className="p-1.5 rounded-xl text-slate-600 hover:text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer"
-                                  title="Editar agendamento"
+                                  onClick={() => atualizarStatusMudanca(mud.id, 'Confirmada')}
+                                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
                                 >
-                                  <Edit3 className="w-4 h-4" />
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Aprovar</span>
                                 </button>
 
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (confirm('Deseja excluir este registro de mudança?')) {
-                                      excluirMudanca(mud.id);
+                                    setMotivoRecusaMudancaModal(mud);
+                                    setMotivoRecusaMudancaTexto('Conflito de horário ou necessidade de vistoria prévia.');
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-950 text-xs font-black transition-colors border border-rose-300 cursor-pointer"
+                                >
+                                  <span>Recusar</span>
+                                </button>
+                              </>
+                            )}
+
+                            {isConfirmada && (
+                              <span className="text-xs font-bold text-emerald-900 flex items-center gap-1">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                Liberado na Portaria
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMudancaToEditAdmin(mud);
+                                setIsCreateEditMudancaAdminOpen(true);
+                              }}
+                              className="p-1.5 rounded-xl text-slate-600 hover:text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer"
+                              title="Editar agendamento"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm('Deseja excluir este registro de mudança?')) {
+                                  excluirMudanca(mud.id);
+                                }
+                              }}
+                              className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Modal de Cadastro/Edição de Mudança no Admin */}
+            <CreateAgendamentoMudancaModal
+              isOpen={isCreateEditMudancaAdminOpen}
+              onClose={() => {
+                setIsCreateEditMudancaAdminOpen(false);
+                setMudancaToEditAdmin(null);
+              }}
+              mudancaToEdit={mudancaToEditAdmin}
+            />
+
+          </div>
+        </div>
+
+      </div>
+    );
+  })()
+}
+
+{/* ========================================================================= */ }
+{/* SEÇÃO 15: PORTARIA ENCOMENDAS/VISITAS (4 CENÁRIOS COM TIMELINE COMPLETA) */ }
+{/* ========================================================================= */ }
+{
+  (() => {
+    // Classificação de status: Abertos (em andamento) vs Fechados (concluídos)
+    const isAcessoAberto = (status: string) => [
+      'Aguardando Chegada',
+      'Entrada Liberada / Presente',
+      'Chave na Portaria à Disposição',
+      'Chave Retirada / No Condomínio'
+    ].includes(status);
+
+    const isAcessoFechado = (status: string) => [
+      'Finalizado / Saiu',
+      'Chave Devolvida / Concluído',
+      'Cancelado / Expirado'
+    ].includes(status);
+
+    const isEncomendaAberta = (status: string) => [
+      'Aguardando Chegada na Portaria',
+      'Aguardando Retirada',
+      'Embrulho Deixado pelo Morador',
+      'Aguardando Coleta na Portaria'
+    ].includes(status);
+
+    const isEncomendaFechada = (status: string) => [
+      'Entregue ao Morador',
+      'Despachado / Retirado por Terceiro',
+      'Devolvido'
+    ].includes(status);
+
+    const totalAguardandoAcesso = autorizacoesAcesso.filter(a => a.status === 'Aguardando Chegada').length;
+    const totalChaveDisposicao = autorizacoesAcesso.filter(a => a.status === 'Chave na Portaria à Disposição').length;
+    const totalPresentes = autorizacoesAcesso.filter(a => a.status === 'Entrada Liberada / Presente' || a.status === 'Chave Retirada / No Condomínio').length;
+    const totalAcessosAbertos = autorizacoesAcesso.filter(a => isAcessoAberto(a.status)).length;
+    const totalAcessosFechados = autorizacoesAcesso.filter(a => isAcessoFechado(a.status)).length;
+
+    const totalEncomendasEsperadas = encomendasEntregas.filter(e => e.status === 'Aguardando Chegada na Portaria').length;
+    const totalEmbrulhosCustodia = encomendasEntregas.filter(e => e.status === 'Embrulho Deixado pelo Morador' || e.status === 'Aguardando Coleta na Portaria').length;
+    const totalEncomendasPendentes = encomendasEntregas.filter(e => e.status === 'Aguardando Retirada').length;
+    const totalEncomendasAbertas = encomendasEntregas.filter(e => isEncomendaAberta(e.status)).length;
+    const totalEncomendasFechadas = encomendasEntregas.filter(e => isEncomendaFechada(e.status)).length;
+
+    const filteredAcessosAdmin = autorizacoesAcesso.filter(a => {
+      const matchProcesso = filtroProcessoPortariaAdmin === 'todos' ||
+        (filtroProcessoPortariaAdmin === 'abertos' && isAcessoAberto(a.status)) ||
+        (filtroProcessoPortariaAdmin === 'fechados' && isAcessoFechado(a.status));
+
+      const matchStatus = filtroStatusAcessoAdmin === 'Todas' || a.status === filtroStatusAcessoAdmin;
+      const termo = searchPortariaAdmin.toLowerCase().trim();
+      const matchBusca = !termo ||
+        a.nomeVisitante.toLowerCase().includes(termo) ||
+        a.moradorNome.toLowerCase().includes(termo) ||
+        a.unidade.includes(termo) ||
+        a.tipoVisitante.toLowerCase().includes(termo) ||
+        (a.identificacaoChave && a.identificacaoChave.toLowerCase().includes(termo)) ||
+        (a.localChavePortaria && a.localChavePortaria.toLowerCase().includes(termo));
+
+      return matchProcesso && matchStatus && matchBusca;
+    });
+
+    const filteredEncomendasAdmin = encomendasEntregas.filter(e => {
+      const matchProcesso = filtroProcessoPortariaAdmin === 'todos' ||
+        (filtroProcessoPortariaAdmin === 'abertos' && isEncomendaAberta(e.status)) ||
+        (filtroProcessoPortariaAdmin === 'fechados' && isEncomendaFechada(e.status));
+
+      const matchStatus = filtroStatusEncomendaAdmin === 'Todas' || e.status === filtroStatusEncomendaAdmin;
+      const termo = searchPortariaAdmin.toLowerCase().trim();
+      const matchBusca = !termo ||
+        e.destinatarioNome.toLowerCase().includes(termo) ||
+        e.unidade.includes(termo) ||
+        e.empresaTransporte.toLowerCase().includes(termo) ||
+        e.tipo.toLowerCase().includes(termo) ||
+        (e.destinatarioExterno && e.destinatarioExterno.toLowerCase().includes(termo)) ||
+        (e.despachadoPor && e.despachadoPor.toLowerCase().includes(termo)) ||
+        (e.localArmazenamento && e.localArmazenamento.toLowerCase().includes(termo));
+
+      return matchProcesso && matchStatus && matchBusca;
+    });
+
+    return (
+      <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${canAccessPortaria ? 'bg-indigo-50/70 border-indigo-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+        }`}>
+
+        {/* Accordion Header */}
+        <button
+          type="button"
+          disabled={!canAccessPortaria}
+          onClick={() => canAccessPortaria && setIsPortariaAdminOpen(!isPortariaAdminOpen)}
+          className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${canAccessPortaria
+              ? 'bg-indigo-100/90 hover:bg-indigo-200/70 border-indigo-200 cursor-pointer active:scale-[0.999]'
+              : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
+            }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${canAccessPortaria ? 'bg-indigo-500/20 border-indigo-400/40 text-indigo-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+              }`}>
+              {canAccessPortaria ? <PackageCheck className="w-5 h-5 text-indigo-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-black text-slate-950">
+                  15. Portaria encomendas/visitas
+                </h3>
+                {canAccessPortaria ? (
+                  <>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-950 border border-indigo-300">
+                      {autorizacoesAcesso.length} acessos • {encomendasEntregas.length} encomendas/despachos
+                    </span>
+                    {totalEncomendasEsperadas > 0 && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-sky-400 text-slate-950 shadow-2xs">
+                        ⏳ {totalEncomendasEsperadas} a caminho
+                      </span>
+                    )}
+                    {totalEncomendasPendentes > 0 && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 animate-pulse shadow-2xs">
+                        📦 {totalEncomendasPendentes} a retirar
+                      </span>
+                    )}
+                    {totalEmbrulhosCustodia > 0 && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-300 text-purple-950 shadow-2xs">
+                        📤 {totalEmbrulhosCustodia} aguardando coleta
+                      </span>
+                    )}
+                    {totalChaveDisposicao > 0 && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-yellow-300 text-yellow-950 shadow-2xs">
+                        🔑 {totalChaveDisposicao} chave na portaria
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-700 font-medium">
+                Controle de encomendas (entradas e despachos), pré-autorizações com foto, visitas, prestadores e custódia de chaves com registro de horários e timeline.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {canAccessPortaria ? (
+              <>
+                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                  {isPortariaAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+                </span>
+                <div className="p-2 rounded-xl bg-white border border-indigo-300 text-slate-700 shadow-2xs">
+                  <ChevronDown className={`w-4 h-4 text-indigo-900 transition-transform duration-500 ease-out ${isPortariaAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </div>
+              </>
+            ) : (
+              <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
+                <Lock className="w-4 h-4 text-slate-400" />
+              </div>
+            )}
+          </div>
+        </button>
+
+        {/* Accordion Content */}
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${canAccessPortaria && isPortariaAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            }`}
+        >
+          <div className="min-h-0 overflow-hidden bg-indigo-50/50 p-4 sm:p-6 space-y-5">
+
+            {/* Resumo & Ações Rápidas */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/70 p-4 rounded-2xl border border-white/90 shadow-xs">
+              <div className="flex items-center gap-2.5 text-xs font-bold text-slate-700 flex-wrap">
+                <span className="flex items-center gap-1.5 bg-indigo-50 px-2.5 py-1 rounded-xl border border-indigo-200 text-indigo-950 font-black">
+                  <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                  {totalAguardandoAcesso} visitas aguardando
+                </span>
+                {totalChaveDisposicao > 0 && (
+                  <span className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200 text-amber-950 font-black">
+                    <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+                    {totalChaveDisposicao} chaves na portaria
+                  </span>
+                )}
+                <span className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200 text-emerald-950 font-black">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  {totalPresentes} presentes no condomínio
+                </span>
+                {totalEncomendasEsperadas > 0 && (
+                  <span className="flex items-center gap-1.5 bg-sky-50 px-2.5 py-1 rounded-xl border border-sky-200 text-sky-950 font-black">
+                    <Clock className="w-3.5 h-3.5 text-sky-600" />
+                    {totalEncomendasEsperadas} encomendas a caminho
+                  </span>
+                )}
+                <span className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200 text-amber-950 font-black">
+                  <Package className="w-3.5 h-3.5 text-amber-600" />
+                  {totalEncomendasPendentes} pacotes a retirar
+                </span>
+                {totalEmbrulhosCustodia > 0 && (
+                  <span className="flex items-center gap-1.5 bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200 text-purple-950 font-black">
+                    <Package className="w-3.5 h-3.5 text-purple-600" />
+                    {totalEmbrulhosCustodia} aguardando coleta
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateEncomendaAdminOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  <span>+ Registrar Encomenda / Despacho</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateAutorizacaoAdminOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>+ Autorizar Entrada / Deixar Chave</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Sub-Abas do Painel da Portaria */}
+            <div className="flex items-center gap-2 bg-white/80 p-1.5 rounded-2xl border border-slate-200 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setAbaPortariaAdmin('acessos')}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${abaPortariaAdmin === 'acessos'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+              >
+                <UserCheck className="w-4 h-4" />
+                <span>Autorizações, Visitas & Chaves ({filteredAcessosAdmin.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAbaPortariaAdmin('encomendas')}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${abaPortariaAdmin === 'encomendas'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+              >
+                <Package className="w-4 h-4" />
+                <span>Encomendas & Despachos de Embrulhos ({filteredEncomendasAdmin.length})</span>
+              </button>
+            </div>
+
+            {/* FILTRO DE PROCESSOS EM ABERTO vs FECHADOS / CONCLUÍDOS */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-indigo-200 shadow-xs">
+              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setFiltroProcessoPortariaAdmin('abertos')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${filtroProcessoPortariaAdmin === 'abertos'
+                      ? 'bg-amber-400 text-slate-950 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-950 hover:bg-slate-200/60'
+                    }`}
+                >
+                  <span>⚡ Em Aberto / Pendentes</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-950/10 font-black">
+                    {abaPortariaAdmin === 'acessos' ? totalAcessosAbertos : totalEncomendasAbertas}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFiltroProcessoPortariaAdmin('fechados')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${filtroProcessoPortariaAdmin === 'fechados'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-950 hover:bg-slate-200/60'
+                    }`}
+                >
+                  <span>🏁 Fechados / Concluídos</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 font-black">
+                    {abaPortariaAdmin === 'acessos' ? totalAcessosFechados : totalEncomendasFechadas}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFiltroProcessoPortariaAdmin('todos')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${filtroProcessoPortariaAdmin === 'todos'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-950 hover:bg-slate-200/60'
+                    }`}
+                >
+                  <span>📋 Todos ({abaPortariaAdmin === 'acessos' ? autorizacoesAcesso.length : encomendasEntregas.length})</span>
+                </button>
+              </div>
+
+              {/* Atalhos para expandir ou recolher todos os cards */}
+              <div className="flex items-center gap-2 text-xs font-bold shrink-0">
+                <span className="text-slate-400 hidden sm:inline text-[11px]">Visualização dos cards:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const items = abaPortariaAdmin === 'acessos' ? filteredAcessosAdmin : filteredEncomendasAdmin;
+                    const newMap: { [id: string]: boolean } = {};
+                    items.forEach(it => { newMap[it.id] = true; });
+                    setExpandedPortariaCardsAdmin(newMap);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-950 border border-indigo-200 font-bold text-[11px] transition-colors cursor-pointer"
+                >
+                  Expandir Todos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const items = abaPortariaAdmin === 'acessos' ? filteredAcessosAdmin : filteredEncomendasAdmin;
+                    const newMap: { [id: string]: boolean } = {};
+                    items.forEach(it => { newMap[it.id] = false; });
+                    setExpandedPortariaCardsAdmin(newMap);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold text-[11px] transition-colors cursor-pointer"
+                >
+                  Recolher Todos
+                </button>
+              </div>
+            </div>
+
+            {/* Filtros e Busca */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+              <div className="sm:col-span-2 relative">
+                <input
+                  type="text"
+                  placeholder={abaPortariaAdmin === 'acessos' ? "Buscar por visitante, morador, chave ou apto..." : "Buscar por morador, pacote, transportadora, terceiro ou apto..."}
+                  value={searchPortariaAdmin}
+                  onChange={(e) => setSearchPortariaAdmin(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-2xs"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+              </div>
+
+              {abaPortariaAdmin === 'acessos' ? (
+                <div>
+                  <select
+                    value={filtroStatusAcessoAdmin}
+                    onChange={(e) => setFiltroStatusAcessoAdmin(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-2xs cursor-pointer"
+                  >
+                    <option value="Todas">Status Específico: Todos</option>
+                    <option value="Aguardando Chegada">Aguardando Chegada</option>
+                    <option value="Entrada Liberada / Presente">Entrada Liberada / Presente</option>
+                    <option value="Finalizado / Saiu">Finalizado / Saiu</option>
+                    <option value="Chave na Portaria à Disposição">Chave na Portaria à Disposição</option>
+                    <option value="Chave Retirada / No Condomínio">Chave Retirada / No Condomínio</option>
+                    <option value="Chave Devolvida / Concluído">Chave Devolvida / Concluído</option>
+                    <option value="Cancelado / Expirado">Cancelado / Expirado</option>
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <select
+                    value={filtroStatusEncomendaAdmin}
+                    onChange={(e) => setFiltroStatusEncomendaAdmin(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-2xs cursor-pointer"
+                  >
+                    <option value="Todas">Status Específico: Todos</option>
+                    <option value="Aguardando Chegada na Portaria">Aguardando Chegada na Portaria</option>
+                    <option value="Aguardando Retirada">Aguardando Retirada na Portaria</option>
+                    <option value="Entregue ao Morador">Entregue ao Morador</option>
+                    <option value="Embrulho Deixado pelo Morador">Embrulho Deixado pelo Morador</option>
+                    <option value="Aguardando Coleta na Portaria">Aguardando Coleta na Portaria</option>
+                    <option value="Despachado / Retirado por Terceiro">Despachado / Retirado por Terceiro</option>
+                    <option value="Devolvido">Devolvido</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* CONTEÚDO DA ABA 1: AUTORIZAÇÕES DE ENTRADA, VISITAS & CUSTÓDIA DE CHAVES */}
+            {abaPortariaAdmin === 'acessos' && (
+              <div>
+                {filteredAcessosAdmin.length === 0 ? (
+                  <div className="p-8 text-center bg-white/70 rounded-2xl border border-slate-200 space-y-2">
+                    <UserCheck className="w-8 h-8 text-indigo-400 mx-auto" />
+                    <p className="text-xs font-bold text-slate-700">
+                      Nenhum registro de autorização de acesso ou chave encontrado com os filtros atuais.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    {filteredAcessosAdmin.map((acesso) => {
+                      const isAguardando = acesso.status === 'Aguardando Chegada';
+                      const isPresente = acesso.status === 'Entrada Liberada / Presente';
+                      const isChaveDisposicao = acesso.status === 'Chave na Portaria à Disposição';
+                      const isChaveRetirada = acesso.status === 'Chave Retirada / No Condomínio';
+                      const isCardOpen = expandedPortariaCardsAdmin[acesso.id] !== undefined
+                        ? expandedPortariaCardsAdmin[acesso.id]
+                        : isAcessoAberto(acesso.status);
+
+                      return (
+                        <div
+                          key={acesso.id}
+                          className={`border rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${isPresente || isChaveRetirada ? 'bg-emerald-50/70 border-emerald-300' :
+                              isChaveDisposicao ? 'bg-amber-50/70 border-amber-300' :
+                                isAguardando ? 'bg-white border-indigo-200' : 'bg-slate-50 border-slate-200 opacity-90'
+                            }`}
+                        >
+                          {/* CABEÇALHO DO CARD (Dentro do retângulo vermelho - sempre visível e clicável para abrir/fechar) */}
+                          <div
+                            onClick={() => setExpandedPortariaCardsAdmin(prev => ({
+                              ...prev,
+                              [acesso.id]: !isCardOpen
+                            }))}
+                            className="flex items-center justify-between gap-2 cursor-pointer select-none group"
+                            title={isCardOpen ? "Clique para recolher detalhes" : "Clique para expandir detalhes"}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {acesso.fotoVisitante ? (
+                                <img
+                                  src={acesso.fotoVisitante}
+                                  alt={acesso.nomeVisitante}
+                                  className="w-11 h-11 rounded-xl object-contain border border-indigo-300 shrink-0 bg-slate-100 shadow-2xs transition-transform group-hover:scale-105"
+                                />
+                              ) : (
+                                <div className="w-11 h-11 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-800 shrink-0 transition-transform group-hover:scale-105">
+                                  {acesso.deixouChave ? <KeyRound className="w-5 h-5 text-amber-700" /> : <User className="w-5 h-5" />}
+                                </div>
+                              )}
+
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-slate-900 text-indigo-300">
+                                    {acesso.tipoVisitante}
+                                  </span>
+                                  {acesso.deixouChave && (
+                                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 border border-amber-300">
+                                      🔑 Chave
+                                    </span>
+                                  )}
+                                </div>
+                                <h4 className="font-black text-sm text-slate-950 leading-tight truncate mt-0.5">
+                                  Apto {acesso.unidade} • {acesso.nomeVisitante}
+                                </h4>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${isPresente || isChaveRetirada ? 'bg-emerald-100 text-emerald-950 border-emerald-300' :
+                                  isChaveDisposicao ? 'bg-amber-200 text-amber-950 border-amber-400 font-black' :
+                                    isAguardando ? 'bg-indigo-100 text-indigo-950 border-indigo-300' :
+                                      'bg-slate-200 text-slate-700 border-slate-300'
+                                }`}>
+                                {acesso.status}
+                              </span>
+                              <div className="p-1 rounded-lg text-slate-400 group-hover:text-slate-700 group-hover:bg-slate-200/50 transition-colors">
+                                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isCardOpen ? 'rotate-180' : 'rotate-0'}`} />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* CORPO EXPANSÍVEL DO CARD */}
+                          {isCardOpen && (
+                            <div className="space-y-3 pt-2 border-t border-slate-200/70 animate-in fade-in duration-200">
+                              <p className="text-[11px] text-slate-600 font-bold">
+                                Morador Solicitante: <b>{acesso.moradorNome}</b> {acesso.bloco && `(Bloco ${acesso.bloco})`}
+                              </p>
+
+                              {/* Detalhes de Horário & Regra de Entrada */}
+                              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-slate-500 font-bold">Horário Previsto:</span>
+                                  <strong className="text-slate-950 font-black flex items-center gap-1">
+                                    <Clock className="w-3 h-3 text-indigo-600" />
+                                    {acesso.horarioEstimado} ({acesso.dataPrevista})
+                                  </strong>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-slate-500 font-bold">Diretriz da Portaria:</span>
+                                  <span className={`font-black text-[11px] ${acesso.deixarEntrarDireto ? 'text-emerald-700' : 'text-amber-800'
+                                    }`}>
+                                    {acesso.deixarEntrarDireto ? '✓ Deixar Entrar Direto' : '⚠️ Interfonar antes'}
+                                  </span>
+                                </div>
+
+                                {acesso.deixouChave && (
+                                  <div className="text-[11px] bg-amber-100/80 p-2 rounded-lg border border-amber-300 text-amber-950 space-y-0.5">
+                                    <div className="font-black flex items-center gap-1">
+                                      <KeyRound className="w-3 h-3 text-amber-700" />
+                                      Chave: {acesso.identificacaoChave || 'Chave da Unidade'}
+                                    </div>
+                                    {acesso.localChavePortaria && (
+                                      <div className="text-[10px] font-bold text-amber-900">
+                                        Local na Portaria: {acesso.localChavePortaria}
+                                      </div>
+                                    )}
+                                    {acesso.horarioRetiradaChave && (
+                                      <div className="text-[10px] text-emerald-900 font-bold">
+                                        Retirada: {acesso.horarioRetiradaChave}
+                                      </div>
+                                    )}
+                                    {acesso.horarioDevolucaoChave && (
+                                      <div className="text-[10px] text-slate-700 font-bold">
+                                        Devolvida: {acesso.horarioDevolucaoChave}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {acesso.documentoRg && (
+                                  <div className="text-[10px] text-slate-600 font-mono">
+                                    RG/Doc: {acesso.documentoRg}
+                                  </div>
+                                )}
+                              </div>
+
+                              {acesso.observacoes && (
+                                <p className="text-[11px] text-slate-700 font-medium bg-amber-50/70 p-2 rounded-lg border border-amber-200">
+                                  <b>Recado:</b> {acesso.observacoes}
+                                </p>
+                              )}
+
+                              {acesso.horarioEntradaReal && (
+                                <div className="text-[10px] text-emerald-950 font-bold bg-emerald-100 p-1.5 rounded-lg">
+                                  Entrou às {acesso.horarioEntradaReal} {acesso.horarioSaidaReal && `• Saiu às ${acesso.horarioSaidaReal}`}
+                                </div>
+                              )}
+
+                              {/* Ações da Portaria */}
+                              <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-200 flex-wrap">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {isAguardando && (
+                                    <button
+                                      type="button"
+                                      onClick={() => atualizarStatusAcesso(acesso.id, 'Entrada Liberada / Presente')}
+                                      className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                      title="Registrar chegada e entrada da visita/prestador"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>Registrar Entrada</span>
+                                    </button>
+                                  )}
+
+                                  {isPresente && (
+                                    <button
+                                      type="button"
+                                      onClick={() => atualizarStatusAcesso(acesso.id, 'Finalizado / Saiu')}
+                                      className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                                      title="Registrar saída do condomínio"
+                                    >
+                                      <span>Registrar Saída</span>
+                                    </button>
+                                  )}
+
+                                  {isChaveDisposicao && (
+                                    <button
+                                      type="button"
+                                      onClick={() => atualizarStatusAcesso(acesso.id, 'Chave Retirada / No Condomínio')}
+                                      className="px-2.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                      title="Entregar chave ao visitante/prestador e liberar acesso"
+                                    >
+                                      <KeyRound className="w-3.5 h-3.5" />
+                                      <span>Entregar Chave</span>
+                                    </button>
+                                  )}
+
+                                  {isChaveRetirada && (
+                                    <button
+                                      type="button"
+                                      onClick={() => atualizarStatusAcesso(acesso.id, 'Chave Devolvida / Concluído')}
+                                      className="px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                      title="Confirmar devolução da chave na portaria e saída"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>Devolver Chave</span>
+                                    </button>
+                                  )}
+
+                                  {/* Botão de Timeline Histórica */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setTimelineModalPortariaData({ item: acesso, tipo: 'acesso' });
+                                      setTimelineModalPortariaOpen(true);
+                                    }}
+                                    className="px-2 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-xs font-black transition-colors flex items-center gap-1 cursor-pointer"
+                                    title="Ver timeline completa de horários e passos"
+                                  >
+                                    <History className="w-3.5 h-3.5 text-indigo-600" />
+                                    <span>Timeline</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const unit = unidades.find(u => u.numero === acesso.unidade);
+                                      setSelectedUnidadeParaNotificar(unit || {
+                                        id: `temp-${acesso.unidade}`,
+                                        numero: acesso.unidade,
+                                        bloco: acesso.bloco || '',
+                                        moradores: []
+                                      });
+                                      setIsNotifyModalOpen(true);
+                                    }}
+                                    className="p-1.5 rounded-xl text-amber-800 hover:bg-amber-100 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                    title="Notificar Apto"
+                                  >
+                                    <Bell className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm('Deseja excluir este registro de acesso?')) {
+                                      excluirAutorizacaoAcesso(acesso.id);
                                     }
                                   }}
                                   className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                                   title="Excluir"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </div>
+                          )}
 
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Modal de Cadastro/Edição de Mudança no Admin */}
-                <CreateAgendamentoMudancaModal
-                  isOpen={isCreateEditMudancaAdminOpen}
-                  onClose={() => {
-                    setIsCreateEditMudancaAdminOpen(false);
-                    setMudancaToEditAdmin(null);
-                  }}
-                  mudancaToEdit={mudancaToEditAdmin}
-                />
-
-              </div>
-            </div>
-
-          </div>
-        );
-      })()}
-
-      {/* ========================================================================= */}
-      {/* SEÇÃO 15: PORTARIA ENCOMENDAS/VISITAS (4 CENÁRIOS COM TIMELINE COMPLETA) */}
-      {/* ========================================================================= */}
-      {(() => {
-        // Classificação de status: Abertos (em andamento) vs Fechados (concluídos)
-        const isAcessoAberto = (status: string) => [
-          'Aguardando Chegada',
-          'Entrada Liberada / Presente',
-          'Chave na Portaria à Disposição',
-          'Chave Retirada / No Condomínio'
-        ].includes(status);
-
-        const isAcessoFechado = (status: string) => [
-          'Finalizado / Saiu',
-          'Chave Devolvida / Concluído',
-          'Cancelado / Expirado'
-        ].includes(status);
-
-        const isEncomendaAberta = (status: string) => [
-          'Aguardando Chegada na Portaria',
-          'Aguardando Retirada',
-          'Embrulho Deixado pelo Morador',
-          'Aguardando Coleta na Portaria'
-        ].includes(status);
-
-        const isEncomendaFechada = (status: string) => [
-          'Entregue ao Morador',
-          'Despachado / Retirado por Terceiro',
-          'Devolvido'
-        ].includes(status);
-
-        const totalAguardandoAcesso = autorizacoesAcesso.filter(a => a.status === 'Aguardando Chegada').length;
-        const totalChaveDisposicao = autorizacoesAcesso.filter(a => a.status === 'Chave na Portaria à Disposição').length;
-        const totalPresentes = autorizacoesAcesso.filter(a => a.status === 'Entrada Liberada / Presente' || a.status === 'Chave Retirada / No Condomínio').length;
-        const totalAcessosAbertos = autorizacoesAcesso.filter(a => isAcessoAberto(a.status)).length;
-        const totalAcessosFechados = autorizacoesAcesso.filter(a => isAcessoFechado(a.status)).length;
-        
-        const totalEncomendasEsperadas = encomendasEntregas.filter(e => e.status === 'Aguardando Chegada na Portaria').length;
-        const totalEmbrulhosCustodia = encomendasEntregas.filter(e => e.status === 'Embrulho Deixado pelo Morador' || e.status === 'Aguardando Coleta na Portaria').length;
-        const totalEncomendasPendentes = encomendasEntregas.filter(e => e.status === 'Aguardando Retirada').length;
-        const totalEncomendasAbertas = encomendasEntregas.filter(e => isEncomendaAberta(e.status)).length;
-        const totalEncomendasFechadas = encomendasEntregas.filter(e => isEncomendaFechada(e.status)).length;
-
-        const filteredAcessosAdmin = autorizacoesAcesso.filter(a => {
-          const matchProcesso = filtroProcessoPortariaAdmin === 'todos' ||
-            (filtroProcessoPortariaAdmin === 'abertos' && isAcessoAberto(a.status)) ||
-            (filtroProcessoPortariaAdmin === 'fechados' && isAcessoFechado(a.status));
-
-          const matchStatus = filtroStatusAcessoAdmin === 'Todas' || a.status === filtroStatusAcessoAdmin;
-          const termo = searchPortariaAdmin.toLowerCase().trim();
-          const matchBusca = !termo ||
-            a.nomeVisitante.toLowerCase().includes(termo) ||
-            a.moradorNome.toLowerCase().includes(termo) ||
-            a.unidade.includes(termo) ||
-            a.tipoVisitante.toLowerCase().includes(termo) ||
-            (a.identificacaoChave && a.identificacaoChave.toLowerCase().includes(termo)) ||
-            (a.localChavePortaria && a.localChavePortaria.toLowerCase().includes(termo));
-
-          return matchProcesso && matchStatus && matchBusca;
-        });
-
-        const filteredEncomendasAdmin = encomendasEntregas.filter(e => {
-          const matchProcesso = filtroProcessoPortariaAdmin === 'todos' ||
-            (filtroProcessoPortariaAdmin === 'abertos' && isEncomendaAberta(e.status)) ||
-            (filtroProcessoPortariaAdmin === 'fechados' && isEncomendaFechada(e.status));
-
-          const matchStatus = filtroStatusEncomendaAdmin === 'Todas' || e.status === filtroStatusEncomendaAdmin;
-          const termo = searchPortariaAdmin.toLowerCase().trim();
-          const matchBusca = !termo ||
-            e.destinatarioNome.toLowerCase().includes(termo) ||
-            e.unidade.includes(termo) ||
-            e.empresaTransporte.toLowerCase().includes(termo) ||
-            e.tipo.toLowerCase().includes(termo) ||
-            (e.destinatarioExterno && e.destinatarioExterno.toLowerCase().includes(termo)) ||
-            (e.despachadoPor && e.despachadoPor.toLowerCase().includes(termo)) ||
-            (e.localArmazenamento && e.localArmazenamento.toLowerCase().includes(termo));
-
-          return matchProcesso && matchStatus && matchBusca;
-        });
-
-        return (
-          <div className={`rounded-3xl border-2 shadow-md overflow-hidden transition-all ${
-            canAccessPortaria ? 'bg-indigo-50/70 border-indigo-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-          }`}>
-            
-            {/* Accordion Header */}
-            <button
-              type="button"
-              disabled={!canAccessPortaria}
-              onClick={() => canAccessPortaria && setIsPortariaAdminOpen(!isPortariaAdminOpen)}
-              className={`w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left border-b transition-colors select-none ${
-                canAccessPortaria
-                  ? 'bg-indigo-100/90 hover:bg-indigo-200/70 border-indigo-200 cursor-pointer active:scale-[0.999]'
-                  : 'bg-slate-200/60 border-slate-300 cursor-not-allowed opacity-80'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-                  canAccessPortaria ? 'bg-indigo-500/20 border-indigo-400/40 text-indigo-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-                }`}>
-                  {canAccessPortaria ? <PackageCheck className="w-5 h-5 text-indigo-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-base font-black text-slate-950">
-                      15. Portaria encomendas/visitas
-                    </h3>
-                    {canAccessPortaria ? (
-                      <>
-                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-950 border border-indigo-300">
-                          {autorizacoesAcesso.length} acessos • {encomendasEntregas.length} encomendas/despachos
-                        </span>
-                        {totalEncomendasEsperadas > 0 && (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-sky-400 text-slate-950 shadow-2xs">
-                            ⏳ {totalEncomendasEsperadas} a caminho
-                          </span>
-                        )}
-                        {totalEncomendasPendentes > 0 && (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 animate-pulse shadow-2xs">
-                            📦 {totalEncomendasPendentes} a retirar
-                          </span>
-                        )}
-                        {totalEmbrulhosCustodia > 0 && (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-300 text-purple-950 shadow-2xs">
-                            📤 {totalEmbrulhosCustodia} aguardando coleta
-                          </span>
-                        )}
-                        {totalChaveDisposicao > 0 && (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-yellow-300 text-yellow-950 shadow-2xs">
-                            🔑 {totalChaveDisposicao} chave na portaria
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1">
-                        <Lock className="w-3 h-3 text-slate-500" /> Acesso Bloqueado
-                      </span>
-                    )}
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className="text-xs text-slate-700 font-medium">
-                    Controle de encomendas (entradas e despachos), pré-autorizações com foto, visitas, prestadores e custódia de chaves com registro de horários e timeline.
-                  </p>
-                </div>
+                )}
               </div>
+            )}
 
-              <div className="flex items-center gap-2 shrink-0">
-                {canAccessPortaria ? (
-                  <>
-                    <span className="text-xs font-bold text-slate-600 hidden sm:inline">
-                      {isPortariaAdminOpen ? 'Recolher seção' : 'Expandir seção'}
-                    </span>
-                    <div className="p-2 rounded-xl bg-white border border-indigo-300 text-slate-700 shadow-2xs">
-                      <ChevronDown className={`w-4 h-4 text-indigo-900 transition-transform duration-500 ease-out ${isPortariaAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-                    </div>
-                  </>
+            {/* CONTEÚDO DA ABA 2: ENCOMENDAS & DESPACHOS DE EMBRULHOS */}
+            {abaPortariaAdmin === 'encomendas' && (
+              <div>
+                {filteredEncomendasAdmin.length === 0 ? (
+                  <div className="p-8 text-center bg-white/70 rounded-2xl border border-slate-200 space-y-2">
+                    <Package className="w-8 h-8 text-indigo-400 mx-auto" />
+                    <p className="text-xs font-bold text-slate-700">
+                      Nenhum registro de encomenda ou despacho encontrado com os filtros atuais.
+                    </p>
+                  </div>
                 ) : (
-                  <div className="p-2 rounded-xl bg-slate-200 border border-slate-300 text-slate-500 shadow-2xs" title="Acesso não autorizado para o seu perfil">
-                    <Lock className="w-4 h-4 text-slate-400" />
-                  </div>
-                )}
-              </div>
-            </button>
-
-            {/* Accordion Content */}
-            <div 
-              className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out overflow-hidden ${
-                canAccessPortaria && isPortariaAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
-            >
-              <div className="min-h-0 overflow-hidden bg-indigo-50/50 p-4 sm:p-6 space-y-5">
-                
-                {/* Resumo & Ações Rápidas */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/70 p-4 rounded-2xl border border-white/90 shadow-xs">
-                  <div className="flex items-center gap-2.5 text-xs font-bold text-slate-700 flex-wrap">
-                    <span className="flex items-center gap-1.5 bg-indigo-50 px-2.5 py-1 rounded-xl border border-indigo-200 text-indigo-950 font-black">
-                      <Clock className="w-3.5 h-3.5 text-indigo-600" />
-                      {totalAguardandoAcesso} visitas aguardando
-                    </span>
-                    {totalChaveDisposicao > 0 && (
-                      <span className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200 text-amber-950 font-black">
-                        <KeyRound className="w-3.5 h-3.5 text-amber-600" />
-                        {totalChaveDisposicao} chaves na portaria
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200 text-emerald-950 font-black">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      {totalPresentes} presentes no condomínio
-                    </span>
-                    {totalEncomendasEsperadas > 0 && (
-                      <span className="flex items-center gap-1.5 bg-sky-50 px-2.5 py-1 rounded-xl border border-sky-200 text-sky-950 font-black">
-                        <Clock className="w-3.5 h-3.5 text-sky-600" />
-                        {totalEncomendasEsperadas} encomendas a caminho
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200 text-amber-950 font-black">
-                      <Package className="w-3.5 h-3.5 text-amber-600" />
-                      {totalEncomendasPendentes} pacotes a retirar
-                    </span>
-                    {totalEmbrulhosCustodia > 0 && (
-                      <span className="flex items-center gap-1.5 bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200 text-purple-950 font-black">
-                        <Package className="w-3.5 h-3.5 text-purple-600" />
-                        {totalEmbrulhosCustodia} aguardando coleta
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => setIsCreateEncomendaAdminOpen(true)}
-                      className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Package className="w-3.5 h-3.5" />
-                      <span>+ Registrar Encomenda / Despacho</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsCreateAutorizacaoAdminOpen(true)}
-                      className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <UserPlus className="w-3.5 h-3.5" />
-                      <span>+ Autorizar Entrada / Deixar Chave</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Sub-Abas do Painel da Portaria */}
-                <div className="flex items-center gap-2 bg-white/80 p-1.5 rounded-2xl border border-slate-200 shadow-2xs">
-                  <button
-                    type="button"
-                    onClick={() => setAbaPortariaAdmin('acessos')}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                      abaPortariaAdmin === 'acessos'
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    <UserCheck className="w-4 h-4" />
-                    <span>Autorizações, Visitas & Chaves ({filteredAcessosAdmin.length})</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAbaPortariaAdmin('encomendas')}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                      abaPortariaAdmin === 'encomendas'
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    <Package className="w-4 h-4" />
-                    <span>Encomendas & Despachos de Embrulhos ({filteredEncomendasAdmin.length})</span>
-                  </button>
-                </div>
-
-                {/* FILTRO DE PROCESSOS EM ABERTO vs FECHADOS / CONCLUÍDOS */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-indigo-200 shadow-xs">
-                  <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => setFiltroProcessoPortariaAdmin('abertos')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                        filtroProcessoPortariaAdmin === 'abertos'
-                          ? 'bg-amber-400 text-slate-950 shadow-xs'
-                          : 'text-slate-600 hover:text-slate-950 hover:bg-slate-200/60'
-                      }`}
-                    >
-                      <span>⚡ Em Aberto / Pendentes</span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-950/10 font-black">
-                        {abaPortariaAdmin === 'acessos' ? totalAcessosAbertos : totalEncomendasAbertas}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setFiltroProcessoPortariaAdmin('fechados')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                        filtroProcessoPortariaAdmin === 'fechados'
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-950 hover:bg-slate-200/60'
-                      }`}
-                    >
-                      <span>🏁 Fechados / Concluídos</span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 font-black">
-                        {abaPortariaAdmin === 'acessos' ? totalAcessosFechados : totalEncomendasFechadas}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setFiltroProcessoPortariaAdmin('todos')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                        filtroProcessoPortariaAdmin === 'todos'
-                          ? 'bg-slate-900 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-950 hover:bg-slate-200/60'
-                      }`}
-                    >
-                      <span>📋 Todos ({abaPortariaAdmin === 'acessos' ? autorizacoesAcesso.length : encomendasEntregas.length})</span>
-                    </button>
-                  </div>
-
-                  {/* Atalhos para expandir ou recolher todos os cards */}
-                  <div className="flex items-center gap-2 text-xs font-bold shrink-0">
-                    <span className="text-slate-400 hidden sm:inline text-[11px]">Visualização dos cards:</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const items = abaPortariaAdmin === 'acessos' ? filteredAcessosAdmin : filteredEncomendasAdmin;
-                        const newMap: { [id: string]: boolean } = {};
-                        items.forEach(it => { newMap[it.id] = true; });
-                        setExpandedPortariaCardsAdmin(newMap);
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-950 border border-indigo-200 font-bold text-[11px] transition-colors cursor-pointer"
-                    >
-                      Expandir Todos
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const items = abaPortariaAdmin === 'acessos' ? filteredAcessosAdmin : filteredEncomendasAdmin;
-                        const newMap: { [id: string]: boolean } = {};
-                        items.forEach(it => { newMap[it.id] = false; });
-                        setExpandedPortariaCardsAdmin(newMap);
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold text-[11px] transition-colors cursor-pointer"
-                    >
-                      Recolher Todos
-                    </button>
-                  </div>
-                </div>
-
-                {/* Filtros e Busca */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
-                  <div className="sm:col-span-2 relative">
-                    <input
-                      type="text"
-                      placeholder={abaPortariaAdmin === 'acessos' ? "Buscar por visitante, morador, chave ou apto..." : "Buscar por morador, pacote, transportadora, terceiro ou apto..."}
-                      value={searchPortariaAdmin}
-                      onChange={(e) => setSearchPortariaAdmin(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 pl-9 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-2xs"
-                    />
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-                  </div>
-
-                  {abaPortariaAdmin === 'acessos' ? (
-                    <div>
-                      <select
-                        value={filtroStatusAcessoAdmin}
-                        onChange={(e) => setFiltroStatusAcessoAdmin(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-2xs cursor-pointer"
-                      >
-                        <option value="Todas">Status Específico: Todos</option>
-                        <option value="Aguardando Chegada">Aguardando Chegada</option>
-                        <option value="Entrada Liberada / Presente">Entrada Liberada / Presente</option>
-                        <option value="Finalizado / Saiu">Finalizado / Saiu</option>
-                        <option value="Chave na Portaria à Disposição">Chave na Portaria à Disposição</option>
-                        <option value="Chave Retirada / No Condomínio">Chave Retirada / No Condomínio</option>
-                        <option value="Chave Devolvida / Concluído">Chave Devolvida / Concluído</option>
-                        <option value="Cancelado / Expirado">Cancelado / Expirado</option>
-                      </select>
-                    </div>
-                  ) : (
-                    <div>
-                      <select
-                        value={filtroStatusEncomendaAdmin}
-                        onChange={(e) => setFiltroStatusEncomendaAdmin(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-2xs cursor-pointer"
-                      >
-                        <option value="Todas">Status Específico: Todos</option>
-                        <option value="Aguardando Chegada na Portaria">Aguardando Chegada na Portaria</option>
-                        <option value="Aguardando Retirada">Aguardando Retirada na Portaria</option>
-                        <option value="Entregue ao Morador">Entregue ao Morador</option>
-                        <option value="Embrulho Deixado pelo Morador">Embrulho Deixado pelo Morador</option>
-                        <option value="Aguardando Coleta na Portaria">Aguardando Coleta na Portaria</option>
-                        <option value="Despachado / Retirado por Terceiro">Despachado / Retirado por Terceiro</option>
-                        <option value="Devolvido">Devolvido</option>
-                      </select>
-                    </div>
-                  )}
-                </div>
-
-                {/* CONTEÚDO DA ABA 1: AUTORIZAÇÕES DE ENTRADA, VISITAS & CUSTÓDIA DE CHAVES */}
-                {abaPortariaAdmin === 'acessos' && (
-                  <div>
-                    {filteredAcessosAdmin.length === 0 ? (
-                      <div className="p-8 text-center bg-white/70 rounded-2xl border border-slate-200 space-y-2">
-                        <UserCheck className="w-8 h-8 text-indigo-400 mx-auto" />
-                        <p className="text-xs font-bold text-slate-700">
-                          Nenhum registro de autorização de acesso ou chave encontrado com os filtros atuais.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                        {filteredAcessosAdmin.map((acesso) => {
-                          const isAguardando = acesso.status === 'Aguardando Chegada';
-                          const isPresente = acesso.status === 'Entrada Liberada / Presente';
-                          const isChaveDisposicao = acesso.status === 'Chave na Portaria à Disposição';
-                          const isChaveRetirada = acesso.status === 'Chave Retirada / No Condomínio';
-                          const isCardOpen = expandedPortariaCardsAdmin[acesso.id] !== undefined
-                            ? expandedPortariaCardsAdmin[acesso.id]
-                            : isAcessoAberto(acesso.status);
-
-                          return (
-                            <div
-                              key={acesso.id}
-                              className={`border rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${
-                                isPresente || isChaveRetirada ? 'bg-emerald-50/70 border-emerald-300' :
-                                isChaveDisposicao ? 'bg-amber-50/70 border-amber-300' :
-                                isAguardando ? 'bg-white border-indigo-200' : 'bg-slate-50 border-slate-200 opacity-90'
-                              }`}
-                            >
-                              {/* CABEÇALHO DO CARD (Dentro do retângulo vermelho - sempre visível e clicável para abrir/fechar) */}
-                              <div 
-                                onClick={() => setExpandedPortariaCardsAdmin(prev => ({
-                                  ...prev,
-                                  [acesso.id]: !isCardOpen
-                                }))}
-                                className="flex items-center justify-between gap-2 cursor-pointer select-none group"
-                                title={isCardOpen ? "Clique para recolher detalhes" : "Clique para expandir detalhes"}
-                              >
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  {acesso.fotoVisitante ? (
-                                    <img
-                                      src={acesso.fotoVisitante}
-                                      alt={acesso.nomeVisitante}
-                                      className="w-11 h-11 rounded-xl object-contain border border-indigo-300 shrink-0 bg-slate-100 shadow-2xs transition-transform group-hover:scale-105"
-                                    />
-                                  ) : (
-                                    <div className="w-11 h-11 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-800 shrink-0 transition-transform group-hover:scale-105">
-                                      {acesso.deixouChave ? <KeyRound className="w-5 h-5 text-amber-700" /> : <User className="w-5 h-5" />}
-                                    </div>
-                                  )}
-
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-slate-900 text-indigo-300">
-                                        {acesso.tipoVisitante}
-                                      </span>
-                                      {acesso.deixouChave && (
-                                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 border border-amber-300">
-                                          🔑 Chave
-                                        </span>
-                                      )}
-                                    </div>
-                                    <h4 className="font-black text-sm text-slate-950 leading-tight truncate mt-0.5">
-                                      Apto {acesso.unidade} • {acesso.nomeVisitante}
-                                    </h4>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${
-                                    isPresente || isChaveRetirada ? 'bg-emerald-100 text-emerald-950 border-emerald-300' :
-                                    isChaveDisposicao ? 'bg-amber-200 text-amber-950 border-amber-400 font-black' :
-                                    isAguardando ? 'bg-indigo-100 text-indigo-950 border-indigo-300' :
-                                    'bg-slate-200 text-slate-700 border-slate-300'
-                                  }`}>
-                                    {acesso.status}
-                                  </span>
-                                  <div className="p-1 rounded-lg text-slate-400 group-hover:text-slate-700 group-hover:bg-slate-200/50 transition-colors">
-                                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isCardOpen ? 'rotate-180' : 'rotate-0'}`} />
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* CORPO EXPANSÍVEL DO CARD */}
-                              {isCardOpen && (
-                                <div className="space-y-3 pt-2 border-t border-slate-200/70 animate-in fade-in duration-200">
-                                  <p className="text-[11px] text-slate-600 font-bold">
-                                    Morador Solicitante: <b>{acesso.moradorNome}</b> {acesso.bloco && `(Bloco ${acesso.bloco})`}
-                                  </p>
-
-                                  {/* Detalhes de Horário & Regra de Entrada */}
-                                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-[10px] text-slate-500 font-bold">Horário Previsto:</span>
-                                      <strong className="text-slate-950 font-black flex items-center gap-1">
-                                        <Clock className="w-3 h-3 text-indigo-600" />
-                                        {acesso.horarioEstimado} ({acesso.dataPrevista})
-                                      </strong>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-[10px] text-slate-500 font-bold">Diretriz da Portaria:</span>
-                                      <span className={`font-black text-[11px] ${
-                                        acesso.deixarEntrarDireto ? 'text-emerald-700' : 'text-amber-800'
-                                      }`}>
-                                        {acesso.deixarEntrarDireto ? '✓ Deixar Entrar Direto' : '⚠️ Interfonar antes'}
-                                      </span>
-                                    </div>
-
-                                    {acesso.deixouChave && (
-                                      <div className="text-[11px] bg-amber-100/80 p-2 rounded-lg border border-amber-300 text-amber-950 space-y-0.5">
-                                        <div className="font-black flex items-center gap-1">
-                                          <KeyRound className="w-3 h-3 text-amber-700" />
-                                          Chave: {acesso.identificacaoChave || 'Chave da Unidade'}
-                                        </div>
-                                        {acesso.localChavePortaria && (
-                                          <div className="text-[10px] font-bold text-amber-900">
-                                            Local na Portaria: {acesso.localChavePortaria}
-                                          </div>
-                                        )}
-                                        {acesso.horarioRetiradaChave && (
-                                          <div className="text-[10px] text-emerald-900 font-bold">
-                                            Retirada: {acesso.horarioRetiradaChave}
-                                          </div>
-                                        )}
-                                        {acesso.horarioDevolucaoChave && (
-                                          <div className="text-[10px] text-slate-700 font-bold">
-                                            Devolvida: {acesso.horarioDevolucaoChave}
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-
-                                    {acesso.documentoRg && (
-                                      <div className="text-[10px] text-slate-600 font-mono">
-                                        RG/Doc: {acesso.documentoRg}
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {acesso.observacoes && (
-                                    <p className="text-[11px] text-slate-700 font-medium bg-amber-50/70 p-2 rounded-lg border border-amber-200">
-                                      <b>Recado:</b> {acesso.observacoes}
-                                    </p>
-                                  )}
-
-                                  {acesso.horarioEntradaReal && (
-                                    <div className="text-[10px] text-emerald-950 font-bold bg-emerald-100 p-1.5 rounded-lg">
-                                      Entrou às {acesso.horarioEntradaReal} {acesso.horarioSaidaReal && `• Saiu às ${acesso.horarioSaidaReal}`}
-                                    </div>
-                                  )}
-
-                                  {/* Ações da Portaria */}
-                                  <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-200 flex-wrap">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      {isAguardando && (
-                                        <button
-                                          type="button"
-                                          onClick={() => atualizarStatusAcesso(acesso.id, 'Entrada Liberada / Presente')}
-                                          className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                                          title="Registrar chegada e entrada da visita/prestador"
-                                        >
-                                          <Check className="w-3.5 h-3.5" />
-                                          <span>Registrar Entrada</span>
-                                        </button>
-                                      )}
-
-                                      {isPresente && (
-                                        <button
-                                          type="button"
-                                          onClick={() => atualizarStatusAcesso(acesso.id, 'Finalizado / Saiu')}
-                                          className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                                          title="Registrar saída do condomínio"
-                                        >
-                                          <span>Registrar Saída</span>
-                                        </button>
-                                      )}
-
-                                      {isChaveDisposicao && (
-                                        <button
-                                          type="button"
-                                          onClick={() => atualizarStatusAcesso(acesso.id, 'Chave Retirada / No Condomínio')}
-                                          className="px-2.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                                          title="Entregar chave ao visitante/prestador e liberar acesso"
-                                        >
-                                          <KeyRound className="w-3.5 h-3.5" />
-                                          <span>Entregar Chave</span>
-                                        </button>
-                                      )}
-
-                                      {isChaveRetirada && (
-                                        <button
-                                          type="button"
-                                          onClick={() => atualizarStatusAcesso(acesso.id, 'Chave Devolvida / Concluído')}
-                                          className="px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                                          title="Confirmar devolução da chave na portaria e saída"
-                                        >
-                                          <Check className="w-3.5 h-3.5" />
-                                          <span>Devolver Chave</span>
-                                        </button>
-                                      )}
-
-                                      {/* Botão de Timeline Histórica */}
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setTimelineModalPortariaData({ item: acesso, tipo: 'acesso' });
-                                          setTimelineModalPortariaOpen(true);
-                                        }}
-                                        className="px-2 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-xs font-black transition-colors flex items-center gap-1 cursor-pointer"
-                                        title="Ver timeline completa de horários e passos"
-                                      >
-                                        <History className="w-3.5 h-3.5 text-indigo-600" />
-                                        <span>Timeline</span>
-                                      </button>
-
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const unit = unidades.find(u => u.numero === acesso.unidade);
-                                          setSelectedUnidadeParaNotificar(unit || {
-                                            id: `temp-${acesso.unidade}`,
-                                            numero: acesso.unidade,
-                                            bloco: acesso.bloco || '',
-                                            moradores: []
-                                          });
-                                          setIsNotifyModalOpen(true);
-                                        }}
-                                        className="p-1.5 rounded-xl text-amber-800 hover:bg-amber-100 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
-                                        title="Notificar Apto"
-                                      >
-                                        <Bell className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (confirm('Deseja excluir este registro de acesso?')) {
-                                          excluirAutorizacaoAcesso(acesso.id);
-                                        }
-                                      }}
-                                      className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                                      title="Excluir"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* CONTEÚDO DA ABA 2: ENCOMENDAS & DESPACHOS DE EMBRULHOS */}
-                {abaPortariaAdmin === 'encomendas' && (
-                  <div>
-                    {filteredEncomendasAdmin.length === 0 ? (
-                      <div className="p-8 text-center bg-white/70 rounded-2xl border border-slate-200 space-y-2">
-                        <Package className="w-8 h-8 text-indigo-400 mx-auto" />
-                        <p className="text-xs font-bold text-slate-700">
-                          Nenhum registro de encomenda ou despacho encontrado com os filtros atuais.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                        {filteredEncomendasAdmin.map((enc) => {
-                          const isEsperando = enc.status === 'Aguardando Chegada na Portaria';
-                          const isPendente = enc.status === 'Aguardando Retirada';
-                          const isEntregue = enc.status === 'Entregue ao Morador';
-                          const isEmbrulhoDeixado = enc.status === 'Embrulho Deixado pelo Morador';
-                          const isAguardandoColeta = enc.status === 'Aguardando Coleta na Portaria';
-                          const isDespachado = enc.status === 'Despachado / Retirado por Terceiro';
-                          const isSaida = enc.fluxoTipo === 'saida_embrulho';
-                          const isCardOpen = expandedPortariaCardsAdmin[enc.id] !== undefined
-                            ? expandedPortariaCardsAdmin[enc.id]
-                            : isEncomendaAberta(enc.status);
-
-                          return (
-                            <div
-                              key={enc.id}
-                              className={`border rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${
-                                isEsperando ? 'bg-sky-50/80 border-sky-300' :
-                                isPendente ? 'bg-amber-50/80 border-amber-300' :
-                                isAguardandoColeta || isEmbrulhoDeixado ? 'bg-purple-50/80 border-purple-300' :
-                                isEntregue || isDespachado ? 'bg-emerald-50/70 border-emerald-300' : 'bg-white border-slate-200'
-                              }`}
-                            >
-                              {/* CABEÇALHO DO CARD (Dentro do retângulo vermelho - sempre visível e clicável para abrir/fechar) */}
-                              <div 
-                                onClick={() => setExpandedPortariaCardsAdmin(prev => ({
-                                  ...prev,
-                                  [enc.id]: !isCardOpen
-                                }))}
-                                className="flex items-center justify-between gap-2 cursor-pointer select-none group"
-                                title={isCardOpen ? "Clique para recolher detalhes" : "Clique para expandir detalhes"}
-                              >
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black shrink-0 transition-transform group-hover:scale-105 ${
-                                    isEsperando ? 'bg-sky-600 text-white' :
-                                    isPendente ? 'bg-amber-500 text-slate-950' :
-                                    isAguardandoColeta || isEmbrulhoDeixado ? 'bg-purple-600 text-white' :
-                                    isEntregue || isDespachado ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'
-                                  }`}>
-                                    <Package className="w-5 h-5" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className="text-[10px] font-black uppercase text-indigo-900 block truncate">
-                                        {enc.empresaTransporte || 'Portaria'}
-                                      </span>
-                                      {isSaida ? (
-                                        <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-purple-200 text-purple-950 border border-purple-300">
-                                          📤 Saída / Despacho
-                                        </span>
-                                      ) : (
-                                        <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-sky-100 text-sky-950 border border-sky-300">
-                                          📥 Entrada
-                                        </span>
-                                      )}
-                                    </div>
-                                    <h4 className="font-black text-sm text-slate-950 leading-tight truncate mt-0.5">
-                                      Apto {enc.unidade} • {enc.destinatarioNome}
-                                    </h4>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${
-                                    isEsperando ? 'bg-sky-100 text-sky-950 border-sky-300' :
-                                    isPendente ? 'bg-amber-400 text-slate-950 border-amber-500 animate-pulse' :
-                                    isAguardandoColeta || isEmbrulhoDeixado ? 'bg-purple-200 text-purple-950 border-purple-400 font-black' :
-                                    isEntregue || isDespachado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' :
-                                    'bg-slate-100 text-slate-800 border-slate-300'
-                                  }`}>
-                                    {enc.status}
-                                  </span>
-                                  <div className="p-1 rounded-lg text-slate-400 group-hover:text-slate-700 group-hover:bg-slate-200/50 transition-colors">
-                                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isCardOpen ? 'rotate-180' : 'rotate-0'}`} />
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* CORPO EXPANSÍVEL DO CARD */}
-                              {isCardOpen && (
-                                <div className="space-y-3 pt-2 border-t border-slate-200/70 animate-in fade-in duration-200">
-                                  {/* Dados da Encomenda */}
-                                  <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
-                                    {isEsperando && (
-                                      <div className="text-[10px] text-sky-900 font-bold bg-sky-50 p-1.5 rounded-lg border border-sky-200">
-                                        ⏳ Morador avisou que espera entrega • Aguardando chegada física
-                                      </div>
-                                    )}
-
-                                    {isEmbrulhoDeixado && (
-                                      <div className="text-[10px] text-purple-900 font-bold bg-purple-50 p-1.5 rounded-lg border border-purple-200">
-                                        📦 Morador deixou embrulho na portaria • Aguarda confirmação
-                                      </div>
-                                    )}
-
-                                    {isAguardandoColeta && (
-                                      <div className="text-[10px] text-purple-950 font-bold bg-purple-100 p-1.5 rounded-lg border border-purple-300">
-                                        📦 Embrulho sob custódia da portaria • Aguardando coleta do destinatário
-                                      </div>
-                                    )}
-
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-[10px] text-slate-500 font-bold">Tipo:</span>
-                                      <strong className="text-slate-950">{enc.tipo}</strong>
-                                    </div>
-
-                                    {/* Info de Despacho para Terceiro */}
-                                    {isSaida && (
-                                      <div className="text-[11px] bg-purple-50 p-2 rounded-lg border border-purple-200 space-y-0.5">
-                                        <div className="font-black text-purple-950">
-                                          Retirar por: {enc.destinatarioExterno || 'Destinatário Externo'}
-                                        </div>
-                                        {enc.telefoneDestinatario && (
-                                          <div className="text-[10px] text-purple-800 font-semibold">
-                                            Tel: {enc.telefoneDestinatario}
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-
-                                    {enc.localArmazenamento && (
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-[10px] text-slate-500 font-bold">Guardado em:</span>
-                                        <span className="text-indigo-900 font-bold flex items-center gap-1">
-                                          <MapPin className="w-3 h-3 text-indigo-600" />
-                                          {enc.localArmazenamento}
-                                        </span>
-                                      </div>
-                                    )}
-
-                                    <div className="flex items-center justify-between text-[10px] text-slate-600">
-                                      {isEsperando ? (
-                                        <span>Aviso em: {enc.dataRecebimento || 'Hoje'}</span>
-                                      ) : (
-                                        <span>Recebido: {enc.dataRecebimento} às {enc.horaRecebimento}</span>
-                                      )}
-                                      {enc.porteiroRecebedor && <span>Por: {enc.porteiroRecebedor}</span>}
-                                    </div>
-
-                                    {enc.codigoRastreio && (
-                                      <div className="text-[10px] text-slate-700 font-mono bg-slate-100 px-2 py-0.5 rounded">
-                                        Rastreio/Nota: {enc.codigoRastreio}
-                                      </div>
-                                    )}
-
-                                    {enc.observacoes && (
-                                      <div className="text-[10px] text-slate-700 bg-slate-50 p-1.5 rounded border border-slate-200">
-                                        <b>Obs:</b> {enc.observacoes}
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {enc.fotoPacote && (
-                                    <div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-50 border border-slate-200">
-                                      <img
-                                        src={enc.fotoPacote}
-                                        alt="Pacote"
-                                        className="w-10 h-10 rounded-lg object-contain border border-slate-300 bg-slate-100 shrink-0"
-                                      />
-                                      <span className="text-[10px] text-slate-600 font-medium">
-                                        Foto do pacote anexada
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {enc.status === 'Entregue ao Morador' && (
-                                    <div className="text-[10px] text-emerald-950 font-bold bg-emerald-100 p-1.5 rounded-lg">
-                                      ✓ Entregue para {enc.retiradoPorNome || enc.destinatarioNome} em {enc.dataRetirada} às {enc.horaRetirada}
-                                    </div>
-                                  )}
-
-                                  {enc.status === 'Despachado / Retirado por Terceiro' && (
-                                    <div className="text-[10px] text-emerald-950 font-bold bg-emerald-100 p-1.5 rounded-lg">
-                                      ✓ Despachado para {enc.despachadoPor || enc.destinatarioExterno || 'Terceiro'} em {enc.dataDespacho || enc.dataRetirada} às {enc.horaDespacho || enc.horaRetirada}
-                                    </div>
-                                  )}
-
-                                  {/* Ações */}
-                                  <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-200 flex-wrap">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      {isEsperando && (
-                                        <button
-                                          type="button"
-                                          onClick={() => atualizarStatusEncomenda(enc.id, 'Aguardando Retirada')}
-                                          className="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                                          title="Confirmar recebimento físico do pacote na portaria"
-                                        >
-                                          <Package className="w-3.5 h-3.5" />
-                                          <span>Receber na Portaria</span>
-                                        </button>
-                                      )}
-
-                                      {isPendente && (
-                                        <button
-                                          type="button"
-                                          onClick={() => darBaixaEncomenda(enc.id)}
-                                          className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                                          title="Dar baixa confirmando que o morador retirou o pacote"
-                                        >
-                                          <Check className="w-3.5 h-3.5" />
-                                          <span>Dar Baixa (Entregue)</span>
-                                        </button>
-                                      )}
-
-                                      {isEmbrulhoDeixado && (
-                                        <button
-                                          type="button"
-                                          onClick={() => atualizarStatusEncomenda(enc.id, 'Aguardando Coleta na Portaria')}
-                                          className="px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                                          title="Confirmar custódia do embrulho deixado pelo morador"
-                                        >
-                                          <Package className="w-3.5 h-3.5" />
-                                          <span>Confirmar Custódia</span>
-                                        </button>
-                                      )}
-
-                                      {isAguardandoColeta && (
-                                        <button
-                                          type="button"
-                                          onClick={() => atualizarStatusEncomenda(enc.id, 'Despachado / Retirado por Terceiro')}
-                                          className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                                          title="Confirmar entrega do embrulho para o terceiro / entregador"
-                                        >
-                                          <Check className="w-3.5 h-3.5" />
-                                          <span>Despachar / Entregar</span>
-                                        </button>
-                                      )}
-
-                                      {/* Botão de Timeline Histórica */}
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setTimelineModalPortariaData({ item: enc, tipo: 'encomenda' });
-                                          setTimelineModalPortariaOpen(true);
-                                        }}
-                                        className="px-2 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-xs font-black transition-colors flex items-center gap-1 cursor-pointer"
-                                        title="Ver timeline completa de horários e passos"
-                                      >
-                                        <History className="w-3.5 h-3.5 text-indigo-600" />
-                                        <span>Timeline</span>
-                                      </button>
-
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const unit = unidades.find(u => u.numero === enc.unidade);
-                                          setSelectedUnidadeParaNotificar(unit || {
-                                            id: `temp-${enc.unidade}`,
-                                            numero: enc.unidade,
-                                            bloco: enc.bloco || '',
-                                            moradores: []
-                                          });
-                                          setIsNotifyModalOpen(true);
-                                        }}
-                                        className="p-1.5 rounded-xl text-amber-800 hover:bg-amber-100 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
-                                        title="Avisar Morador"
-                                      >
-                                        <Bell className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (confirm('Deseja excluir este registro de encomenda?')) {
-                                          excluirEncomenda(enc.id);
-                                        }
-                                      }}
-                                      className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                                      title="Excluir"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-              </div>
-            </div>
-
-          </div>
-        );
-      })()}
-
-      {/* ========================================================================= */}
-      {/* 16. GESTÃO DE BENFEITORIAS & CONQUISTAS DA GESTÃO                         */}
-      {/* ========================================================================= */}
-      {(() => {
-        const tiposBenfeitoriaOptions: TipoBenfeitoria[] = [
-          'Grande Reparo & Manutenção',
-          'Nova Aquisição & Modernização',
-          'Equilíbrio Financeiro & Economia',
-          'Área Comum & Convivência'
-        ];
-
-        const filteredBenfeitoriasAdmin = benfeitorias.filter(item => {
-          const matchTipo = filtroTipoBenfeitoriaAdmin === 'Todas' || item.tipo === filtroTipoBenfeitoriaAdmin;
-          const termo = searchBenfeitoriaAdmin.toLowerCase().trim();
-          const matchBusca = !termo ||
-            (item.titulo || '').toLowerCase().includes(termo) ||
-            (item.subtitulo || '').toLowerCase().includes(termo) ||
-            (item.descricao || '').toLowerCase().includes(termo) ||
-            (item.impactoGestao || '').toLowerCase().includes(termo);
-          return matchTipo && matchBusca;
-        });
-
-        const totalInvestimento = benfeitorias.reduce((acc, curr) => acc + (curr.investimento || 0), 0);
-        const totalEconomiaMensal = benfeitorias.reduce((acc, curr) => acc + (curr.economiaMensal || 0), 0);
-
-        return (
-          <div className={`rounded-3xl border transition-all duration-300 overflow-hidden shadow-sm ${
-            canAccessBenfeitorias ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
-          }`}>
-            <button
-              type="button"
-              disabled={!canAccessBenfeitorias}
-              onClick={() => canAccessBenfeitorias && setIsBenfeitoriasAdminOpen(!isBenfeitoriasAdminOpen)}
-              className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-amber-100/50 transition-colors focus:outline-none cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-2xl border ${
-                  canAccessBenfeitorias ? 'bg-amber-500/20 border-amber-400/40 text-amber-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
-                }`}>
-                  {canAccessBenfeitorias ? <Sparkles className="w-5 h-5 text-amber-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
-                      canAccessBenfeitorias ? 'bg-amber-100 text-amber-950 border-amber-300' : 'bg-slate-200 text-slate-600 border-slate-300'
-                    }`}>
-                      16. Gestão de Benfeitorias & Obras
-                    </span>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 shadow-2xs">
-                      {benfeitorias.length} Conquistas
-                    </span>
-                  </div>
-                  <h3 className={`text-base sm:text-lg font-black mt-0.5 ${canAccessBenfeitorias ? 'text-slate-950' : 'text-slate-700'}`}>
-                    16. Benfeitorias, Obras & Realizações da Gestão
-                  </h3>
-                  <p className={`text-xs font-medium max-w-2xl mt-0.5 ${canAccessBenfeitorias ? 'text-slate-700' : 'text-slate-500'}`}>
-                    Publique e gerencie grandes reparos concluídos, aquisições de equipamentos e o demonstrativo de economia para a transparência do condomínio.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-amber-900 hidden sm:inline">
-                  {isBenfeitoriasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
-                </span>
-                <div className="p-2 rounded-xl bg-white/80 border border-amber-300/80 shadow-2xs">
-                  <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isBenfeitoriasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
-                </div>
-              </div>
-            </button>
-
-            {/* Conteúdo Expansível */}
-            <div className={`grid transition-all duration-500 ease-in-out ${
-              canAccessBenfeitorias && isBenfeitoriasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-            }`}>
-              <div className="overflow-hidden">
-                <div className="p-4 sm:p-5 border-t border-amber-200/80 space-y-4">
-
-                  {/* Cards Informativos de Métricas */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="bg-white/80 border border-amber-200 p-3.5 rounded-2xl shadow-2xs flex items-center gap-3">
-                      <div className="p-2.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-300">
-                        <CheckCircle2 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
-                          Total de Entregas
-                        </span>
-                        <span className="text-base font-black text-slate-950">
-                          {benfeitorias.length} Conquistas Publicadas
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="bg-white/80 border border-purple-200 p-3.5 rounded-2xl shadow-2xs flex items-center gap-3">
-                      <div className="p-2.5 rounded-xl bg-purple-100 text-purple-900 border border-purple-300">
-                        <DollarSign className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
-                          Investimento Acumulado
-                        </span>
-                        <span className="text-base font-black text-purple-950">
-                          R$ {totalInvestimento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="bg-white/80 border border-emerald-200 p-3.5 rounded-2xl shadow-2xs flex items-center gap-3">
-                      <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-900 border border-emerald-300">
-                        <TrendingDown className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
-                          Economia Mensal Gerada
-                        </span>
-                        <span className="text-base font-black text-emerald-900">
-                          + R$ {totalEconomiaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Barra de Busca, Filtros e Botão Novo */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white/70 p-3 rounded-2xl border border-amber-200 shadow-2xs">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <div className="relative flex-1">
-                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input
-                          type="text"
-                          value={searchBenfeitoriaAdmin}
-                          onChange={(e) => setSearchBenfeitoriaAdmin(e.target.value)}
-                          placeholder="Buscar por título, resumo ou descrição..."
-                          className="w-full bg-white border border-slate-300 focus:border-amber-500 rounded-xl pl-9 pr-3 py-1.5 text-xs font-bold text-slate-950 placeholder-slate-400 shadow-2xs focus:outline-none"
-                        />
-                      </div>
-
-                      <select
-                        value={filtroTipoBenfeitoriaAdmin}
-                        onChange={(e) => setFiltroTipoBenfeitoriaAdmin(e.target.value)}
-                        className="bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-950 focus:outline-none cursor-pointer shadow-2xs shrink-0"
-                      >
-                        <option value="Todas">Todas as Categorias</option>
-                        {tiposBenfeitoriaOptions.map(t => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
-                      {/* Select Dropdown com os reparos disponíveis no condomínio */}
-                      <select
-                        value={selectedReparoForImportAdmin}
-                        onChange={(e) => setSelectedReparoForImportAdmin(e.target.value)}
-                        className="bg-amber-50 border border-amber-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-950 focus:outline-none cursor-pointer shadow-2xs max-w-[220px] truncate"
-                        title="Selecione um item do módulo de reparos para importar"
-                      >
-                        <option value="">Selecione Reparo p/ Importar...</option>
-                        {reparos.filter(r => !r.migradoParaBenfeitoriaId).map(rep => (
-                          <option key={rep.id} value={rep.id}>
-                            [{rep.categoria}] {rep.titulo} ({rep.solicitanteNome})
-                          </option>
-                        ))}
-                      </select>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsImportReparoModalOpen(true);
-                        }}
-                        className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700 text-xs font-black rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
-                        title="Importar item do módulo de reparos"
-                      >
-                        <Download className="w-4 h-4 text-amber-400" />
-                        <span>Importar Reparo</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setBenfeitoriaToEditInAdmin(null);
-                          setIsCreateEditBenfeitoriaModalOpen(true);
-                        }}
-                        className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>Nova Benfeitoria</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Listagem de Benfeitorias */}
-                  {filteredBenfeitoriasAdmin.length === 0 ? (
-                    <div className="text-center py-10 bg-white/60 border border-dashed border-amber-300 rounded-2xl p-6">
-                      <Sparkles className="w-10 h-10 text-amber-400 mx-auto mb-2 opacity-80" />
-                      <h4 className="text-sm font-black text-slate-900">Nenhuma benfeitoria encontrada</h4>
-                      <p className="text-xs text-slate-600 font-medium max-w-md mx-auto mt-1">
-                        {searchBenfeitoriaAdmin || filtroTipoBenfeitoriaAdmin !== 'Todas'
-                          ? 'Tente alterar os filtros de busca para visualizar os registros.'
-                          : 'Clique no botão "Nova Benfeitoria" acima para cadastrar a primeira realização da gestão.'}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {filteredBenfeitoriasAdmin.map((item) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    {filteredEncomendasAdmin.map((enc) => {
+                      const isEsperando = enc.status === 'Aguardando Chegada na Portaria';
+                      const isPendente = enc.status === 'Aguardando Retirada';
+                      const isEntregue = enc.status === 'Entregue ao Morador';
+                      const isEmbrulhoDeixado = enc.status === 'Embrulho Deixado pelo Morador';
+                      const isAguardandoColeta = enc.status === 'Aguardando Coleta na Portaria';
+                      const isDespachado = enc.status === 'Despachado / Retirado por Terceiro';
+                      const isSaida = enc.fluxoTipo === 'saida_embrulho';
+                      const isCardOpen = expandedPortariaCardsAdmin[enc.id] !== undefined
+                        ? expandedPortariaCardsAdmin[enc.id]
+                        : isEncomendaAberta(enc.status);
+
+                      return (
                         <div
-                          key={item.id}
-                          className="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-3"
+                          key={enc.id}
+                          className={`border rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${isEsperando ? 'bg-sky-50/80 border-sky-300' :
+                              isPendente ? 'bg-amber-50/80 border-amber-300' :
+                                isAguardandoColeta || isEmbrulhoDeixado ? 'bg-purple-50/80 border-purple-300' :
+                                  isEntregue || isDespachado ? 'bg-emerald-50/70 border-emerald-300' : 'bg-white border-slate-200'
+                            }`}
                         >
-                          <div className="space-y-2">
-                            {/* Header do Card */}
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="space-y-1">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300 inline-block">
-                                    {item.tipo}
+                          {/* CABEÇALHO DO CARD (Dentro do retângulo vermelho - sempre visível e clicável para abrir/fechar) */}
+                          <div
+                            onClick={() => setExpandedPortariaCardsAdmin(prev => ({
+                              ...prev,
+                              [enc.id]: !isCardOpen
+                            }))}
+                            className="flex items-center justify-between gap-2 cursor-pointer select-none group"
+                            title={isCardOpen ? "Clique para recolher detalhes" : "Clique para expandir detalhes"}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black shrink-0 transition-transform group-hover:scale-105 ${isEsperando ? 'bg-sky-600 text-white' :
+                                  isPendente ? 'bg-amber-500 text-slate-950' :
+                                    isAguardandoColeta || isEmbrulhoDeixado ? 'bg-purple-600 text-white' :
+                                      isEntregue || isDespachado ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'
+                                }`}>
+                                <Package className="w-5 h-5" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-[10px] font-black uppercase text-indigo-900 block truncate">
+                                    {enc.empresaTransporte || 'Portaria'}
                                   </span>
-
-                                  {/* Badge da Fase Atual */}
-                                  {(() => {
-                                    const st = item.statusAtual || 'entregue';
-                                    const labels: Record<string, { label: string; color: string }> = {
-                                      proposta: { label: '1. Proposta', color: 'bg-rose-100 text-rose-950 border-rose-300' },
-                                      orcamento: { label: '2. Buscando Orçamento', color: 'bg-sky-100 text-sky-950 border-sky-300' },
-                                      votacao: { label: '3. Votação Aberta', color: 'bg-amber-500 text-white border-amber-600 animate-pulse' },
-                                      contratada: { label: '4. Empresa Contratada', color: 'bg-blue-100 text-blue-950 border-blue-300' },
-                                      execucao: { label: '5. Em Execução', color: 'bg-orange-100 text-orange-950 border-orange-300' },
-                                      avaliacao: { label: '6. Avaliação Aberta', color: 'bg-purple-100 text-purple-950 border-purple-300' },
-                                      entregue: { label: '7. Entregue ✓', color: 'bg-emerald-100 text-emerald-950 border-emerald-300' },
-                                      cancelada: { label: '8. Cancelado ⚠', color: 'bg-red-600 text-white border-red-700' }
-                                    };
-                                    const conf = labels[st] || labels.entregue;
-                                    return (
-                                      <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${conf.color}`}>
-                                        {conf.label}
-                                      </span>
-                                    );
-                                  })()}
+                                  {isSaida ? (
+                                    <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-purple-200 text-purple-950 border border-purple-300">
+                                      📤 Saída / Despacho
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-sky-100 text-sky-950 border border-sky-300">
+                                      📥 Entrada
+                                    </span>
+                                  )}
                                 </div>
-
-                                <h4 className="text-sm sm:text-base font-black text-slate-950 leading-snug">
-                                  {item.titulo}
+                                <h4 className="font-black text-sm text-slate-950 leading-tight truncate mt-0.5">
+                                  Apto {enc.unidade} • {enc.destinatarioNome}
                                 </h4>
                               </div>
-
-                              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md shrink-0">
-                                {item.dataEntrega}
-                              </span>
                             </div>
 
-                            {/* Foto & Subtítulo */}
-                            {item.subtitulo && (
-                              <p className="text-xs text-slate-700 font-semibold italic">
-                                "{item.subtitulo}"
-                              </p>
-                            )}
-
-                            {item.fotos && item.fotos.length > 0 && (
-                              <div className="w-full max-w-[280px] aspect-square mx-auto rounded-2xl overflow-hidden border border-amber-300/80 bg-slate-950 flex items-center justify-center p-1.5 shadow-inner">
-                                <img
-                                  src={item.fotos[0]}
-                                  alt={item.titulo}
-                                  className="w-full h-full object-contain"
-                                />
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0 ${isEsperando ? 'bg-sky-100 text-sky-950 border-sky-300' :
+                                  isPendente ? 'bg-amber-400 text-slate-950 border-amber-500 animate-pulse' :
+                                    isAguardandoColeta || isEmbrulhoDeixado ? 'bg-purple-200 text-purple-950 border-purple-400 font-black' :
+                                      isEntregue || isDespachado ? 'bg-emerald-100 text-emerald-950 border-emerald-300' :
+                                        'bg-slate-100 text-slate-800 border-slate-300'
+                                }`}>
+                                {enc.status}
+                              </span>
+                              <div className="p-1 rounded-lg text-slate-400 group-hover:text-slate-700 group-hover:bg-slate-200/50 transition-colors">
+                                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isCardOpen ? 'rotate-180' : 'rotate-0'}`} />
                               </div>
-                            )}
-
-                            {/* Descrição */}
-                            <p className="text-xs text-slate-800 line-clamp-2 leading-relaxed">
-                              {item.descricao}
-                            </p>
-
-                            {/* Impacto na Gestão */}
-                            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] font-bold text-amber-950">
-                              <span className="text-[10px] uppercase font-black text-amber-800 block mb-0.5">
-                                Impacto na Gestão:
-                              </span>
-                              {item.impactoGestao}
-                            </div>
-
-                            {/* Valores de Investimento e Economia */}
-                            <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 font-bold">
-                              <span className="text-slate-600">
-                                Investimento: <strong className="text-slate-950">{item.investimento ? `R$ ${item.investimento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A'}</strong>
-                              </span>
-                              {item.economiaMensal && (
-                                <span className="text-emerald-700 font-black">
-                                  Economia: +R$ {item.economiaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Indicadores de Votação e Avaliação */}
-                            <div className="flex flex-wrap items-center gap-2 pt-1">
-                              {item.votos && item.votos.length > 0 && (
-                                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-200">
-                                  🗳️ {item.votos.length} {item.votos.length === 1 ? 'voto' : 'votos'}
-                                </span>
-                              )}
-                              {item.notaMediaFinal && (
-                                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-100 text-purple-900 border border-purple-200 flex items-center gap-0.5">
-                                  ★ {item.notaMediaFinal} ({item.avaliacoes?.length || 0} avaliações)
-                                </span>
-                              )}
-                              {item.timeline && item.timeline.length > 0 && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
-                                  {item.timeline.length} {item.timeline.length === 1 ? 'evento na timeline' : 'eventos na timeline'}
-                                </span>
-                              )}
                             </div>
                           </div>
 
-                          {/* Botões de Ação */}
-                          <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                            {/* Botão Destaque: Avançar para Próxima Fase */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setBenfeitoriaForTimelineModal(item);
-                                setTimelineModalInitialTab('novo_passo');
-                                setIsTimelineModalOpen(true);
-                              }}
-                              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer ring-2 ring-amber-300"
-                              title={`Avançar para fase: ${getNextFaseLabel(item.statusAtual)}`}
-                            >
-                              <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                              <span>Avançar Fase ({getNextFaseLabel(item.statusAtual)})</span>
-                            </button>
+                          {/* CORPO EXPANSÍVEL DO CARD */}
+                          {isCardOpen && (
+                            <div className="space-y-3 pt-2 border-t border-slate-200/70 animate-in fade-in duration-200">
+                              {/* Dados da Encomenda */}
+                              <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+                                {isEsperando && (
+                                  <div className="text-[10px] text-sky-900 font-bold bg-sky-50 p-1.5 rounded-lg border border-sky-200">
+                                    ⏳ Morador avisou que espera entrega • Aguardando chegada física
+                                  </div>
+                                )}
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setBenfeitoriaForTimelineModal(item);
-                                setTimelineModalInitialTab('timeline');
-                                setIsTimelineModalOpen(true);
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-amber-100 border border-slate-300 text-slate-900 text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                              title="Ver Linha do Tempo e Histórico"
-                            >
-                              <Clock className="w-3.5 h-3.5 text-slate-700" />
-                              <span>Ver Timeline</span>
-                            </button>
+                                {isEmbrulhoDeixado && (
+                                  <div className="text-[10px] text-purple-900 font-bold bg-purple-50 p-1.5 rounded-lg border border-purple-200">
+                                    📦 Morador deixou embrulho na portaria • Aguarda confirmação
+                                  </div>
+                                )}
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setBenfeitoriaToEditInAdmin(item);
-                                setIsCreateEditBenfeitoriaModalOpen(true);
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-amber-100 border border-slate-300 text-slate-800 text-xs font-black transition-colors flex items-center gap-1 cursor-pointer"
-                              title="Editar benfeitoria"
-                            >
-                              <Edit3 className="w-3.5 h-3.5 text-slate-700" />
-                              <span>Editar</span>
-                            </button>
+                                {isAguardandoColeta && (
+                                  <div className="text-[10px] text-purple-950 font-bold bg-purple-100 p-1.5 rounded-lg border border-purple-300">
+                                    📦 Embrulho sob custódia da portaria • Aguardando coleta do destinatário
+                                  </div>
+                                )}
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm(`Deseja excluir permanentemente a benfeitoria "${item.titulo}"?`)) {
-                                  excluirBenfeitoria(item.id);
-                                }
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-black transition-colors flex items-center gap-1 cursor-pointer"
-                              title="Excluir benfeitoria"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                              <span>Excluir</span>
-                            </button>
-                          </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-slate-500 font-bold">Tipo:</span>
+                                  <strong className="text-slate-950">{enc.tipo}</strong>
+                                </div>
+
+                                {/* Info de Despacho para Terceiro */}
+                                {isSaida && (
+                                  <div className="text-[11px] bg-purple-50 p-2 rounded-lg border border-purple-200 space-y-0.5">
+                                    <div className="font-black text-purple-950">
+                                      Retirar por: {enc.destinatarioExterno || 'Destinatário Externo'}
+                                    </div>
+                                    {enc.telefoneDestinatario && (
+                                      <div className="text-[10px] text-purple-800 font-semibold">
+                                        Tel: {enc.telefoneDestinatario}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {enc.localArmazenamento && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-slate-500 font-bold">Guardado em:</span>
+                                    <span className="text-indigo-900 font-bold flex items-center gap-1">
+                                      <MapPin className="w-3 h-3 text-indigo-600" />
+                                      {enc.localArmazenamento}
+                                    </span>
+                                  </div>
+                                )}
+
+                                <div className="flex items-center justify-between text-[10px] text-slate-600">
+                                  {isEsperando ? (
+                                    <span>Aviso em: {enc.dataRecebimento || 'Hoje'}</span>
+                                  ) : (
+                                    <span>Recebido: {enc.dataRecebimento} às {enc.horaRecebimento}</span>
+                                  )}
+                                  {enc.porteiroRecebedor && <span>Por: {enc.porteiroRecebedor}</span>}
+                                </div>
+
+                                {enc.codigoRastreio && (
+                                  <div className="text-[10px] text-slate-700 font-mono bg-slate-100 px-2 py-0.5 rounded">
+                                    Rastreio/Nota: {enc.codigoRastreio}
+                                  </div>
+                                )}
+
+                                {enc.observacoes && (
+                                  <div className="text-[10px] text-slate-700 bg-slate-50 p-1.5 rounded border border-slate-200">
+                                    <b>Obs:</b> {enc.observacoes}
+                                  </div>
+                                )}
+                              </div>
+
+                              {enc.fotoPacote && (
+                                <div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-50 border border-slate-200">
+                                  <img
+                                    src={enc.fotoPacote}
+                                    alt="Pacote"
+                                    className="w-10 h-10 rounded-lg object-contain border border-slate-300 bg-slate-100 shrink-0"
+                                  />
+                                  <span className="text-[10px] text-slate-600 font-medium">
+                                    Foto do pacote anexada
+                                  </span>
+                                </div>
+                              )}
+
+                              {enc.status === 'Entregue ao Morador' && (
+                                <div className="text-[10px] text-emerald-950 font-bold bg-emerald-100 p-1.5 rounded-lg">
+                                  ✓ Entregue para {enc.retiradoPorNome || enc.destinatarioNome} em {enc.dataRetirada} às {enc.horaRetirada}
+                                </div>
+                              )}
+
+                              {enc.status === 'Despachado / Retirado por Terceiro' && (
+                                <div className="text-[10px] text-emerald-950 font-bold bg-emerald-100 p-1.5 rounded-lg">
+                                  ✓ Despachado para {enc.despachadoPor || enc.destinatarioExterno || 'Terceiro'} em {enc.dataDespacho || enc.dataRetirada} às {enc.horaDespacho || enc.horaRetirada}
+                                </div>
+                              )}
+
+                              {/* Ações */}
+                              <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-200 flex-wrap">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {isEsperando && (
+                                    <button
+                                      type="button"
+                                      onClick={() => atualizarStatusEncomenda(enc.id, 'Aguardando Retirada')}
+                                      className="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                      title="Confirmar recebimento físico do pacote na portaria"
+                                    >
+                                      <Package className="w-3.5 h-3.5" />
+                                      <span>Receber na Portaria</span>
+                                    </button>
+                                  )}
+
+                                  {isPendente && (
+                                    <button
+                                      type="button"
+                                      onClick={() => darBaixaEncomenda(enc.id)}
+                                      className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                      title="Dar baixa confirmando que o morador retirou o pacote"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>Dar Baixa (Entregue)</span>
+                                    </button>
+                                  )}
+
+                                  {isEmbrulhoDeixado && (
+                                    <button
+                                      type="button"
+                                      onClick={() => atualizarStatusEncomenda(enc.id, 'Aguardando Coleta na Portaria')}
+                                      className="px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                      title="Confirmar custódia do embrulho deixado pelo morador"
+                                    >
+                                      <Package className="w-3.5 h-3.5" />
+                                      <span>Confirmar Custódia</span>
+                                    </button>
+                                  )}
+
+                                  {isAguardandoColeta && (
+                                    <button
+                                      type="button"
+                                      onClick={() => atualizarStatusEncomenda(enc.id, 'Despachado / Retirado por Terceiro')}
+                                      className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                      title="Confirmar entrega do embrulho para o terceiro / entregador"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>Despachar / Entregar</span>
+                                    </button>
+                                  )}
+
+                                  {/* Botão de Timeline Histórica */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setTimelineModalPortariaData({ item: enc, tipo: 'encomenda' });
+                                      setTimelineModalPortariaOpen(true);
+                                    }}
+                                    className="px-2 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-xs font-black transition-colors flex items-center gap-1 cursor-pointer"
+                                    title="Ver timeline completa de horários e passos"
+                                  >
+                                    <History className="w-3.5 h-3.5 text-indigo-600" />
+                                    <span>Timeline</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const unit = unidades.find(u => u.numero === enc.unidade);
+                                      setSelectedUnidadeParaNotificar(unit || {
+                                        id: `temp-${enc.unidade}`,
+                                        numero: enc.unidade,
+                                        bloco: enc.bloco || '',
+                                        moradores: []
+                                      });
+                                      setIsNotifyModalOpen(true);
+                                    }}
+                                    className="p-1.5 rounded-xl text-amber-800 hover:bg-amber-100 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                    title="Avisar Morador"
+                                  >
+                                    <Bell className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm('Deseja excluir este registro de encomenda?')) {
+                                      excluirEncomenda(enc.id);
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
           </div>
-        );
-      })()}
+        </div>
 
-      {/* ========================================================================= */}
-      {/* MODAL: CRIAR NOVA CATEGORIA / CARGO DINÂMICO */}
-      {/* ========================================================================= */}
-      {isModalNovaCategoriaOpen && (
-        <div className="modal-overlay-safe bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="modal-content-safe bg-white border-2 border-amber-400 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
-            
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-900 flex items-center justify-center">
-                  <Layers className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-black text-base text-slate-950">
-                    Nova Categoria / Cargo
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">Cadastre um novo cargo de colaborador</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsModalNovaCategoriaOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      </div>
+    );
+  })()
+}
+
+{/* ========================================================================= */ }
+{/* 16. GESTÃO DE BENFEITORIAS & CONQUISTAS DA GESTÃO                         */ }
+{/* ========================================================================= */ }
+{
+  (() => {
+    const tiposBenfeitoriaOptions: TipoBenfeitoria[] = [
+      'Grande Reparo & Manutenção',
+      'Nova Aquisição & Modernização',
+      'Equilíbrio Financeiro & Economia',
+      'Área Comum & Convivência'
+    ];
+
+    const filteredBenfeitoriasAdmin = benfeitorias.filter(item => {
+      const matchTipo = filtroTipoBenfeitoriaAdmin === 'Todas' || item.tipo === filtroTipoBenfeitoriaAdmin;
+      const termo = searchBenfeitoriaAdmin.toLowerCase().trim();
+      const matchBusca = !termo ||
+        (item.titulo || '').toLowerCase().includes(termo) ||
+        (item.subtitulo || '').toLowerCase().includes(termo) ||
+        (item.descricao || '').toLowerCase().includes(termo) ||
+        (item.impactoGestao || '').toLowerCase().includes(termo);
+      return matchTipo && matchBusca;
+    });
+
+    const totalInvestimento = benfeitorias.reduce((acc, curr) => acc + (curr.investimento || 0), 0);
+    const totalEconomiaMensal = benfeitorias.reduce((acc, curr) => acc + (curr.economiaMensal || 0), 0);
+
+    return (
+      <div className={`rounded-3xl border transition-all duration-300 overflow-hidden shadow-sm ${canAccessBenfeitorias ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-100/90 border-slate-300 opacity-60'
+        }`}>
+        <button
+          type="button"
+          disabled={!canAccessBenfeitorias}
+          onClick={() => canAccessBenfeitorias && setIsBenfeitoriasAdminOpen(!isBenfeitoriasAdminOpen)}
+          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-amber-100/50 transition-colors focus:outline-none cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-2xl border ${canAccessBenfeitorias ? 'bg-amber-500/20 border-amber-400/40 text-amber-950' : 'bg-slate-300/50 border-slate-300 text-slate-600'
+              }`}>
+              {canAccessBenfeitorias ? <Sparkles className="w-5 h-5 text-amber-900" /> : <Lock className="w-5 h-5 text-slate-500" />}
             </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${canAccessBenfeitorias ? 'bg-amber-100 text-amber-950 border-amber-300' : 'bg-slate-200 text-slate-600 border-slate-300'
+                  }`}>
+                  16. Gestão de Benfeitorias & Obras
+                </span>
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 shadow-2xs">
+                  {benfeitorias.length} Conquistas
+                </span>
+              </div>
+              <h3 className={`text-base sm:text-lg font-black mt-0.5 ${canAccessBenfeitorias ? 'text-slate-950' : 'text-slate-700'}`}>
+                16. Benfeitorias, Obras & Realizações da Gestão
+              </h3>
+              <p className={`text-xs font-medium max-w-2xl mt-0.5 ${canAccessBenfeitorias ? 'text-slate-700' : 'text-slate-500'}`}>
+                Publique e gerencie grandes reparos concluídos, aquisições de equipamentos e o demonstrativo de economia para a transparência do condomínio.
+              </p>
+            </div>
+          </div>
 
-            <form onSubmit={handleAddNovaCategoria} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                  Nome da Categoria / Cargo *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: Piscineiro, Jardineiro, Eletricista, Manobrista..."
-                  value={novaCategoriaNome}
-                  onChange={(e) => setNovaCategoriaNome(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"
-                  required
-                />
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-amber-900 hidden sm:inline">
+              {isBenfeitoriasAdminOpen ? 'Recolher seção' : 'Expandir seção'}
+            </span>
+            <div className="p-2 rounded-xl bg-white/80 border border-amber-300/80 shadow-2xs">
+              <ChevronDown className={`w-4 h-4 text-amber-900 transition-transform duration-500 ease-out ${isBenfeitoriasAdminOpen ? 'rotate-180' : 'rotate-0'}`} />
+            </div>
+          </div>
+        </button>
+
+        {/* Conteúdo Expansível */}
+        <div className={`grid transition-all duration-500 ease-in-out ${canAccessBenfeitorias && isBenfeitoriasAdminOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}>
+          <div className="overflow-hidden">
+            <div className="p-4 sm:p-5 border-t border-amber-200/80 space-y-4">
+
+              {/* Cards Informativos de Métricas */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-white/80 border border-amber-200 p-3.5 rounded-2xl shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-300">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
+                      Total de Entregas
+                    </span>
+                    <span className="text-base font-black text-slate-950">
+                      {benfeitorias.length} Conquistas Publicadas
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-white/80 border border-purple-200 p-3.5 rounded-2xl shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-purple-100 text-purple-900 border border-purple-300">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
+                      Investimento Acumulado
+                    </span>
+                    <span className="text-base font-black text-purple-950">
+                      R$ {totalInvestimento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-white/80 border border-emerald-200 p-3.5 rounded-2xl shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-900 border border-emerald-300">
+                    <TrendingDown className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
+                      Economia Mensal Gerada
+                    </span>
+                    <span className="text-base font-black text-emerald-900">
+                      + R$ {totalEconomiaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                  Nível de Permissão & Poderes *
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Barra de Busca, Filtros e Botão Novo */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white/70 p-3 rounded-2xl border border-amber-200 shadow-2xs">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={searchBenfeitoriaAdmin}
+                      onChange={(e) => setSearchBenfeitoriaAdmin(e.target.value)}
+                      placeholder="Buscar por título, resumo ou descrição..."
+                      className="w-full bg-white border border-slate-300 focus:border-amber-500 rounded-xl pl-9 pr-3 py-1.5 text-xs font-bold text-slate-950 placeholder-slate-400 shadow-2xs focus:outline-none"
+                    />
+                  </div>
+
+                  <select
+                    value={filtroTipoBenfeitoriaAdmin}
+                    onChange={(e) => setFiltroTipoBenfeitoriaAdmin(e.target.value)}
+                    className="bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-950 focus:outline-none cursor-pointer shadow-2xs shrink-0"
+                  >
+                    <option value="Todas">Todas as Categorias</option>
+                    {tiposBenfeitoriaOptions.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                  {/* Select Dropdown com os reparos disponíveis no condomínio */}
+                  <select
+                    value={selectedReparoForImportAdmin}
+                    onChange={(e) => setSelectedReparoForImportAdmin(e.target.value)}
+                    className="bg-amber-50 border border-amber-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-950 focus:outline-none cursor-pointer shadow-2xs max-w-[220px] truncate"
+                    title="Selecione um item do módulo de reparos para importar"
+                  >
+                    <option value="">Selecione Reparo p/ Importar...</option>
+                    {reparos.filter(r => !r.migradoParaBenfeitoriaId).map(rep => (
+                      <option key={rep.id} value={rep.id}>
+                        [{rep.categoria}] {rep.titulo} ({rep.solicitanteNome})
+                      </option>
+                    ))}
+                  </select>
+
                   <button
                     type="button"
-                    onClick={() => setNovaCategoriaTipoAcesso('total')}
-                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                      novaCategoriaTipoAcesso === 'total'
-                        ? 'bg-amber-100/90 border-amber-400 ring-2 ring-amber-500/20'
-                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                    }`}
+                    onClick={() => {
+                      setIsImportReparoModalOpen(true);
+                    }}
+                    className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700 text-xs font-black rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                    title="Importar item do módulo de reparos"
                   >
-                    <div className="flex items-center gap-1.5 font-black text-xs text-slate-950">
-                      <Lock className="w-3.5 h-3.5 text-amber-800" />
-                      <span>Acesso Irrestrito (Admin)</span>
-                    </div>
-                    <p className="text-[10px] text-slate-600 font-medium mt-1">
-                      Acesso total a todas as telas, painel de admin e gestão.
-                    </p>
+                    <Download className="w-4 h-4 text-amber-400" />
+                    <span>Importar Reparo</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setNovaCategoriaTipoAcesso('morador_destaque')}
-                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                      novaCategoriaTipoAcesso === 'morador_destaque'
-                        ? 'bg-amber-100/90 border-amber-400 ring-2 ring-amber-500/20'
-                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                    }`}
+                    onClick={() => {
+                      setBenfeitoriaToEditInAdmin(null);
+                      setIsCreateEditBenfeitoriaModalOpen(true);
+                    }}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
                   >
-                    <div className="flex items-center gap-1.5 font-black text-xs text-slate-950">
-                      <Unlock className="w-3.5 h-3.5 text-indigo-700" />
-                      <span>Poder de Morador (Conselho)</span>
-                    </div>
-                    <p className="text-[10px] text-slate-600 font-medium mt-1">
-                      Poder de um morador comum, mas ganha destaque no quadro de equipe.
-                    </p>
+                    <Plus className="w-4 h-4" />
+                    <span>Nova Benfeitoria</span>
                   </button>
                 </div>
               </div>
 
-              {/* Descrição Opcional */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                  Descrição / Atribuições (Opcional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: Responsável pelas vistorias técnicas e orçamentos de obras"
-                  value={novaCategoriaDescricao}
-                  onChange={(e) => setNovaCategoriaDescricao(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"
-                />
-              </div>
-
-              {/* Sugestões Rápidas */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block">
-                  Sugestões Rápidas:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {['Piscineiro', 'Jardineiro', 'Eletricista', 'Auxiliar de Manutenção', 'Manobrista', 'Zelador Chefe'].map((sug) => (
-                    <button
-                      key={sug}
-                      type="button"
-                      onClick={() => setNovaCategoriaNome(sug)}
-                      className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 transition-colors cursor-pointer"
+              {/* Listagem de Benfeitorias */}
+              {filteredBenfeitoriasAdmin.length === 0 ? (
+                <div className="text-center py-10 bg-white/60 border border-dashed border-amber-300 rounded-2xl p-6">
+                  <Sparkles className="w-10 h-10 text-amber-400 mx-auto mb-2 opacity-80" />
+                  <h4 className="text-sm font-black text-slate-900">Nenhuma benfeitoria encontrada</h4>
+                  <p className="text-xs text-slate-600 font-medium max-w-md mx-auto mt-1">
+                    {searchBenfeitoriaAdmin || filtroTipoBenfeitoriaAdmin !== 'Todas'
+                      ? 'Tente alterar os filtros de busca para visualizar os registros.'
+                      : 'Clique no botão "Nova Benfeitoria" acima para cadastrar a primeira realização da gestão.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredBenfeitoriasAdmin.map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-3"
                     >
-                      + {sug}
-                    </button>
+                      <div className="space-y-2">
+                        {/* Header do Card */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300 inline-block">
+                                {item.tipo}
+                              </span>
+
+                              {/* Badge da Fase Atual */}
+                              {(() => {
+                                const st = item.statusAtual || 'entregue';
+                                const labels: Record<string, { label: string; color: string }> = {
+                                  proposta: { label: '1. Proposta', color: 'bg-rose-100 text-rose-950 border-rose-300' },
+                                  orcamento: { label: '2. Buscando Orçamento', color: 'bg-sky-100 text-sky-950 border-sky-300' },
+                                  votacao: { label: '3. Votação Aberta', color: 'bg-amber-500 text-white border-amber-600 animate-pulse' },
+                                  contratada: { label: '4. Empresa Contratada', color: 'bg-blue-100 text-blue-950 border-blue-300' },
+                                  execucao: { label: '5. Em Execução', color: 'bg-orange-100 text-orange-950 border-orange-300' },
+                                  avaliacao: { label: '6. Avaliação Aberta', color: 'bg-purple-100 text-purple-950 border-purple-300' },
+                                  entregue: { label: '7. Entregue ✓', color: 'bg-emerald-100 text-emerald-950 border-emerald-300' },
+                                  cancelada: { label: '8. Cancelado ⚠', color: 'bg-red-600 text-white border-red-700' }
+                                };
+                                const conf = labels[st] || labels.entregue;
+                                return (
+                                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${conf.color}`}>
+                                    {conf.label}
+                                  </span>
+                                );
+                              })()}
+                            </div>
+
+                            <h4 className="text-sm sm:text-base font-black text-slate-950 leading-snug">
+                              {item.titulo}
+                            </h4>
+                          </div>
+
+                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md shrink-0">
+                            {item.dataEntrega}
+                          </span>
+                        </div>
+
+                        {/* Foto & Subtítulo */}
+                        {item.subtitulo && (
+                          <p className="text-xs text-slate-700 font-semibold italic">
+                            "{item.subtitulo}"
+                          </p>
+                        )}
+
+                        {item.fotos && item.fotos.length > 0 && (
+                          <div className="w-full max-w-[280px] aspect-square mx-auto rounded-2xl overflow-hidden border border-amber-300/80 bg-slate-950 flex items-center justify-center p-1.5 shadow-inner">
+                            <img
+                              src={item.fotos[0]}
+                              alt={item.titulo}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        )}
+
+                        {/* Descrição */}
+                        <p className="text-xs text-slate-800 line-clamp-2 leading-relaxed">
+                          {item.descricao}
+                        </p>
+
+                        {/* Impacto na Gestão */}
+                        <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] font-bold text-amber-950">
+                          <span className="text-[10px] uppercase font-black text-amber-800 block mb-0.5">
+                            Impacto na Gestão:
+                          </span>
+                          {item.impactoGestao}
+                        </div>
+
+                        {/* Valores de Investimento e Economia */}
+                        <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 font-bold">
+                          <span className="text-slate-600">
+                            Investimento: <strong className="text-slate-950">{item.investimento ? `R$ ${item.investimento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A'}</strong>
+                          </span>
+                          {item.economiaMensal && (
+                            <span className="text-emerald-700 font-black">
+                              Economia: +R$ {item.economiaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Indicadores de Votação e Avaliação */}
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          {item.votos && item.votos.length > 0 && (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-200">
+                              🗳️ {item.votos.length} {item.votos.length === 1 ? 'voto' : 'votos'}
+                            </span>
+                          )}
+                          {item.notaMediaFinal && (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-100 text-purple-900 border border-purple-200 flex items-center gap-0.5">
+                              ★ {item.notaMediaFinal} ({item.avaliacoes?.length || 0} avaliações)
+                            </span>
+                          )}
+                          {item.timeline && item.timeline.length > 0 && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                              {item.timeline.length} {item.timeline.length === 1 ? 'evento na timeline' : 'eventos na timeline'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Botões de Ação */}
+                      <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                        {/* Botão Destaque: Avançar para Próxima Fase */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBenfeitoriaForTimelineModal(item);
+                            setTimelineModalInitialTab('novo_passo');
+                            setIsTimelineModalOpen(true);
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer ring-2 ring-amber-300"
+                          title={`Avançar para fase: ${getNextFaseLabel(item.statusAtual)}`}
+                        >
+                          <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                          <span>Avançar Fase ({getNextFaseLabel(item.statusAtual)})</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBenfeitoriaForTimelineModal(item);
+                            setTimelineModalInitialTab('timeline');
+                            setIsTimelineModalOpen(true);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-amber-100 border border-slate-300 text-slate-900 text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                          title="Ver Linha do Tempo e Histórico"
+                        >
+                          <Clock className="w-3.5 h-3.5 text-slate-700" />
+                          <span>Ver Timeline</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBenfeitoriaToEditInAdmin(item);
+                            setIsCreateEditBenfeitoriaModalOpen(true);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-amber-100 border border-slate-300 text-slate-800 text-xs font-black transition-colors flex items-center gap-1 cursor-pointer"
+                          title="Editar benfeitoria"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-slate-700" />
+                          <span>Editar</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`Deseja excluir permanentemente a benfeitoria "${item.titulo}"?`)) {
+                              excluirBenfeitoria(item.id);
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-black transition-colors flex items-center gap-1 cursor-pointer"
+                          title="Excluir benfeitoria"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                          <span>Excluir</span>
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
+              )}
 
-              {/* Botões do Modal */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsModalNovaCategoriaOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md active:scale-95 cursor-pointer"
-                >
-                  Salvar e Adicionar ao Select
-                </button>
-              </div>
-
-            </form>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Modal de Notificação Privada da Unidade */}
-      <PrivateNotifyModal
-        isOpen={isNotifyModalOpen}
-        onClose={() => {
-          setIsNotifyModalOpen(false);
-          setSelectedUnidadeParaNotificar(null);
-        }}
-        unidade={selectedUnidadeParaNotificar}
-      />
+      </div>
+    );
+  })()
+}
 
-      {/* Modal de Suspensão e Moderação de Serviços */}
-      <SuspendServiceModal
-        isOpen={isSuspendModalOpen}
-        onClose={() => {
-          setIsSuspendModalOpen(false);
-          setServicoParaSuspender(null);
-        }}
-        servico={servicoParaSuspender}
-      />
+{/* ========================================================================= */ }
+{/* MODAL: CRIAR NOVA CATEGORIA / CARGO DINÂMICO */ }
+{/* ========================================================================= */ }
+{
+  isModalNovaCategoriaOpen && (
+    <div className="modal-overlay-safe bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="modal-content-safe bg-white border-2 border-amber-400 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
 
-      {/* Modal de Edição de Funcionário / Colaborador */}
-      <EditFuncionarioModal
-        isOpen={isEditFuncionarioModalOpen}
-        onClose={() => {
-          setIsEditFuncionarioModalOpen(false);
-          setSelectedFuncionarioToEdit(null);
-        }}
-        funcionario={selectedFuncionarioToEdit}
-      />
-
-      {/* Modal de Criação de Funcionário / Colaborador */}
-      <CreateFuncionarioModal
-        isOpen={isCreateFuncionarioModalOpen}
-        onClose={() => setIsCreateFuncionarioModalOpen(false)}
-      />
-
-      {/* Modal de Suspensão e Moderação de Eventos */}
-      <SuspendEventoModal
-        isOpen={isSuspendEventoModalOpen}
-        onClose={() => {
-          setIsSuspendEventoModalOpen(false);
-          setEventoParaSuspender(null);
-        }}
-        evento={eventoParaSuspender}
-      />
-
-      {/* Modal de Criação / Edição de Evento pelo Admin */}
-      <CreateEditEventoModal
-        isOpen={isCreateEditEventoAdminOpen}
-        onClose={() => {
-          setIsCreateEditEventoAdminOpen(false);
-          setEventoToEditInAdmin(null);
-        }}
-        eventoToEdit={eventoToEditInAdmin}
-      />
-
-      {/* Modal de Criação / Edição de Assembleia / Reunião pelo Admin */}
-      <CreateEditAssembleiaModal
-        isOpen={isCreateEditAssembleiaAdminOpen}
-        onClose={() => {
-          setIsCreateEditAssembleiaAdminOpen(false);
-          setAssembleiaToEditInAdmin(null);
-        }}
-        assembleiaToEdit={assembleiaToEditInAdmin}
-      />
-
-      {/* Modal de Publicação de Ata & Soluções pelo Admin */}
-      <PublicarAtaModal
-        isOpen={isPublicarAtaAdminOpen}
-        onClose={() => {
-          setIsPublicarAtaAdminOpen(false);
-          setAssembleiaParaAtaAdmin(null);
-        }}
-        assembleia={assembleiaParaAtaAdmin}
-      />
-
-      {/* Modal de Confirmação e Registro de Ocultação de Comentário */}
-      {motivoOcultacaoModal && motivoOcultacaoModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white border-2 border-rose-400 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
-            
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-800 flex items-center justify-center">
-                  <EyeOff className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-black text-base text-slate-950">
-                    Ocultar Comentário da Visão Pública
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    O comentário continuará registrado no banco, mas não será mais visível aos moradores.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setMotivoOcultacaoModal(null)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-900 flex items-center justify-center">
+              <Layers className="w-5 h-5" />
             </div>
-
-            {/* Informações do Autor e Conteúdo */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-black text-slate-950">
-                  Autor: {motivoOcultacaoModal.autorNome}
-                </span>
-                <span className="font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                  {motivoOcultacaoModal.autorUnidade}
-                </span>
-              </div>
-              <p className="text-slate-700 italic bg-white p-2 rounded-xl border border-slate-200 leading-relaxed">
-                "{motivoOcultacaoModal.texto}"
-              </p>
-            </div>
-
-            {/* Formulário de Motivo */}
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                  Motivo da Moderação / Ocultação *
-                </label>
-                <textarea
-                  rows={3}
-                  value={motivoOcultacaoTexto}
-                  onChange={(e) => setMotivoOcultacaoTexto(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-rose-500 resize-none shadow-xs"
-                  placeholder="Ex: Linguagem ofensiva, desrespeito ao regimento ou acusação indevida..."
-                  required
-                />
-              </div>
-
-              {/* Checkbox Notificar */}
-              <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-amber-50/70 border border-amber-200 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={enviarNotificacaoAoOcultar}
-                  onChange={(e) => setEnviarNotificacaoAoOcultar(e.target.checked)}
-                  className="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
-                />
-                <div className="text-xs">
-                  <strong className="block font-black text-amber-950">
-                    Enviar Notificação Privada ao Morador
-                  </strong>
-                  <span className="text-[11px] text-amber-900">
-                    Avisa automaticamente a unidade {motivoOcultacaoModal.autorUnidade} sobre a moderação e o motivo registrado.
-                  </span>
-                </div>
-              </label>
-            </div>
-
-            {/* Ações */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setMotivoOcultacaoModal(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!motivoOcultacaoTexto.trim()) {
-                    alert('Por favor, informe o motivo da moderação.');
-                    return;
-                  }
-                  toggleOcultarComentario(
-                    motivoOcultacaoModal.reclamacaoId, 
-                    motivoOcultacaoModal.comentarioId, 
-                    motivoOcultacaoTexto.trim()
-                  );
-
-                  if (enviarNotificacaoAoOcultar && motivoOcultacaoModal.autorUnidade) {
-                    const rawUnit = String(motivoOcultacaoModal.autorUnidade || '').replace(/[^0-9]/g, '') || motivoOcultacaoModal.autorUnidade;
-                    enviarNotificacaoPrivada(
-                      rawUnit,
-                      `Moderação de Conteúdo: Seu comentário na ocorrência foi ocultado da visualização pública pela administração. Motivo: ${motivoOcultacaoTexto.trim()}`,
-                      'Aviso de Moderação de Comentário'
-                    );
-                  }
-
-                  setMotivoOcultacaoModal(null);
-                }}
-                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
-              >
-                <EyeOff className="w-4 h-4" />
-                <span>Confirmar Ocultação</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL: REGISTRAR MOTIVO DA OCULTAÇÃO DE COMENTÁRIO DE REPARO */}
-      {/* ========================================================================= */}
-      {motivoOcultacaoReparoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white border-2 border-rose-400 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
-            
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-800 flex items-center justify-center">
-                  <EyeOff className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-black text-base text-slate-950">
-                    Ocultar Manifestação de Reparo
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    O comentário continuará registrado no banco, mas não será mais visível aos moradores.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setMotivoOcultacaoReparoModal(null)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Informações do Autor e Conteúdo */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-black text-slate-950">
-                  Autor: {motivoOcultacaoReparoModal.autorNome}
-                </span>
-                <span className="font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                  {motivoOcultacaoReparoModal.autorUnidade}
-                </span>
-              </div>
-              <p className="text-slate-700 italic bg-white p-2 rounded-xl border border-slate-200 leading-relaxed">
-                "{motivoOcultacaoReparoModal.texto}"
-              </p>
-            </div>
-
-            {/* Formulário de Motivo */}
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                  Motivo da Moderação / Ocultação *
-                </label>
-                <textarea
-                  rows={3}
-                  value={motivoOcultacaoReparoTexto}
-                  onChange={(e) => setMotivoOcultacaoReparoTexto(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-rose-500 resize-none shadow-xs"
-                  placeholder="Ex: Linguagem ofensiva, desrespeito ou informação incorreta..."
-                  required
-                />
-              </div>
-
-              {/* Checkbox Notificar */}
-              <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-amber-50/70 border border-amber-200 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={enviarNotificacaoAoOcultarReparo}
-                  onChange={(e) => setEnviarNotificacaoAoOcultarReparo(e.target.checked)}
-                  className="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
-                />
-                <div className="text-xs">
-                  <strong className="block font-black text-amber-950">
-                    Enviar Notificação Privada ao Morador
-                  </strong>
-                  <span className="text-[11px] text-amber-900">
-                    Avisa automaticamente a unidade {motivoOcultacaoReparoModal.autorUnidade} sobre a moderação e o motivo registrado.
-                  </span>
-                </div>
-              </label>
-            </div>
-
-            {/* Ações */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setMotivoOcultacaoReparoModal(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!motivoOcultacaoReparoTexto.trim()) {
-                    alert('Por favor, informe o motivo da moderação.');
-                    return;
-                  }
-                  toggleOcultarComentarioReparo(
-                    motivoOcultacaoReparoModal.reparoId, 
-                    motivoOcultacaoReparoModal.comentarioId, 
-                    motivoOcultacaoReparoTexto.trim()
-                  );
-
-                  if (enviarNotificacaoAoOcultarReparo && motivoOcultacaoReparoModal.autorUnidade) {
-                    const rawUnit = String(motivoOcultacaoReparoModal.autorUnidade || '').replace(/[^0-9]/g, '') || motivoOcultacaoReparoModal.autorUnidade;
-                    enviarNotificacaoPrivada(
-                      rawUnit,
-                      `Moderação de Conteúdo: Seu comentário no reparo/manutenção foi ocultado da visualização pública pela administração. Motivo: ${motivoOcultacaoReparoTexto.trim()}`,
-                      'Aviso de Moderação de Comentário'
-                    );
-                  }
-
-                  setMotivoOcultacaoReparoModal(null);
-                }}
-                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
-              >
-                <EyeOff className="w-4 h-4" />
-                <span>Confirmar Ocultação</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL: PUBLICAR NOVO ORÇAMENTO / COTAÇÃO DE FORNECEDOR */}
-      {/* ========================================================================= */}
-      {isModalNovoOrcamentoOpen && reparoParaOrcamento && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white border-2 border-indigo-400 rounded-3xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
-            
-            {/* Modal Header */}
-            <div className="p-5 bg-gradient-to-r from-indigo-50/80 via-white to-indigo-50/40 flex items-center justify-between border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
-                  <DollarSign className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-black text-base text-slate-950">
-                    Publicar Orçamento / Cotação Técnica
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Ordem de Reparo: <b className="text-slate-800">{reparoParaOrcamento.titulo}</b>
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsModalNovoOrcamentoOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Form Body */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!formOrcamento.empresa.trim()) {
-                  alert('Por favor, informe o nome da empresa.');
-                  return;
-                }
-                const valorNum = parseCurrencyInput(formOrcamento.valor);
-                if (isNaN(valorNum) || valorNum <= 0) {
-                  alert('Por favor, informe um valor válido para o orçamento.');
-                  return;
-                }
-                const prazoNum = parseInt(formOrcamento.prazoDias, 10);
-                if (isNaN(prazoNum) || prazoNum <= 0) {
-                  alert('Por favor, informe o prazo em dias úteis.');
-                  return;
-                }
-
-                adicionarOrcamentoReparo(reparoParaOrcamento.id, {
-                  empresa: formOrcamento.empresa.trim(),
-                  siteUrl: formOrcamento.siteUrl.trim(),
-                  cnpj: formOrcamento.cnpj.trim() || undefined,
-                  valor: valorNum,
-                  prazoDias: prazoNum,
-                  descricao: formOrcamento.descricao.trim(),
-                  documentoUrl: formOrcamento.documentoUrl.trim() || undefined,
-                  documentoNome: formOrcamento.documentoNome.trim() || undefined
-                });
-
-                alert(`Orçamento da empresa "${formOrcamento.empresa.trim()}" publicado com sucesso! Todos os moradores agora podem visualizá-lo.`);
-                setIsModalNovoOrcamentoOpen(false);
-              }}
-              className="p-5 space-y-4 overflow-y-auto flex-1 text-xs"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Nome da Empresa */}
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-800">
-                    Nome da Empresa / Prestador *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ex: Automatiza Tech Portões e Serralheria Ltda"
-                    value={formOrcamento.empresa}
-                    onChange={(e) => setFormOrcamento(prev => ({ ...prev, empresa: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-xs"
-                  />
-                </div>
-
-                {/* Site da Empresa */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-800">
-                    Link do Site Oficial da Empresa
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="https://empresa.com.br"
-                    value={formOrcamento.siteUrl}
-                    onChange={(e) => setFormOrcamento(prev => ({ ...prev, siteUrl: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-xs"
-                  />
-                </div>
-
-                {/* CNPJ Formatado Automaticamente */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-black uppercase tracking-wider text-slate-800">
-                      CNPJ (Opcional)
-                    </label>
-                    {formOrcamento.cnpj && (
-                      <span className="text-[10px] text-slate-500 font-mono">
-                        {formOrcamento.cnpj.replace(/\D/g, '').length}/14 dígitos
-                      </span>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    maxLength={18}
-                    placeholder="00.000.000/0000-00"
-                    value={formOrcamento.cnpj}
-                    onChange={(e) => {
-                      const formatted = formatCNPJ(e.target.value);
-                      setFormOrcamento(prev => ({ ...prev, cnpj: formatted }));
-                    }}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono font-semibold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-xs"
-                  />
-                </div>
-
-                {/* Preço / Valor Total com Máscara de Moeda (R$ e centavos automáticos) */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-800">
-                    Preço / Valor Total *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="R$ 0,00"
-                    value={formOrcamento.valor}
-                    onChange={(e) => {
-                      const formatted = formatCurrencyInput(e.target.value);
-                      setFormOrcamento(prev => ({ ...prev, valor: formatted }));
-                    }}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-emerald-900 font-black focus:outline-none focus:bg-white focus:border-emerald-500 shadow-xs tracking-wide"
-                  />
-                </div>
-
-                {/* Prazo */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-800">
-                    Prazo de Execução (Dias Úteis) *
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    placeholder="Ex: 3"
-                    value={formOrcamento.prazoDias}
-                    onChange={(e) => setFormOrcamento(prev => ({ ...prev, prazoDias: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-xs"
-                  />
-                </div>
-              </div>
-
-              {/* Comentário / Escopo da Proposta */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-black uppercase tracking-wider text-slate-800">
-                  Comentário Técnico / Escopo & Garantia *
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  placeholder="Descreva as peças incluídas, marcas, especificações técnicas e prazo de garantia oferecido..."
-                  value={formOrcamento.descricao}
-                  onChange={(e) => setFormOrcamento(prev => ({ ...prev, descricao: e.target.value }))}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 font-medium focus:outline-none focus:bg-white focus:border-indigo-500 resize-none shadow-xs"
-                />
-              </div>
-
-              {/* Documento do Orçamento (Link ou Upload) */}
-              <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-2.5">
-                <div className="flex items-center gap-1.5 text-indigo-950 font-black text-xs uppercase tracking-wide">
-                  <FileText className="w-4 h-4 text-indigo-700" />
-                  <span>Documento do Orçamento / PDF Transparente</span>
-                </div>
-                <p className="text-[11px] text-indigo-900 leading-relaxed font-medium">
-                  Disponibilize o arquivo PDF ou link da proposta comercial para que os moradores possam conferir a transparência da contratação.
-                </p>
-
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Insira a URL do documento (ex: https://.../orcamento.pdf)"
-                    value={formOrcamento.documentoUrl}
-                    onChange={(e) => setFormOrcamento(prev => ({ ...prev, documentoUrl: e.target.value }))}
-                    className="w-full bg-white border border-indigo-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:border-indigo-600 shadow-xs"
-                  />
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] uppercase font-bold text-indigo-800">Ou anexe arquivo:</span>
-                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 text-indigo-900 border border-indigo-300 text-xs font-bold transition-all cursor-pointer shadow-2xs">
-                      <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>Selecionar Arquivo PDF / Imagem</span>
-                      <input
-                        type="file"
-                        accept=".pdf,image/*"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            if (file.type.startsWith('image/')) {
-                              try {
-                                const opt = await otimizarImagemArquivo(file, { maxBytes: 120 * 1024 });
-                                setFormOrcamento(prev => ({
-                                  ...prev,
-                                  documentoUrl: opt,
-                                  documentoNome: file.name
-                                }));
-                              } catch (err) {
-                                console.error('Erro ao otimizar imagem de orçamento:', err);
-                              }
-                            } else {
-                              const reader = new FileReader();
-                              reader.onload = () => {
-                                setFormOrcamento(prev => ({
-                                  ...prev,
-                                  documentoUrl: reader.result as string,
-                                  documentoNome: file.name
-                                }));
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }
-                        }}
-                      />
-                    </label>
-                    {formOrcamento.documentoNome && (
-                      <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 truncate max-w-xs">
-                        ✓ {formOrcamento.documentoNome}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Ações do Modal */}
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsModalNovoOrcamentoOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
-                >
-                  <DollarSign className="w-4 h-4" />
-                  <span>Publicar Orçamento na Ordem de Reparo</span>
-                </button>
-              </div>
-            </form>
-
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAIS DE GESTÃO FINANCEIRA & PRESTAÇÃO DE CONTAS */}
-      {/* ========================================================================= */}
-      
-      {/* Modal de Cadastro / Edição de Saída (Despesa) */}
-      <CreateEditDespesaModal
-        isOpen={isCreateEditDespesaModalOpen}
-        onClose={() => {
-          setIsCreateEditDespesaModalOpen(false);
-          setDespesaToEditInAdmin(null);
-        }}
-        mesAno={selectedMesFinanceiro}
-        despesaToEdit={despesaToEditInAdmin}
-      />
-
-      {/* Modal de Cadastro / Edição de Entrada (Receita) */}
-      <CreateEditReceitaModal
-        isOpen={isCreateEditReceitaModalOpen}
-        onClose={() => {
-          setIsCreateEditReceitaModalOpen(false);
-          setReceitaToEditInAdmin(null);
-        }}
-        mesAno={selectedMesFinanceiro}
-        receitaToEdit={receitaToEditInAdmin}
-      />
-
-      {/* Modal de Abertura de Novo Mês Financeiro */}
-      <CreateMonthModal
-        isOpen={isCreateMonthModalOpen}
-        onClose={() => setIsCreateMonthModalOpen(false)}
-        onSelectCreatedMonth={(novoMes) => setSelectedMesFinanceiro(novoMes)}
-      />
-
-      {/* Modal de Criação de Novas Categorias Financeiras */}
-      <CreateCategoryModal
-        isOpen={isCreateCategoryModalOpen}
-        onClose={() => setIsCreateCategoryModalOpen(false)}
-        tipoInicial={tipoCategoriaModal}
-      />
-
-      {/* Modal de Visualização Oficial de Nota Fiscal / DANFE / Recibo */}
-      {viewPdfModalItem && (
-        <ReceiptPdfModal
-          item={viewPdfModalItem.item}
-          tipo={viewPdfModalItem.tipo}
-          onClose={() => setViewPdfModalItem(null)}
-        />
-      )}
-
-      {/* Modal de Criação / Edição de Tópicos e Regras de Condomínio com Editor Rico */}
-      <CreateEditRegraModal
-        isOpen={isCreateEditRegraModalOpen}
-        onClose={() => {
-          setIsCreateEditRegraModalOpen(false);
-          setRegraToEditInAdmin(null);
-        }}
-        regraToEdit={regraToEditInAdmin}
-      />
-
-      {/* Modal de Criação / Edição de Unidades Disponíveis (Aluguel e Venda) */}
-      <CreateEditUnidadeDisponivelModal
-        isOpen={isCreateEditUnidadeDisponivelModalOpen}
-        onClose={() => {
-          setIsCreateEditUnidadeDisponivelModalOpen(false);
-          setUnidadeDisponivelToEdit(null);
-        }}
-        unidadeToEdit={unidadeDisponivelToEdit}
-      />
-
-      {/* Modal de Criação / Edição de Fornecedores & Serviços do Condomínio */}
-      <CreateEditServicoContratadoModal
-        isOpen={isCreateEditServicoModalOpen}
-        onClose={() => {
-          setIsCreateEditServicoModalOpen(false);
-          setServicoToEditInAdmin(null);
-        }}
-        servicoToEdit={servicoToEditInAdmin}
-      />
-
-      {/* Modal de Criação / Edição de Desapegos do Enjoei */}
-      <CreateEditDesapegoModal
-        isOpen={isCreateEditDesapegoModalOpen}
-        onClose={() => {
-          setIsCreateEditDesapegoModalOpen(false);
-          setItemDesapegoToEditInAdmin(null);
-        }}
-        itemToEdit={itemDesapegoToEditInAdmin}
-      />
-
-      {/* Modal de Criação / Edição de Dependências e Áreas Comuns */}
-      <CreateEditDependenciaModal
-        isOpen={isCreateEditDependenciaModalOpen}
-        onClose={() => {
-          setIsCreateEditDependenciaModalOpen(false);
-          setDependenciaToEditInAdmin(null);
-        }}
-        dependenciaToEdit={dependenciaToEditInAdmin}
-      />
-
-      {/* Modal de Justificativa de Suspensão de Anúncio no Enjoei */}
-      {motivoSuspenderEnjoeiItem && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="fixed inset-0" onClick={() => setMotivoSuspenderEnjoeiItem(null)} />
-          
-          <div className="relative w-full max-w-md bg-white border-2 border-rose-400 rounded-3xl p-5 shadow-2xl z-10 space-y-4 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-rose-100">
-              <h3 className="font-black text-base text-slate-950 flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-rose-600" />
-                Suspender Anúncio do Enjoei
+            <div>
+              <h3 className="font-black text-base text-slate-950">
+                Nova Categoria / Cargo
               </h3>
+              <p className="text-xs text-slate-500 font-medium">Cadastre um novo cargo de colaborador</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsModalNovaCategoriaOpen(false)}
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleAddNovaCategoria} className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
+              Nome da Categoria / Cargo *
+            </label>
+            <input
+              type="text"
+              placeholder="Ex: Piscineiro, Jardineiro, Eletricista, Manobrista..."
+              value={novaCategoriaNome}
+              onChange={(e) => setNovaCategoriaNome(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
+              Nível de Permissão & Poderes *
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setMotivoSuspenderEnjoeiItem(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-950 hover:bg-rose-50"
+                onClick={() => setNovaCategoriaTipoAcesso('total')}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${novaCategoriaTipoAcesso === 'total'
+                    ? 'bg-amber-100/90 border-amber-400 ring-2 ring-amber-500/20'
+                    : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                  }`}
               >
-                <X className="w-4 h-4" />
+                <div className="flex items-center gap-1.5 font-black text-xs text-slate-950">
+                  <Lock className="w-3.5 h-3.5 text-amber-800" />
+                  <span>Acesso Irrestrito (Admin)</span>
+                </div>
+                <p className="text-[10px] text-slate-600 font-medium mt-1">
+                  Acesso total a todas as telas, painel de admin e gestão.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setNovaCategoriaTipoAcesso('morador_destaque')}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${novaCategoriaTipoAcesso === 'morador_destaque'
+                    ? 'bg-amber-100/90 border-amber-400 ring-2 ring-amber-500/20'
+                    : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                  }`}
+              >
+                <div className="flex items-center gap-1.5 font-black text-xs text-slate-950">
+                  <Unlock className="w-3.5 h-3.5 text-indigo-700" />
+                  <span>Poder de Morador (Conselho)</span>
+                </div>
+                <p className="text-[10px] text-slate-600 font-medium mt-1">
+                  Poder de um morador comum, mas ganha destaque no quadro de equipe.
+                </p>
               </button>
             </div>
+          </div>
 
-            <div className="space-y-2 text-xs">
-              <p className="text-slate-700">
-                Informe o motivo para suspender o anúncio <strong>"{motivoSuspenderEnjoeiItem.titulo}"</strong> de <strong>{motivoSuspenderEnjoeiItem.moradorNome}</strong> ({motivoSuspenderEnjoeiItem.moradorUnidade}).
-              </p>
-              <p className="text-[11px] text-rose-800 font-semibold">
-                Uma notificação privada será enviada automaticamente para o morador explicando a suspensão.
-              </p>
+          {/* Descrição Opcional */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
+              Descrição / Atribuições (Opcional)
+            </label>
+            <input
+              type="text"
+              placeholder="Ex: Responsável pelas vistorias técnicas e orçamentos de obras"
+              value={novaCategoriaDescricao}
+              onChange={(e) => setNovaCategoriaDescricao(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:border-amber-500"
+            />
+          </div>
 
-              <textarea
-                rows={3}
-                value={motivoSuspensaoEnjoeiTexto}
-                onChange={(e) => setMotivoSuspensaoEnjoeiTexto(e.target.value)}
-                placeholder="Ex: Item não permitido conforme convenção ou anúncio comercial irregular..."
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-950 font-medium focus:outline-none focus:bg-white focus:border-rose-500 resize-none shadow-xs"
+          {/* Sugestões Rápidas */}
+          <div className="space-y-1.5 pt-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block">
+              Sugestões Rápidas:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {['Piscineiro', 'Jardineiro', 'Eletricista', 'Auxiliar de Manutenção', 'Manobrista', 'Zelador Chefe'].map((sug) => (
+                <button
+                  key={sug}
+                  type="button"
+                  onClick={() => setNovaCategoriaNome(sug)}
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 transition-colors cursor-pointer"
+                >
+                  + {sug}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Botões do Modal */}
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setIsModalNovaCategoriaOpen(false)}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md active:scale-95 cursor-pointer"
+            >
+              Salvar e Adicionar ao Select
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  )
+}
+
+{/* Modal de Notificação Privada da Unidade */ }
+<PrivateNotifyModal
+  isOpen={isNotifyModalOpen}
+  onClose={() => {
+    setIsNotifyModalOpen(false);
+    setSelectedUnidadeParaNotificar(null);
+  }}
+  unidade={selectedUnidadeParaNotificar}
+/>
+
+{/* Modal de Suspensão e Moderação de Serviços */ }
+<SuspendServiceModal
+  isOpen={isSuspendModalOpen}
+  onClose={() => {
+    setIsSuspendModalOpen(false);
+    setServicoParaSuspender(null);
+  }}
+  servico={servicoParaSuspender}
+/>
+
+{/* Modal de Edição de Funcionário / Colaborador */ }
+<EditFuncionarioModal
+  isOpen={isEditFuncionarioModalOpen}
+  onClose={() => {
+    setIsEditFuncionarioModalOpen(false);
+    setSelectedFuncionarioToEdit(null);
+  }}
+  funcionario={selectedFuncionarioToEdit}
+/>
+
+{/* Modal de Criação de Funcionário / Colaborador */ }
+<CreateFuncionarioModal
+  isOpen={isCreateFuncionarioModalOpen}
+  onClose={() => setIsCreateFuncionarioModalOpen(false)}
+/>
+
+{/* Modal de Suspensão e Moderação de Eventos */ }
+<SuspendEventoModal
+  isOpen={isSuspendEventoModalOpen}
+  onClose={() => {
+    setIsSuspendEventoModalOpen(false);
+    setEventoParaSuspender(null);
+  }}
+  evento={eventoParaSuspender}
+/>
+
+{/* Modal de Criação / Edição de Evento pelo Admin */ }
+<CreateEditEventoModal
+  isOpen={isCreateEditEventoAdminOpen}
+  onClose={() => {
+    setIsCreateEditEventoAdminOpen(false);
+    setEventoToEditInAdmin(null);
+  }}
+  eventoToEdit={eventoToEditInAdmin}
+/>
+
+{/* Modal de Criação / Edição de Assembleia / Reunião pelo Admin */ }
+<CreateEditAssembleiaModal
+  isOpen={isCreateEditAssembleiaAdminOpen}
+  onClose={() => {
+    setIsCreateEditAssembleiaAdminOpen(false);
+    setAssembleiaToEditInAdmin(null);
+  }}
+  assembleiaToEdit={assembleiaToEditInAdmin}
+/>
+
+{/* Modal de Publicação de Ata & Soluções pelo Admin */ }
+<PublicarAtaModal
+  isOpen={isPublicarAtaAdminOpen}
+  onClose={() => {
+    setIsPublicarAtaAdminOpen(false);
+    setAssembleiaParaAtaAdmin(null);
+  }}
+  assembleia={assembleiaParaAtaAdmin}
+/>
+
+{/* Modal de Confirmação e Registro de Ocultação de Comentário */ }
+{
+  motivoOcultacaoModal && motivoOcultacaoModal.isOpen && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white border-2 border-rose-400 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-800 flex items-center justify-center">
+              <EyeOff className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-black text-base text-slate-950">
+                Ocultar Comentário da Visão Pública
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">
+                O comentário continuará registrado no banco, mas não será mais visível aos moradores.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setMotivoOcultacaoModal(null)}
+            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Informações do Autor e Conteúdo */}
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-black text-slate-950">
+              Autor: {motivoOcultacaoModal.autorNome}
+            </span>
+            <span className="font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+              {motivoOcultacaoModal.autorUnidade}
+            </span>
+          </div>
+          <p className="text-slate-700 italic bg-white p-2 rounded-xl border border-slate-200 leading-relaxed">
+            "{motivoOcultacaoModal.texto}"
+          </p>
+        </div>
+
+        {/* Formulário de Motivo */}
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
+              Motivo da Moderação / Ocultação *
+            </label>
+            <textarea
+              rows={3}
+              value={motivoOcultacaoTexto}
+              onChange={(e) => setMotivoOcultacaoTexto(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-rose-500 resize-none shadow-xs"
+              placeholder="Ex: Linguagem ofensiva, desrespeito ao regimento ou acusação indevida..."
+              required
+            />
+          </div>
+
+          {/* Checkbox Notificar */}
+          <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-amber-50/70 border border-amber-200 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={enviarNotificacaoAoOcultar}
+              onChange={(e) => setEnviarNotificacaoAoOcultar(e.target.checked)}
+              className="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+            />
+            <div className="text-xs">
+              <strong className="block font-black text-amber-950">
+                Enviar Notificação Privada ao Morador
+              </strong>
+              <span className="text-[11px] text-amber-900">
+                Avisa automaticamente a unidade {motivoOcultacaoModal.autorUnidade} sobre a moderação e o motivo registrado.
+              </span>
+            </div>
+          </label>
+        </div>
+
+        {/* Ações */}
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={() => setMotivoOcultacaoModal(null)}
+            className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!motivoOcultacaoTexto.trim()) {
+                alert('Por favor, informe o motivo da moderação.');
+                return;
+              }
+              toggleOcultarComentario(
+                motivoOcultacaoModal.reclamacaoId,
+                motivoOcultacaoModal.comentarioId,
+                motivoOcultacaoTexto.trim()
+              );
+
+              if (enviarNotificacaoAoOcultar && motivoOcultacaoModal.autorUnidade) {
+                const rawUnit = String(motivoOcultacaoModal.autorUnidade || '').replace(/[^0-9]/g, '') || motivoOcultacaoModal.autorUnidade;
+                enviarNotificacaoPrivada(
+                  rawUnit,
+                  `Moderação de Conteúdo: Seu comentário na ocorrência foi ocultado da visualização pública pela administração. Motivo: ${motivoOcultacaoTexto.trim()}`,
+                  'Aviso de Moderação de Comentário'
+                );
+              }
+
+              setMotivoOcultacaoModal(null);
+            }}
+            className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+          >
+            <EyeOff className="w-4 h-4" />
+            <span>Confirmar Ocultação</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+{/* ========================================================================= */ }
+{/* MODAL: REGISTRAR MOTIVO DA OCULTAÇÃO DE COMENTÁRIO DE REPARO */ }
+{/* ========================================================================= */ }
+{
+  motivoOcultacaoReparoModal && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white border-2 border-rose-400 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-800 flex items-center justify-center">
+              <EyeOff className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-black text-base text-slate-950">
+                Ocultar Manifestação de Reparo
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">
+                O comentário continuará registrado no banco, mas não será mais visível aos moradores.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setMotivoOcultacaoReparoModal(null)}
+            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Informações do Autor e Conteúdo */}
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-black text-slate-950">
+              Autor: {motivoOcultacaoReparoModal.autorNome}
+            </span>
+            <span className="font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+              {motivoOcultacaoReparoModal.autorUnidade}
+            </span>
+          </div>
+          <p className="text-slate-700 italic bg-white p-2 rounded-xl border border-slate-200 leading-relaxed">
+            "{motivoOcultacaoReparoModal.texto}"
+          </p>
+        </div>
+
+        {/* Formulário de Motivo */}
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
+              Motivo da Moderação / Ocultação *
+            </label>
+            <textarea
+              rows={3}
+              value={motivoOcultacaoReparoTexto}
+              onChange={(e) => setMotivoOcultacaoReparoTexto(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-rose-500 resize-none shadow-xs"
+              placeholder="Ex: Linguagem ofensiva, desrespeito ou informação incorreta..."
+              required
+            />
+          </div>
+
+          {/* Checkbox Notificar */}
+          <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-amber-50/70 border border-amber-200 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={enviarNotificacaoAoOcultarReparo}
+              onChange={(e) => setEnviarNotificacaoAoOcultarReparo(e.target.checked)}
+              className="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+            />
+            <div className="text-xs">
+              <strong className="block font-black text-amber-950">
+                Enviar Notificação Privada ao Morador
+              </strong>
+              <span className="text-[11px] text-amber-900">
+                Avisa automaticamente a unidade {motivoOcultacaoReparoModal.autorUnidade} sobre a moderação e o motivo registrado.
+              </span>
+            </div>
+          </label>
+        </div>
+
+        {/* Ações */}
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={() => setMotivoOcultacaoReparoModal(null)}
+            className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!motivoOcultacaoReparoTexto.trim()) {
+                alert('Por favor, informe o motivo da moderação.');
+                return;
+              }
+              toggleOcultarComentarioReparo(
+                motivoOcultacaoReparoModal.reparoId,
+                motivoOcultacaoReparoModal.comentarioId,
+                motivoOcultacaoReparoTexto.trim()
+              );
+
+              if (enviarNotificacaoAoOcultarReparo && motivoOcultacaoReparoModal.autorUnidade) {
+                const rawUnit = String(motivoOcultacaoReparoModal.autorUnidade || '').replace(/[^0-9]/g, '') || motivoOcultacaoReparoModal.autorUnidade;
+                enviarNotificacaoPrivada(
+                  rawUnit,
+                  `Moderação de Conteúdo: Seu comentário no reparo/manutenção foi ocultado da visualização pública pela administração. Motivo: ${motivoOcultacaoReparoTexto.trim()}`,
+                  'Aviso de Moderação de Comentário'
+                );
+              }
+
+              setMotivoOcultacaoReparoModal(null);
+            }}
+            className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+          >
+            <EyeOff className="w-4 h-4" />
+            <span>Confirmar Ocultação</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+{/* ========================================================================= */ }
+{/* MODAL: PUBLICAR NOVO ORÇAMENTO / COTAÇÃO DE FORNECEDOR */ }
+{/* ========================================================================= */ }
+{
+  isModalNovoOrcamentoOpen && reparoParaOrcamento && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white border-2 border-indigo-400 rounded-3xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
+
+        {/* Modal Header */}
+        <div className="p-5 bg-gradient-to-r from-indigo-50/80 via-white to-indigo-50/40 flex items-center justify-between border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
+              <DollarSign className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-black text-base text-slate-950">
+                Publicar Orçamento / Cotação Técnica
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">
+                Ordem de Reparo: <b className="text-slate-800">{reparoParaOrcamento.titulo}</b>
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsModalNovoOrcamentoOpen(false)}
+            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Modal Form Body */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!formOrcamento.empresa.trim()) {
+              alert('Por favor, informe o nome da empresa.');
+              return;
+            }
+            const valorNum = parseCurrencyInput(formOrcamento.valor);
+            if (isNaN(valorNum) || valorNum <= 0) {
+              alert('Por favor, informe um valor válido para o orçamento.');
+              return;
+            }
+            const prazoNum = parseInt(formOrcamento.prazoDias, 10);
+            if (isNaN(prazoNum) || prazoNum <= 0) {
+              alert('Por favor, informe o prazo em dias úteis.');
+              return;
+            }
+
+            adicionarOrcamentoReparo(reparoParaOrcamento.id, {
+              empresa: formOrcamento.empresa.trim(),
+              siteUrl: formOrcamento.siteUrl.trim(),
+              cnpj: formOrcamento.cnpj.trim() || undefined,
+              valor: valorNum,
+              prazoDias: prazoNum,
+              descricao: formOrcamento.descricao.trim(),
+              documentoUrl: formOrcamento.documentoUrl.trim() || undefined,
+              documentoNome: formOrcamento.documentoNome.trim() || undefined
+            });
+
+            alert(`Orçamento da empresa "${formOrcamento.empresa.trim()}" publicado com sucesso! Todos os moradores agora podem visualizá-lo.`);
+            setIsModalNovoOrcamentoOpen(false);
+          }}
+          className="p-5 space-y-4 overflow-y-auto flex-1 text-xs"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Nome da Empresa */}
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-800">
+                Nome da Empresa / Prestador *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Ex: Automatiza Tech Portões e Serralheria Ltda"
+                value={formOrcamento.empresa}
+                onChange={(e) => setFormOrcamento(prev => ({ ...prev, empresa: e.target.value }))}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-xs"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setMotivoSuspenderEnjoeiItem(null)}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (motivoSuspenderEnjoeiItem) {
-                    suspenderItemEnjoei(motivoSuspenderEnjoeiItem.id, motivoSuspensaoEnjoeiTexto);
-                    setMotivoSuspenderEnjoeiItem(null);
-                  }
+            {/* Site da Empresa */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-800">
+                Link do Site Oficial da Empresa
+              </label>
+              <input
+                type="text"
+                placeholder="https://empresa.com.br"
+                value={formOrcamento.siteUrl}
+                onChange={(e) => setFormOrcamento(prev => ({ ...prev, siteUrl: e.target.value }))}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-xs"
+              />
+            </div>
+
+            {/* CNPJ Formatado Automaticamente */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-800">
+                  CNPJ (Opcional)
+                </label>
+                {formOrcamento.cnpj && (
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {formOrcamento.cnpj.replace(/\D/g, '').length}/14 dígitos
+                  </span>
+                )}
+              </div>
+              <input
+                type="text"
+                maxLength={18}
+                placeholder="00.000.000/0000-00"
+                value={formOrcamento.cnpj}
+                onChange={(e) => {
+                  const formatted = formatCNPJ(e.target.value);
+                  setFormOrcamento(prev => ({ ...prev, cnpj: formatted }));
                 }}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black shadow-md"
-              >
-                Confirmar Suspensão
-              </button>
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono font-semibold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-xs"
+              />
+            </div>
+
+            {/* Preço / Valor Total com Máscara de Moeda (R$ e centavos automáticos) */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-800">
+                Preço / Valor Total *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="R$ 0,00"
+                value={formOrcamento.valor}
+                onChange={(e) => {
+                  const formatted = formatCurrencyInput(e.target.value);
+                  setFormOrcamento(prev => ({ ...prev, valor: formatted }));
+                }}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-emerald-900 font-black focus:outline-none focus:bg-white focus:border-emerald-500 shadow-xs tracking-wide"
+              />
+            </div>
+
+            {/* Prazo */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-800">
+                Prazo de Execução (Dias Úteis) *
+              </label>
+              <input
+                type="number"
+                min="1"
+                required
+                placeholder="Ex: 3"
+                value={formOrcamento.prazoDias}
+                onChange={(e) => setFormOrcamento(prev => ({ ...prev, prazoDias: e.target.value }))}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-indigo-500 shadow-xs"
+              />
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Modais de Portaria & Acessos no Admin */}
+          {/* Comentário / Escopo da Proposta */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-black uppercase tracking-wider text-slate-800">
+              Comentário Técnico / Escopo & Garantia *
+            </label>
+            <textarea
+              rows={3}
+              required
+              placeholder="Descreva as peças incluídas, marcas, especificações técnicas e prazo de garantia oferecido..."
+              value={formOrcamento.descricao}
+              onChange={(e) => setFormOrcamento(prev => ({ ...prev, descricao: e.target.value }))}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 font-medium focus:outline-none focus:bg-white focus:border-indigo-500 resize-none shadow-xs"
+            />
+          </div>
+
+          {/* Documento do Orçamento (Link ou Upload) */}
+          <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-2.5">
+            <div className="flex items-center gap-1.5 text-indigo-950 font-black text-xs uppercase tracking-wide">
+              <FileText className="w-4 h-4 text-indigo-700" />
+              <span>Documento do Orçamento / PDF Transparente</span>
+            </div>
+            <p className="text-[11px] text-indigo-900 leading-relaxed font-medium">
+              Disponibilize o arquivo PDF ou link da proposta comercial para que os moradores possam conferir a transparência da contratação.
+            </p>
+
+            <div className="space-y-2">
+              <input
+                type="text"
+                placeholder="Insira a URL do documento (ex: https://.../orcamento.pdf)"
+                value={formOrcamento.documentoUrl}
+                onChange={(e) => setFormOrcamento(prev => ({ ...prev, documentoUrl: e.target.value }))}
+                className="w-full bg-white border border-indigo-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold focus:outline-none focus:border-indigo-600 shadow-xs"
+              />
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] uppercase font-bold text-indigo-800">Ou anexe arquivo:</span>
+                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 text-indigo-900 border border-indigo-300 text-xs font-bold transition-all cursor-pointer shadow-2xs">
+                  <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Selecionar Arquivo PDF / Imagem</span>
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.type.startsWith('image/')) {
+                          try {
+                            const opt = await otimizarImagemArquivo(file, { maxBytes: 120 * 1024 });
+                            setFormOrcamento(prev => ({
+                              ...prev,
+                              documentoUrl: opt,
+                              documentoNome: file.name
+                            }));
+                          } catch (err) {
+                            console.error('Erro ao otimizar imagem de orçamento:', err);
+                          }
+                        } else {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            setFormOrcamento(prev => ({
+                              ...prev,
+                              documentoUrl: reader.result as string,
+                              documentoNome: file.name
+                            }));
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }
+                    }}
+                  />
+                </label>
+                {formOrcamento.documentoNome && (
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 truncate max-w-xs">
+                    ✓ {formOrcamento.documentoNome}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Ações do Modal */}
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setIsModalNovoOrcamentoOpen(false)}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+            >
+              <DollarSign className="w-4 h-4" />
+              <span>Publicar Orçamento na Ordem de Reparo</span>
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  )
+}
+
+{/* ========================================================================= */ }
+{/* MODAIS DE GESTÃO FINANCEIRA & PRESTAÇÃO DE CONTAS */ }
+{/* ========================================================================= */ }
+
+{/* Modal de Cadastro / Edição de Saída (Despesa) */ }
+<CreateEditDespesaModal
+  isOpen={isCreateEditDespesaModalOpen}
+  onClose={() => {
+    setIsCreateEditDespesaModalOpen(false);
+    setDespesaToEditInAdmin(null);
+  }}
+  mesAno={selectedMesFinanceiro}
+  despesaToEdit={despesaToEditInAdmin}
+/>
+
+{/* Modal de Cadastro / Edição de Entrada (Receita) */ }
+<CreateEditReceitaModal
+  isOpen={isCreateEditReceitaModalOpen}
+  onClose={() => {
+    setIsCreateEditReceitaModalOpen(false);
+    setReceitaToEditInAdmin(null);
+  }}
+  mesAno={selectedMesFinanceiro}
+  receitaToEdit={receitaToEditInAdmin}
+/>
+
+{/* Modal de Abertura de Novo Mês Financeiro */ }
+<CreateMonthModal
+  isOpen={isCreateMonthModalOpen}
+  onClose={() => setIsCreateMonthModalOpen(false)}
+  onSelectCreatedMonth={(novoMes) => setSelectedMesFinanceiro(novoMes)}
+/>
+
+{/* Modal de Criação de Novas Categorias Financeiras */ }
+<CreateCategoryModal
+  isOpen={isCreateCategoryModalOpen}
+  onClose={() => setIsCreateCategoryModalOpen(false)}
+  tipoInicial={tipoCategoriaModal}
+/>
+
+{/* Modal de Visualização Oficial de Nota Fiscal / DANFE / Recibo */ }
+{
+  viewPdfModalItem && (
+    <ReceiptPdfModal
+      item={viewPdfModalItem.item}
+      tipo={viewPdfModalItem.tipo}
+      onClose={() => setViewPdfModalItem(null)}
+    />
+  )
+}
+
+{/* Modal de Criação / Edição de Tópicos e Regras de Condomínio com Editor Rico */ }
+<CreateEditRegraModal
+  isOpen={isCreateEditRegraModalOpen}
+  onClose={() => {
+    setIsCreateEditRegraModalOpen(false);
+    setRegraToEditInAdmin(null);
+  }}
+  regraToEdit={regraToEditInAdmin}
+/>
+
+{/* Modal de Criação / Edição de Unidades Disponíveis (Aluguel e Venda) */ }
+<CreateEditUnidadeDisponivelModal
+  isOpen={isCreateEditUnidadeDisponivelModalOpen}
+  onClose={() => {
+    setIsCreateEditUnidadeDisponivelModalOpen(false);
+    setUnidadeDisponivelToEdit(null);
+  }}
+  unidadeToEdit={unidadeDisponivelToEdit}
+/>
+
+{/* Modal de Criação / Edição de Fornecedores & Serviços do Condomínio */ }
+<CreateEditServicoContratadoModal
+  isOpen={isCreateEditServicoModalOpen}
+  onClose={() => {
+    setIsCreateEditServicoModalOpen(false);
+    setServicoToEditInAdmin(null);
+  }}
+  servicoToEdit={servicoToEditInAdmin}
+/>
+
+{/* Modal de Criação / Edição de Desapegos do Enjoei */ }
+<CreateEditDesapegoModal
+  isOpen={isCreateEditDesapegoModalOpen}
+  onClose={() => {
+    setIsCreateEditDesapegoModalOpen(false);
+    setItemDesapegoToEditInAdmin(null);
+  }}
+  itemToEdit={itemDesapegoToEditInAdmin}
+/>
+
+{/* Modal de Criação / Edição de Dependências e Áreas Comuns */ }
+<CreateEditDependenciaModal
+  isOpen={isCreateEditDependenciaModalOpen}
+  onClose={() => {
+    setIsCreateEditDependenciaModalOpen(false);
+    setDependenciaToEditInAdmin(null);
+  }}
+  dependenciaToEdit={dependenciaToEditInAdmin}
+/>
+
+{/* Modal de Justificativa de Suspensão de Anúncio no Enjoei */ }
+{
+  motivoSuspenderEnjoeiItem && (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="fixed inset-0" onClick={() => setMotivoSuspenderEnjoeiItem(null)} />
+
+      <div className="relative w-full max-w-md bg-white border-2 border-rose-400 rounded-3xl p-5 shadow-2xl z-10 space-y-4 animate-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between pb-3 border-b border-rose-100">
+          <h3 className="font-black text-base text-slate-950 flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5 text-rose-600" />
+            Suspender Anúncio do Enjoei
+          </h3>
+          <button
+            type="button"
+            onClick={() => setMotivoSuspenderEnjoeiItem(null)}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-950 hover:bg-rose-50"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="space-y-2 text-xs">
+          <p className="text-slate-700">
+            Informe o motivo para suspender o anúncio <strong>"{motivoSuspenderEnjoeiItem.titulo}"</strong> de <strong>{motivoSuspenderEnjoeiItem.moradorNome}</strong> ({motivoSuspenderEnjoeiItem.moradorUnidade}).
+          </p>
+          <p className="text-[11px] text-rose-800 font-semibold">
+            Uma notificação privada será enviada automaticamente para o morador explicando a suspensão.
+          </p>
+
+          <textarea
+            rows={3}
+            value={motivoSuspensaoEnjoeiTexto}
+            onChange={(e) => setMotivoSuspensaoEnjoeiTexto(e.target.value)}
+            placeholder="Ex: Item não permitido conforme convenção ou anúncio comercial irregular..."
+            className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-950 font-medium focus:outline-none focus:bg-white focus:border-rose-500 resize-none shadow-xs"
+          />
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={() => setMotivoSuspenderEnjoeiItem(null)}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (motivoSuspenderEnjoeiItem) {
+                suspenderItemEnjoei(motivoSuspenderEnjoeiItem.id, motivoSuspensaoEnjoeiTexto);
+                setMotivoSuspenderEnjoeiItem(null);
+              }
+            }}
+            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black shadow-md"
+          >
+            Confirmar Suspensão
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+{/* Modais de Portaria & Acessos no Admin */ }
       <CreateAutorizacaoModal
         isOpen={isCreateAutorizacaoAdminOpen}
         onClose={() => setIsCreateAutorizacaoAdminOpen(false)}
@@ -12008,237 +11955,239 @@ export const AdminPanelScreen: React.FC = () => {
         tipo={timelineModalPortariaData.tipo}
       />
 
-      {/* Modal de Criação / Edição de Benfeitorias */}
-      <CreateEditBenfeitoriaModal
-        isOpen={isCreateEditBenfeitoriaModalOpen}
-        onClose={() => setIsCreateEditBenfeitoriaModalOpen(false)}
-        benfeitoriaToEdit={benfeitoriaToEditInAdmin}
-      />
+{/* Modal de Criação / Edição de Benfeitorias */ }
+<CreateEditBenfeitoriaModal
+  isOpen={isCreateEditBenfeitoriaModalOpen}
+  onClose={() => setIsCreateEditBenfeitoriaModalOpen(false)}
+  benfeitoriaToEdit={benfeitoriaToEditInAdmin}
+/>
 
-      {/* Modal de Importação de Reparos para Benfeitorias */}
-      <ImportReparoModal
-        isOpen={isImportReparoModalOpen}
-        onClose={() => setIsImportReparoModalOpen(false)}
-        initialReparoId={selectedReparoForImportAdmin}
-      />
+{/* Modal de Importação de Reparos para Benfeitorias */ }
+<ImportReparoModal
+  isOpen={isImportReparoModalOpen}
+  onClose={() => setIsImportReparoModalOpen(false)}
+  initialReparoId={selectedReparoForImportAdmin}
+/>
 
-      {/* Modal de Gestão de Ciclo de Vida e Linha do Tempo de Benfeitorias */}
-      <BenfeitoriaTimelineModal
-        isOpen={isTimelineModalOpen}
-        onClose={() => {
-          setIsTimelineModalOpen(false);
-          setBenfeitoriaForTimelineModal(null);
-        }}
-        benfeitoria={benfeitoriaForTimelineModal}
-        initialTab={timelineModalInitialTab}
-      />
+{/* Modal de Gestão de Ciclo de Vida e Linha do Tempo de Benfeitorias */ }
+<BenfeitoriaTimelineModal
+  isOpen={isTimelineModalOpen}
+  onClose={() => {
+    setIsTimelineModalOpen(false);
+    setBenfeitoriaForTimelineModal(null);
+  }}
+  benfeitoria={benfeitoriaForTimelineModal}
+  initialTab={timelineModalInitialTab}
+/>
 
-      {/* Modal de Importação em Lote via Excel */}
-      <ImportExcelFinanceModal
-        isOpen={isImportExcelModalOpen}
-        onClose={() => setIsImportExcelModalOpen(false)}
-        defaultMonth={selectedMesFinanceiro}
-      />
+{/* Modal de Importação em Lote via Excel */ }
+<ImportExcelFinanceModal
+  isOpen={isImportExcelModalOpen}
+  onClose={() => setIsImportExcelModalOpen(false)}
+  defaultMonth={selectedMesFinanceiro}
+/>
 
-      {/* Modal de Gráfico de Saúde Financeira dos Últimos 12 Meses */}
-      <FinanceGraphModal
-        isOpen={isFinanceGraphModalOpen}
-        onClose={() => setIsFinanceGraphModalOpen(false)}
-      />
+{/* Modal de Gráfico de Saúde Financeira dos Últimos 12 Meses */ }
+<FinanceGraphModal
+  isOpen={isFinanceGraphModalOpen}
+  onClose={() => setIsFinanceGraphModalOpen(false)}
+/>
 
-      {/* Modal de Segurança, Resgate de Moradores e Backup Isolado por Condomínio */}
-      <BackupRestoreCondoModal
-        isOpen={isBackupRestoreModalOpen}
-        onClose={() => setIsBackupRestoreModalOpen(false)}
-      />
+{/* Modal de Segurança, Resgate de Moradores e Backup Isolado por Condomínio */ }
+<BackupRestoreCondoModal
+  isOpen={isBackupRestoreModalOpen}
+  onClose={() => setIsBackupRestoreModalOpen(false)}
+/>
 
-      {/* Modal de Aprovação / Recusa / Resposta Oficial de Reservas */}
-      {respostaAdminModal && respostaAdminModal.isOpen && respostaAdminModal.reserva && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="fixed inset-0" onClick={() => setRespostaAdminModal(null)} />
-          
-          <div className="relative w-full max-w-lg bg-white border-2 border-emerald-400 rounded-3xl p-5 sm:p-6 shadow-2xl z-10 space-y-4 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <div className="flex items-center gap-2">
-                <div className={`p-2 rounded-xl text-white ${
-                  respostaAdminModal.acao === 'aprovar' ? 'bg-emerald-600' : respostaAdminModal.acao === 'recusar' ? 'bg-rose-600' : 'bg-indigo-600'
-                }`}>
-                  {respostaAdminModal.acao === 'aprovar' ? <Check className="w-5 h-5 stroke-[3]" /> : respostaAdminModal.acao === 'recusar' ? <X className="w-5 h-5" /> : <MessageSquare className="w-5 h-5" />}
-                </div>
-                <div>
-                  <h3 className="font-black text-base text-slate-950">
-                    {respostaAdminModal.acao === 'aprovar' ? 'Aprovar Reserva de Espaço' : respostaAdminModal.acao === 'recusar' ? 'Recusar Reserva' : 'Enviar Orientações ao Morador'}
-                  </h3>
-                  <p className="text-xs text-slate-600 font-medium">
-                    {respostaAdminModal.reserva.dependenciaNome} • {respostaAdminModal.reserva.moradorNome} ({respostaAdminModal.reserva.unidade})
-                  </p>
-                </div>
-              </div>
+{/* Modal de Aprovação / Recusa / Resposta Oficial de Reservas */ }
+{
+  respostaAdminModal && respostaAdminModal.isOpen && respostaAdminModal.reserva && (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="fixed inset-0" onClick={() => setRespostaAdminModal(null)} />
 
-              <button
-                type="button"
-                onClick={() => setRespostaAdminModal(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-950 hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      <div className="relative w-full max-w-lg bg-white border-2 border-emerald-400 rounded-3xl p-5 sm:p-6 shadow-2xl z-10 space-y-4 animate-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div className="flex items-center gap-2">
+            <div className={`p-2 rounded-xl text-white ${respostaAdminModal.acao === 'aprovar' ? 'bg-emerald-600' : respostaAdminModal.acao === 'recusar' ? 'bg-rose-600' : 'bg-indigo-600'
+              }`}>
+              {respostaAdminModal.acao === 'aprovar' ? <Check className="w-5 h-5 stroke-[3]" /> : respostaAdminModal.acao === 'recusar' ? <X className="w-5 h-5" /> : <MessageSquare className="w-5 h-5" />}
             </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Data do Evento:</span>
-                  <strong className="text-slate-950 text-xs">{respostaAdminModal.reserva.dataReserva}</strong>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Período:</span>
-                  <strong className="text-slate-950 text-xs">{respostaAdminModal.reserva.periodo}</strong>
-                </div>
-                {respostaAdminModal.reserva.valorTaxa !== undefined && respostaAdminModal.reserva.valorTaxa > 0 && (
-                  <div className="col-span-2 pt-1 border-t border-slate-200 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-purple-950">Taxa do Espaço: R$ {respostaAdminModal.reserva.valorTaxa.toFixed(2)}</span>
-                    <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(respostaAdminModal.pago)}
-                        onChange={(e) => setRespostaAdminModal(prev => prev ? { ...prev, pago: e.target.checked } : null)}
-                        className="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4"
-                      />
-                      <span>Marcar taxa como Paga</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              {respostaAdminModal.acao === 'recusar' ? (
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-black uppercase text-rose-950 block">
-                    Motivo da Recusa (obrigatório para o morador):
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={respostaAdminModal.texto}
-                    onChange={(e) => setRespostaAdminModal(prev => prev ? { ...prev, texto: e.target.value } : null)}
-                    placeholder="Ex: Conflito de data, manutenção preventiva ou necessidade de regularização prévia..."
-                    className="w-full bg-slate-50 border border-rose-300 rounded-xl p-3 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-rose-500 resize-none shadow-xs"
-                    required
-                  />
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-black uppercase text-slate-800 block">
-                    Orientações e Instruções da Administração (chaves, horário, vistoria):
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={respostaAdminModal.texto}
-                    onChange={(e) => setRespostaAdminModal(prev => prev ? { ...prev, texto: e.target.value } : null)}
-                    placeholder="Ex: Chaves disponíveis na portaria às 14h mediante assinatura do termo de vistoria..."
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500 resize-none shadow-xs"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={() => setRespostaAdminModal(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                onClick={async () => {
-                  if (!respostaAdminModal.reserva) return;
-                  const resId = respostaAdminModal.reserva.id;
-
-                  if (respostaAdminModal.acao === 'aprovar') {
-                    await atualizarStatusReserva(
-                      resId, 
-                      'Confirmada', 
-                      respostaAdminModal.texto, 
-                      undefined, 
-                      respostaAdminModal.pago
-                    );
-                  } else if (respostaAdminModal.acao === 'recusar') {
-                    await atualizarStatusReserva(
-                      resId, 
-                      'Recusada', 
-                      undefined, 
-                      respostaAdminModal.texto, 
-                      false
-                    );
-                  } else {
-                    await atualizarStatusReserva(
-                      resId, 
-                      respostaAdminModal.reserva.status, 
-                      respostaAdminModal.texto, 
-                      undefined, 
-                      respostaAdminModal.pago
-                    );
-                  }
-
-                  setRespostaAdminModal(null);
-                }}
-                className={`px-5 py-2.5 rounded-xl text-white text-xs font-black shadow-md transition-all active:scale-95 cursor-pointer ${
-                  respostaAdminModal.acao === 'aprovar' 
-                    ? 'bg-emerald-600 hover:bg-emerald-500' 
-                    : respostaAdminModal.acao === 'recusar' 
-                      ? 'bg-rose-600 hover:bg-rose-500' 
-                      : 'bg-indigo-600 hover:bg-indigo-500'
-                }`}
-              >
-                {respostaAdminModal.acao === 'aprovar' ? 'Confirmar Aprovação' : respostaAdminModal.acao === 'recusar' ? 'Confirmar Recusa' : 'Salvar Orientações'}
-              </button>
+            <div>
+              <h3 className="font-black text-base text-slate-950">
+                {respostaAdminModal.acao === 'aprovar' ? 'Aprovar Reserva de Espaço' : respostaAdminModal.acao === 'recusar' ? 'Recusar Reserva' : 'Enviar Orientações ao Morador'}
+              </h3>
+              <p className="text-xs text-slate-600 font-medium">
+                {respostaAdminModal.reserva.dependenciaNome} • {respostaAdminModal.reserva.moradorNome} ({respostaAdminModal.reserva.unidade})
+              </p>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setRespostaAdminModal(null)}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-950 hover:bg-slate-100 cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-      )}
 
-      {/* Modal de Lightbox para Visualizar Comprovante de Pagamento */}
-      {viewComprovanteModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="fixed inset-0" onClick={() => setViewComprovanteModal(null)} />
-          
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl p-4 sm:p-5 shadow-2xl z-10 space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-              <h3 className="font-black text-sm sm:text-base text-slate-950 flex items-center gap-2">
-                <Paperclip className="w-4 h-4 text-indigo-600" />
-                Comprovante de Pagamento Anexado pelo Morador
-              </h3>
-              <button
-                type="button"
-                onClick={() => setViewComprovanteModal(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-950 hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+        <div className="space-y-3 text-xs">
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-500 block">Data do Evento:</span>
+              <strong className="text-slate-950 text-xs">{respostaAdminModal.reserva.dataReserva}</strong>
             </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-500 block">Período:</span>
+              <strong className="text-slate-950 text-xs">{respostaAdminModal.reserva.periodo}</strong>
+            </div>
+            {respostaAdminModal.reserva.valorTaxa !== undefined && respostaAdminModal.reserva.valorTaxa > 0 && (
+              <div className="col-span-2 pt-1 border-t border-slate-200 flex items-center justify-between">
+                <span className="text-[11px] font-bold text-purple-950">Taxa do Espaço: R$ {respostaAdminModal.reserva.valorTaxa.toFixed(2)}</span>
+                <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(respostaAdminModal.pago)}
+                    onChange={(e) => setRespostaAdminModal(prev => prev ? { ...prev, pago: e.target.checked } : null)}
+                    className="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                  />
+                  <span>Marcar taxa como Paga</span>
+                </label>
+              </div>
+            )}
+          </div>
 
-            <div className="w-full max-h-[70vh] overflow-auto rounded-2xl bg-slate-950 flex items-center justify-center p-2">
-              <img
-                src={viewComprovanteModal}
-                alt="Comprovante de Pagamento"
-                className="max-w-full max-h-[65vh] object-contain rounded-xl"
+          {respostaAdminModal.acao === 'recusar' ? (
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase text-rose-950 block">
+                Motivo da Recusa (obrigatório para o morador):
+              </label>
+              <textarea
+                rows={3}
+                value={respostaAdminModal.texto}
+                onChange={(e) => setRespostaAdminModal(prev => prev ? { ...prev, texto: e.target.value } : null)}
+                placeholder="Ex: Conflito de data, manutenção preventiva ou necessidade de regularização prévia..."
+                className="w-full bg-slate-50 border border-rose-300 rounded-xl p-3 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-rose-500 resize-none shadow-xs"
+                required
               />
             </div>
-
-            <div className="flex justify-end pt-1">
-              <button
-                type="button"
-                onClick={() => setViewComprovanteModal(null)}
-                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-black cursor-pointer hover:bg-slate-800"
-              >
-                Fechar Visualização
-              </button>
+          ) : (
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase text-slate-800 block">
+                Orientações e Instruções da Administração (chaves, horário, vistoria):
+              </label>
+              <textarea
+                rows={3}
+                value={respostaAdminModal.texto}
+                onChange={(e) => setRespostaAdminModal(prev => prev ? { ...prev, texto: e.target.value } : null)}
+                placeholder="Ex: Chaves disponíveis na portaria às 14h mediante assinatura do termo de vistoria..."
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-950 font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500 resize-none shadow-xs"
+              />
             </div>
-          </div>
+          )}
         </div>
-      )}
 
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+          <button
+            type="button"
+            onClick={() => setRespostaAdminModal(null)}
+            className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            onClick={async () => {
+              if (!respostaAdminModal.reserva) return;
+              const resId = respostaAdminModal.reserva.id;
+
+              if (respostaAdminModal.acao === 'aprovar') {
+                await atualizarStatusReserva(
+                  resId,
+                  'Confirmada',
+                  respostaAdminModal.texto,
+                  undefined,
+                  respostaAdminModal.pago
+                );
+              } else if (respostaAdminModal.acao === 'recusar') {
+                await atualizarStatusReserva(
+                  resId,
+                  'Recusada',
+                  undefined,
+                  respostaAdminModal.texto,
+                  false
+                );
+              } else {
+                await atualizarStatusReserva(
+                  resId,
+                  respostaAdminModal.reserva.status,
+                  respostaAdminModal.texto,
+                  undefined,
+                  respostaAdminModal.pago
+                );
+              }
+
+              setRespostaAdminModal(null);
+            }}
+            className={`px-5 py-2.5 rounded-xl text-white text-xs font-black shadow-md transition-all active:scale-95 cursor-pointer ${respostaAdminModal.acao === 'aprovar'
+                ? 'bg-emerald-600 hover:bg-emerald-500'
+                : respostaAdminModal.acao === 'recusar'
+                  ? 'bg-rose-600 hover:bg-rose-500'
+                  : 'bg-indigo-600 hover:bg-indigo-500'
+              }`}
+          >
+            {respostaAdminModal.acao === 'aprovar' ? 'Confirmar Aprovação' : respostaAdminModal.acao === 'recusar' ? 'Confirmar Recusa' : 'Salvar Orientações'}
+          </button>
+        </div>
+      </div>
     </div>
+  )
+}
+
+{/* Modal de Lightbox para Visualizar Comprovante de Pagamento */ }
+{
+  viewComprovanteModal && (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="fixed inset-0" onClick={() => setViewComprovanteModal(null)} />
+
+      <div className="relative w-full max-w-2xl bg-white rounded-3xl p-4 sm:p-5 shadow-2xl z-10 space-y-3">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+          <h3 className="font-black text-sm sm:text-base text-slate-950 flex items-center gap-2">
+            <Paperclip className="w-4 h-4 text-indigo-600" />
+            Comprovante de Pagamento Anexado pelo Morador
+          </h3>
+          <button
+            type="button"
+            onClick={() => setViewComprovanteModal(null)}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-950 hover:bg-slate-100 cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="w-full max-h-[70vh] overflow-auto rounded-2xl bg-slate-950 flex items-center justify-center p-2">
+          <img
+            src={viewComprovanteModal}
+            alt="Comprovante de Pagamento"
+            className="max-w-full max-h-[65vh] object-contain rounded-xl"
+          />
+        </div>
+
+        <div className="flex justify-end pt-1">
+          <button
+            type="button"
+            onClick={() => setViewComprovanteModal(null)}
+            className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-black cursor-pointer hover:bg-slate-800"
+          >
+            Fechar Visualização
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+    </div >
   );
 };

@@ -12,7 +12,10 @@ import {
   Sparkles, 
   Image as ImageIcon, 
   Check,
-  PartyPopper
+  PartyPopper,
+  Info,
+  ShieldAlert,
+  Send
 } from 'lucide-react';
 import { otimizarImagemArquivo } from '../../utils/imageOptimizer';
 
@@ -47,7 +50,8 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
   onClose,
   eventoToEdit
 }) => {
-  const { currentUser, adicionarEvento, editarEvento } = useCondo();
+  const { currentUser, adicionarEvento, editarEvento, isAdminLoggedIn } = useCondo();
+  const isAdmin = currentUser.role === 'sindico' || currentUser.role === 'subsindico' || Boolean(isAdminLoggedIn);
 
   const [titulo, setTitulo] = useState('');
   const [data, setData] = useState('');
@@ -130,13 +134,15 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
       ? `${currentUser.nome} (${unidadeFormatada})` 
       : `Morador (${unidadeFormatada})`;
 
+    const visibilidadeFinal: TipoVisibilidadeEvento = isAdmin ? visibilidade : 'Público';
+
     if (eventoToEdit) {
       editarEvento(eventoToEdit.id, {
         titulo: titulo.trim(),
         data: dataFormatada,
         horario: horario.trim(),
         local: localFinal,
-        visibilidade,
+        visibilidade: visibilidadeFinal,
         descricao: descricao.trim(),
         imagem: imagemFinal
       });
@@ -149,11 +155,14 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
         organizador: organizadorFinal,
         organizadorId: currentUser.id,
         organizadorUnidade: unidadeFormatada,
-        visibilidade,
+        visibilidade: visibilidadeFinal,
         descricao: descricao.trim(),
-        imagem: imagemFinal,
-        ativo: true
+        imagem: imagemFinal
       });
+
+      if (!isAdmin) {
+        alert('✅ Seu anúncio de evento público foi enviado para a moderação!\n\nEle ficará aguardando o status de aprovado do síndico. Assim que for aprovado, será publicado e mostrado aos outros moradores.');
+      }
     }
 
     onClose();
@@ -210,9 +219,17 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
 
           {/* Tipo de Visibilidade (Público vs Privado) */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-              Tipo de Visibilidade *
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
+                Tipo de Visibilidade *
+              </label>
+              {!isAdmin && (
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                  Morador: Somente Público
+                </span>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
                 type="button"
@@ -234,22 +251,54 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
 
               <button
                 type="button"
-                onClick={() => setVisibilidade('Privado')}
-                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
-                  visibilidade === 'Privado'
-                    ? 'bg-purple-50 border-purple-400 ring-2 ring-purple-400/40 text-purple-950 shadow-sm'
-                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                disabled={!isAdmin}
+                onClick={() => {
+                  if (isAdmin) setVisibilidade('Privado');
+                }}
+                className={`p-3 rounded-2xl border text-left transition-all flex items-center gap-2.5 relative ${
+                  !isAdmin
+                    ? 'opacity-55 bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                    : visibilidade === 'Privado'
+                    ? 'bg-purple-50 border-purple-400 ring-2 ring-purple-400/40 text-purple-950 shadow-sm cursor-pointer'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer'
                 }`}
+                title={!isAdmin ? "Para eventos privados, utilize o módulo 'Dependências & Reservas'" : undefined}
               >
-                <div className={`p-2 rounded-xl ${visibilidade === 'Privado' ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                <div className={`p-2 rounded-xl ${visibilidade === 'Privado' && isAdmin ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
                   <Lock className="w-4 h-4" />
                 </div>
-                <div>
-                  <strong className="block text-xs font-black">Celebração Privada</strong>
-                  <span className="text-[10px] opacity-80">Apenas informativo de uso de espaço para convidados do morador</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 justify-between">
+                    <strong className="block text-xs font-black">Celebração Privada</strong>
+                    {!isAdmin && (
+                      <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-slate-200 text-slate-700 rounded-md">
+                        Bloqueado
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] opacity-80">
+                    {!isAdmin ? 'Exclusivo no módulo "Dependências & Reservas"' : 'Apenas informativo de uso de espaço para convidados do morador'}
+                  </span>
                 </div>
               </button>
             </div>
+
+            {/* Alerta explicativo da regra para Moradores */}
+            {!isAdmin && (
+              <div className="p-3 rounded-2xl bg-amber-50/90 border border-amber-300 text-amber-950 text-xs space-y-1 mt-2">
+                <div className="flex items-center gap-1.5 font-black text-amber-900 text-[11px] uppercase tracking-wide">
+                  <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                  <span>Aprovação Prévia do Síndico Obrigatória</span>
+                </div>
+                <p className="text-[11px] text-amber-900 leading-relaxed font-semibold">
+                  Ao criar um anúncio de evento público, ele aguardará a aprovação do síndico. 
+                  Assim que for aprovado, ele será publicado e ficará visível aos outros moradores no mural.
+                </p>
+                <p className="text-[10px] text-amber-800 font-medium pt-0.5">
+                  💡 <strong>Celebrações particulares fechadas:</strong> Devem ser solicitadas através do menu <em>"Dependências & Reservas"</em>, onde a locação é paga e agendada oficialmente.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Data & Horário */}
@@ -396,8 +445,22 @@ export const CreateEditEventoModal: React.FC<CreateEditEventoModalProps> = ({
               type="submit"
               className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
             >
-              <Check className="w-4 h-4 stroke-[3]" />
-              {eventoToEdit ? 'Salvar Alterações' : 'Publicar no Mural'}
+              {eventoToEdit ? (
+                <>
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  Salvar Alterações
+                </>
+              ) : isAdmin ? (
+                <>
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  Publicar no Mural
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 stroke-[2.5]" />
+                  Enviar para Aprovação do Síndico
+                </>
+              )}
             </button>
           </div>
 
