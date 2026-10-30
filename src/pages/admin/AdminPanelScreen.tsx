@@ -507,18 +507,15 @@ const AdminCasaTableRow: React.FC<AdminCasaItemProps> = React.memo(({
         )}
       </td>
 
-      {/* 5. Reset de Senha */}
       {/* 5. Trocar Morador */}
       <td className="py-2.5 px-3.5 text-center">
         <button
           type="button"
           onClick={() => onResetSenha(u)}
           className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-xs font-black inline-flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
-          title={`Resetar cadastro e senha da Casa ${u.numero} para liberar novo cadastro`}
           title={`Trocar morador da Casa ${u.numero} (limpar cadastro atual para um novo morador)`}
         >
           <RotateCcw className="w-3 h-3 text-amber-800" />
-          <span>Reset Senha</span>
           <span>Trocar Morador</span>
         </button>
       </td>
@@ -857,11 +854,9 @@ const AdminCasaCard: React.FC<AdminCasaItemProps> = React.memo(({
             type="button"
             onClick={() => onResetSenha(u)}
             className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer shadow-2xs"
-            title={`Resetar cadastro e senha da Casa ${u.numero} para liberar novo cadastro`}
             title={`Trocar morador da Casa ${u.numero} (limpar cadastro atual para um novo morador)`}
           >
             <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
-            <span>Reset Senha</span>
             <span>Trocar Morador</span>
           </button>
         </div>
@@ -1474,8 +1469,7 @@ export const AdminPanelScreen: React.FC = () => {
       : (u.numero ? `Apto ${u.numero}` : 'apartamento');
 
     const confirmou = window.confirm(
-      `Deseja realmente resetar o cadastro e senha ${isCasas ? `da ${unitLabel}` : `do ${unitLabel}`}?\n\nEsta ação liberará a residência para que o morador possa selecioná-la e realizar um novo cadastro a partir do início (definindo uma nova senha pessoal).\n\nUse esta opção caso o morador tenha esquecido a senha e o e-mail cadastrado.`
-        `Deseja realmente trocar o morador ${isCasas ? `da ${unitLabel}` : `do ${unitLabel}`}?\n\nEsta ação removerá o perfil do morador atual e liberará a residência para que o próximo morador possa selecioná-la e realizar um novo cadastro do zero.`
+      `Deseja realmente trocar o morador ${isCasas ? `da ${unitLabel}` : `do ${unitLabel}`}?\n\nEsta ação removerá o perfil do morador atual e liberará a residência para que o próximo morador possa selecioná-la e realizar um novo cadastro do zero.`
     );
     if (!confirmou) return;
 
@@ -2391,7 +2385,6 @@ export const AdminPanelScreen: React.FC = () => {
                           {!isCasas && (
                             <th className="py-3 px-3.5 min-w-[150px]">Vaga da Garagem</th>
                           )}
-                          <th className="py-3 px-3.5 text-center min-w-[130px]">Reset de Senha</th>
                           <th className="py-3 px-3.5 text-center min-w-[130px]">Trocar Morador</th>
                           <th className="py-3 px-2.5 text-center min-w-[80px]">Vazio</th>
                           <th className="py-3 px-3.5 text-center min-w-[100px]">Status</th>
@@ -2657,18 +2650,15 @@ export const AdminPanelScreen: React.FC = () => {
                                   )}
                                 </td>
 
-                                {/* 6. Reset de Senha Seguro */}
                                 {/* 6. Trocar Morador */}
                                 <td className="py-2.5 px-3.5 text-center">
                                   <button
                                     type="button"
                                     onClick={() => handleResetSenha(u)}
                                     className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-xs font-black inline-flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
-                                    title={`Resetar cadastro e senha do Apto ${u.numero} para liberar novo cadastro`}
                                     title={`Trocar morador do Apto ${u.numero} (limpar cadastro atual para um novo morador)`}
                                   >
                                     <RotateCcw className="w-3 h-3 text-amber-800" />
-                                    <span>Reset Senha</span>
                                     <span>Trocar Morador</span>
                                   </button>
                                 </td>
@@ -3008,11 +2998,9 @@ export const AdminPanelScreen: React.FC = () => {
                                 type="button"
                                 onClick={() => handleResetSenha(u)}
                                 className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0 transition-all active:scale-95 cursor-pointer shadow-2xs"
-                                title={`Resetar cadastro e senha do Apto ${u.numero} para liberar novo cadastro`}
                                 title={`Trocar morador do Apto ${u.numero} (limpar cadastro atual para um novo morador)`}
                               >
                                 <RotateCcw className="w-2.5 h-2.5 text-amber-800" />
-                                <span>Reset Senha</span>
                                 <span>Trocar Morador</span>
                               </button>
                             </div>
@@ -8693,8 +8681,6 @@ export const AdminPanelScreen: React.FC = () => {
                           </span>
                         )}
                         {totalComprovantesAguardandoConfirmacao > 0 && (
-                          <span className="text-[10px] font-black px-2.5 py-0.5 rou
-... [truncated for diff preview]
                           <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-purple-600 text-white animate-pulse shadow-xs border border-purple-400">
                             📑 {totalComprovantesAguardandoConfirmacao} PIX para confirmar
                           </span>
