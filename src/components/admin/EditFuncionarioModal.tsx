@@ -4,14 +4,14 @@ import { useCondo } from '../../context/CondoContext';
 import { Funcionario, StatusFuncionario, CategoriaFuncionario, AdminModuloKey } from '../../types';
 import { AdminPermissionsSelector } from './AdminPermissionsSelector';
 import { ADMIN_MODULOS_LIST } from '../../constants/adminModulos';
-import { 
-  X, 
-  Check, 
-  Camera, 
-  User, 
-  Clock, 
-  Calendar, 
-  ShieldCheck, 
+import {
+  X,
+  Check,
+  Camera,
+  User,
+  Clock,
+  Calendar,
+  ShieldCheck,
   AlertCircle,
   Briefcase,
   Sun,
@@ -63,7 +63,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
   onClose,
   funcionario
 }) => {
-  const { editarFuncionario, avaliacoesFuncionarios, unidades, currentUser, isMasterLoggedIn } = useCondo();
+  const { editarFuncionario, excluirFuncionario, avaliacoesFuncionarios, unidades, currentUser, isMasterLoggedIn } = useCondo();
 
   const [isAvaliacoesOpen, setIsAvaliacoesOpen] = useState(false);
   const [nome, setNome] = useState('');
@@ -96,7 +96,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
       setUsuario(funcionario.usuario || funcionario.email || '');
       setSenha(funcionario.senha || funcionario.email || '');
       setPermiteAcessoAreaMorador(funcionario.permiteAcessoAreaMorador !== undefined ? funcionario.permiteAcessoAreaMorador : true);
-      
+
       if (funcionario.permissoesModulos && funcionario.permissoesModulos.length > 0) {
         setPermissoesModulos(funcionario.permissoesModulos);
       } else if (funcionario.categoria === 'Portaria') {
@@ -176,7 +176,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
       <div className="fixed inset-0" onClick={onClose} />
 
       <div className="modal-content-safe relative w-full max-w-xl bg-white border-2 border-amber-400 rounded-3xl shadow-2xl flex flex-col z-10 animate-in zoom-in-95 duration-200">
-        
+
         {/* Header Fixo */}
         <div className="shrink-0 p-4 sm:p-5 bg-gradient-to-r from-amber-100 via-amber-50 to-white flex items-center justify-between border-b border-amber-200">
           <div className="flex items-center gap-3">
@@ -205,7 +205,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
 
         {/* Corpo com Rolagem Interna */}
         <form id="edit-funcionario-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-          
+
           {sucesso && (
             <div className="p-3 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs font-bold flex items-center gap-2 animate-in zoom-in-95">
               <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
@@ -229,11 +229,10 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
                   key={st.value}
                   type="button"
                   onClick={() => setStatus(st.value as StatusFuncionario)}
-                  className={`py-1.5 px-2 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-center gap-1 border cursor-pointer ${
-                    status === st.value
+                  className={`py-1.5 px-2 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-center gap-1 border cursor-pointer ${status === st.value
                       ? `${st.bg} ${st.border} shadow-md scale-105 ring-2 ring-amber-400`
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                  }`}
+                    }`}
                 >
                   {st.label}
                 </button>
@@ -249,13 +248,13 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
             const totalAvaliacoes = avaliacoesDoFuncionario.length;
             const somaNotas = avaliacoesDoFuncionario.reduce((acc, curr) => acc + curr.nota, 0);
             const mediaNumerica = totalAvaliacoes > 0 ? somaNotas / totalAvaliacoes : 0;
-            const mediaFormatada = totalAvaliacoes > 0 
+            const mediaFormatada = totalAvaliacoes > 0
               ? (Number.isInteger(mediaNumerica) ? mediaNumerica.toFixed(1) : mediaNumerica.toFixed(2))
               : '0.0';
 
             const isSuperAdmin = Boolean(
-              currentUser?.isDev || 
-              currentUser?.role === 'sindico' || 
+              currentUser?.isDev ||
+              currentUser?.role === 'sindico' ||
               (currentUser as any)?.tipoAcesso === 'total' ||
               isMasterLoggedIn
             );
@@ -277,8 +276,8 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
                         </span>
                       </div>
                       <span className="text-[10px] text-slate-600 font-bold block">
-                        {totalAvaliacoes === 0 
-                          ? 'Nenhuma avaliação recebida ainda' 
+                        {totalAvaliacoes === 0
+                          ? 'Nenhuma avaliação recebida ainda'
                           : `${totalAvaliacoes} ${totalAvaliacoes === 1 ? 'avaliação registrada' : 'avaliações registradas'}`}
                       </span>
                     </div>
@@ -313,14 +312,14 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
                         {avaliacoesDoFuncionario.map((aval) => {
                           const unidadeInfo = unidades.find(u => u.numero === aval.unidade || u.id === aval.usuarioId);
                           const moradorNome = unidadeInfo?.moradores?.[0]?.nome;
-                          const rotuloMorador = moradorNome 
+                          const rotuloMorador = moradorNome
                             ? `${moradorNome} (Unidade ${aval.unidade || unidadeInfo?.numero || '---'})`
-                            : aval.unidade 
-                              ? `Morador da Unidade ${aval.unidade}` 
+                            : aval.unidade
+                              ? `Morador da Unidade ${aval.unidade}`
                               : `Morador ID: ${aval.usuarioId}`;
 
                           return (
-                            <div 
+                            <div
                               key={aval.id}
                               className="p-2.5 bg-white border border-amber-200 rounded-xl flex items-center justify-between text-xs shadow-2xs"
                             >
@@ -342,9 +341,9 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
                                 <span className="font-black text-amber-950 text-xs">{aval.nota}.0</span>
                                 <div className="flex items-center text-amber-500">
                                   {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star 
-                                      key={star} 
-                                      className={`w-3 h-3 ${star <= aval.nota ? 'fill-amber-400 text-amber-500' : 'text-slate-300'}`} 
+                                    <Star
+                                      key={star}
+                                      className={`w-3 h-3 ${star <= aval.nota ? 'fill-amber-400 text-amber-500' : 'text-slate-300'}`}
                                     />
                                   ))}
                                 </div>
@@ -368,7 +367,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
                   alt="Preview"
                   className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-md bg-slate-100"
                 />
-                <label 
+                <label
                   htmlFor="edit-foto-upload"
                   className="absolute -bottom-1.5 -right-1.5 p-1.5 rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 cursor-pointer shadow-md border border-white"
                   title="Trocar Foto"
@@ -398,9 +397,8 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
                     key={idx}
                     type="button"
                     onClick={() => setFoto(av)}
-                    className={`w-9 h-9 rounded-xl overflow-hidden border-2 shrink-0 transition-transform active:scale-95 cursor-pointer ${
-                      foto === av ? 'border-amber-500 scale-110 shadow-md' : 'border-slate-200 hover:border-amber-300'
-                    }`}
+                    className={`w-9 h-9 rounded-xl overflow-hidden border-2 shrink-0 transition-transform active:scale-95 cursor-pointer ${foto === av ? 'border-amber-500 scale-110 shadow-md' : 'border-slate-200 hover:border-amber-300'
+                      }`}
                   >
                     <img src={av} alt="Avatar" className="w-full h-full object-cover" />
                   </button>
@@ -518,7 +516,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
           <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-300/80 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-black uppercase text-amber-950 flex items-center gap-1.5">
-                <Lock className="w-4 h-4 text-amber-800" /> 
+                <Lock className="w-4 h-4 text-amber-800" />
                 Credenciais de Acesso Individual (Login & Rastreabilidade):
               </span>
               <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-400">
@@ -529,7 +527,7 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
             <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
               💡 O e-mail informado será o login oficial do colaborador. A senha inicial pode ser a repetição do e-mail, e o colaborador poderá alterá-la para sua senha pessoal. Todas as ações realizadas ficarão registradas em seu nome.
             </p>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold uppercase text-slate-800 flex items-center gap-1">
@@ -591,26 +589,41 @@ export const EditFuncionarioModal: React.FC<EditFuncionarioModalProps> = ({
         </form>
 
         {/* Rodapé Fixo com Ações */}
-        <div className="shrink-0 p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer active:scale-95"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            form="edit-funcionario-form"
-            className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
-          >
-            <Check className="w-4 h-4 stroke-[3]" /> Salvar Alterações
-          </button>
+          <div className="shrink-0 p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`Tem certeza que deseja excluir o cadastro de ${funcionario.nome}?`)) {
+                  excluirFuncionario(funcionario.id);
+                  onClose();
+                }
+              }}
+              className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-black uppercase transition-colors cursor-pointer active:scale-95 flex items-center gap-1.5"
+            >
+              <UserX className="w-4 h-4" /> Excluir
+            </button>
+
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer active:scale-95"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                form="edit-funcionario-form"
+                className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4 stroke-[3]" /> Salvar Alterações
+              </button>
+            </div>
+          </div>
+
         </div>
-
       </div>
-    </div>
-  );
+      );
 
-  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
+      return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };

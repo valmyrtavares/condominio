@@ -3605,183 +3605,68 @@ export const AdminPanelScreen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
                 {funcionarios
                   .filter(f => filtroCategoriaColab === 'Todos' || (f.categoria || 'Gestão') === filtroCategoriaColab)
                   .map((func) => {
-                    const isPassVisible = visibleAdminPasswords[func.id];
                     const currentStatus = func.status || 'Ativo';
 
-                    // Status Badge Style Helper
-                    const getStatusColor = (st: string) => {
+                    const getStatusDot = (st: string) => {
                       switch (st) {
                         case 'Férias':
-                          return { badge: 'bg-amber-100 text-amber-950 border-amber-300', dot: 'bg-amber-500' };
+                          return 'bg-amber-500';
                         case 'Doente':
-                          return { badge: 'bg-orange-100 text-orange-950 border-orange-300', dot: 'bg-orange-500' };
+                          return 'bg-orange-500';
                         case 'Ausente':
-                          return { badge: 'bg-rose-100 text-rose-950 border-rose-300', dot: 'bg-rose-500' };
+                          return 'bg-rose-500';
                         case 'Desligado':
-                          return { badge: 'bg-slate-200 text-slate-700 border-slate-300', dot: 'bg-slate-600' };
+                          return 'bg-slate-600';
                         case 'Ativo':
                         default:
-                          return { badge: 'bg-emerald-100 text-emerald-950 border-emerald-300', dot: 'bg-emerald-500' };
+                          return 'bg-emerald-500';
                       }
                     };
-
-                    const statusStyle = getStatusColor(currentStatus);
 
                     return (
                       <div
                         key={func.id}
-                        className={`bg-white border hover:border-amber-400 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 ${currentStatus === 'Desligado' ? 'opacity-70 border-slate-200 bg-slate-50/80' : 'border-slate-200'
-                          }`}
+                        className={`bg-white border hover:border-amber-400 rounded-xl p-2.5 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-2.5 ${currentStatus === 'Desligado' ? 'opacity-65 border-slate-200 bg-slate-50/80' : 'border-slate-200'}`}
                       >
-                        {/* Topo do Card com Foto e Indicador de Status */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-3">
-                            <div className="relative shrink-0">
-                              <img
-                                src={func.foto || AVATARES_SUGERIDOS[0]}
-                                alt={func.nome}
-                                className="w-13 h-13 rounded-2xl object-cover border-2 border-amber-300 shadow-sm bg-slate-100"
-                              />
-                              <span
-                                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white shadow-xs ${statusStyle.dot}`}
-                                title={`Status: ${currentStatus}`}
-                              />
-                            </div>
-                            <div className="min-w-0">
-                              <h4 className="font-black text-sm text-slate-950 leading-tight truncate">
-                                {func.nome}
-                              </h4>
-                              <p className="text-xs text-indigo-900 font-extrabold truncate mt-0.5">
-                                {func.funcao}
-                              </p>
-                            </div>
+                        {/* Imagem + Nome + Função */}
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div className="relative shrink-0">
+                            <img
+                              src={func.foto || AVATARES_SUGERIDOS[0]}
+                              alt={func.nome}
+                              className="w-11 h-11 rounded-xl object-cover border-2 border-amber-300 shadow-2xs bg-slate-100"
+                            />
+                            <span
+                              className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white shadow-2xs ${getStatusDot(currentStatus)}`}
+                              title={`Status: ${currentStatus}`}
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-black text-xs text-slate-950 leading-tight truncate" title={func.nome}>
+                              {func.nome}
+                            </h4>
+                            <p className="text-[11px] text-indigo-900 font-extrabold truncate mt-0.5" title={func.funcao}>
+                              {func.funcao}
+                            </p>
                           </div>
                         </div>
 
-                        {/* Categoria e Status Interativo */}
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-900 text-amber-300 border border-slate-800">
-                            {func.categoria || 'Colaborador'}
-                          </span>
-
-                          {/* Seletor Rápido de Status no próprio Card */}
-                          <select
-                            value={currentStatus}
-                            onChange={(e) => atualizarStatusFuncionario(func.id, e.target.value as StatusFuncionario)}
-                            className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-2xs cursor-pointer focus:outline-none ${statusStyle.badge}`}
-                            title="Alterar status deste colaborador"
-                          >
-                            <option value="Ativo">🟢 Ativo</option>
-                            <option value="Férias">🟡 Férias</option>
-                            <option value="Doente">🟠 Doente</option>
-                            <option value="Ausente">🔴 Ausente</option>
-                            <option value="Desligado">⚫ Desligado</option>
-                          </select>
-                        </div>
-
-                        {/* Informações de Turno & Escala */}
-                        <div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                          <div>
-                            <span className="text-[9px] font-extrabold uppercase text-slate-500 flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-indigo-600" /> Turno:
-                            </span>
-                            <strong className="text-slate-950 font-bold text-[11px] block truncate" title={func.horario}>
-                              {func.horario || 'Integral'}
-                            </strong>
-                          </div>
-
-                          <div>
-                            <span className="text-[9px] font-extrabold uppercase text-slate-500 flex items-center gap-1">
-                              <Calendar className="w-3 h-3 text-amber-600" /> Escala:
-                            </span>
-                            <span className="text-slate-800 font-bold text-[11px] block truncate" title={func.disponibilidade}>
-                              {func.disponibilidade || 'Seg a Sex'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Dados de Login e Senha se for membro com credencial de acesso */}
-                        {func.usuario && (
-                          <div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-amber-50/70 border border-amber-200 text-xs">
-                            <div>
-                              <span className="text-[9px] font-extrabold uppercase text-slate-600 block">
-                                Usuário:
-                              </span>
-                              <strong className="text-slate-950 font-mono font-black text-xs">
-                                {func.usuario}
-                              </strong>
-                            </div>
-
-                            <div>
-                              <span className="text-[9px] font-extrabold uppercase text-slate-600 block">
-                                Senha:
-                              </span>
-                              <div className="flex items-center justify-between">
-                                <strong className="text-slate-950 font-mono font-black text-xs">
-                                  {isPassVisible ? (func.senha || 'admin') : '••••••••'}
-                                </strong>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleAdminPasswordVisibility(func.id)}
-                                  className="text-slate-500 hover:text-slate-800 p-0.5 rounded cursor-pointer"
-                                  title={isPassVisible ? "Ocultar senha" : "Ver senha"}
-                                >
-                                  {isPassVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Rodapé do Card com Ações (Editar, Copiar, Excluir) */}
-                        <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
-
-                          {/* Botão de Editar */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedFuncionarioToEdit(func);
-                              setIsEditFuncionarioModalOpen(true);
-                            }}
-                            className="p-1.5 rounded-lg text-amber-800 hover:text-amber-950 hover:bg-amber-100 transition-colors flex items-center gap-1 text-[11px] font-black uppercase cursor-pointer"
-                            title="Editar dados do colaborador"
-                          >
-                            <Edit3 className="w-3.5 h-3.5 text-amber-800" /> Editar
-                          </button>
-
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const info = `Condomínio - Colaborador: ${func.nome}\nFunção: ${func.funcao}\nCategoria: ${func.categoria}\nTurno: ${func.horario}\nEscala: ${func.disponibilidade}\nStatus: ${func.status || 'Ativo'}${func.usuario ? `\nUsuário: ${func.usuario}\nSenha: ${func.senha}` : ''}`;
-                                navigator.clipboard.writeText(info);
-                                alert(`Dados de ${func.nome} copiados!`);
-                              }}
-                              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center gap-1 text-[11px] font-bold cursor-pointer"
-                              title="Copiar informações"
-                            >
-                              <Copy className="w-3.5 h-3.5" /> Copiar
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (window.confirm(`Tem certeza que deseja excluir o cadastro de ${func.nome}?`)) {
-                                  excluirFuncionario(func.id);
-                                }
-                              }}
-                              className="p-1.5 rounded-lg text-rose-600 hover:text-rose-800 hover:bg-rose-100 transition-colors flex items-center gap-1 text-[11px] font-bold cursor-pointer"
-                              title="Remover Colaborador"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" /> Excluir
-                            </button>
-                          </div>
-                        </div>
-
+                        {/* Botão de Editar */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedFuncionarioToEdit(func);
+                            setIsEditFuncionarioModalOpen(true);
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-500 text-amber-900 hover:text-slate-950 border border-amber-200/80 hover:border-amber-500 transition-all flex items-center gap-1 text-[10px] font-black uppercase shrink-0 cursor-pointer shadow-2xs"
+                          title="Editar dados do colaborador"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" /> Editar
+                        </button>
                       </div>
                     );
                   })}
