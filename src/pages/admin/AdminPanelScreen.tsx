@@ -3207,8 +3207,8 @@ export const AdminPanelScreen: React.FC = () => {
               </div>
             )}
 
-            {/* Form de Criação de Novo Membro / Funcionário com Foto */}
-            <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs">
+            {/* Form de Criação de Novo Membro / Funcionário com Foto (Compacto) */}
+            <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-3 sm:p-4 space-y-2.5 shadow-2xs">
               <div className="flex items-center justify-between gap-2 pb-2 border-b border-amber-200/60 flex-wrap">
                 <div className="flex items-center gap-2">
                   <UserPlus className="w-4 h-4 text-amber-800" />
@@ -3218,7 +3218,7 @@ export const AdminPanelScreen: React.FC = () => {
                 </div>
 
                 {/* Alternador de Tipo de Cadastro: Gestão com Senha vs Funcionário Operacional */}
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <div className="flex items-center bg-white/80 p-0.5 rounded-xl border border-amber-200 shadow-2xs">
                     <button
                       type="button"
@@ -3228,8 +3228,8 @@ export const AdminPanelScreen: React.FC = () => {
                           setNovoColabPermissoes(ADMIN_MODULOS_LIST.map(m => m.key));
                         }
                       }}
-                      className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${tipoCadastroColab === 'gestao'
-                          ? 'bg-amber-500 text-slate-950 shadow-xs scale-102'
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${tipoCadastroColab === 'gestao'
+                          ? 'bg-amber-500 text-slate-950 shadow-xs'
                           : 'text-slate-600 hover:text-slate-950'
                         }`}
                     >
@@ -3243,8 +3243,8 @@ export const AdminPanelScreen: React.FC = () => {
                           setNovoColabPermissoes(['portaria', 'mudancas']);
                         }
                       }}
-                      className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${tipoCadastroColab === 'operacional'
-                          ? 'bg-amber-500 text-slate-950 shadow-xs scale-102'
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${tipoCadastroColab === 'operacional'
+                          ? 'bg-amber-500 text-slate-950 shadow-xs'
                           : 'text-slate-600 hover:text-slate-950'
                         }`}
                     >
@@ -3256,7 +3256,7 @@ export const AdminPanelScreen: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsModalNovaCategoriaOpen(true)}
-                    className="px-2.5 py-1.5 bg-white hover:bg-amber-100 border border-amber-300 text-amber-950 rounded-xl text-[11px] font-black uppercase flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+                    className="px-2.5 py-1 bg-white hover:bg-amber-100 border border-amber-300 text-amber-950 rounded-xl text-[10px] font-black uppercase flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
                   >
                     <Settings2 className="w-3.5 h-3.5 text-amber-800" />
                     + Criar Nova Categoria
@@ -3264,29 +3264,25 @@ export const AdminPanelScreen: React.FC = () => {
                 </div>
               </div>
 
-              <form onSubmit={handleAddAdminUser} autoComplete="off" className="space-y-4">
+              <form onSubmit={handleAddAdminUser} autoComplete="off" className="space-y-2.5">
 
-                {/* Linha 1: Foto de Perfil Individual + Dados Principais */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                {/* Bloco Superior Compacto: Card da Foto Enxuto + Campos em Colunas Estreitas (Sem espaço vazio abaixo da foto) */}
+                <div className="flex flex-col lg:flex-row gap-2.5 items-stretch">
 
-                  {/* Foto de Perfil com Upload e Preview */}
-                  <div className="md:col-span-3 space-y-2 bg-white/80 border border-amber-200 rounded-2xl p-3 text-center">
-                    <label className="text-[10px] font-extrabold uppercase text-slate-700 block">
-                      Foto de Perfil (Aparece em Funcionários):
-                    </label>
-
-                    <div className="relative w-20 h-20 mx-auto">
+                  {/* Card de Foto Compacto */}
+                  <div className="lg:w-52 shrink-0 bg-white/80 border border-amber-200 rounded-xl p-2.5 flex items-center lg:flex-col lg:justify-center gap-2.5 text-center shadow-2xs">
+                    <div className="relative w-14 h-14 shrink-0 mx-auto">
                       <img
                         src={novoAdminFoto || AVATARES_SUGERIDOS[0]}
                         alt="Preview"
-                        className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-md bg-slate-100"
+                        className="w-14 h-14 rounded-xl object-cover border-2 border-amber-400 shadow-xs bg-slate-100"
                       />
                       <label
                         htmlFor="upload-admin-foto"
-                        className="absolute -bottom-1.5 -right-1.5 p-1.5 rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 cursor-pointer shadow-md border border-white"
+                        className="absolute -bottom-1 -right-1 p-1 rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 cursor-pointer shadow-xs border border-white"
                         title="Trocar Foto"
                       >
-                        <Camera className="w-3.5 h-3.5" />
+                        <Camera className="w-3 h-3" />
                         <input
                           id="upload-admin-foto"
                           type="file"
@@ -3297,17 +3293,17 @@ export const AdminPanelScreen: React.FC = () => {
                       </label>
                     </div>
 
-                    <div className="space-y-1">
-                      <span className="text-[9px] font-extrabold uppercase text-slate-500 block">
-                        Ou escolha um avatar:
+                    <div className="flex-1 lg:flex-initial space-y-1 text-left lg:text-center">
+                      <span className="text-[9px] font-extrabold uppercase text-slate-500 block leading-none">
+                        Foto ou Avatar:
                       </span>
-                      <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                      <div className="flex items-center lg:justify-center gap-1 flex-wrap">
                         {AVATARES_SUGERIDOS.slice(0, 6).map((av, idx) => (
                           <button
                             key={idx}
                             type="button"
                             onClick={() => setNovoAdminFoto(av)}
-                            className={`w-6 h-6 rounded-full overflow-hidden border-2 transition-all cursor-pointer ${novoAdminFoto === av ? 'border-amber-600 scale-110 shadow-sm ring-1 ring-amber-400' : 'border-transparent opacity-70 hover:opacity-100'
+                            className={`w-5 h-5 rounded-full overflow-hidden border transition-all cursor-pointer ${novoAdminFoto === av ? 'border-amber-600 scale-110 ring-1 ring-amber-400' : 'border-transparent opacity-70 hover:opacity-100'
                               }`}
                           >
                             <img src={av} alt="Avatar" className="w-full h-full object-cover" />
@@ -3317,129 +3313,134 @@ export const AdminPanelScreen: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Campos do Formulário */}
-                  <div className="md:col-span-9 space-y-3">
+                  {/* Coluna Direita Alinhada à Altura da Foto: 2 Linhas Enxutas */}
+                  <div className="flex-1 flex flex-col justify-between gap-2 min-w-0">
 
-                    {/* Linha de Nome e Cargo */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* Linha 1: Campos Principais com Largura Reduzida (4 ou 5 colunas na mesma linha) */}
+                    {tipoCadastroColab === 'gestao' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                        {/* Nome Completo */}
+                        <div className="space-y-0.5">
+                          <label className="text-[9px] font-extrabold uppercase text-slate-700 block">
+                            Nome Completo:
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ex: Ademar Lopes..."
+                            value={novoAdminNome}
+                            onChange={(e) => setNovoAdminNome(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-950 placeholder-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                            required
+                          />
+                        </div>
 
-                      {/* Nome Completo */}
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                          Nome Completo:
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Ex: Ademar Lopes, Valmyr Tavares..."
-                          value={novoAdminNome}
-                          onChange={(e) => setNovoAdminNome(e.target.value)}
-                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
-                          required
-                        />
-                      </div>
-
-                      {/* Cargo / Categoria */}
-                      {tipoCadastroColab === 'gestao' ? (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                        {/* Categoria / Função */}
+                        <div className="space-y-0.5">
+                          <div className="flex items-center justify-between gap-1">
+                            <label className="text-[9px] font-extrabold uppercase text-slate-700 truncate">
                               Categoria / Função:
                             </label>
-                            <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded border bg-amber-100 text-amber-950 border-amber-300">
-                              🔓 ACESSO TOTAL
+                            <span className="text-[8px] font-black uppercase px-1 rounded bg-amber-100 text-amber-950 border border-amber-300 shrink-0">
+                              🔓 TOTAL
                             </span>
                           </div>
-
                           <select
                             value={novoAdminRoleSelected}
                             onChange={(e) => setNovoAdminRoleSelected(e.target.value)}
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs cursor-pointer"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs cursor-pointer"
                           >
                             {adminRoles.map((role) => (
                               <option key={role.id} value={role.nome}>
-                                {role.nome} {role.tipoAcesso === 'total' ? '(Acesso Irrestrito)' : '(Poder de Morador)'}
+                                {role.nome} {role.tipoAcesso === 'total' ? '(Irrestrito)' : '(Morador)'}
                               </option>
                             ))}
                           </select>
                         </div>
-                      ) : (
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                            Cargo / Função do Funcionário:
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Ex: Porteiro Noturno (12x36), Faxineira Chefe, Vigia..."
-                            value={novoColabCargo}
-                            onChange={(e) => setNovoColabCargo(e.target.value)}
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
-                            required
-                          />
-                        </div>
-                      )}
-
-                    </div>
-
-                    {/* Linha de Dados Específicos: Se for Gestão (Usuário/Senha) | Se for Operacional (Categoria, Horário, Escala) */}
-                    {tipoCadastroColab === 'gestao' ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 
                         {/* Usuário de Login */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                            Usuário de Acesso / Login:
+                        <div className="space-y-0.5">
+                          <label className="text-[9px] font-extrabold uppercase text-slate-700 block">
+                            Usuário / Login:
                           </label>
                           <input
                             type="text"
-                            placeholder="Ex: admin, subsindico, conselheiro1"
+                            placeholder="Ex: admin, subsindico"
                             value={novoAdminUsuario}
                             onChange={(e) => setNovoAdminUsuario(e.target.value)}
                             autoComplete="off"
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-950 placeholder-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
                             required
                           />
                         </div>
 
                         {/* Senha com Olho */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                        <div className="space-y-0.5">
+                          <label className="text-[9px] font-extrabold uppercase text-slate-700 block">
                             Senha de Acesso:
                           </label>
                           <div className="relative">
                             <input
                               type={showNovoAdminSenha ? 'text' : 'password'}
-                              placeholder="Ex: admin123, 101..."
+                              placeholder="Ex: admin123..."
                               value={novoAdminSenha}
                               onChange={(e) => setNovoAdminSenha(e.target.value)}
                               autoComplete="new-password"
-                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pr-9 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                              className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 pr-8 text-xs text-slate-950 placeholder-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
                               required
                             />
                             <button
                               type="button"
                               onClick={() => setShowNovoAdminSenha(!showNovoAdminSenha)}
-                              className="p-1 text-slate-500 hover:text-slate-800 absolute right-2.5 top-1.5 rounded-lg cursor-pointer"
+                              className="p-0.5 text-slate-500 hover:text-slate-800 absolute right-2 top-1.5 rounded cursor-pointer"
                               tabIndex={-1}
                               title={showNovoAdminSenha ? "Ocultar senha" : "Ver senha"}
                             >
-                              {showNovoAdminSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              {showNovoAdminSenha ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                             </button>
                           </div>
                         </div>
-
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                        {/* Nome Completo */}
+                        <div className="space-y-0.5">
+                          <label className="text-[9px] font-extrabold uppercase text-slate-700 block">
+                            Nome Completo:
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ex: Ademar Lopes..."
+                            value={novoAdminNome}
+                            onChange={(e) => setNovoAdminNome(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-950 placeholder-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                            required
+                          />
+                        </div>
+
+                        {/* Cargo / Função */}
+                        <div className="space-y-0.5">
+                          <label className="text-[9px] font-extrabold uppercase text-slate-700 block">
+                            Cargo / Função:
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ex: Porteiro Noturno..."
+                            value={novoColabCargo}
+                            onChange={(e) => setNovoColabCargo(e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-950 placeholder-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                            required
+                          />
+                        </div>
 
                         {/* Categoria Operacional */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                        <div className="space-y-0.5">
+                          <label className="text-[9px] font-extrabold uppercase text-slate-700 block">
                             Categoria:
                           </label>
                           <select
                             value={novoColabCategoria}
                             onChange={(e) => setNovoColabCategoria(e.target.value as CategoriaFuncionario)}
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs cursor-pointer"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-950 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs cursor-pointer"
                           >
                             <option value="Portaria">Portaria</option>
                             <option value="Limpeza">Limpeza</option>
@@ -3451,127 +3452,120 @@ export const AdminPanelScreen: React.FC = () => {
                         </div>
 
                         {/* Horário de Turno */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                        <div className="space-y-0.5">
+                          <label className="text-[9px] font-extrabold uppercase text-slate-700 block">
                             Horário de Turno:
                           </label>
                           <input
                             type="text"
-                            placeholder="Ex: 07:00 - 19:00, 19:00 - 07:00..."
+                            placeholder="Ex: 07:00 - 19:00"
                             value={novoColabHorario}
                             onChange={(e) => setNovoColabHorario(e.target.value)}
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-950 placeholder-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
                           />
                         </div>
 
                         {/* Escala / Dias */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-extrabold uppercase text-slate-700">
+                        <div className="space-y-0.5">
+                          <label className="text-[9px] font-extrabold uppercase text-slate-700 block">
                             Escala / Dias:
                           </label>
                           <input
                             type="text"
-                            placeholder="Ex: Escala 12x36, Seg a Sex..."
+                            placeholder="Ex: 12x36, Seg a Sex"
                             value={novoColabDisponibilidade}
                             onChange={(e) => setNovoColabDisponibilidade(e.target.value)}
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-950 placeholder-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
                           />
                         </div>
-
                       </div>
                     )}
 
-                    {/* Status Inicial do Funcionário */}
-                    <div className="space-y-1 bg-white/70 p-2.5 rounded-xl border border-amber-200/80">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                          Status Inicial do Funcionário:
+                    {/* Linha 2: Status Inicial + E-mail + Acesso Morador (se operacional) + Botão Salvar na mesma linha */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                      {/* Status Inicial Compacto */}
+                      <div className={`${tipoCadastroColab === 'operacional' ? 'sm:col-span-5' : 'sm:col-span-6'} space-y-0.5`}>
+                        <label className="text-[9px] font-extrabold uppercase text-slate-700 block">
+                          Status Inicial:
                         </label>
-                        <span className="text-[10px] font-black uppercase text-slate-800">
-                          {novoColabStatus}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-                        {[
-                          { label: 'Ativo', val: 'Ativo', bg: 'bg-emerald-500 text-white' },
-                          { label: 'Férias', val: 'Férias', bg: 'bg-amber-500 text-slate-950' },
-                          { label: 'Doente', val: 'Doente', bg: 'bg-orange-500 text-white' },
-                          { label: 'Ausente', val: 'Ausente', bg: 'bg-rose-500 text-white' },
-                          { label: 'Desligado', val: 'Desligado', bg: 'bg-slate-700 text-white' }
-                        ].map((st) => (
-                          <button
-                            key={st.val}
-                            type="button"
-                            onClick={() => setNovoColabStatus(st.val as StatusFuncionario)}
-                            className={`py-1 px-2 rounded-lg text-[11px] font-black uppercase transition-all border cursor-pointer ${novoColabStatus === st.val
-                                ? `${st.bg} border-transparent shadow-xs scale-102 ring-2 ring-amber-400`
-                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                              }`}
-                          >
-                            {st.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Permissão de Acesso ao Ambiente dos Moradores (Área do Cliente) */}
-                    {tipoCadastroColab === 'operacional' && (
-                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 border border-amber-300/70">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-3.5 h-3.5 text-amber-900 shrink-0" />
-                          <span className="text-[10px] font-extrabold uppercase text-amber-950">
-                            Liberar Acesso ao Ambiente de Morador (Área do Cliente)
-                          </span>
+                        <div className="grid grid-cols-5 gap-1 bg-white/80 p-1 rounded-lg border border-amber-200/80">
+                          {[
+                            { label: 'Ativo', val: 'Ativo', bg: 'bg-emerald-500 text-white' },
+                            { label: 'Férias', val: 'Férias', bg: 'bg-amber-500 text-slate-950' },
+                            { label: 'Doente', val: 'Doente', bg: 'bg-orange-500 text-white' },
+                            { label: 'Ausente', val: 'Ausente', bg: 'bg-rose-500 text-white' },
+                            { label: 'Desligado', val: 'Desligado', bg: 'bg-slate-700 text-white' }
+                          ].map((st) => (
+                            <button
+                              key={st.val}
+                              type="button"
+                              onClick={() => setNovoColabStatus(st.val as StatusFuncionario)}
+                              className={`py-1 px-1 rounded-md text-[9px] font-black uppercase transition-all truncate cursor-pointer ${novoColabStatus === st.val
+                                  ? `${st.bg} shadow-2xs ring-1 ring-amber-400`
+                                  : 'bg-white text-slate-600 hover:bg-slate-100'
+                                }`}
+                            >
+                              {st.label}
+                            </button>
+                          ))}
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={novoColabAcessoMorador}
-                            onChange={(e) => setNovoColabAcessoMorador(e.target.checked)}
-                            className="sr-only peer"
-                          />
-                          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
-                        </label>
                       </div>
-                    )}
 
-                    {/* Seletor de Permissões de Abas / Módulos Administrativos */}
-                    <AdminPermissionsSelector
-                      selectedModulos={novoColabPermissoes}
-                      onChange={setNovoColabPermissoes}
-                    />
-
-                    {/* E-mail e Botão de Salvar */}
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-1 items-end">
-                      <div className="sm:col-span-8 space-y-1">
-                        <label className="text-[10px] font-extrabold uppercase text-slate-700">
-                          E-mail / Contato (Opcional):
+                      {/* E-mail Opcional */}
+                      <div className={`${tipoCadastroColab === 'operacional' ? 'sm:col-span-3' : 'sm:col-span-3'} space-y-0.5`}>
+                        <label className="text-[9px] font-extrabold uppercase text-slate-700 block">
+                          E-mail (Opcional):
                         </label>
                         <div className="relative">
                           <input
                             type="email"
-                            placeholder="Ex: colaborador@condominio.com"
+                            placeholder="colaborador@email.com"
                             value={novoAdminEmail}
                             onChange={(e) => setNovoAdminEmail(e.target.value)}
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 pl-9 text-xs text-slate-950 placeholder-slate-500 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 pl-7 text-xs text-slate-950 placeholder-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
                           />
-                          <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                          <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2" />
                         </div>
                       </div>
 
-                      <div className="sm:col-span-4">
+                      {/* Toggle Área de Morador (apenas quando Operacional) */}
+                      {tipoCadastroColab === 'operacional' && (
+                        <div className="sm:col-span-2 flex items-center justify-between gap-1 px-2 py-1.5 rounded-lg bg-amber-500/10 border border-amber-300/70">
+                          <span className="text-[9px] font-extrabold uppercase text-amber-950 leading-tight truncate" title="Liberar Acesso ao Ambiente de Morador">
+                            Área Morador
+                          </span>
+                          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                            <input
+                              type="checkbox"
+                              checked={novoColabAcessoMorador}
+                              onChange={(e) => setNovoColabAcessoMorador(e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-500"></div>
+                          </label>
+                        </div>
+                      )}
+
+                      {/* Botão Salvar Colaborador */}
+                      <div className={`${tipoCadastroColab === 'operacional' ? 'sm:col-span-2' : 'sm:col-span-3'}`}>
                         <button
                           type="submit"
-                          className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
+                          className="w-full py-1.5 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-[11px] font-black uppercase flex items-center justify-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer"
                         >
-                          <ShieldCheck className="w-4 h-4 stroke-[3]" />
-                          Salvar Colaborador
+                          <ShieldCheck className="w-3.5 h-3.5 stroke-[3] shrink-0" />
+                          <span className="truncate">Salvar Colaborador</span>
                         </button>
                       </div>
                     </div>
 
                   </div>
                 </div>
+
+                {/* Linha Inferior Largura Total: Seletor de Permissões em Select + Cards Excluíveis */}
+                <AdminPermissionsSelector
+                  selectedModulos={novoColabPermissoes}
+                  onChange={setNovoColabPermissoes}
+                />
 
               </form>
             </div>
